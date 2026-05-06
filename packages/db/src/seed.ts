@@ -1,5 +1,6 @@
 import { db } from "./client"
 import { exercise, routine, routineExercise, team, teamMember } from "./schema"
+import { seedExercises } from "./seed-exercises"
 
 const API_URL = process.env.API_URL ?? "http://localhost:3001"
 
@@ -33,19 +34,8 @@ async function seed() {
   console.log("✓ Equipo y miembros creados")
 
   // Global exercise catalog
-  const exercises = await db
-    .insert(exercise)
-    .values([
-      { name: "Sentadilla", description: "Back squat con barra" },
-      { name: "Press de banca", description: "Bench press plano con barra" },
-      { name: "Peso muerto", description: "Deadlift convencional" },
-      { name: "Press militar", description: "Overhead press de pie" },
-      { name: "Remo con barra", description: "Barbell row" },
-      { name: "Dominadas", description: "Pull-ups con peso corporal o cargadas" },
-      { name: "Hip thrust", description: "Hip thrust con barra" },
-    ])
-    .returning()
-  console.log("✓ Catálogo de ejercicios creado")
+  await seedExercises()
+  const exercises = await db.select().from(exercise)
 
   // Sample routine
   const [newRoutine] = await db

@@ -5,8 +5,8 @@ import { PlusIcon, Trash2Icon } from "lucide-react"
 import Link from "next/link"
 import { use, useState } from "react"
 
-export default function RoutinePage({ params }: { params: Promise<{ routineId: string }> }) {
-  const { routineId } = use(params)
+export default function RoutinePage({ params }: { params: Promise<{ teamId: string; routineId: string }> }) {
+  const { teamId, routineId } = use(params)
   const [addingExercise, setAddingExercise] = useState(false)
 
   const { data: routine, refetch } = trpc.routines.get.useQuery({ id: routineId })
@@ -15,18 +15,16 @@ export default function RoutinePage({ params }: { params: Promise<{ routineId: s
   const addExercise = trpc.routines.addExercise.useMutation({ onSuccess: () => { refetch(); setAddingExercise(false) } })
   const removeExercise = trpc.routines.removeExercise.useMutation({ onSuccess: refetch })
 
-  if (!routine) return <div className="p-8 text-muted-foreground">Cargando rutina...</div>
+  if (!routine) return <div className="p-8 text-muted-foreground">Cargando plantilla...</div>
 
   const usedExerciseIds = new Set(routine.exercises.map((e) => e.exerciseId))
   const availableExercises = catalog?.filter((e) => !usedExerciseIds.has(e.id)) ?? []
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10 space-y-6">
+    <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
       <div>
         <p className="text-sm text-muted-foreground mb-1">
-          <Link href="/dashboard" className="hover:underline">Equipos</Link>
-          {" / "}
-          <Link href={`/teams/${routine.teamId}`} className="hover:underline">Equipo</Link>
+          <Link href={`/teams/${teamId}/plantillas`} className="hover:underline">Plantillas</Link>
           {" / "}
         </p>
         <h1 className="text-xl font-semibold">{routine.name}</h1>
@@ -87,14 +85,13 @@ type RoutineExercise = {
   sets: SetTarget[]
 }
 
-// ─── Exercise card ─────────────────────────────────────────────────────────────
+// ─── Exercise card ────────────────────────────────────────────────────────────
 
 function ExerciseCard({ ex, onRemove, onUpdate }: { ex: RoutineExercise; onRemove: () => void; onUpdate: () => void }) {
   const [editingSets, setEditingSets] = useState(false)
 
   return (
     <div className="border rounded-lg overflow-hidden">
-      {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3 bg-muted/20">
         <span className="font-medium text-sm flex-1">{ex.exerciseName}</span>
         <span className="text-xs text-muted-foreground">{ex.sets.length} serie{ex.sets.length !== 1 ? "s" : ""}</span>
@@ -109,7 +106,6 @@ function ExerciseCard({ ex, onRemove, onUpdate }: { ex: RoutineExercise; onRemov
         </button>
       </div>
 
-      {/* Sets preview (collapsed) */}
       {!editingSets && ex.sets.length > 0 && (
         <div className="divide-y">
           {ex.sets.map((s) => (
@@ -118,7 +114,6 @@ function ExerciseCard({ ex, onRemove, onUpdate }: { ex: RoutineExercise; onRemov
         </div>
       )}
 
-      {/* Sets editor (expanded) */}
       {editingSets && (
         <SetsEditor
           routineExerciseId={ex.id}
@@ -232,7 +227,6 @@ function SetsEditor({
           </div>
         ))}
       </div>
-
       <div className="flex items-center justify-between px-4 py-2 border-t bg-muted/10">
         <button
           onClick={addSet}
@@ -325,7 +319,6 @@ function AddExerciseForm({
           ))}
         </select>
       </div>
-
       <div className="divide-y">
         {sets.map((s, i) => (
           <div key={i} className="flex items-center gap-2 px-4 py-2">
@@ -365,7 +358,6 @@ function AddExerciseForm({
           </div>
         ))}
       </div>
-
       <div className="flex items-center justify-between px-4 py-2 border-t bg-muted/10">
         <button
           type="button"

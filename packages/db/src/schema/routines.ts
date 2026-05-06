@@ -24,8 +24,15 @@ export const routineExercise = pgTable("routine_exercise", {
   exerciseId: uuid("exercise_id")
     .notNull()
     .references(() => exercise.id),
-  targetSets: integer("target_sets").notNull(),
-  targetReps: integer("target_reps").notNull(),
-  targetWeight: numeric("target_weight", { precision: 6, scale: 2 }),
   order: integer("order").notNull(),
+})
+
+export const routineSetTarget = pgTable("routine_set_target", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  routineExerciseId: uuid("routine_exercise_id")
+    .notNull()
+    .references(() => routineExercise.id, { onDelete: "cascade" }),
+  setNumber: integer("set_number").notNull(),
+  targetReps: integer("target_reps"),
+  targetPercent: numeric("target_percent", { precision: 5, scale: 2 }),
 })

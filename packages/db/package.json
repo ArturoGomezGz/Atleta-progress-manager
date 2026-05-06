@@ -8,8 +8,8 @@
   },
   "scripts": {
     "generate": "drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
-    "seed": "tsx src/seed.ts",
+    "migrate": "tsx --env-file=.env src/migrate.ts",
+    "seed": "tsx --env-file=.env src/seed.ts",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {

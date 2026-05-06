@@ -130,11 +130,13 @@ function AthleteExercises({
   isActive: boolean
 }) {
   const { data: sets, refetch } = trpc.sessions.athleteSets.useQuery({ sessionId, athleteId })
+  const { data: athleteRms } = trpc.sessions.athleteRms.useQuery({ sessionId, athleteId })
 
   return (
     <div className="space-y-4">
       {exercises.map((ex) => {
         const exSets = (sets ?? []).filter((s) => s.sessionExerciseId === ex.id) as SetRecord[]
+        const rmLbs = athleteRms?.[ex.exerciseId] ?? null
         return (
           <ExerciseCard
             key={ex.id}
@@ -143,6 +145,7 @@ function AthleteExercises({
             exercise={ex}
             sets={exSets}
             isActive={isActive}
+            rmLbs={rmLbs}
             onUpdate={refetch}
           />
         )
@@ -159,6 +162,7 @@ function ExerciseCard({
   exercise,
   sets,
   isActive,
+  rmLbs,
   onUpdate,
 }: {
   sessionId: string
@@ -166,15 +170,13 @@ function ExerciseCard({
   exercise: Exercise
   sets: SetRecord[]
   isActive: boolean
+  rmLbs: string | null
   onUpdate: () => void
 }) {
-  // Find next unrecorded target, or null if all done
-  const nextTarget = exercise.targets.find(
-    (t) => !sets.some((s) => s.sessionSetTargetId === t.id),
-  ) ?? null
+  const [addingExtra, setAddingExtra] = useState(false)
 
   const nextSetNumber = (sets.at(-1)?.setNumber ?? 0) + 1
-  const isExtraSet = nextTarget === null && isActive
+  const extraCount = sets.filter((s) => s.sessionSetTargetId === null).length
 
   return (
     <div className="border rounded-lg overflow-hidden">
@@ -185,7 +187,6 @@ function ExerciseCard({
         </div>
       </div>
 
-      {/* Target sets */}
       <div className="divide-y">
         {exercise.targets.map((target) => {
           const recorded = sets.find((s) => s.sessionSetTargetId === target.id)
@@ -198,30 +199,40 @@ function ExerciseCard({
               target={target}
               recorded={recorded ?? null}
               isActive={isActive}
+              rmLbs={rmLbs}
               onUpdate={onUpdate}
             />
           )
         })}
 
-        {/* Extra sets (no target) */}
         {sets.filter((s) => s.sessionSetTargetId === null).map((set) => (
           <SetRow key={set.id} set={set} isActive={isActive} onUpdate={onUpdate} />
         ))}
 
-        {/* Add extra set */}
-        {isExtraSet && (
-          <div className="px-4 py-2">
-            <RecordSetForm
-              sessionId={sessionId}
-              athleteId={athleteId}
-              sessionExerciseId={exercise.id}
-              sessionSetTargetId={null}
-              setNumber={nextSetNumber}
-              defaultReps=""
-              defaultWeight=""
-              label={`Serie extra ${sets.filter((s) => s.sessionSetTargetId === null).length + 1}`}
-              onSave={onUpdate}
-            />
+        {isActive && (
+          <div className="px-4 py-2.5">
+            {addingExtra ? (
+              <RecordSetForm
+                sessionId={sessionId}
+                athleteId={athleteId}
+                sessionExerciseId={exercise.id}
+                sessionSetTargetId={null}
+                setNumber={nextSetNumber}
+                defaultReps=""
+                defaultWeight=""
+                label={`Serie extra ${extraCount + 1}`}
+                onSave={() => { onUpdate(); setAddingExtra(false) }}
+                onCancel={() => setAddingExtra(false)}
+              />
+            ) : (
+              <button
+                onClick={() => setAddingExtra(true)}
+                className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors"
+              >
+                <PlusIcon className="w-3.5 h-3.5" />
+                Agregar serie
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -238,6 +249,7 @@ function TargetSetRow({
   target,
   recorded,
   isActive,
+  rmLbs,
   onUpdate,
 }: {
   sessionId: string
@@ -246,14 +258,19 @@ function TargetSetRow({
   target: SessionSetTarget
   recorded: SetRecord | null
   isActive: boolean
+  rmLbs: string | null
   onUpdate: () => void
 }) {
   const repsLabel = target.targetReps != null ? `${target.targetReps} reps` : "reps libre"
   const pctLabel = target.targetPercent != null ? `${target.targetPercent}%RM` : "%RM libre"
 
+  const defaultWeight =
+    target.targetPercent != null && rmLbs != null
+      ? (Math.ceil(Number(rmLbs) * Number(target.targetPercent) / 100 * 2) / 2).toFixed(1)
+      : ""
+
   return (
     <div className={cn("border-b last:border-0", recorded?.status === "invalid" && "opacity-50")}>
-      {/* Target line */}
       <div className="flex items-center gap-3 px-4 py-2 bg-muted/10">
         <span className="text-xs font-medium text-muted-foreground w-14">Serie {target.setNumber}</span>
         <span className="text-xs text-muted-foreground">{repsLabel}</span>
@@ -265,17 +282,17 @@ function TargetSetRow({
         )}
       </div>
 
-      {/* Record form or recorded result */}
       {isActive && !recorded && (
         <div className="px-4 py-2 border-t border-dashed">
           <RecordSetForm
+            key={defaultWeight}
             sessionId={sessionId}
             athleteId={athleteId}
             sessionExerciseId={sessionExerciseId}
             sessionSetTargetId={target.id}
             setNumber={target.setNumber}
             defaultReps={target.targetReps?.toString() ?? ""}
-            defaultWeight=""
+            defaultWeight={defaultWeight}
             label="Registrar"
             onSave={onUpdate}
           />
@@ -343,6 +360,7 @@ function RecordSetForm({
   defaultWeight,
   label,
   onSave,
+  onCancel,
 }: {
   sessionId: string
   athleteId: string
@@ -353,6 +371,7 @@ function RecordSetForm({
   defaultWeight: string
   label: string
   onSave: () => void
+  onCancel?: () => void
 }) {
   const [reps, setReps] = useState(defaultReps)
   const [weightLbs, setWeightLbs] = useState(defaultWeight)
@@ -382,7 +401,7 @@ function RecordSetForm({
           value={reps}
           onChange={(e) => setReps(e.target.value)}
           placeholder="Reps"
-          className="w-16 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          className="w-16 border border-border rounded-md px-2 py-1 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
         />
         <span className="text-xs text-muted-foreground">reps</span>
       </div>
@@ -394,17 +413,26 @@ function RecordSetForm({
           value={weightLbs}
           onChange={(e) => setWeightLbs(e.target.value)}
           placeholder="0"
-          className="w-20 border rounded px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+          className="w-20 border border-border rounded-md px-2 py-1 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
         />
         <span className="text-xs text-muted-foreground">lbs</span>
       </div>
       <button
         type="submit"
         disabled={recordSet.isPending || reps === ""}
-        className="bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded disabled:opacity-50"
+        className="bg-primary text-primary-foreground text-xs px-3 py-1.5 rounded-md disabled:opacity-50"
       >
         {recordSet.isPending ? "..." : label}
       </button>
+      {onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="text-xs text-muted-foreground hover:text-foreground px-2 py-1.5"
+        >
+          Cancelar
+        </button>
+      )}
     </form>
   )
 }

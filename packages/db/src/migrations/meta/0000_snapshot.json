@@ -1,5 +1,5 @@
 {
-  "id": "a9077f4d-1e11-4053-a847-c8bac71938bc",
+  "id": "ea1880bf-547d-4dae-b453-cbe0d0437cc7",
   "prevId": "00000000-0000-0000-0000-000000000000",
   "version": "7",
   "dialect": "postgresql",
@@ -453,24 +453,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "target_sets": {
-          "name": "target_sets",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_reps": {
-          "name": "target_reps",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_weight": {
-          "name": "target_weight",
-          "type": "numeric(6, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "order": {
           "name": "order",
           "type": "integer",
@@ -504,6 +486,64 @@
             "id"
           ],
           "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.routine_set_target": {
+      "name": "routine_set_target",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "routine_exercise_id": {
+          "name": "routine_exercise_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "set_number": {
+          "name": "set_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_reps": {
+          "name": "target_reps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_percent": {
+          "name": "target_percent",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "routine_set_target_routine_exercise_id_routine_exercise_id_fk": {
+          "name": "routine_set_target_routine_exercise_id_routine_exercise_id_fk",
+          "tableFrom": "routine_set_target",
+          "tableTo": "routine_exercise",
+          "columnsFrom": [
+            "routine_exercise_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
           "onUpdate": "no action"
         }
       },
@@ -603,24 +643,6 @@
           "primaryKey": false,
           "notNull": true
         },
-        "target_sets": {
-          "name": "target_sets",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_reps": {
-          "name": "target_reps",
-          "type": "integer",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "target_weight": {
-          "name": "target_weight",
-          "type": "numeric(6, 2)",
-          "primaryKey": false,
-          "notNull": false
-        },
         "order": {
           "name": "order",
           "type": "integer",
@@ -663,6 +685,64 @@
       "checkConstraints": {},
       "isRLSEnabled": false
     },
+    "public.session_set_target": {
+      "name": "session_set_target",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "session_exercise_id": {
+          "name": "session_exercise_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "set_number": {
+          "name": "set_number",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "target_reps": {
+          "name": "target_reps",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "target_percent": {
+          "name": "target_percent",
+          "type": "numeric(5, 2)",
+          "primaryKey": false,
+          "notNull": false
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "session_set_target_session_exercise_id_session_exercise_id_fk": {
+          "name": "session_set_target_session_exercise_id_session_exercise_id_fk",
+          "tableFrom": "session_set_target",
+          "tableTo": "session_exercise",
+          "columnsFrom": [
+            "session_exercise_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
     "public.set_record": {
       "name": "set_record",
       "schema": "",
@@ -686,6 +766,12 @@
           "primaryKey": false,
           "notNull": true
         },
+        "session_set_target_id": {
+          "name": "session_set_target_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
         "set_number": {
           "name": "set_number",
           "type": "integer",
@@ -698,11 +784,12 @@
           "primaryKey": false,
           "notNull": true
         },
-        "weight": {
-          "name": "weight",
+        "weight_lbs": {
+          "name": "weight_lbs",
           "type": "numeric(6, 2)",
           "primaryKey": false,
-          "notNull": false
+          "notNull": true,
+          "default": "'0'"
         },
         "status": {
           "name": "status",
@@ -752,6 +839,19 @@
             "id"
           ],
           "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "set_record_session_set_target_id_session_set_target_id_fk": {
+          "name": "set_record_session_set_target_id_session_set_target_id_fk",
+          "tableFrom": "set_record",
+          "tableTo": "session_set_target",
+          "columnsFrom": [
+            "session_set_target_id"
+          ],
+          "columnsTo": [
+            "id"
+          ],
+          "onDelete": "set null",
           "onUpdate": "no action"
         },
         "set_record_recorded_by_user_id_fk": {

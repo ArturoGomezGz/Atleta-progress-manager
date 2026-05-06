@@ -1,0 +1,67 @@
+import { db } from "@atleta/db/client"
+import { athleteExerciseRm, exercise, teamMember, user } from "@atleta/db/schema"
+import { and, desc, eq } from "drizzle-orm"
+import { z } from "zod"
+import { protectedProcedure, router } from "../trpc"
+import { assertCoach, assertMember } from "./teams"
+
+export const rmsRouter = router({
+  listByAthlete: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid(), athleteId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertMember(ctx.session.user.id, input.teamId)
+
+      const allRms = await db
+        .select({
+          id: athleteExerciseRm.id,
+          exerciseId: athleteExerciseRm.exerciseId,
+          exerciseName: exercise.name,
+          rmLbs: athleteExerciseRm.rmLbs,
+          source: athleteExerciseRm.source,
+          sessionId: athleteExerciseRm.sessionId,
+          recordedAt: athleteExerciseRm.recordedAt,
+        })
+        .from(athleteExerciseRm)
+        .innerJoin(exercise, eq(athleteExerciseRm.exerciseId, exercise.id))
+        .where(eq(athleteExerciseRm.athleteId, input.athleteId))
+        .orderBy(desc(athleteExerciseRm.recordedAt))
+
+      type RmEntry = (typeof allRms)[number]
+      const exerciseMap = new Map<string, { exerciseId: string; exerciseName: string; current: RmEntry; history: RmEntry[] }>()
+      for (const rm of allRms) {
+        if (!exerciseMap.has(rm.exerciseId)) {
+          exerciseMap.set(rm.exerciseId, { exerciseId: rm.exerciseId, exerciseName: rm.exerciseName, current: rm, history: [] })
+        }
+        exerciseMap.get(rm.exerciseId)!.history.push(rm)
+      }
+
+      return Array.from(exerciseMap.values())
+    }),
+
+  setManual: protectedProcedure
+    .input(z.object({
+      teamId: z.string().uuid(),
+      athleteId: z.string(),
+      exerciseId: z.string().uuid(),
+      rmLbs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Peso inválido"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      const [rm] = await db
+        .insert(athleteExerciseRm)
+        .values({ athleteId: input.athleteId, exerciseId: input.exerciseId, rmLbs: input.rmLbs, source: "manual", sessionId: null })
+        .returning()
+      return rm
+    }),
+
+  athletes: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertMember(ctx.session.user.id, input.teamId)
+      return db
+        .select({ id: user.id, name: user.name, email: user.email })
+        .from(teamMember)
+        .innerJoin(user, eq(teamMember.userId, user.id))
+        .where(and(eq(teamMember.teamId, input.teamId), eq(teamMember.role, "athlete")))
+    }),
+})

@@ -1,21 +1,20 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { use, useState } from "react"
+import { useRouter } from "next/navigation"
 
-export default function NewSessionPage() {
+export default function NewSessionPage({ params }: { params: Promise<{ teamId: string }> }) {
+  const { teamId } = use(params)
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const teamId = searchParams.get("teamId") ?? ""
 
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null)
   const [selectedAthleteIds, setSelectedAthleteIds] = useState<Set<string>>(new Set())
 
-  const { data: routines } = trpc.routines.list.useQuery({ teamId }, { enabled: !!teamId })
-  const { data: members } = trpc.teams.members.useQuery({ teamId }, { enabled: !!teamId })
+  const { data: routines } = trpc.routines.list.useQuery({ teamId })
+  const { data: members } = trpc.teams.members.useQuery({ teamId })
   const createSession = trpc.sessions.create.useMutation({
-    onSuccess: (session) => router.push(`/sessions/${session.id}`),
+    onSuccess: (session) => router.push(`/teams/${teamId}/sesiones/${session.id}`),
   })
 
   const athletes = members?.filter((m) => m.role === "athlete") ?? []
@@ -49,16 +48,15 @@ export default function NewSessionPage() {
   const canSubmit = !!selectedRoutineId && selectedAthleteIds.size > 0 && !createSession.isPending
 
   return (
-    <div className="max-w-lg mx-auto px-6 py-10 space-y-8">
+    <div className="max-w-lg mx-auto px-6 py-8 space-y-8">
       <h1 className="text-xl font-semibold">Comenzar rutina</h1>
 
       <form onSubmit={handleSubmit} className="space-y-8">
-        {/* Routine */}
         <section className="space-y-3">
-          <h2 className="text-sm font-medium">Rutina</h2>
+          <h2 className="text-sm font-medium">Plantilla</h2>
           {routines?.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Este equipo no tiene rutinas. Crea una primero.
+              Este equipo no tiene plantillas. Crea una primero.
             </p>
           )}
           <div className="space-y-2">
@@ -81,7 +79,6 @@ export default function NewSessionPage() {
           </div>
         </section>
 
-        {/* Athletes */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium">Atletas</h2>
@@ -92,9 +89,7 @@ export default function NewSessionPage() {
             )}
           </div>
           {athletes.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              No hay atletas en este equipo todavía.
-            </p>
+            <p className="text-sm text-muted-foreground">No hay atletas en este equipo.</p>
           )}
           <div className="space-y-2">
             {athletes.map((a) => (

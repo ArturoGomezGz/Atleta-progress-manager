@@ -16,16 +16,25 @@ async function main() {
 
   // Auth routes — better-auth handles all /api/auth/* internally
   app.all("/api/auth/*", async (req, reply) => {
-    const response = await auth.handler(
-      new Request(`${process.env.BETTER_AUTH_URL ?? "http://localhost:3001"}${req.url}`, {
-        method: req.method,
-        headers: fromNodeHeaders(req.headers),
-        body: req.method !== "GET" && req.method !== "HEAD" ? JSON.stringify(req.body) : undefined,
-      }),
-    )
-    reply.status(response.status)
-    response.headers.forEach((value, key) => reply.header(key, value))
-    reply.send(response.body ? await response.text() : null)
+    try {
+      const response = await auth.handler(
+        new Request(`${process.env.BETTER_AUTH_URL ?? "http://localhost:3001"}${req.url}`, {
+          method: req.method,
+          headers: fromNodeHeaders(req.headers),
+          body: req.method !== "GET" && req.method !== "HEAD" ? JSON.stringify(req.body) : undefined,
+        }),
+      )
+      reply.status(response.status)
+      response.headers.forEach((value, key) => reply.header(key, value))
+      const text = await response.text()
+      if (response.status >= 500) {
+        req.log.error({ status: response.status, body: text }, "better-auth 5xx")
+      }
+      reply.send(text || null)
+    } catch (err) {
+      req.log.error(err, "better-auth handler error")
+      reply.status(500).send({ error: String(err) })
+    }
   })
 
   // tRPC routes
