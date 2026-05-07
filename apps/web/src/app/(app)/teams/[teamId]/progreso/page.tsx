@@ -3,7 +3,7 @@
 import { useSession } from "@/lib/auth"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon } from "lucide-react"
+import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, XIcon } from "lucide-react"
 import { use, useState } from "react"
 import {
   CartesianGrid,
@@ -78,13 +78,41 @@ function CoachProgresoView({ teamId }: { teamId: string }) {
 function AthleteRms({ teamId, athleteId, isCoach }: { teamId: string; athleteId: string; isCoach: boolean }) {
   const { data: rmGroups, refetch } = trpc.rms.listByAthlete.useQuery({ teamId, athleteId })
   const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [addingManual, setAddingManual] = useState(false)
 
   if (!rmGroups) return <p className="text-sm text-muted-foreground">Cargando...</p>
-  if (rmGroups.length === 0) return <p className="text-sm text-muted-foreground">Sin PRs registrados.</p>
+
+  const existingExerciseIds = new Set(rmGroups.map((g) => g.exerciseId))
 
   return (
     <div className="space-y-2 max-w-2xl">
-      <h2 className="font-semibold mb-4">PRs registrados</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="font-semibold">PRs registrados</h2>
+        {isCoach && !addingManual && (
+          <button
+            onClick={() => setAddingManual(true)}
+            className="flex items-center gap-1.5 text-sm border px-3 py-1.5 rounded-md hover:bg-muted transition-colors"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Agregar PR manualmente
+          </button>
+        )}
+      </div>
+
+      {isCoach && addingManual && (
+        <AddManualRmForm
+          teamId={teamId}
+          athleteId={athleteId}
+          excludeExerciseIds={existingExerciseIds}
+          onSaved={() => { refetch(); setAddingManual(false) }}
+          onCancel={() => setAddingManual(false)}
+        />
+      )}
+
+      {rmGroups.length === 0 && !addingManual && (
+        <p className="text-sm text-muted-foreground">Sin PRs registrados.</p>
+      )}
+
       {rmGroups.map((group) => (
         <ExerciseRmRow
           key={group.exerciseId}
@@ -98,6 +126,89 @@ function AthleteRms({ teamId, athleteId, isCoach }: { teamId: string; athleteId:
         />
       ))}
     </div>
+  )
+}
+
+function AddManualRmForm({
+  teamId,
+  athleteId,
+  excludeExerciseIds,
+  onSaved,
+  onCancel,
+}: {
+  teamId: string
+  athleteId: string
+  excludeExerciseIds: Set<string>
+  onSaved: () => void
+  onCancel: () => void
+}) {
+  const { data: allExercises } = trpc.exercises.list.useQuery()
+  const [exerciseId, setExerciseId] = useState("")
+  const [rmLbs, setRmLbs] = useState("")
+  const setManual = trpc.rms.setManual.useMutation({ onSuccess: onSaved })
+
+  const availableExercises = (allExercises ?? []).filter((e) => !excludeExerciseIds.has(e.id))
+
+  function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!exerciseId || !rmLbs) return
+    setManual.mutate({ teamId, athleteId, exerciseId, rmLbs })
+  }
+
+  return (
+    <form
+      onSubmit={handleSubmit}
+      className="border rounded-lg px-4 py-3 bg-muted/10 flex items-end gap-3 flex-wrap"
+    >
+      <div className="flex-1 min-w-48 space-y-1">
+        <label className="text-xs text-muted-foreground">Ejercicio</label>
+        <select
+          autoFocus
+          value={exerciseId}
+          onChange={(e) => setExerciseId(e.target.value)}
+          className="w-full border border-border rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+        >
+          <option value="">Seleccionar ejercicio...</option>
+          {availableExercises.map((ex) => (
+            <option key={ex.id} value={ex.id}>{ex.name}</option>
+          ))}
+        </select>
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs text-muted-foreground">PR (lbs)</label>
+        <input
+          type="number"
+          min={0}
+          step={0.5}
+          value={rmLbs}
+          onChange={(e) => setRmLbs(e.target.value)}
+          placeholder="0"
+          className="w-24 border border-border rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          type="submit"
+          disabled={setManual.isPending || !exerciseId || !rmLbs}
+          className="bg-primary text-primary-foreground text-sm px-3 py-1.5 rounded-md disabled:opacity-50"
+        >
+          {setManual.isPending ? "Guardando..." : "Guardar"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          className="p-1.5 text-muted-foreground hover:text-foreground rounded-md"
+        >
+          <XIcon className="w-4 h-4" />
+        </button>
+      </div>
+
+      {availableExercises.length === 0 && (
+        <p className="w-full text-xs text-muted-foreground">Todos los ejercicios ya tienen PR registrado.</p>
+      )}
+    </form>
   )
 }
 
