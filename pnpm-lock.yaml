@@ -21,7 +21,10 @@ importers:
         version: 11.17.0(typescript@5.9.3)
       better-auth:
         specifier: ^1.2.0
-        version: 1.6.9(next@15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+        version: 1.6.9(drizzle-orm@0.41.0(gel@2.2.0)(kysely@0.28.17)(postgres@3.4.9))(next@15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+      drizzle-orm:
+        specifier: ^0.41.0
+        version: 0.41.0(gel@2.2.0)(kysely@0.28.17)(postgres@3.4.9)
       fastify:
         specifier: ^5.0.0
         version: 5.8.5
@@ -55,7 +58,7 @@ importers:
         version: 11.17.0(@tanstack/react-query@5.100.9(react@19.2.5))(@trpc/client@11.17.0(@trpc/server@11.17.0(typescript@5.9.3))(typescript@5.9.3))(@trpc/server@11.17.0(typescript@5.9.3))(react@19.2.5)(typescript@5.9.3)
       better-auth:
         specifier: ^1.2.0
-        version: 1.6.9(next@15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
+        version: 1.6.9(drizzle-orm@0.41.0(gel@2.2.0)(kysely@0.28.17)(postgres@3.4.9))(next@15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       clsx:
         specifier: ^2.1.1
         version: 2.1.1
@@ -1840,10 +1843,12 @@ snapshots:
       nanostores: 1.3.0
       zod: 4.4.3
 
-  '@better-auth/drizzle-adapter@1.6.9(@better-auth/core@1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.4.0)':
+  '@better-auth/drizzle-adapter@1.6.9(@better-auth/core@1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.4.0)(drizzle-orm@0.41.0(gel@2.2.0)(kysely@0.28.17)(postgres@3.4.9))':
     dependencies:
       '@better-auth/core': 1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0)
       '@better-auth/utils': 0.4.0
+    optionalDependencies:
+      drizzle-orm: 0.41.0(gel@2.2.0)(kysely@0.28.17)(postgres@3.4.9)
 
   '@better-auth/kysely-adapter@1.6.9(@better-auth/core@1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.4.0)(kysely@0.28.17)':
     dependencies:
@@ -2460,10 +2465,10 @@ snapshots:
       '@fastify/error': 4.2.0
       fastq: 1.20.1
 
-  better-auth@1.6.9(next@15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
+  better-auth@1.6.9(drizzle-orm@0.41.0(gel@2.2.0)(kysely@0.28.17)(postgres@3.4.9))(next@15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5))(react-dom@19.2.5(react@19.2.5))(react@19.2.5):
     dependencies:
       '@better-auth/core': 1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0)
-      '@better-auth/drizzle-adapter': 1.6.9(@better-auth/core@1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.4.0)
+      '@better-auth/drizzle-adapter': 1.6.9(@better-auth/core@1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.4.0)(drizzle-orm@0.41.0(gel@2.2.0)(kysely@0.28.17)(postgres@3.4.9))
       '@better-auth/kysely-adapter': 1.6.9(@better-auth/core@1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.4.0)(kysely@0.28.17)
       '@better-auth/memory-adapter': 1.6.9(@better-auth/core@1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.4.0)
       '@better-auth/mongo-adapter': 1.6.9(@better-auth/core@1.6.9(@better-auth/utils@0.4.0)(@better-fetch/fetch@1.1.21)(better-call@1.3.5(zod@3.25.76))(jose@6.2.3)(kysely@0.28.17)(nanostores@1.3.0))(@better-auth/utils@0.4.0)
@@ -2480,6 +2485,7 @@ snapshots:
       nanostores: 1.3.0
       zod: 4.4.3
     optionalDependencies:
+      drizzle-orm: 0.41.0(gel@2.2.0)(kysely@0.28.17)(postgres@3.4.9)
       next: 15.5.15(react-dom@19.2.5(react@19.2.5))(react@19.2.5)
       react: 19.2.5
       react-dom: 19.2.5(react@19.2.5)
