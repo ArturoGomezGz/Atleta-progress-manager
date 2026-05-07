@@ -1,0 +1,25 @@
+FROM node:22-alpine
+RUN corepack enable pnpm
+
+WORKDIR /app
+
+# Copy manifests for layer caching
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/db/package.json ./packages/db/
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+
+# Install all workspace deps
+RUN pnpm install --frozen-lockfile
+
+# Copy source
+COPY packages/db ./packages/db
+COPY apps/api ./apps/api
+COPY apps/web ./apps/web
+
+# Build Next.js
+RUN pnpm --filter web build
+
+EXPOSE 3000
+
+CMD ["pnpm", "--filter", "web", "start"]
