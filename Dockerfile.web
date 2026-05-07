@@ -17,7 +17,9 @@ COPY packages/db ./packages/db
 COPY apps/api ./apps/api
 COPY apps/web ./apps/web
 
-# Build Next.js
+# Build Next.js (NEXT_PUBLIC_* vars must be available at build time)
+ARG NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN pnpm --filter web build
 
 EXPOSE 3000
