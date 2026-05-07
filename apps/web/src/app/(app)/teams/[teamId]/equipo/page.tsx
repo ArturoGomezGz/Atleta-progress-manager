@@ -207,9 +207,9 @@ function MembersSection({
 
 const ROLE_STYLES = {
   coach: {
-    card: "border-violet-200 bg-violet-50/50 dark:border-violet-700 dark:bg-violet-900/25",
+    card: "border-violet-800/60 bg-violet-950/50",
     avatar: "bg-violet-600 text-white",
-    badge: "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-800",
+    badge: "bg-violet-900/50 text-violet-300 border-violet-700/60",
     icon: <ShieldCheckIcon className="w-3 h-3" />,
     label: "Entrenador",
   },
