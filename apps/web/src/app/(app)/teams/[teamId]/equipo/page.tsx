@@ -207,7 +207,7 @@ function MembersSection({
 
 const ROLE_STYLES = {
   coach: {
-    card: "border-violet-200 bg-violet-50/50 dark:border-violet-900 dark:bg-violet-950/20",
+    card: "border-violet-200 bg-violet-50/50 dark:border-violet-700 dark:bg-violet-900/25",
     avatar: "bg-violet-600 text-white",
     badge: "bg-violet-100 text-violet-800 border-violet-200 dark:bg-violet-900/40 dark:text-violet-300 dark:border-violet-800",
     icon: <ShieldCheckIcon className="w-3 h-3" />,
@@ -236,17 +236,15 @@ function MemberRow({
   const initials = member.userName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
 
   return (
-    <div className={`flex items-center justify-between px-4 py-3 border rounded-lg transition-colors ${styles.card}`}>
-      <div className="flex items-center gap-3">
-        <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${styles.avatar}`}>
-          {initials}
-        </div>
-        <div>
-          <p className="text-sm font-medium">{member.userName}</p>
-          <p className="text-xs text-muted-foreground">{member.userEmail}</p>
-        </div>
+    <div className={`flex items-center gap-3 px-4 py-3 border rounded-lg transition-colors ${styles.card}`}>
+      <div className={`w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${styles.avatar}`}>
+        {initials}
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate">{member.userName}</p>
+        <p className="text-xs text-muted-foreground truncate">{member.userEmail}</p>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
         {editing ? (
           <>
             <select
