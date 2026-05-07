@@ -2,6 +2,7 @@ import { db } from "@atleta/db/client"
 import {
   athleteExerciseRm,
   athleteSession,
+  athleteSessionExerciseCancelled,
   exercise,
   routine,
   routineExercise,
@@ -165,6 +166,7 @@ export const sessionsRouter = router({
       setNumber: z.number().int().min(1),
       reps: z.number().int().min(0),
       weightLbs: z.string().default("0"),
+      status: z.enum(["valid", "invalid"]).default("valid"),
     }))
     .mutation(async ({ ctx, input }) => {
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
@@ -189,10 +191,28 @@ export const sessionsRouter = router({
           setNumber: input.setNumber,
           reps: input.reps,
           weightLbs: input.weightLbs,
+          status: input.status,
           recordedBy: ctx.session.user.id,
         })
         .returning()
       return set
+    }),
+
+  updateSet: protectedProcedure
+    .input(z.object({ setId: z.string().uuid(), reps: z.number().int().min(0), weightLbs: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [set] = await db.select().from(setRecord).where(eq(setRecord.id, input.setId)).limit(1)
+      if (!set) throw new TRPCError({ code: "NOT_FOUND" })
+      const [as] = await db.select().from(athleteSession).where(eq(athleteSession.id, set.athleteSessionId)).limit(1)
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
+      if (session?.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
+      await assertCoach(ctx.session.user.id, session!.teamId)
+      const [updated] = await db
+        .update(setRecord)
+        .set({ reps: input.reps, weightLbs: input.weightLbs })
+        .where(eq(setRecord.id, input.setId))
+        .returning()
+      return updated
     }),
 
   updateSetStatus: protectedProcedure
@@ -230,6 +250,18 @@ export const sessionsRouter = router({
         .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, input.athleteId)))
     }),
 
+  reactivateAthlete: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid(), athleteId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, session.teamId)
+      await db
+        .update(athleteSession)
+        .set({ status: "active" })
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, input.athleteId)))
+    }),
+
   addSessionExercise: protectedProcedure
     .input(z.object({
       sessionId: z.string().uuid(),
@@ -262,6 +294,66 @@ export const sessionsRouter = router({
         )
         return se
       })
+    }),
+
+  cancelAthleteExercise: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid(), athleteId: z.string(), sessionExerciseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
+      await assertCoach(ctx.session.user.id, session.teamId)
+      const [as] = await db
+        .select()
+        .from(athleteSession)
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, input.athleteId)))
+        .limit(1)
+      if (!as) throw new TRPCError({ code: "NOT_FOUND" })
+      await db
+        .insert(athleteSessionExerciseCancelled)
+        .values({ athleteSessionId: as.id, sessionExerciseId: input.sessionExerciseId })
+        .onConflictDoNothing()
+    }),
+
+  reactivateAthleteExercise: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid(), athleteId: z.string(), sessionExerciseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, session.teamId)
+      const [as] = await db
+        .select()
+        .from(athleteSession)
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, input.athleteId)))
+        .limit(1)
+      if (!as) throw new TRPCError({ code: "NOT_FOUND" })
+      await db
+        .delete(athleteSessionExerciseCancelled)
+        .where(
+          and(
+            eq(athleteSessionExerciseCancelled.athleteSessionId, as.id),
+            eq(athleteSessionExerciseCancelled.sessionExerciseId, input.sessionExerciseId),
+          ),
+        )
+    }),
+
+  athleteCancelledExercises: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid(), athleteId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertMember(ctx.session.user.id, session.teamId)
+      const [as] = await db
+        .select()
+        .from(athleteSession)
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, input.athleteId)))
+        .limit(1)
+      if (!as) throw new TRPCError({ code: "NOT_FOUND" })
+      const rows = await db
+        .select({ sessionExerciseId: athleteSessionExerciseCancelled.sessionExerciseId })
+        .from(athleteSessionExerciseCancelled)
+        .where(eq(athleteSessionExerciseCancelled.athleteSessionId, as.id))
+      return rows.map((r) => r.sessionExerciseId)
     }),
 
   complete: protectedProcedure

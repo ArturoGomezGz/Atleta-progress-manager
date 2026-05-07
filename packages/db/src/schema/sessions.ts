@@ -1,4 +1,4 @@
-import { integer, numeric, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { integer, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
 import { routine, routineSetTarget } from "./routines"
@@ -68,6 +68,19 @@ export const athleteExerciseRm = pgTable("athlete_exercise_rm", {
   sessionId: uuid("session_id").references(() => trainingSession.id, { onDelete: "set null" }),
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
 })
+
+export const athleteSessionExerciseCancelled = pgTable(
+  "athlete_session_exercise_cancelled",
+  {
+    athleteSessionId: uuid("athlete_session_id")
+      .notNull()
+      .references(() => athleteSession.id, { onDelete: "cascade" }),
+    sessionExerciseId: uuid("session_exercise_id")
+      .notNull()
+      .references(() => sessionExercise.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.athleteSessionId, t.sessionExerciseId] })],
+)
 
 export const setRecord = pgTable("set_record", {
   id: uuid("id").primaryKey().defaultRandom(),

@@ -15,6 +15,13 @@
       "when": 1746576000000,
       "tag": "0001_athlete_exercise_rm",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1746748800000,
+      "tag": "0002_athlete_session_exercise_cancelled",
+      "breakpoints": true
     }
   ]
 }
