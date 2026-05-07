@@ -64,7 +64,7 @@ function SessionCard({
   session,
 }: {
   teamId: string
-  session: { id: string; status: string; startedAt: Date; routineName: string }
+  session: { id: string; status: string; startedAt: string; routineName: string }
 }) {
   const statusLabel: Record<string, string> = {
     active: "Activa",
