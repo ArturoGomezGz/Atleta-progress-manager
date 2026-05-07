@@ -363,9 +363,9 @@ function ExerciseRmRow({
                       background: "hsl(var(--background))",
                       color: "hsl(var(--foreground))",
                     }}
-                    formatter={(value, _: string, entry: { payload: { source: string } }) => [
+                    formatter={(value, _, entry) => [
                       `${value ?? ""} lbs`,
-                      entry.payload.source === "auto" ? "auto" : "manual",
+                      (entry as { payload: { source: string } }).payload.source === "auto" ? "auto" : "manual",
                     ]}
                     labelStyle={{ color: "hsl(var(--muted-foreground))" }}
                   />
