@@ -53,16 +53,15 @@ export function SessionView({ sessionId }: Props) {
         )}
       </div>
 
-      <div className="flex flex-1 overflow-hidden">
-        {/* Athlete sidebar */}
-        <aside className="w-48 border-r flex flex-col overflow-y-auto shrink-0">
-          <p className="text-xs font-medium text-muted-foreground px-4 py-3 uppercase tracking-wide">Atletas</p>
+      <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
+        {/* Athlete list — horizontal strip on mobile, vertical sidebar on desktop */}
+        <aside className="lg:w-48 lg:border-r lg:flex-col lg:overflow-y-auto lg:shrink-0 flex flex-row overflow-x-auto border-b lg:border-b-0 shrink-0">
           {session.athletes.map((a) => (
             <button
               key={a.athleteId}
               onClick={() => setSelectedAthleteId(a.athleteId)}
               className={cn(
-                "text-left px-4 py-3 text-sm border-b last:border-0 hover:bg-muted/50 transition-colors",
+                "shrink-0 px-4 py-2.5 lg:py-3 text-sm border-r lg:border-r-0 lg:border-b last:border-0 hover:bg-muted/50 transition-colors whitespace-nowrap text-left",
                 a.athleteId === activeAthleteId && "bg-muted font-medium",
                 a.status === "cancelled" && "opacity-40 line-through",
               )}
@@ -73,7 +72,7 @@ export function SessionView({ sessionId }: Props) {
         </aside>
 
         {/* Main */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 lg:p-6">
           {activeAthleteId ? (
             <AthleteExercises
               sessionId={sessionId}

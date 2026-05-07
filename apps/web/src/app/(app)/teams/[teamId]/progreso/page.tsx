@@ -45,18 +45,17 @@ function CoachProgresoView({ teamId }: { teamId: string }) {
   const activeAthleteId = selectedAthleteId ?? athletes?.[0]?.id ?? null
 
   return (
-    <div className="flex h-[calc(100vh-57px)]">
-      <aside className="w-48 border-r flex flex-col overflow-y-auto shrink-0">
-        <p className="text-xs font-medium text-muted-foreground px-4 py-3 uppercase tracking-wide">Atletas</p>
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-57px)] lg:h-[calc(100vh-57px)]">
+      <aside className="lg:w-48 lg:border-r lg:flex-col lg:overflow-y-auto lg:shrink-0 flex flex-row overflow-x-auto border-b lg:border-b-0 shrink-0">
         {athletes?.length === 0 && (
-          <p className="px-4 text-xs text-muted-foreground">Sin atletas</p>
+          <p className="px-4 py-3 text-xs text-muted-foreground">Sin atletas</p>
         )}
         {athletes?.map((a) => (
           <button
             key={a.id}
             onClick={() => setSelectedAthleteId(a.id)}
             className={cn(
-              "text-left px-4 py-3 text-sm border-b last:border-0 hover:bg-muted/50 transition-colors",
+              "shrink-0 text-left px-4 py-2.5 lg:py-3 text-sm border-r lg:border-r-0 lg:border-b last:border-0 hover:bg-muted/50 transition-colors whitespace-nowrap",
               a.id === activeAthleteId && "bg-muted font-medium",
             )}
           >
@@ -64,7 +63,7 @@ function CoachProgresoView({ teamId }: { teamId: string }) {
           </button>
         ))}
       </aside>
-      <div className="flex-1 overflow-y-auto p-6">
+      <div className="flex-1 overflow-y-auto p-4 lg:p-6">
         {activeAthleteId ? (
           <AthleteRms teamId={teamId} athleteId={activeAthleteId} isCoach={true} />
         ) : (

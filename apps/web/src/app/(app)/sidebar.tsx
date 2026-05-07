@@ -1,7 +1,7 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, UsersIcon, PlusIcon, ChevronDownIcon } from "lucide-react"
+import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -31,6 +31,7 @@ function extractSection(pathname: string): string | null {
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
+  const [mobileOpen, setMobileOpen] = useState(false)
   const [teamPickerOpen, setTeamPickerOpen] = useState(false)
   const [creatingTeam, setCreatingTeam] = useState(false)
   const [newTeamName, setNewTeamName] = useState("")
@@ -43,6 +44,7 @@ export function Sidebar() {
       setCreatingTeam(false)
       setNewTeamName("")
       setTeamPickerOpen(false)
+      setMobileOpen(false)
       router.push(`/teams/${team.id}/sesiones`)
     },
   })
@@ -52,6 +54,9 @@ export function Sidebar() {
   const currentTeam = teams?.find((t) => t.team.id === currentTeamId)
   const isAthlete = currentTeam?.role === "athlete"
   const navItems = isAthlete ? ATHLETE_NAV : COACH_NAV
+
+  // Close mobile drawer on navigation
+  useEffect(() => { setMobileOpen(false) }, [pathname])
 
   // Redirect athletes away from coach-only sections
   useEffect(() => {
@@ -66,13 +71,19 @@ export function Sidebar() {
     createTeam.mutate({ name: newTeamName.trim() })
   }
 
-  return (
-    <aside className="w-56 shrink-0 flex flex-col h-screen sticky top-0 bg-popover border-r border-border">
+  const sidebarContent = (
+    <>
       {/* App name */}
-      <div className="px-5 py-4 border-b border-border">
+      <div className="px-5 py-4 border-b border-border flex items-center justify-between">
         <span className="font-bold text-lg tracking-tight text-foreground" style={{ fontFamily: "var(--font-space-grotesk)" }}>
           Atleta
         </span>
+        <button
+          onClick={() => setMobileOpen(false)}
+          className="lg:hidden p-1 rounded text-muted-foreground hover:text-foreground"
+        >
+          <XIcon className="w-4 h-4" />
+        </button>
       </div>
 
       {/* Team selector */}
@@ -102,7 +113,6 @@ export function Sidebar() {
                   {team.name}
                 </button>
               ))}
-
               {!creatingTeam ? (
                 <button
                   onClick={() => setCreatingTeam(true)}
@@ -121,18 +131,10 @@ export function Sidebar() {
                     className="w-full bg-card border border-border rounded-md px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                   />
                   <div className="flex gap-1">
-                    <button
-                      type="submit"
-                      disabled={createTeam.isPending}
-                      className="flex-1 bg-primary text-primary-foreground text-xs py-1.5 rounded-md disabled:opacity-50 font-medium"
-                    >
+                    <button type="submit" disabled={createTeam.isPending} className="flex-1 bg-primary text-primary-foreground text-xs py-1.5 rounded-md disabled:opacity-50 font-medium">
                       Crear
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setCreatingTeam(false)}
-                      className="flex-1 border border-border text-xs py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted"
-                    >
+                    <button type="button" onClick={() => setCreatingTeam(false)} className="flex-1 border border-border text-xs py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted">
                       Cancelar
                     </button>
                   </div>
@@ -149,7 +151,6 @@ export function Sidebar() {
           const href = currentTeamId ? `/teams/${currentTeamId}/${key}` : "#"
           const isActive = currentSection === key
           const disabled = !currentTeamId
-
           return (
             <Link
               key={key}
@@ -157,10 +158,7 @@ export function Sidebar() {
               aria-disabled={disabled}
               onClick={(e) => disabled && e.preventDefault()}
               className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-200
-                ${isActive
-                  ? "bg-primary/15 text-primary font-medium"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                }
+                ${isActive ? "bg-primary/15 text-primary font-medium" : "text-muted-foreground hover:text-foreground hover:bg-muted"}
                 ${disabled ? "opacity-25 cursor-default pointer-events-none" : ""}
               `}
             >
@@ -175,6 +173,43 @@ export function Sidebar() {
       <div className="px-4 py-3 border-t border-border">
         <AccountMenu />
       </div>
-    </aside>
+    </>
+  )
+
+  return (
+    <>
+      {/* Mobile top bar */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-14 z-30 bg-popover border-b border-border flex items-center px-4 gap-3">
+        <button
+          onClick={() => setMobileOpen(true)}
+          className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+        >
+          <MenuIcon className="w-5 h-5" />
+        </button>
+        <span className="font-bold text-base tracking-tight text-foreground" style={{ fontFamily: "var(--font-space-grotesk)" }}>
+          {currentTeam ? currentTeam.team.name : "Atleta"}
+        </span>
+      </div>
+
+      {/* Mobile drawer backdrop */}
+      {mobileOpen && (
+        <div
+          className="lg:hidden fixed inset-0 z-40 bg-black/40"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar — drawer on mobile, static on desktop */}
+      <aside
+        className={`
+          fixed inset-y-0 left-0 z-50 w-56 flex flex-col bg-popover border-r border-border
+          transition-transform duration-200
+          ${mobileOpen ? "translate-x-0" : "-translate-x-full"}
+          lg:static lg:translate-x-0 lg:shrink-0 lg:h-screen lg:sticky lg:top-0
+        `}
+      >
+        {sidebarContent}
+      </aside>
+    </>
   )
 }
