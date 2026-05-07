@@ -4,7 +4,7 @@ RUN corepack enable pnpm
 WORKDIR /app
 
 # Copy manifests for layer caching
-COPY package.json pnpm-workspace.yaml ./
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
 COPY packages/db/package.json ./packages/db/
 COPY apps/api/package.json ./apps/api/
 
