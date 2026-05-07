@@ -11,8 +11,8 @@ export function SessionView({ sessionId }: Props) {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null)
 
   const { data: session, refetch: refetchSession } = trpc.sessions.get.useQuery({ id: sessionId })
-  const completeSession = trpc.sessions.complete.useMutation({ onSuccess: refetchSession })
-  const cancelSession = trpc.sessions.cancel.useMutation({ onSuccess: refetchSession })
+  const completeSession = trpc.sessions.complete.useMutation({ onSuccess: () => refetchSession() })
+  const cancelSession = trpc.sessions.cancel.useMutation({ onSuccess: () => refetchSession() })
 
   if (!session) return <div className="p-8 text-muted-foreground">Cargando sesión...</div>
 
