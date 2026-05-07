@@ -2,9 +2,9 @@
 
 import { trpc } from "@/lib/trpc/client"
 import { useRouter, useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 
-export default function NewSessionPage() {
+function NewSessionForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const teamId = searchParams.get("teamId") ?? ""
@@ -123,5 +123,13 @@ export default function NewSessionPage() {
         </button>
       </form>
     </div>
+  )
+}
+
+export default function NewSessionPage() {
+  return (
+    <Suspense>
+      <NewSessionForm />
+    </Suspense>
   )
 }
