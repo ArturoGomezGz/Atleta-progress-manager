@@ -1,7 +1,7 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
+import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, ListIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -195,6 +195,24 @@ export function Sidebar() {
           )
         })}
       </nav>
+
+      {/* Global nav */}
+      <div className="px-3 py-2 border-t border-border">
+        <Link
+          href="/exercises"
+          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer
+            ${pathname === "/exercises"
+              ? "bg-primary/10 text-primary font-semibold"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"}
+          `}
+        >
+          {pathname === "/exercises" && (
+            <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
+          )}
+          <ListIcon className="w-4 h-4 shrink-0" />
+          Mis ejercicios
+        </Link>
+      </div>
 
       {/* Account */}
       <div className="px-4 py-3 border-t border-border">

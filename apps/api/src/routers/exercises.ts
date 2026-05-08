@@ -1,5 +1,5 @@
 import { db } from "@atleta/db/client"
-import { exercise, teamMember } from "@atleta/db/schema"
+import { exercise, team, teamMember } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
 import { and, asc, eq, inArray, isNull, or } from "drizzle-orm"
 import { z } from "zod"
@@ -130,4 +130,27 @@ export const exercisesRouter = router({
 
       await db.delete(exercise).where(eq(exercise.id, input.id))
     }),
+
+  listOwned: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+
+    const coachedTeams = await db
+      .select({ teamId: teamMember.teamId })
+      .from(teamMember)
+      .innerJoin(team, eq(teamMember.teamId, team.id))
+      .where(and(eq(teamMember.userId, userId), eq(teamMember.role, "coach")))
+
+    const coachedTeamIds = coachedTeams.map((t) => t.teamId)
+
+    return db
+      .select()
+      .from(exercise)
+      .where(
+        or(
+          eq(exercise.ownerUserId, userId),
+          ...(coachedTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, coachedTeamIds)] : []),
+        ),
+      )
+      .orderBy(asc(exercise.name))
+  }),
 })
