@@ -22,24 +22,16 @@ export async function generateExerciseProgressReport(input: {
     })
     .join("\n")
 
-  const prompt = `Eres un asistente de entrenamiento deportivo. Analiza el progreso del atleta en el ejercicio "${exerciseName}" y escribe un mini-reporte en español (2-4 oraciones, entre 150 y 250 palabras).
-
-Debe cubrir:
-1. Estado actual del PR.
-2. Cambio porcentual respecto a la medición anterior${pctChange ? ` (${pctChange}%)` : " (primer registro)"}.
-3. Tendencia general del historial.
-4. Frase de aliento si progresa bien, o advertencia constructiva si hay estancamiento o retroceso.
+  const prompt = `Eres un asistente de entrenamiento deportivo. En 2 oraciones cortas en español y sin formato markdown, resume el progreso del atleta en "${exerciseName}": menciona el PR actual, ${pctChange ? `el cambio de ${pctChange}% respecto al registro anterior` : "que es el primer registro"}, y termina con una frase de aliento o advertencia según la tendencia.
 
 Historial:
 ${historyLines}
 
-PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateString("es", { dateStyle: "long" })})
-
-Escribe solo el reporte, sin encabezados ni listas.`
+PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateString("es", { dateStyle: "long" })})`
 
   const message = await client.messages.create({
     model: "claude-haiku-4-5-20251001",
-    max_tokens: 400,
+    max_tokens: 120,
     messages: [{ role: "user", content: prompt }],
   })
 
