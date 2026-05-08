@@ -1,5 +1,5 @@
 import type { Metadata } from "next"
-import { Inter, Space_Grotesk } from "next/font/google"
+import { Barlow_Condensed, Inter } from "next/font/google"
 import "./globals.css"
 import { TRPCProvider } from "@/lib/trpc/client"
 
@@ -9,10 +9,10 @@ const inter = Inter({
   display: "swap",
 })
 
-const spaceGrotesk = Space_Grotesk({
+const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
-  variable: "--font-space-grotesk",
-  weight: ["500", "600", "700"],
+  variable: "--font-barlow-condensed",
+  weight: ["500", "600", "700", "800"],
   display: "swap",
 })
 
@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${inter.variable} ${spaceGrotesk.variable}`}>
+    <html lang="es" className={`${inter.variable} ${barlowCondensed.variable}`}>
       <body>
         <TRPCProvider>{children}</TRPCProvider>
       </body>

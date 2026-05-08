@@ -20,34 +20,37 @@
   --color-border: hsl(var(--border));
   --color-input: hsl(var(--input));
   --color-ring: hsl(var(--ring));
+  --color-gold: hsl(var(--gold));
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-heading: var(--font-barlow-condensed), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 @layer base {
   :root {
-    --background: 216 33% 5%;        /* #080B10 */
-    --foreground: 214 36% 93%;       /* #E8EDF5 */
-    --card: 213 25% 10%;             /* #131920 */
-    --card-foreground: 214 36% 93%;
-    --popover: 214 28% 7%;           /* #0D1117 */
-    --popover-foreground: 214 36% 93%;
-    --primary: 217 100% 66%;         /* #4F8EFF */
+    --background: 220 22% 4%;          /* deep OLED navy-black */
+    --foreground: 214 28% 91%;         /* clean off-white */
+    --card: 218 20% 8%;                /* elevated surface */
+    --card-foreground: 214 28% 91%;
+    --popover: 218 22% 6%;             /* deeper surface */
+    --popover-foreground: 214 28% 91%;
+    --primary: 217 100% 64%;           /* precision blue */
     --primary-foreground: 0 0% 100%;
-    --secondary: 215 30% 15%;        /* #1A2230 */
-    --secondary-foreground: 214 36% 93%;
-    --muted: 215 30% 15%;            /* #1A2230 */
-    --muted-foreground: 215 15% 55%;
-    --accent: 215 30% 15%;
-    --accent-foreground: 214 36% 93%;
-    --destructive: 0 100% 66%;       /* #FF5252 */
+    --secondary: 217 22% 14%;
+    --secondary-foreground: 214 28% 91%;
+    --muted: 217 22% 14%;
+    --muted-foreground: 215 14% 50%;
+    --accent: 217 22% 14%;
+    --accent-foreground: 214 28% 91%;
+    --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
-    --border: 217 14% 11%;           /* ~rgba(255,255,255,0.07) on dark */
-    --input: 213 25% 12%;
-    --ring: 217 100% 66%;
-    --radius: 0.875rem;              /* 14px — matches landing cards */
+    --border: 217 18% 14%;             /* visible but subtle */
+    --input: 218 20% 10%;
+    --ring: 217 100% 64%;
+    --gold: 43 96% 56%;                /* achievement / PR color */
+    --radius: 0.75rem;                 /* tighter radius = more premium */
   }
 
   * {
@@ -59,9 +62,32 @@
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    line-height: 1.6;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-space-grotesk), ui-sans-serif, system-ui, sans-serif;
+    font-family: var(--font-barlow-condensed), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    letter-spacing: 0.02em;
+    line-height: 1.15;
+  }
+
+  ::selection {
+    background: hsl(217 100% 64% / 0.22);
+  }
+
+  /* Thin premium scrollbar */
+  ::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 2px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(var(--muted-foreground) / 0.6);
   }
 }
