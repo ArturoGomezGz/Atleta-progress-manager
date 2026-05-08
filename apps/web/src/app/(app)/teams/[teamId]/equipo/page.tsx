@@ -1,16 +1,19 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { DumbbellIcon, PlusIcon, ShieldCheckIcon } from "lucide-react"
+import { DumbbellIcon, PlusIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react"
 import { use, useState } from "react"
+import { useRouter } from "next/navigation"
 
 export default function EquipoPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = use(params)
+  const router = useRouter()
 
   const [newMemberEmail, setNewMemberEmail] = useState("")
   const [newMemberRole, setNewMemberRole] = useState<"coach" | "athlete">("athlete")
   const [addMemberError, setAddMemberError] = useState("")
   const [addingMember, setAddingMember] = useState(false)
+  const [deleteDialog, setDeleteDialog] = useState<null | "confirm" | "warn">(null)
 
   const { data: teams } = trpc.teams.list.useQuery()
   const { data: members, refetch: refetchMembers } = trpc.teams.members.useQuery({ teamId })
@@ -21,9 +24,17 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
   })
   const updateRole = trpc.teams.updateMemberRole.useMutation({ onSuccess: refetchMembers })
   const removeMember = trpc.teams.removeMember.useMutation({ onSuccess: refetchMembers })
+  const deleteTeam = trpc.teams.deleteTeam.useMutation({
+    onSuccess: () => router.push("/dashboard"),
+  })
 
-  const team = teams?.find((t) => t.team.id === teamId)
-  const isCoach = team?.role === "coach"
+  const currentTeam = teams?.find((t) => t.team.id === teamId)
+  const isCoach = currentTeam?.role === "coach"
+  const otherMembersCount = (members?.length ?? 1) - 1
+
+  function handleDeleteClick() {
+    setDeleteDialog(otherMembersCount > 0 ? "warn" : "confirm")
+  }
 
   async function handleAddMember(e: React.FormEvent) {
     e.preventDefault()
@@ -53,6 +64,55 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
         onUpdateRole={(userId, role) => updateRole.mutateAsync({ teamId, userId, role })}
         onRemove={(userId) => removeMember.mutateAsync({ teamId, userId })}
       />
+
+      {isCoach && (
+        <div className="pt-4 border-t border-border">
+          <button
+            onClick={handleDeleteClick}
+            className="flex items-center gap-2 text-sm text-destructive border border-destructive/40 px-3 py-1.5 rounded-md hover:bg-destructive/10 transition-colors"
+          >
+            <Trash2Icon className="w-4 h-4" />
+            Eliminar equipo
+          </button>
+        </div>
+      )}
+
+      {deleteDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4">
+          <div className="bg-card border border-border rounded-xl p-6 max-w-sm w-full space-y-4">
+            <h2 className="font-semibold text-base">Eliminar equipo</h2>
+            {deleteDialog === "warn" ? (
+              <p className="text-sm text-muted-foreground">
+                Este equipo tiene{" "}
+                <span className="font-medium text-foreground">
+                  {otherMembersCount} {otherMembersCount === 1 ? "miembro" : "miembros"} adicional{otherMembersCount !== 1 ? "es" : ""}
+                </span>
+                . Al eliminarlo se perderán todos los datos del equipo y sus miembros perderán el acceso.
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                ¿Seguro que quieres eliminar este equipo? Esta acción no se puede deshacer.
+              </p>
+            )}
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => setDeleteDialog(null)}
+                disabled={deleteTeam.isPending}
+                className="text-sm border border-border px-3 py-1.5 rounded-md hover:bg-muted disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => deleteTeam.mutate({ teamId })}
+                disabled={deleteTeam.isPending}
+                className="text-sm bg-destructive text-white px-3 py-1.5 rounded-md hover:bg-destructive/90 disabled:opacity-50"
+              >
+                {deleteTeam.isPending ? "Eliminando..." : "Eliminar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

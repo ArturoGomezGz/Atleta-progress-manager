@@ -82,6 +82,13 @@ export const teamsRouter = router({
         .where(and(eq(teamMember.teamId, input.teamId), eq(teamMember.userId, input.userId)))
     }),
 
+  deleteTeam: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      await db.delete(team).where(eq(team.id, input.teamId))
+    }),
+
   removeMember: protectedProcedure
     .input(z.object({ teamId: z.string().uuid(), userId: z.string() }))
     .mutation(async ({ ctx, input }) => {
