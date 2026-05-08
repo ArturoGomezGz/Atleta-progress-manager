@@ -358,11 +358,6 @@ function ExerciseRmRow({
               <span className="text-sm font-semibold tabular-nums">{group.current.rmLbs} lbs</span>
             </div>
             {isCoach && (
-              <span className="text-xs text-muted-foreground/60">
-                {group.current.source === "auto" ? "auto" : "manual"}
-              </span>
-            )}
-            {isCoach && (
               <button
                 onClick={(e) => { e.stopPropagation(); setEditValue(""); setEditing(true) }}
                 className="p-1 text-muted-foreground hover:text-foreground rounded"
