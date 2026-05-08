@@ -1,7 +1,7 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
+import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, ListIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -66,6 +66,8 @@ export function Sidebar() {
   const currentTeamId = extractTeamId(pathname)
   const currentSection = extractSection(pathname)
   const currentTeam = teams?.find((t) => t.team.id === currentTeamId)
+  // When on a non-team page (/exercises, etc.) fall back to the first team so nav links stay usable
+  const effectiveTeamId = currentTeamId ?? teams?.[0]?.team.id ?? null
   const isAthlete = currentTeam?.role === "athlete"
   const navItems = isAthlete ? ATHLETE_NAV : COACH_NAV
 
@@ -170,9 +172,9 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 space-y-0.5">
         {navItems.map(({ key, label, icon: Icon }) => {
-          const href = currentTeamId ? `/teams/${currentTeamId}/${key}` : "#"
+          const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${key}` : "#"
           const isActive = currentSection === key
-          const disabled = !currentTeamId
+          const disabled = !effectiveTeamId
           return (
             <Link
               key={key}
@@ -194,6 +196,23 @@ export function Sidebar() {
             </Link>
           )
         })}
+
+        <div className="pt-1 mt-1 border-t border-border/50">
+          <Link
+            href="/exercises"
+            className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer
+              ${pathname === "/exercises"
+                ? "bg-primary/10 text-primary font-semibold"
+                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"}
+            `}
+          >
+            {pathname === "/exercises" && (
+              <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
+            )}
+            <ListIcon className="w-4 h-4 shrink-0" />
+            Mis ejercicios
+          </Link>
+        </div>
       </nav>
 
       {/* Account */}

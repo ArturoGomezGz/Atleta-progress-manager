@@ -1,5 +1,6 @@
 "use client"
 
+import { ExercisePicker } from "@/components/exercise-picker"
 import { useSession } from "@/lib/auth"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -147,12 +148,12 @@ function AddManualRmForm({
   onSaved: () => void
   onCancel: () => void
 }) {
-  const { data: allExercises } = trpc.exercises.list.useQuery()
+  const { data: allExercises } = trpc.exercises.list.useQuery({ teamId })
   const [exerciseId, setExerciseId] = useState("")
   const [rmLbs, setRmLbs] = useState("")
   const setManual = trpc.rms.setManual.useMutation({ onSuccess: onSaved })
 
-  const availableExercises = (allExercises ?? []).filter((e) => !excludeExerciseIds.has(e.id))
+  const available = (allExercises ?? []).filter((e) => !excludeExerciseIds.has(e.id))
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -161,39 +162,39 @@ function AddManualRmForm({
   }
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="border rounded-lg px-4 py-3 bg-muted/10 flex items-end gap-3 flex-wrap"
-    >
-      <div className="flex-1 min-w-48 space-y-1">
-        <label className="text-xs text-muted-foreground">Ejercicio</label>
-        <select
-          autoFocus
-          value={exerciseId}
-          onChange={(e) => setExerciseId(e.target.value)}
-          className="w-full border border-border rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-        >
-          <option value="">Seleccionar ejercicio...</option>
-          {availableExercises.map((ex) => (
-            <option key={ex.id} value={ex.id}>{ex.name}</option>
-          ))}
-        </select>
+    <form onSubmit={handleSubmit} className="border rounded-lg px-4 py-3 bg-muted/10 space-y-3">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium">Registrar PR manual</p>
+        <button type="button" onClick={onCancel} className="p-1 text-muted-foreground hover:text-foreground rounded">
+          <XIcon className="w-4 h-4" />
+        </button>
       </div>
 
+      {/* Exercise picker */}
       <div className="space-y-1">
-        <label className="text-xs text-muted-foreground">PR (lbs)</label>
-        <input
-          type="number"
-          min={0}
-          step={0.5}
-          value={rmLbs}
-          onChange={(e) => setRmLbs(e.target.value)}
-          placeholder="0"
-          className="w-24 border border-border rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+        <label className="text-xs text-muted-foreground">Ejercicio</label>
+        <ExercisePicker
+          exercises={available}
+          value={exerciseId}
+          onChange={setExerciseId}
+          placeholder={available.length === 0 ? "Todos los ejercicios tienen PR" : "Seleccionar ejercicio..."}
         />
       </div>
 
-      <div className="flex gap-2">
+      {/* PR input + actions */}
+      <div className="flex items-end gap-3">
+        <div className="space-y-1">
+          <label className="text-xs text-muted-foreground">PR (lbs)</label>
+          <input
+            type="number"
+            min={0}
+            step={0.5}
+            value={rmLbs}
+            onChange={(e) => setRmLbs(e.target.value)}
+            placeholder="0"
+            className="w-24 border border-border rounded-md px-2 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+          />
+        </div>
         <button
           type="submit"
           disabled={setManual.isPending || !exerciseId || !rmLbs}
@@ -201,18 +202,7 @@ function AddManualRmForm({
         >
           {setManual.isPending ? "Guardando..." : "Guardar"}
         </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="p-1.5 text-muted-foreground hover:text-foreground rounded-md"
-        >
-          <XIcon className="w-4 h-4" />
-        </button>
       </div>
-
-      {availableExercises.length === 0 && (
-        <p className="w-full text-xs text-muted-foreground">Todos los ejercicios ya tienen PR registrado.</p>
-      )}
     </form>
   )
 }

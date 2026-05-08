@@ -1,5 +1,6 @@
 "use client"
 
+import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
 import { trpc } from "@/lib/trpc/client"
 import { PlusIcon, Trash2Icon } from "lucide-react"
 import Link from "next/link"
@@ -10,7 +11,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   const [addingExercise, setAddingExercise] = useState(false)
 
   const { data: routine, refetch } = trpc.routines.get.useQuery({ id: routineId })
-  const { data: catalog } = trpc.exercises.list.useQuery()
+  const { data: catalog } = trpc.exercises.list.useQuery({ teamId })
 
   const addExercise = trpc.routines.addExercise.useMutation({ onSuccess: () => { refetch(); setAddingExercise(false) } })
   const removeExercise = trpc.routines.removeExercise.useMutation({ onSuccess: refetch })
@@ -54,6 +55,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           onAdd={(values) => addExercise.mutate(values)}
           onCancel={() => setAddingExercise(false)}
           isPending={addExercise.isPending}
+          teamId={teamId}
         />
       ) : (
         <button
@@ -249,10 +251,9 @@ function SetsEditor({
 
 // ─── Add exercise form ────────────────────────────────────────────────────────
 
-type CatalogExercise = { id: string; name: string }
-
 function AddExerciseForm({
   routineId,
+  teamId: _teamId,
   nextOrder,
   exercises,
   onAdd,
@@ -260,14 +261,26 @@ function AddExerciseForm({
   isPending,
 }: {
   routineId: string
+  teamId: string
   nextOrder: number
-  exercises: CatalogExercise[]
+  exercises: PickerExercise[]
   onAdd: (v: { routineId: string; exerciseId: string; order: number; sets: { setNumber: number; targetReps: number | null; targetPercent: string | null }[] }) => void
   onCancel: () => void
   isPending: boolean
 }) {
-  const [exerciseId, setExerciseId] = useState(exercises[0]?.id ?? "")
-  const [sets, setSets] = useState<DraftSet[]>([{ setNumber: 1, targetReps: "", targetPercent: "" }])
+  const DEFAULT_SETS: DraftSet[] = [
+    { setNumber: 1, targetReps: "5", targetPercent: "80" },
+    { setNumber: 2, targetReps: "3", targetPercent: "90" },
+    { setNumber: 3, targetReps: "", targetPercent: "100" },
+  ]
+
+  const [exerciseId, setExerciseId] = useState("")
+  const [sets, setSets] = useState<DraftSet[]>(DEFAULT_SETS)
+
+  function handleExerciseChange(id: string) {
+    setExerciseId(id)
+    setSets(DEFAULT_SETS)
+  }
 
   function addSet() {
     setSets((prev) => [...prev, { setNumber: prev.length + 1, targetReps: "", targetPercent: "" }])
@@ -306,19 +319,12 @@ function AddExerciseForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border rounded-lg overflow-hidden">
-      <div className="px-4 py-3 border-b bg-muted/10">
-        <p className="text-sm font-medium mb-2">Agregar ejercicio</p>
-        <select
-          value={exerciseId}
-          onChange={(e) => setExerciseId(e.target.value)}
-          className="w-full border rounded-md px-3 py-2 text-sm bg-background"
-        >
-          {exercises.map((ex) => (
-            <option key={ex.id} value={ex.id}>{ex.name}</option>
-          ))}
-        </select>
+    <form onSubmit={handleSubmit} className="border rounded-lg">
+      <div className="px-4 py-3 border-b bg-muted/10 space-y-2">
+        <p className="text-sm font-medium">Agregar ejercicio</p>
+        <ExercisePicker exercises={exercises} value={exerciseId} onChange={handleExerciseChange} />
       </div>
+
       <div className="divide-y">
         {sets.map((s, i) => (
           <div key={i} className="flex items-center gap-2 px-4 py-2">
@@ -371,7 +377,7 @@ function AddExerciseForm({
           <button type="button" onClick={onCancel} className="text-xs px-3 py-1.5 rounded border">
             Cancelar
           </button>
-          <button type="submit" disabled={isPending} className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded disabled:opacity-50">
+          <button type="submit" disabled={isPending || !exerciseId} className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded disabled:opacity-50">
             {isPending ? "Agregando..." : "Agregar"}
           </button>
         </div>
