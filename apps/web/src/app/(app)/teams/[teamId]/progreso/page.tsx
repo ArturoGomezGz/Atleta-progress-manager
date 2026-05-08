@@ -571,12 +571,7 @@ function ExerciseRmRow({
               {group.history.map((entry) => (
                 <div key={entry.id} className="flex items-center gap-3 text-xs">
                   <span className="tabular-nums font-medium">{entry.rmLbs} lbs</span>
-                  <span className={cn(
-                    "px-1.5 py-0.5 rounded",
-                    entry.source === "auto" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700",
-                  )}>
-                    {entry.source}
-                  </span>
+                  <span className="font-bold">{entry.source}</span>
                   <span className="text-muted-foreground">
                     {new Date(entry.recordedAt).toLocaleDateString("es", { dateStyle: "medium" })}
                   </span>
