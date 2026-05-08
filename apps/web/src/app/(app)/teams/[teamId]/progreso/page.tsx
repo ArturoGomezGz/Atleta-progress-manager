@@ -351,13 +351,15 @@ function ExerciseRmRow({
           </form>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold tabular-nums">{group.current.rmLbs} lbs</span>
-            <span className={cn(
-              "text-xs px-1.5 py-0.5 rounded",
-              group.current.source === "auto" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700",
-            )}>
-              {group.current.source === "auto" ? "auto" : "manual"}
-            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-xs text-muted-foreground">1RM</span>
+              <span className="text-sm font-semibold tabular-nums">{group.current.rmLbs} lbs</span>
+            </div>
+            {isCoach && (
+              <span className="text-xs text-muted-foreground/60">
+                {group.current.source === "auto" ? "auto" : "manual"}
+              </span>
+            )}
             {isCoach && (
               <button
                 onClick={() => { setEditValue(""); setEditing(true) }}
