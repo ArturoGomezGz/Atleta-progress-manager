@@ -362,7 +362,7 @@ function SetActions({ set, onUpdate }: { set: SetRecord; onUpdate: () => void })
   if (editing) {
     return (
       <div className="flex items-center gap-2">
-        <input autoFocus type="number" inputMode="numeric" min={0} value={reps}
+        <input type="number" inputMode="numeric" min={0} value={reps}
           onChange={(e) => setReps(e.target.value)}
           className="w-14 h-9 border rounded-lg px-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring text-center" />
         <span className="text-xs text-muted-foreground">reps</span>
@@ -431,7 +431,7 @@ function RecordSetForm({ sessionId, athleteId, sessionExerciseId, sessionSetTarg
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-2">
       <div className="flex items-center gap-1.5 flex-1">
-        <input autoFocus type="number" inputMode="numeric" min={0} value={reps}
+        <input type="number" inputMode="numeric" min={0} value={reps}
           onChange={(e) => setReps(e.target.value)} placeholder="Reps"
           className="w-full min-w-0 h-11 border rounded-xl px-3 text-base bg-background focus:outline-none focus:ring-2 focus:ring-primary text-center font-medium" />
         <span className="text-xs text-muted-foreground shrink-0">reps</span>
