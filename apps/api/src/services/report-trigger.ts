@@ -35,9 +35,9 @@ export async function triggerExerciseReport(params: {
 
   await db
     .insert(exerciseProgressReport)
-    .values({ athleteId, exerciseId, teamId, content, generatedAt: new Date(), triggerRmId })
+    .values({ athleteId, exerciseId, teamId, content, reportSource: "ai", seenAt: null, generatedAt: new Date(), triggerRmId })
     .onConflictDoUpdate({
       target: [exerciseProgressReport.athleteId, exerciseProgressReport.exerciseId],
-      set: { content, generatedAt: new Date(), triggerRmId },
+      set: { content, reportSource: "ai", seenAt: null, generatedAt: new Date(), triggerRmId },
     })
 }

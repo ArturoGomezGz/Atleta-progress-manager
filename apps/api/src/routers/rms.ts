@@ -74,6 +74,8 @@ export const rmsRouter = router({
       const [report] = await db
         .select({
           content: exerciseProgressReport.content,
+          reportSource: exerciseProgressReport.reportSource,
+          seenAt: exerciseProgressReport.seenAt,
           generatedAt: exerciseProgressReport.generatedAt,
         })
         .from(exerciseProgressReport)
@@ -84,6 +86,66 @@ export const rmsRouter = router({
         ))
         .limit(1)
       return report ?? null
+    }),
+
+  reportStatuses: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid(), athleteId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      await assertMember(ctx.session.user.id, input.teamId)
+      const reports = await db
+        .select({
+          exerciseId: exerciseProgressReport.exerciseId,
+          reportSource: exerciseProgressReport.reportSource,
+          seenAt: exerciseProgressReport.seenAt,
+        })
+        .from(exerciseProgressReport)
+        .where(and(
+          eq(exerciseProgressReport.athleteId, input.athleteId),
+          eq(exerciseProgressReport.teamId, input.teamId),
+        ))
+      return reports.map((r) => ({
+        exerciseId: r.exerciseId,
+        source: r.reportSource,
+        hasUnread: r.seenAt === null,
+      }))
+    }),
+
+  updateReport: protectedProcedure
+    .input(z.object({
+      teamId: z.string().uuid(),
+      athleteId: z.string(),
+      exerciseId: z.string().uuid(),
+      content: z.string().min(1).max(2000),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      await db
+        .update(exerciseProgressReport)
+        .set({ content: input.content, reportSource: "coach", seenAt: null, generatedAt: new Date() })
+        .where(and(
+          eq(exerciseProgressReport.athleteId, input.athleteId),
+          eq(exerciseProgressReport.exerciseId, input.exerciseId),
+          eq(exerciseProgressReport.teamId, input.teamId),
+        ))
+    }),
+
+  markReportSeen: protectedProcedure
+    .input(z.object({
+      teamId: z.string().uuid(),
+      athleteId: z.string(),
+      exerciseId: z.string().uuid(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await assertMember(ctx.session.user.id, input.teamId)
+      await db
+        .update(exerciseProgressReport)
+        .set({ seenAt: new Date() })
+        .where(and(
+          eq(exerciseProgressReport.athleteId, input.athleteId),
+          eq(exerciseProgressReport.exerciseId, input.exerciseId),
+          eq(exerciseProgressReport.teamId, input.teamId),
+          // Only mark seen if not already seen
+        ))
     }),
 
   athletes: protectedProcedure
