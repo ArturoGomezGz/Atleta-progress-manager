@@ -86,9 +86,9 @@ function SessionCard({
       <span
         className={cn(
           "text-xs font-medium px-2 py-0.5 rounded-full border",
-          session.status === "active" && "bg-green-50 text-green-700 border-green-200 dark:bg-green-950/30 dark:text-green-400 dark:border-green-800",
-          session.status === "completed" && "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800",
-          session.status === "cancelled" && "bg-rose-50 text-rose-600 border-rose-200 dark:bg-rose-950/30 dark:text-rose-400 dark:border-rose-800",
+          session.status === "active" && "bg-primary/10 text-primary border-primary/20",
+          session.status === "completed" && "bg-muted text-muted-foreground border",
+          session.status === "cancelled" && "bg-destructive/10 text-destructive/70 border-destructive/20",
         )}
       >
         {statusLabel[session.status] ?? session.status}

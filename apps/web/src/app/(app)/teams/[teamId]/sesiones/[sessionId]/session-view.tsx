@@ -94,7 +94,7 @@ export function SessionView({ sessionId }: Props) {
           </div>
         )}
         {!isActive && (
-          <span className={cn("text-sm font-medium", session.status === "completed" ? "text-green-600" : "text-muted-foreground")}>
+          <span className={cn("text-sm font-medium", session.status === "completed" ? "text-primary" : "text-muted-foreground")}>
             {session.status === "completed" ? "Completada" : "Cancelada"}
           </span>
         )}
@@ -134,7 +134,7 @@ export function SessionView({ sessionId }: Props) {
                 <button
                   onClick={() => reactivateAthlete.mutate({ sessionId, athleteId: a.athleteId })}
                   title="Reactivar atleta"
-                  className="p-1.5 mr-1 text-muted-foreground hover:text-green-600 rounded shrink-0"
+                  className="p-1.5 mr-1 text-muted-foreground hover:text-primary rounded shrink-0"
                 >
                   <RotateCcwIcon className="w-3.5 h-3.5" />
                 </button>
@@ -286,7 +286,7 @@ function ExerciseCard({
               onClick={() => reactivateExercise.mutate({ sessionId, athleteId, sessionExerciseId: exercise.id })}
               disabled={reactivateExercise.isPending}
               title="Reactivar ejercicio"
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-green-600 rounded px-2 py-1 disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary rounded px-2 py-1 disabled:opacity-50"
             >
               <RotateCcwIcon className="w-3.5 h-3.5" />
               Reactivar
@@ -495,7 +495,7 @@ function SetActions({ set, onUpdate }: { set: SetRecord; onUpdate: () => void })
         onClick={() => updateStatus.mutate({ setId: set.id, status: set.status === "valid" ? "invalid" : "valid" })}
         className={cn(
           "text-xs px-2 py-0.5 rounded border",
-          set.status === "valid" ? "text-muted-foreground hover:text-destructive" : "text-muted-foreground hover:text-green-600",
+          set.status === "valid" ? "text-muted-foreground hover:text-destructive" : "text-muted-foreground hover:text-primary",
         )}
       >
         {set.status === "valid" ? "Invalidar" : "Validar"}
