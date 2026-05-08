@@ -47,7 +47,7 @@ export function SessionView({ sessionId }: Props) {
           </div>
         )}
         {!isActive && (
-          <span className={cn("text-sm font-medium", session.status === "completed" ? "text-green-600" : "text-muted-foreground")}>
+          <span className={cn("text-sm font-medium", session.status === "completed" ? "text-primary" : "text-muted-foreground")}>
             {session.status === "completed" ? "Completada" : "Cancelada"}
           </span>
         )}
@@ -316,7 +316,7 @@ function SetActions({ set, onUpdate }: { set: SetRecord; onUpdate: () => void })
         onClick={() => updateStatus.mutate({ setId: set.id, status: set.status === "valid" ? "invalid" : "valid" })}
         className={cn(
           "text-xs px-2 py-0.5 rounded border",
-          set.status === "valid" ? "text-muted-foreground hover:text-destructive" : "text-green-600 hover:bg-green-50",
+          set.status === "valid" ? "text-muted-foreground hover:text-destructive" : "text-primary hover:bg-primary/10",
         )}
       >
         {set.status === "valid" ? "Invalidar" : "Validar"}
