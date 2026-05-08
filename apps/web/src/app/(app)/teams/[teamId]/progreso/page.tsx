@@ -1,5 +1,6 @@
 "use client"
 
+import { ExercisePicker } from "@/components/exercise-picker"
 import { useSession } from "@/lib/auth"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -134,14 +135,6 @@ function AthleteRms({ teamId, athleteId, isCoach }: { teamId: string; athleteId:
   )
 }
 
-const CATEGORY_LABELS: Record<string, string> = {
-  team: "Del equipo",
-  system: "Sistema",
-  mine: "Mis ejercicios",
-  public: "Públicos",
-}
-const CATEGORY_ORDER = ["team", "system", "mine", "public"]
-
 function AddManualRmForm({
   teamId,
   athleteId,
@@ -157,22 +150,10 @@ function AddManualRmForm({
 }) {
   const { data: allExercises } = trpc.exercises.list.useQuery({ teamId })
   const [exerciseId, setExerciseId] = useState("")
-  const [search, setSearch] = useState("")
   const [rmLbs, setRmLbs] = useState("")
   const setManual = trpc.rms.setManual.useMutation({ onSuccess: onSaved })
 
   const available = (allExercises ?? []).filter((e) => !excludeExerciseIds.has(e.id))
-  const filtered = search
-    ? available.filter((e) => e.name.toLowerCase().includes(search.toLowerCase()))
-    : available
-
-  const grouped = CATEGORY_ORDER.reduce<Record<string, typeof filtered>>((acc, cat) => {
-    const items = filtered.filter((e) => e.category === cat)
-    if (items.length > 0) acc[cat] = items
-    return acc
-  }, {})
-
-  const selectedName = available.find((e) => e.id === exerciseId)?.name
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -192,52 +173,12 @@ function AddManualRmForm({
       {/* Exercise picker */}
       <div className="space-y-1">
         <label className="text-xs text-muted-foreground">Ejercicio</label>
-        <div className="border border-border rounded-md overflow-hidden bg-background">
-          <div className="flex items-center gap-2 px-3 py-1.5 border-b border-border">
-            <svg className="w-3.5 h-3.5 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-            <input
-              autoFocus
-              type="text"
-              placeholder="Buscar ejercicio..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 text-xs bg-transparent outline-none"
-            />
-          </div>
-          <div className="max-h-40 overflow-y-auto">
-            {Object.entries(grouped).map(([cat, items]) => (
-              <div key={cat}>
-                <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/30 sticky top-0">
-                  {CATEGORY_LABELS[cat]}
-                </div>
-                {items.map((ex) => (
-                  <button
-                    key={ex.id}
-                    type="button"
-                    onClick={() => setExerciseId(ex.id)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/40 transition-colors ${
-                      exerciseId === ex.id ? "bg-primary/10 text-primary font-medium" : ""
-                    }`}
-                  >
-                    {ex.name}
-                  </button>
-                ))}
-              </div>
-            ))}
-            {filtered.length === 0 && (
-              <p className="px-3 py-4 text-xs text-muted-foreground text-center">
-                {available.length === 0 ? "Todos los ejercicios ya tienen PR registrado." : "Sin resultados"}
-              </p>
-            )}
-          </div>
-        </div>
-        {selectedName && (
-          <p className="text-xs text-muted-foreground">
-            Seleccionado: <span className="font-medium text-foreground">{selectedName}</span>
-          </p>
-        )}
+        <ExercisePicker
+          exercises={available}
+          value={exerciseId}
+          onChange={setExerciseId}
+          placeholder={available.length === 0 ? "Todos los ejercicios tienen PR" : "Seleccionar ejercicio..."}
+        />
       </div>
 
       {/* PR input + actions */}

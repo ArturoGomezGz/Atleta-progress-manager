@@ -1,5 +1,6 @@
 "use client"
 
+import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
 import { trpc } from "@/lib/trpc/client"
 import { PlusIcon, Trash2Icon } from "lucide-react"
 import Link from "next/link"
@@ -250,17 +251,6 @@ function SetsEditor({
 
 // ─── Add exercise form ────────────────────────────────────────────────────────
 
-type CatalogExercise = { id: string; name: string; category: "team" | "system" | "mine" | "public" }
-
-const CATEGORY_LABELS: Record<CatalogExercise["category"], string> = {
-  team: "Del equipo",
-  system: "Sistema",
-  mine: "Mis ejercicios",
-  public: "Públicos",
-}
-
-const CATEGORY_ORDER: CatalogExercise["category"][] = ["team", "system", "mine", "public"]
-
 function AddExerciseForm({
   routineId,
   teamId: _teamId,
@@ -273,24 +263,13 @@ function AddExerciseForm({
   routineId: string
   teamId: string
   nextOrder: number
-  exercises: CatalogExercise[]
+  exercises: PickerExercise[]
   onAdd: (v: { routineId: string; exerciseId: string; order: number; sets: { setNumber: number; targetReps: number | null; targetPercent: string | null }[] }) => void
   onCancel: () => void
   isPending: boolean
 }) {
-  const [search, setSearch] = useState("")
-  const [exerciseId, setExerciseId] = useState(exercises[0]?.id ?? "")
+  const [exerciseId, setExerciseId] = useState("")
   const [sets, setSets] = useState<DraftSet[]>([{ setNumber: 1, targetReps: "", targetPercent: "" }])
-
-  const filtered = search
-    ? exercises.filter((ex) => ex.name.toLowerCase().includes(search.toLowerCase()))
-    : exercises
-
-  const grouped = CATEGORY_ORDER.reduce<Record<string, CatalogExercise[]>>((acc, cat) => {
-    const items = filtered.filter((ex) => ex.category === cat)
-    if (items.length > 0) acc[cat] = items
-    return acc
-  }, {})
 
   function addSet() {
     setSets((prev) => [...prev, { setNumber: prev.length + 1, targetReps: "", targetPercent: "" }])
@@ -328,58 +307,11 @@ function AddExerciseForm({
     )
   }
 
-  const selectedExercise = exercises.find((ex) => ex.id === exerciseId)
-
   return (
     <form onSubmit={handleSubmit} className="border rounded-lg overflow-hidden">
       <div className="px-4 py-3 border-b bg-muted/10 space-y-2">
         <p className="text-sm font-medium">Agregar ejercicio</p>
-
-        {/* Search + picker */}
-        <div className="border rounded-md overflow-hidden bg-background">
-          <div className="flex items-center border-b px-3 py-1.5 gap-2">
-            <svg className="w-3.5 h-3.5 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
-            </svg>
-            <input
-              type="text"
-              placeholder="Buscar ejercicio..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="flex-1 text-xs bg-transparent outline-none"
-            />
-          </div>
-          <div className="max-h-44 overflow-y-auto">
-            {Object.entries(grouped).map(([cat, items]) => (
-              <div key={cat}>
-                <div className="px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground bg-muted/30 sticky top-0">
-                  {CATEGORY_LABELS[cat as CatalogExercise["category"]]}
-                </div>
-                {items.map((ex) => (
-                  <button
-                    key={ex.id}
-                    type="button"
-                    onClick={() => setExerciseId(ex.id)}
-                    className={`w-full text-left px-3 py-2 text-sm hover:bg-muted/40 transition-colors ${
-                      exerciseId === ex.id ? "bg-primary/10 text-primary font-medium" : ""
-                    }`}
-                  >
-                    {ex.name}
-                  </button>
-                ))}
-              </div>
-            ))}
-            {filtered.length === 0 && (
-              <p className="px-3 py-4 text-xs text-muted-foreground text-center">Sin resultados</p>
-            )}
-          </div>
-        </div>
-
-        {selectedExercise && (
-          <p className="text-xs text-muted-foreground">
-            Seleccionado: <span className="font-medium text-foreground">{selectedExercise.name}</span>
-          </p>
-        )}
+        <ExercisePicker exercises={exercises} value={exerciseId} onChange={setExerciseId} />
       </div>
 
       <div className="divide-y">
