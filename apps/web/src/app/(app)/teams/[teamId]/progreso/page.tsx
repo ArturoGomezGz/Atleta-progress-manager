@@ -312,8 +312,11 @@ function ExerciseRmRow({
 
   return (
     <div className="border rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-muted/20">
+      {/* Header — whole row is the toggle */}
+      <div
+        className="flex items-center gap-3 px-4 py-3 bg-muted/20 cursor-pointer select-none"
+        onClick={!editing ? onToggle : undefined}
+      >
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm truncate">{group.exerciseName}</p>
           <p className="text-xs text-muted-foreground">
@@ -322,7 +325,7 @@ function ExerciseRmRow({
         </div>
 
         {isCoach && editing ? (
-          <form onSubmit={handleEdit} className="flex items-center gap-1.5">
+          <form onSubmit={handleEdit} className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             <input
               autoFocus
               type="number"
@@ -362,22 +365,19 @@ function ExerciseRmRow({
             )}
             {isCoach && (
               <button
-                onClick={() => { setEditValue(""); setEditing(true) }}
+                onClick={(e) => { e.stopPropagation(); setEditValue(""); setEditing(true) }}
                 className="p-1 text-muted-foreground hover:text-foreground rounded"
               >
                 <PencilIcon className="w-3.5 h-3.5" />
               </button>
             )}
 
-            {/* Notification badge — athlete only */}
+            {/* Notification badge — athlete only, visual only (row click handles toggle) */}
             {showNotification && (
-              <button
-                onClick={onToggle}
+              <span
                 className={cn(
-                  "p-1 rounded transition-colors",
-                  notification.source === "coach"
-                    ? "text-emerald-600 hover:text-emerald-700"
-                    : "text-violet-500 hover:text-violet-600",
+                  "p-1",
+                  notification.source === "coach" ? "text-emerald-600" : "text-violet-500",
                 )}
                 title={notification.source === "coach" ? "Mensaje de tu entrenador" : "Análisis de progreso disponible"}
               >
@@ -385,12 +385,12 @@ function ExerciseRmRow({
                   ? <MessageCircleIcon className="w-4 h-4" />
                   : <SparklesIcon className="w-4 h-4" />
                 }
-              </button>
+              </span>
             )}
 
-            <button onClick={onToggle} className="p-1 text-muted-foreground hover:text-foreground rounded">
+            <span className="p-1 text-muted-foreground">
               {expanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
-            </button>
+            </span>
           </div>
         )}
       </div>
