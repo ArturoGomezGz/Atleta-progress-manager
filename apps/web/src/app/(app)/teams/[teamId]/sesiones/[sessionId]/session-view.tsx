@@ -13,7 +13,7 @@ export function SessionView({ sessionId }: Props) {
   const [confirming, setConfirming] = useState<"complete" | "cancel" | null>(null)
   const router = useRouter()
 
-  const { data: session, refetch: refetchSession } = trpc.sessions.get.useQuery({ id: sessionId })
+  const { data: session, refetch: refetchSession } = trpc.sessions.get.useQuery({ id: sessionId }, { refetchInterval: 4000 })
   const completeSession = trpc.sessions.complete.useMutation({
     onSuccess: () => { setConfirming(null); if (session) router.push(`/teams/${session.teamId}/sesiones`) },
   })
@@ -171,9 +171,9 @@ type SetRecord = { id: string; setNumber: number; sessionSetTargetId: string | n
 
 function AthleteExercises({ sessionId, athleteId, exercises, isActive, onSessionUpdate }:
   { sessionId: string; athleteId: string; exercises: Exercise[]; isActive: boolean; onSessionUpdate: () => void }) {
-  const { data: sets, refetch } = trpc.sessions.athleteSets.useQuery({ sessionId, athleteId })
+  const { data: sets, refetch } = trpc.sessions.athleteSets.useQuery({ sessionId, athleteId }, { refetchInterval: isActive ? 4000 : false })
   const { data: athleteRms } = trpc.sessions.athleteRms.useQuery({ sessionId, athleteId })
-  const { data: cancelledExerciseIds, refetch: refetchCancelled } = trpc.sessions.athleteCancelledExercises.useQuery({ sessionId, athleteId })
+  const { data: cancelledExerciseIds, refetch: refetchCancelled } = trpc.sessions.athleteCancelledExercises.useQuery({ sessionId, athleteId }, { refetchInterval: isActive ? 4000 : false })
 
   function refetchAll() { refetch(); refetchCancelled() }
 
