@@ -213,7 +213,6 @@ export default function ExercisesPage() {
         onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
         onDeleteCancel={() => setDeleteConfirm(null)}
         isDeleting={deleteMutation.isPending}
-        onAdd={() => openCreate("user")}
       />
 
       {/* ── Per-team ── */}
@@ -228,7 +227,6 @@ export default function ExercisesPage() {
           onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
           onDeleteCancel={() => setDeleteConfirm(null)}
           isDeleting={deleteMutation.isPending}
-          onAdd={() => openCreate("team", team.id)}
         />
       ))}
     </div>
@@ -246,7 +244,6 @@ function Section({
   onDeleteConfirm,
   onDeleteCancel,
   isDeleting,
-  onAdd,
 }: {
   title: string
   exercises: Exercise[]
@@ -256,20 +253,10 @@ function Section({
   onDeleteConfirm: (id: string) => void
   onDeleteCancel: () => void
   isDeleting: boolean
-  onAdd: () => void
 }) {
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
-        <button
-          onClick={onAdd}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
-        >
-          <PlusIcon className="w-3.5 h-3.5" />
-          Agregar
-        </button>
-      </div>
+      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
 
       {exercises.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-6 border rounded-lg border-dashed">
