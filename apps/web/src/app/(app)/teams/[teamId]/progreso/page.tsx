@@ -55,8 +55,8 @@ function CoachProgresoView({ teamId }: { teamId: string }) {
             key={a.id}
             onClick={() => setSelectedAthleteId(a.id)}
             className={cn(
-              "shrink-0 text-left px-4 py-2.5 lg:py-3 text-sm border-r lg:border-r-0 lg:border-b last:border-0 hover:bg-muted/50 transition-colors whitespace-nowrap",
-              a.id === activeAthleteId && "bg-muted font-medium",
+              "shrink-0 text-left px-4 py-2.5 lg:py-3 text-sm border-r lg:border-r-0 lg:border-b last:border-0 hover:bg-muted/60 transition-colors whitespace-nowrap cursor-pointer",
+              a.id === activeAthleteId ? "bg-primary/10 text-primary font-semibold border-l-2 border-l-primary lg:border-l-2 lg:border-l-primary" : "text-muted-foreground hover:text-foreground",
             )}
           >
             {a.name}
@@ -94,7 +94,7 @@ function AthleteRms({ teamId, athleteId, isCoach }: { teamId: string; athleteId:
         {isCoach && !addingManual && (
           <button
             onClick={() => setAddingManual(true)}
-            className="flex items-center gap-1.5 text-sm border px-3 py-1.5 rounded-md hover:bg-muted transition-colors"
+            className="flex items-center gap-1.5 text-sm border border-border px-3 py-1.5 rounded-lg hover:bg-muted/60 hover:border-primary/30 transition-all duration-200 cursor-pointer"
           >
             <PlusIcon className="w-4 h-4" />
             Agregar PR manualmente
@@ -311,10 +311,10 @@ function ExerciseRmRow({
   }
 
   return (
-    <div className="border rounded-lg overflow-hidden">
+    <div className="border border-border rounded-xl overflow-hidden hover:border-border/80 transition-colors">
       {/* Header — whole row is the toggle */}
       <div
-        className="flex items-center gap-3 px-4 py-3 bg-muted/20 cursor-pointer select-none"
+        className="flex items-center gap-3 px-4 py-3.5 bg-card/80 cursor-pointer select-none hover:bg-muted/30 transition-colors"
         onClick={!editing ? onToggle : undefined}
       >
         <div className="flex-1 min-w-0">
@@ -356,7 +356,8 @@ function ExerciseRmRow({
           <div className="flex items-center gap-2">
             <div className="flex items-baseline gap-1">
               <span className="text-xs text-muted-foreground">1RM</span>
-              <span className="text-sm font-semibold tabular-nums">{group.current.rmLbs} lbs</span>
+              <span className="text-sm font-bold tabular-nums text-gold">{group.current.rmLbs}</span>
+              <span className="text-xs text-muted-foreground">lbs</span>
             </div>
             {isCoach && (
               <button
@@ -550,10 +551,10 @@ function ExerciseRmRow({
             <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Cargas por porcentaje</p>
             <div className="grid grid-cols-4 gap-2">
               {PCT_LEVELS.map((pct) => (
-                <div key={pct} className="text-center border rounded-md py-2 px-1 bg-muted/10">
-                  <p className="text-xs text-muted-foreground">{pct}%</p>
-                  <p className="text-sm font-semibold tabular-nums">{(currentRm * pct / 100).toFixed(1)}</p>
-                  <p className="text-xs text-muted-foreground">lbs</p>
+                <div key={pct} className="text-center border border-border rounded-lg py-2.5 px-1 bg-muted/10 hover:bg-muted/20 transition-colors">
+                  <p className="text-[10px] font-semibold text-muted-foreground tracking-wider uppercase">{pct}%</p>
+                  <p className="text-sm font-bold tabular-nums text-foreground mt-0.5">{(currentRm * pct / 100).toFixed(1)}</p>
+                  <p className="text-[10px] text-muted-foreground">lbs</p>
                 </div>
               ))}
             </div>
