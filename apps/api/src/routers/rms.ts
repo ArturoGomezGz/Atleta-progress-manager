@@ -1,7 +1,8 @@
 import { db } from "@atleta/db/client"
-import { athleteExerciseRm, exercise, teamMember, user } from "@atleta/db/schema"
+import { athleteExerciseRm, exercise, exerciseProgressReport, teamMember, user } from "@atleta/db/schema"
 import { and, desc, eq } from "drizzle-orm"
 import { z } from "zod"
+import { triggerExerciseReport } from "../services/report-trigger"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
 
@@ -51,7 +52,38 @@ export const rmsRouter = router({
         .insert(athleteExerciseRm)
         .values({ athleteId: input.athleteId, exerciseId: input.exerciseId, rmLbs: input.rmLbs, source: "manual", sessionId: null })
         .returning()
+
+      void triggerExerciseReport({
+        athleteId: input.athleteId,
+        exerciseId: input.exerciseId,
+        teamId: input.teamId,
+        triggerRmId: rm.id,
+      }).catch((err) => console.error("Report generation failed (manual)", { rmId: rm.id, err }))
+
       return rm
+    }),
+
+  exerciseReport: protectedProcedure
+    .input(z.object({
+      teamId: z.string().uuid(),
+      athleteId: z.string(),
+      exerciseId: z.string().uuid(),
+    }))
+    .query(async ({ ctx, input }) => {
+      await assertMember(ctx.session.user.id, input.teamId)
+      const [report] = await db
+        .select({
+          content: exerciseProgressReport.content,
+          generatedAt: exerciseProgressReport.generatedAt,
+        })
+        .from(exerciseProgressReport)
+        .where(and(
+          eq(exerciseProgressReport.athleteId, input.athleteId),
+          eq(exerciseProgressReport.exerciseId, input.exerciseId),
+          eq(exerciseProgressReport.teamId, input.teamId),
+        ))
+        .limit(1)
+      return report ?? null
     }),
 
   athletes: protectedProcedure

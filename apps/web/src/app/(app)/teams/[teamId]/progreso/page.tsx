@@ -248,6 +248,10 @@ function ExerciseRmRow({
   const setManual = trpc.rms.setManual.useMutation({
     onSuccess: () => { setEditing(false); onSaved() },
   })
+  const { data: report, isLoading: reportLoading } = trpc.rms.exerciseReport.useQuery(
+    { teamId, athleteId, exerciseId: group.exerciseId },
+    { enabled: expanded },
+  )
 
   const currentRm = Number(group.current.rmLbs)
 
@@ -410,6 +414,25 @@ function ExerciseRmRow({
                 <span className="text-xs text-muted-foreground">manual</span>
               </div>
             </div>
+          </div>
+
+          {/* AI Progress Report */}
+          <div className="px-4 py-3">
+            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Análisis de progreso</p>
+            {reportLoading ? (
+              <p className="text-xs text-muted-foreground animate-pulse">Cargando análisis...</p>
+            ) : report ? (
+              <div>
+                <p className="text-sm leading-relaxed">{report.content}</p>
+                <p className="text-xs text-muted-foreground mt-1.5">
+                  Generado el {new Date(report.generatedAt).toLocaleDateString("es", { dateStyle: "medium" })}
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                El análisis se generará automáticamente al registrar o actualizar un PR.
+              </p>
+            )}
           </div>
 
           {/* Percentages */}

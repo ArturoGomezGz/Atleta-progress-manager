@@ -10,11 +10,12 @@
     "start": "tsx src/index.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.95.1",
     "@atleta/db": "workspace:*",
-    "drizzle-orm": "^0.41.0",
     "@fastify/cors": "^10.0.0",
     "@trpc/server": "^11.0.0",
     "better-auth": "^1.2.0",
+    "drizzle-orm": "^0.41.0",
     "fastify": "^5.0.0",
     "tsx": "^4.19.0",
     "zod": "^3.24.0"

@@ -1,5 +1,6 @@
 export * from "./auth"
 export * from "./exercises"
+export * from "./reports"
 export * from "./routines"
 export * from "./sessions"
 export * from "./teams"

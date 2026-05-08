@@ -16,6 +16,7 @@ import {
 import { TRPCError } from "@trpc/server"
 import { and, asc, desc, eq, gt, gte, inArray, lte } from "drizzle-orm"
 import { z } from "zod"
+import { triggerExerciseReport } from "../services/report-trigger"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
 
@@ -363,7 +364,9 @@ export const sessionsRouter = router({
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, session.teamId)
 
-      return db.transaction(async (tx) => {
+      const newRms: { athleteId: string; exerciseId: string; teamId: string; rmId: string }[] = []
+
+      const result = await db.transaction(async (tx) => {
         const [updated] = await tx
           .update(trainingSession)
           .set({ status: "completed" })
@@ -412,18 +415,30 @@ export const sessionsRouter = router({
             .limit(1)
 
           if (!current || rmLbs > Number(current.rmLbs)) {
-            await tx.insert(athleteExerciseRm).values({
+            const [inserted] = await tx.insert(athleteExerciseRm).values({
               athleteId,
               exerciseId,
               rmLbs: rmLbs.toFixed(2),
               source: "auto",
               sessionId: input.id,
-            })
+            }).returning()
+            newRms.push({ athleteId, exerciseId, teamId: session.teamId, rmId: inserted.id })
           }
         }
 
         return updated
       })
+
+      for (const params of newRms) {
+        void triggerExerciseReport({
+          athleteId: params.athleteId,
+          exerciseId: params.exerciseId,
+          teamId: params.teamId,
+          triggerRmId: params.rmId,
+        }).catch((err) => console.error("Report generation failed", { ...params, err }))
+      }
+
+      return result
     }),
 
   athleteRms: protectedProcedure
