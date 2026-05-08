@@ -137,4 +137,14 @@ export const routinesRouter = router({
       await assertCoach(ctx.session.user.id, r.teamId)
       await db.delete(routine).where(eq(routine.id, input.id))
     }),
+
+  rename: protectedProcedure
+    .input(z.object({ id: z.string().uuid(), name: z.string().min(1) }))
+    .mutation(async ({ ctx, input }) => {
+      const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
+      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, r.teamId)
+      const [updated] = await db.update(routine).set({ name: input.name }).where(eq(routine.id, input.id)).returning()
+      return updated
+    }),
 })

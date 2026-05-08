@@ -268,8 +268,19 @@ function AddExerciseForm({
   onCancel: () => void
   isPending: boolean
 }) {
+  const DEFAULT_SETS: DraftSet[] = [
+    { setNumber: 1, targetReps: "5", targetPercent: "80" },
+    { setNumber: 2, targetReps: "3", targetPercent: "90" },
+    { setNumber: 3, targetReps: "", targetPercent: "100" },
+  ]
+
   const [exerciseId, setExerciseId] = useState("")
-  const [sets, setSets] = useState<DraftSet[]>([{ setNumber: 1, targetReps: "", targetPercent: "" }])
+  const [sets, setSets] = useState<DraftSet[]>(DEFAULT_SETS)
+
+  function handleExerciseChange(id: string) {
+    setExerciseId(id)
+    setSets(DEFAULT_SETS)
+  }
 
   function addSet() {
     setSets((prev) => [...prev, { setNumber: prev.length + 1, targetReps: "", targetPercent: "" }])
@@ -311,7 +322,7 @@ function AddExerciseForm({
     <form onSubmit={handleSubmit} className="border rounded-lg">
       <div className="px-4 py-3 border-b bg-muted/10 space-y-2">
         <p className="text-sm font-medium">Agregar ejercicio</p>
-        <ExercisePicker exercises={exercises} value={exerciseId} onChange={setExerciseId} />
+        <ExercisePicker exercises={exercises} value={exerciseId} onChange={handleExerciseChange} />
       </div>
 
       <div className="divide-y">
