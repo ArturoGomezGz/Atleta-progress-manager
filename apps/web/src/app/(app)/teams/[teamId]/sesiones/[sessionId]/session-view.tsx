@@ -13,7 +13,7 @@ export function SessionView({ sessionId }: Props) {
   const [confirming, setConfirming] = useState<"complete" | "cancel" | null>(null)
   const router = useRouter()
 
-  const { data: session, refetch: refetchSession } = trpc.sessions.get.useQuery({ id: sessionId })
+  const { data: session, refetch: refetchSession } = trpc.sessions.get.useQuery({ id: sessionId }, { refetchInterval: 4000 })
   const completeSession = trpc.sessions.complete.useMutation({
     onSuccess: () => { setConfirming(null); if (session) router.push(`/teams/${session.teamId}/sesiones`) },
   })
@@ -171,9 +171,9 @@ type SetRecord = { id: string; setNumber: number; sessionSetTargetId: string | n
 
 function AthleteExercises({ sessionId, athleteId, exercises, isActive, onSessionUpdate }:
   { sessionId: string; athleteId: string; exercises: Exercise[]; isActive: boolean; onSessionUpdate: () => void }) {
-  const { data: sets, refetch } = trpc.sessions.athleteSets.useQuery({ sessionId, athleteId })
+  const { data: sets, refetch } = trpc.sessions.athleteSets.useQuery({ sessionId, athleteId }, { refetchInterval: isActive ? 4000 : false })
   const { data: athleteRms } = trpc.sessions.athleteRms.useQuery({ sessionId, athleteId })
-  const { data: cancelledExerciseIds, refetch: refetchCancelled } = trpc.sessions.athleteCancelledExercises.useQuery({ sessionId, athleteId })
+  const { data: cancelledExerciseIds, refetch: refetchCancelled } = trpc.sessions.athleteCancelledExercises.useQuery({ sessionId, athleteId }, { refetchInterval: isActive ? 4000 : false })
 
   function refetchAll() { refetch(); refetchCancelled() }
 
@@ -362,7 +362,7 @@ function SetActions({ set, onUpdate }: { set: SetRecord; onUpdate: () => void })
   if (editing) {
     return (
       <div className="flex items-center gap-2">
-        <input autoFocus type="number" inputMode="numeric" min={0} value={reps}
+        <input type="number" inputMode="numeric" min={0} value={reps}
           onChange={(e) => setReps(e.target.value)}
           className="w-14 h-9 border rounded-lg px-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring text-center" />
         <span className="text-xs text-muted-foreground">reps</span>
@@ -431,7 +431,7 @@ function RecordSetForm({ sessionId, athleteId, sessionExerciseId, sessionSetTarg
   return (
     <form onSubmit={handleSubmit} className="flex items-center gap-2">
       <div className="flex items-center gap-1.5 flex-1">
-        <input autoFocus type="number" inputMode="numeric" min={0} value={reps}
+        <input type="number" inputMode="numeric" min={0} value={reps}
           onChange={(e) => setReps(e.target.value)} placeholder="Reps"
           className="w-full min-w-0 h-11 border rounded-xl px-3 text-base bg-background focus:outline-none focus:ring-2 focus:ring-primary text-center font-medium" />
         <span className="text-xs text-muted-foreground shrink-0">reps</span>
