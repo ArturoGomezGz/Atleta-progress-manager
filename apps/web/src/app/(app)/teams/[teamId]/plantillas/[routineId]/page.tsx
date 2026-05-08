@@ -308,7 +308,7 @@ function AddExerciseForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="border rounded-lg overflow-hidden">
+    <form onSubmit={handleSubmit} className="border rounded-lg">
       <div className="px-4 py-3 border-b bg-muted/10 space-y-2">
         <p className="text-sm font-medium">Agregar ejercicio</p>
         <ExercisePicker exercises={exercises} value={exerciseId} onChange={setExerciseId} />
