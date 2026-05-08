@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { AlertTriangleIcon, BanIcon, CheckIcon, PencilIcon, PlusIcon, RotateCcwIcon, XIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 type Props = { sessionId: string }
 
@@ -409,6 +409,11 @@ function RecordSetForm({ sessionId, athleteId, sessionExerciseId, sessionSetTarg
     setNumber: number; defaultReps: string; defaultWeight: string; label: string; onSave: () => void; onCancel?: () => void }) {
   const [reps, setReps] = useState(defaultReps)
   const [weightLbs, setWeightLbs] = useState(defaultWeight)
+
+  // Sync calculated weight once RM data loads (async), but only if user hasn't typed anything
+  useEffect(() => {
+    if (defaultWeight && weightLbs === "") setWeightLbs(defaultWeight)
+  }, [defaultWeight])
 
   const recordSet = trpc.sessions.recordSet.useMutation({
     onSuccess: () => { onSave(); setReps(defaultReps); setWeightLbs(defaultWeight) },
