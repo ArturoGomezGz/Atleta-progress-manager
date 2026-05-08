@@ -90,7 +90,6 @@ function AthleteRms({ teamId, athleteId, isCoach }: { teamId: string; athleteId:
   return (
     <div className="space-y-2 max-w-2xl">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold">PRs registrados</h2>
         {isCoach && !addingManual && (
           <button
             onClick={() => setAddingManual(true)}
