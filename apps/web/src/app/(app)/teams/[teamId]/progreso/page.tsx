@@ -3,8 +3,8 @@
 import { useSession } from "@/lib/auth"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import { ChevronDownIcon, ChevronUpIcon, PencilIcon, PlusIcon, XIcon } from "lucide-react"
-import { use, useState } from "react"
+import { ChevronDownIcon, ChevronUpIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, XIcon } from "lucide-react"
+import { use, useEffect, useState } from "react"
 import {
   CartesianGrid,
   Line,
@@ -74,19 +74,23 @@ function CoachProgresoView({ teamId }: { teamId: string }) {
   )
 }
 
+type ReportStatus = { exerciseId: string; source: "ai" | "coach"; hasUnread: boolean }
+
 function AthleteRms({ teamId, athleteId, isCoach }: { teamId: string; athleteId: string; isCoach: boolean }) {
   const { data: rmGroups, refetch } = trpc.rms.listByAthlete.useQuery({ teamId, athleteId })
+  const { data: statuses, refetch: refetchStatuses } = trpc.rms.reportStatuses.useQuery({ teamId, athleteId })
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [addingManual, setAddingManual] = useState(false)
 
   if (!rmGroups) return <p className="text-sm text-muted-foreground">Cargando...</p>
 
   const existingExerciseIds = new Set(rmGroups.map((g) => g.exerciseId))
+  const statusMap = new Map<string, ReportStatus>(statuses?.map((s) => [s.exerciseId, s]))
 
   return (
     <div className="space-y-2 max-w-2xl">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="font-semibold">PRs registrados</h2>
+        {isCoach && <h2 className="font-semibold">PRs registrados</h2>}
         {isCoach && !addingManual && (
           <button
             onClick={() => setAddingManual(true)}
@@ -120,8 +124,10 @@ function AthleteRms({ teamId, athleteId, isCoach }: { teamId: string; athleteId:
           group={group}
           isCoach={isCoach}
           expanded={expandedId === group.exerciseId}
+          notification={statusMap.get(group.exerciseId)}
           onToggle={() => setExpandedId(expandedId === group.exerciseId ? null : group.exerciseId)}
           onSaved={refetch}
+          onSeenReport={refetchStatuses}
         />
       ))}
     </div>
@@ -232,28 +238,51 @@ function ExerciseRmRow({
   group,
   isCoach,
   expanded,
+  notification,
   onToggle,
   onSaved,
+  onSeenReport,
 }: {
   teamId: string
   athleteId: string
   group: RmGroup
   isCoach: boolean
   expanded: boolean
+  notification?: ReportStatus
   onToggle: () => void
   onSaved: () => void
+  onSeenReport: () => void
 }) {
   const [editing, setEditing] = useState(false)
   const [editValue, setEditValue] = useState("")
+  const [editingReport, setEditingReport] = useState(false)
+  const [reportEditValue, setReportEditValue] = useState("")
+
   const setManual = trpc.rms.setManual.useMutation({
     onSuccess: () => { setEditing(false); onSaved() },
   })
-  const { data: report, isLoading: reportLoading } = trpc.rms.exerciseReport.useQuery(
+  const updateReport = trpc.rms.updateReport.useMutation({
+    onSuccess: () => { setEditingReport(false); refetchReport() },
+  })
+  const markSeen = trpc.rms.markReportSeen.useMutation({
+    onSuccess: onSeenReport,
+  })
+
+  const { data: report, isLoading: reportLoading, refetch: refetchReport } = trpc.rms.exerciseReport.useQuery(
     { teamId, athleteId, exerciseId: group.exerciseId },
     { enabled: expanded },
   )
 
+  // Mark report as seen when athlete expands a row with unread content
+  useEffect(() => {
+    if (expanded && !isCoach && notification?.hasUnread) {
+      markSeen.mutate({ teamId, athleteId, exerciseId: group.exerciseId })
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [expanded])
+
   const currentRm = Number(group.current.rmLbs)
+  const showNotification = !isCoach && !!notification?.hasUnread
 
   // Chart data: history ordered chronologically (oldest → newest)
   const chartData = [...group.history]
@@ -270,10 +299,24 @@ function ExerciseRmRow({
     setManual.mutate({ teamId, athleteId, exerciseId: group.exerciseId, rmLbs: editValue })
   }
 
+  function handleReportEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!reportEditValue.trim()) return
+    updateReport.mutate({ teamId, athleteId, exerciseId: group.exerciseId, content: reportEditValue.trim() })
+  }
+
+  function startEditingReport() {
+    setReportEditValue(report?.content ?? "")
+    setEditingReport(true)
+  }
+
   return (
     <div className="border rounded-lg overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-muted/20">
+      {/* Header — whole row is the toggle */}
+      <div
+        className="flex items-center gap-3 px-4 py-3 bg-muted/20 cursor-pointer select-none"
+        onClick={!editing ? onToggle : undefined}
+      >
         <div className="flex-1 min-w-0">
           <p className="font-medium text-sm truncate">{group.exerciseName}</p>
           <p className="text-xs text-muted-foreground">
@@ -282,7 +325,7 @@ function ExerciseRmRow({
         </div>
 
         {isCoach && editing ? (
-          <form onSubmit={handleEdit} className="flex items-center gap-1.5">
+          <form onSubmit={handleEdit} className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             <input
               autoFocus
               type="number"
@@ -311,24 +354,38 @@ function ExerciseRmRow({
           </form>
         ) : (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-semibold tabular-nums">{group.current.rmLbs} lbs</span>
-            <span className={cn(
-              "text-xs px-1.5 py-0.5 rounded",
-              group.current.source === "auto" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700",
-            )}>
-              {group.current.source === "auto" ? "auto" : "manual"}
-            </span>
+            <div className="flex items-baseline gap-1">
+              <span className="text-xs text-muted-foreground">1RM</span>
+              <span className="text-sm font-semibold tabular-nums">{group.current.rmLbs} lbs</span>
+            </div>
             {isCoach && (
               <button
-                onClick={() => { setEditValue(""); setEditing(true) }}
+                onClick={(e) => { e.stopPropagation(); setEditValue(""); setEditing(true) }}
                 className="p-1 text-muted-foreground hover:text-foreground rounded"
               >
                 <PencilIcon className="w-3.5 h-3.5" />
               </button>
             )}
-            <button onClick={onToggle} className="p-1 text-muted-foreground hover:text-foreground rounded">
+
+            {/* Notification badge — athlete only, visual only (row click handles toggle) */}
+            {showNotification && (
+              <span
+                className={cn(
+                  "p-1",
+                  notification.source === "coach" ? "text-emerald-600" : "text-violet-500",
+                )}
+                title={notification.source === "coach" ? "Mensaje de tu entrenador" : "Análisis de progreso disponible"}
+              >
+                {notification.source === "coach"
+                  ? <MessageCircleIcon className="w-4 h-4" />
+                  : <SparklesIcon className="w-4 h-4" />
+                }
+              </span>
+            )}
+
+            <span className="p-1 text-muted-foreground">
               {expanded ? <ChevronUpIcon className="w-4 h-4" /> : <ChevronDownIcon className="w-4 h-4" />}
-            </button>
+            </span>
           </div>
         )}
       </div>
@@ -416,16 +473,69 @@ function ExerciseRmRow({
             </div>
           </div>
 
-          {/* AI Progress Report */}
+          {/* Progress Report */}
           <div className="px-4 py-3">
-            <p className="text-xs font-medium text-muted-foreground mb-2 uppercase tracking-wide">Análisis de progreso</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                Análisis de progreso
+              </p>
+              {isCoach && report && !editingReport && (
+                <button
+                  onClick={startEditingReport}
+                  className="p-1 text-muted-foreground hover:text-foreground rounded"
+                >
+                  <PencilIcon className="w-3 h-3" />
+                </button>
+              )}
+            </div>
+
             {reportLoading ? (
               <p className="text-xs text-muted-foreground animate-pulse">Cargando análisis...</p>
+            ) : editingReport ? (
+              <form onSubmit={handleReportEdit} className="space-y-2">
+                <textarea
+                  autoFocus
+                  value={reportEditValue}
+                  onChange={(e) => setReportEditValue(e.target.value)}
+                  rows={4}
+                  className="w-full border border-border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    type="submit"
+                    disabled={updateReport.isPending || !reportEditValue.trim()}
+                    className="text-xs px-3 py-1.5 rounded bg-primary text-primary-foreground disabled:opacity-50"
+                  >
+                    {updateReport.isPending ? "Guardando..." : "Guardar"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEditingReport(false)}
+                    className="text-xs px-3 py-1.5 rounded border text-muted-foreground hover:text-foreground"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </form>
             ) : report ? (
               <div>
+                {/* Source badge */}
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  {report.reportSource === "coach" ? (
+                    <MessageCircleIcon className="w-3 h-3 text-emerald-600" />
+                  ) : (
+                    <SparklesIcon className="w-3 h-3 text-violet-500" />
+                  )}
+                  <span className={cn(
+                    "text-xs font-medium",
+                    report.reportSource === "coach" ? "text-emerald-600" : "text-violet-500",
+                  )}>
+                    {report.reportSource === "coach" ? "Nota del entrenador" : "Asistente IA"}
+                  </span>
+                </div>
                 <p className="text-sm leading-relaxed">{report.content}</p>
                 <p className="text-xs text-muted-foreground mt-1.5">
-                  Generado el {new Date(report.generatedAt).toLocaleDateString("es", { dateStyle: "medium" })}
+                  {new Date(report.generatedAt).toLocaleDateString("es", { dateStyle: "medium" })}
                 </p>
               </div>
             ) : (
@@ -456,12 +566,7 @@ function ExerciseRmRow({
               {group.history.map((entry) => (
                 <div key={entry.id} className="flex items-center gap-3 text-xs">
                   <span className="tabular-nums font-medium">{entry.rmLbs} lbs</span>
-                  <span className={cn(
-                    "px-1.5 py-0.5 rounded",
-                    entry.source === "auto" ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700",
-                  )}>
-                    {entry.source}
-                  </span>
+                  <span className="font-bold">{entry.source}</span>
                   <span className="text-muted-foreground">
                     {new Date(entry.recordedAt).toLocaleDateString("es", { dateStyle: "medium" })}
                   </span>
