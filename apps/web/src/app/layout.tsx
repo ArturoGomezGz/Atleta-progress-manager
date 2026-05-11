@@ -1,7 +1,8 @@
+import { ThemeProvider } from "@/lib/theme-provider"
+import { TRPCProvider } from "@/lib/trpc/client"
 import type { Metadata } from "next"
 import { Barlow_Condensed, Inter } from "next/font/google"
 import "./globals.css"
-import { TRPCProvider } from "@/lib/trpc/client"
 
 const inter = Inter({
   subsets: ["latin"],
@@ -23,9 +24,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="es" className={`${inter.variable} ${barlowCondensed.variable}`}>
+    <html lang="es" className={`${inter.variable} ${barlowCondensed.variable}`} suppressHydrationWarning>
+      <head>
+        {/* Inline script: applies theme class before first paint to prevent flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var s=localStorage.getItem('theme');var d=s==='system'||!s;var dark=d?window.matchMedia('(prefers-color-scheme: dark)').matches:s==='dark';document.documentElement.classList.add(dark?'dark':'light')}catch(e){}})()`,
+          }}
+        />
+      </head>
       <body>
-        <TRPCProvider>{children}</TRPCProvider>
+        <TRPCProvider>
+          <ThemeProvider>{children}</ThemeProvider>
+        </TRPCProvider>
       </body>
     </html>
   )
