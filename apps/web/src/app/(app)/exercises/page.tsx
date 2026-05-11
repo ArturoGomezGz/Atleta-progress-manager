@@ -3,7 +3,7 @@
 import { trpc } from "@/lib/trpc/client"
 import { GlobeIcon, LockIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
 import { useSearchParams } from "next/navigation"
-import { useState } from "react"
+import { Suspense, useState } from "react"
 
 type Exercise = {
   id: string
@@ -34,6 +34,14 @@ const EMPTY_FORM = (teamId = ""): FormState => ({
 })
 
 export default function ExercisesPage() {
+  return (
+    <Suspense>
+      <ExercisesContent />
+    </Suspense>
+  )
+}
+
+function ExercisesContent() {
   const searchParams = useSearchParams()
   const selectedTeamId = searchParams.get("team")
 
