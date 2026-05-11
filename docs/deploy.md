@@ -59,11 +59,16 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 |---|---|
 | `DATABASE_URL` | Copiar del servicio PostgreSQL de Railway |
 | `BETTER_AUTH_SECRET` | String aleatorio seguro (mín. 32 caracteres) |
-| `BETTER_AUTH_URL` | URL pública de la API (ej. `https://atleta-api.railway.app`) |
+| `BETTER_AUTH_URL` | URL pública del **web** (ej. `https://atleta.vercel.app`) — ver nota abajo |
 | `WEB_URL` | URL pública del web (ej. `https://atleta.vercel.app`) |
 | `PORT` | `3001` |
+| `RESEND_API_KEY` | API key de Resend |
+| `FROM_EMAIL` | Dirección de envío verificada (ej. `noreply@tudominio.com`) |
+| `GOOGLE_CLIENT_ID` | Client ID del OAuth 2.0 de Google Cloud Console |
+| `GOOGLE_CLIENT_SECRET` | Client Secret del OAuth 2.0 de Google Cloud Console |
+| `ANTHROPIC_API_KEY` | API key de Anthropic |
 
-> Railway expone automáticamente la URL pública en la variable `RAILWAY_PUBLIC_DOMAIN`. La URL final de la API será `https://<RAILWAY_PUBLIC_DOMAIN>`.
+> **`BETTER_AUTH_URL` debe ser la URL del web, no de la API.** El web proxea `/api/auth/*` hacia la API. El estado OAuth se almacena en una cookie del dominio web — si el callback apunta directamente a la API (diferente dominio), la cookie no existe y Google devuelve `state_mismatch`. Apuntando al web, el callback pasa por el proxy y la cookie está disponible.
 
 ### Migraciones en producción
 
@@ -142,13 +147,87 @@ railway run --service api pnpm db:migrate
 
 ---
 
+---
+
+## Configuración de Resend (email transaccional)
+
+### Testing (sin dominio propio)
+- Usar `FROM_EMAIL=onboarding@resend.dev`
+- Solo puede enviar emails **al correo con el que te registraste en Resend**
+- Suficiente para probar el flujo completo
+
+### Producción (con dominio propio)
+1. Entrar a [resend.com](https://resend.com) → **Domains → Add Domain**
+2. Añadir los registros DNS que Resend indica (DKIM + SPF + DMARC) en tu proveedor de dominio
+3. Verificar el dominio (puede tardar hasta 48h, normalmente minutos)
+4. Crear una API key en **API Keys → Create API Key**
+5. Configurar `FROM_EMAIL=noreply@tudominio.com` y `RESEND_API_KEY=re_xxxx` en Railway
+
+---
+
+## Configuración de Google OAuth
+
+### Consideraciones por ambiente
+
+Google OAuth requiere un **redirect URI registrado exacto**. Hay dos estrategias:
+
+**Opción A — Un solo OAuth Client con múltiples URIs (más simple):**
+- En Google Cloud Console → el mismo client → añadir URIs de testing y producción
+- Las URIs deben apuntar al **web**, no a la API (ver nota en variables de entorno)
+
+**Opción B — Un OAuth Client por ambiente (más limpio):**
+- Client "atleta-testing" con la URI de testing
+- Client "atleta-production" con la URI de producción
+- Variables distintas por ambiente en Railway
+
+### URIs a registrar
+
+| Ambiente | URI de redirect |
+|---|---|
+| Local | `http://localhost:3000/api/auth/callback/google` |
+| Testing | `https://web-testing-a80a.up.railway.app/api/auth/callback/google` |
+| Producción | `https://<url-web-prod>/api/auth/callback/google` |
+
+> La URI **siempre apunta al web**, no al API. El web proxea el callback a la API internamente.
+
+### Modo test vs verificado
+
+- **Modo test** (por defecto): solo pueden autenticarse los emails añadidos como "usuarios de prueba" en la pantalla de consentimiento. Gratuito e indefinido.
+- **Modo producción**: cualquier cuenta de Google puede autenticarse. Requiere verificación de la app por Google (proceso de revisión). Necesario cuando se abre a usuarios reales.
+
+Para solicitar verificación: Google Cloud Console → OAuth consent screen → **Publicar app**.
+
+---
+
 ## Checklist de primer deploy a producción
 
+### Infraestructura
 - [ ] PostgreSQL creado en Railway y `DATABASE_URL` copiada
 - [ ] Servicio API creado en Railway apuntando al `Dockerfile`
-- [ ] Variables de entorno configuradas en Railway
-- [ ] Migraciones aplicadas en la BD de producción
+- [ ] Migraciones aplicadas en la BD de producción (`railway run pnpm db:migrate`)
 - [ ] Servicio Web creado en Vercel apuntando a `apps/web`
-- [ ] `NEXT_PUBLIC_API_URL` configurada en Vercel apuntando a la URL de Railway
-- [ ] `WEB_URL` en Railway actualizada con la URL de Vercel
-- [ ] Verificar login en la URL de producción
+
+### Variables de entorno
+- [ ] `DATABASE_URL` en Railway (API)
+- [ ] `BETTER_AUTH_SECRET` en Railway (API) — string aleatorio distinto al de testing
+- [ ] `BETTER_AUTH_URL` en Railway (API) — URL del **web** de producción
+- [ ] `WEB_URL` en Railway (API) — URL del web de producción
+- [ ] `NEXT_PUBLIC_API_URL` en Vercel (Web) — URL de la API en Railway
+- [ ] `ANTHROPIC_API_KEY` en Railway (API)
+
+### Resend
+- [ ] Dominio verificado en Resend
+- [ ] `RESEND_API_KEY` en Railway (API)
+- [ ] `FROM_EMAIL` en Railway (API) con dirección del dominio verificado
+
+### Google OAuth
+- [ ] URI de producción añadida en Google Cloud Console
+- [ ] `GOOGLE_CLIENT_ID` en Railway (API)
+- [ ] `GOOGLE_CLIENT_SECRET` en Railway (API)
+- [ ] App de Google publicada (si se abre a usuarios fuera de la lista de test)
+
+### Verificación final
+- [ ] Login con email + contraseña funciona
+- [ ] Email de verificación llega y el link redirige al dashboard
+- [ ] Login con Google funciona
+- [ ] Reset de contraseña funciona
