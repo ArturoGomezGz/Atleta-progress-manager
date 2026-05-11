@@ -38,11 +38,10 @@ function LoginForm() {
     const result = await signIn.email({ email, password })
 
     if (result.error) {
-      const msg = result.error.message ?? ""
-      if (msg.toLowerCase().includes("email") && msg.toLowerCase().includes("verif")) {
+      if (result.error.status === 403) {
         setUnverified(true)
       } else {
-        setError("Credenciales incorrectas")
+        setError("Correo o contraseña incorrectos")
       }
       setLoading(false)
       return

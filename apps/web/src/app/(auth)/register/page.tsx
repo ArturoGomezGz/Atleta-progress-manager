@@ -21,6 +21,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
+  const [emailInUse, setEmailInUse] = useState(false)
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
 
@@ -28,11 +29,16 @@ export default function RegisterPage() {
     e.preventDefault()
     setLoading(true)
     setError("")
+    setEmailInUse(false)
 
     const result = await signUp.email({ name, email, password })
 
     if (result.error) {
-      setError(result.error.message ?? "Error al crear la cuenta")
+      if (result.error.status === 422) {
+        setEmailInUse(true)
+      } else {
+        setError("Error al crear la cuenta. Inténtalo de nuevo.")
+      }
       setLoading(false)
       return
     }
@@ -105,6 +111,24 @@ export default function RegisterPage() {
           </div>
 
           {error && <p className="text-destructive text-sm">{error}</p>}
+
+          {emailInUse && (
+            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1">
+              <p className="text-sm text-foreground">Este correo ya tiene una cuenta.</p>
+              <div className="flex gap-3 text-sm">
+                <a href="/login" className="text-primary hover:brightness-110 font-medium">
+                  Iniciar sesión
+                </a>
+                <span className="text-muted-foreground">·</span>
+                <a
+                  href={`/verify-email?email=${encodeURIComponent(email)}`}
+                  className="text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Reenviar verificación
+                </a>
+              </div>
+            </div>
+          )}
 
           <button
             type="submit"
