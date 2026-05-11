@@ -49,7 +49,7 @@ export function AccountMenu() {
       {open && (
         <>
           <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-          <div className="absolute bottom-full left-0 right-0 mb-2 border border-border rounded-xl shadow-2xl bg-popover z-20 overflow-hidden">
+          <div className="absolute bottom-full left-0 mb-2 border border-border rounded-xl shadow-2xl bg-popover z-20 overflow-hidden min-w-full w-max max-w-xs">
             <div className="px-3 py-2.5 border-b border-border">
               <p className="text-xs text-muted-foreground truncate">{session.user.email}</p>
             </div>
