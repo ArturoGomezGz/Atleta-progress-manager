@@ -34,11 +34,19 @@ export const auth = betterAuth({
     sendOnSignUp: true,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
+      // Ensure the post-verification redirect goes to the web app, not the API
+      const verifyUrl = new URL(url)
+      const callback = verifyUrl.searchParams.get("callbackURL") ?? "/dashboard"
+      const absoluteCallback = callback.startsWith("http")
+        ? callback
+        : `${process.env.WEB_URL ?? "http://localhost:3000"}${callback}`
+      verifyUrl.searchParams.set("callbackURL", absoluteCallback)
+
       await resend.emails.send({
         from: FROM,
         to: user.email,
         subject: "Verifica tu cuenta",
-        html: `<p>Haz clic <a href="${url}">aquí</a> para verificar tu cuenta de Atleta CMW.</p>`,
+        html: `<p>Haz clic <a href="${verifyUrl.toString()}">aquí</a> para verificar tu cuenta de Atleta CMW.</p>`,
       })
     },
   },
