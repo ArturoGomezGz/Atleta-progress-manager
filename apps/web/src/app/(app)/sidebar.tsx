@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import { trpc } from "@/lib/trpc/client"
 import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, ListIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
@@ -7,15 +8,19 @@ import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { AccountMenu } from "./account-menu"
 
-const COACH_NAV = [
-  { key: "equipo",     label: "Equipo",      icon: UsersIcon },
-  { key: "plantillas", label: "Plantillas",  icon: ClipboardListIcon },
-  { key: "sesiones",   label: "Sesiones",    icon: DumbbellIcon },
-  { key: "progreso",   label: "Progreso",    icon: ChartBarIcon },
+type NavItem = { key: string; label: string; icon: React.ElementType; href?: string }
+
+const COACH_NAV: NavItem[] = [
+  { key: "equipo",      label: "Equipo",      icon: UsersIcon },
+  { key: "plantillas",  label: "Plantillas",  icon: ClipboardListIcon },
+  { key: "sesiones",    label: "Sesiones",    icon: DumbbellIcon },
+  { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
+  { key: "ejercicios",  label: "Ejercicios",  icon: ListIcon, href: "/exercises" },
 ]
 
-const ATHLETE_NAV = [
-  { key: "progreso", label: "Progreso", icon: ChartBarIcon },
+const ATHLETE_NAV: NavItem[] = [
+  { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
+  { key: "ejercicios",  label: "Ejercicios",  icon: ListIcon, href: "/exercises" },
 ]
 
 function extractTeamId(pathname: string): string | null {
@@ -171,10 +176,14 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 space-y-0.5">
-        {navItems.map(({ key, label, icon: Icon }) => {
-          const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${key}` : "#"
-          const isActive = currentSection === key
-          const disabled = !effectiveTeamId
+        {navItems.map(({ key, label, icon: Icon, href: staticHref }) => {
+          const href = staticHref
+            ? (effectiveTeamId ? `${staticHref}?team=${effectiveTeamId}` : staticHref)
+            : (effectiveTeamId ? `/teams/${effectiveTeamId}/${key}` : "#")
+          const isActive = staticHref
+            ? pathname.startsWith(staticHref)
+            : currentSection === key
+          const disabled = !effectiveTeamId && !staticHref
           return (
             <Link
               key={key}
@@ -196,23 +205,6 @@ export function Sidebar() {
             </Link>
           )
         })}
-
-        <div className="pt-1 mt-1 border-t border-border/50">
-          <Link
-            href="/exercises"
-            className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer
-              ${pathname === "/exercises"
-                ? "bg-primary/10 text-primary font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"}
-            `}
-          >
-            {pathname === "/exercises" && (
-              <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
-            )}
-            <ListIcon className="w-4 h-4 shrink-0" />
-            Mis ejercicios
-          </Link>
-        </div>
       </nav>
 
       {/* Account */}

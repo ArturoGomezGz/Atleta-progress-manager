@@ -153,4 +153,36 @@ export const exercisesRouter = router({
       )
       .orderBy(asc(exercise.name))
   }),
+
+  listAllOwned: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+
+    const allTeams = await db
+      .select({ teamId: teamMember.teamId, role: teamMember.role })
+      .from(teamMember)
+      .where(eq(teamMember.userId, userId))
+
+    const allTeamIds = allTeams.map((t) => t.teamId)
+    const coachTeamIds = new Set(
+      allTeams.filter((t) => t.role === "coach").map((t) => t.teamId),
+    )
+
+    const exercises = await db
+      .select()
+      .from(exercise)
+      .where(
+        or(
+          eq(exercise.ownerUserId, userId),
+          ...(allTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, allTeamIds)] : []),
+        ),
+      )
+      .orderBy(asc(exercise.name))
+
+    return exercises.map((ex) => ({
+      ...ex,
+      editable:
+        ex.ownerUserId === userId ||
+        (ex.ownerTeamId !== null && coachTeamIds.has(ex.ownerTeamId)),
+    }))
+  }),
 })

@@ -2,6 +2,7 @@
 
 import { trpc } from "@/lib/trpc/client"
 import { GlobeIcon, LockIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
+import { useSearchParams } from "next/navigation"
 import { useState } from "react"
 
 type Exercise = {
@@ -11,6 +12,7 @@ type Exercise = {
   isPublic: boolean
   ownerUserId: string | null
   ownerTeamId: string | null
+  editable: boolean
   createdAt: string
 }
 
@@ -32,7 +34,10 @@ const EMPTY_FORM = (teamId = ""): FormState => ({
 })
 
 export default function ExercisesPage() {
-  const { data: exercises, refetch } = trpc.exercises.listOwned.useQuery()
+  const searchParams = useSearchParams()
+  const selectedTeamId = searchParams.get("team")
+
+  const { data: exercises, refetch } = trpc.exercises.listAllOwned.useQuery()
   const { data: teams } = trpc.teams.list.useQuery()
   const [form, setForm] = useState<FormState | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
@@ -50,10 +55,17 @@ export default function ExercisesPage() {
   })
 
   const personal = exercises?.filter((ex) => ex.ownerUserId !== null) ?? []
-  const teamGroups = coachTeams.map((t) => ({
-    team: t.team,
-    exercises: exercises?.filter((ex) => ex.ownerTeamId === t.team.id) ?? [],
-  }))
+
+  const selectedTeam = teams?.find((t) => t.team.id === selectedTeamId)
+  const selectedTeamExercises = exercises?.filter((ex) => ex.ownerTeamId === selectedTeamId) ?? []
+
+  const otherTeamGroups = (teams ?? [])
+    .filter((t) => t.team.id !== selectedTeamId)
+    .map((t) => ({
+      team: t.team,
+      exercises: exercises?.filter((ex) => ex.ownerTeamId === t.team.id) ?? [],
+    }))
+    .filter((g) => g.exercises.length > 0)
 
   function openCreate(ownerType: "user" | "team", teamId = "") {
     setForm({ ...EMPTY_FORM(teamId), ownerType })
@@ -96,7 +108,7 @@ export default function ExercisesPage() {
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Mis ejercicios</h1>
+        <h1 className="text-xl font-semibold">Ejercicios</h1>
         {!form && (
           <button
             onClick={() => openCreate("user")}
@@ -215,8 +227,22 @@ export default function ExercisesPage() {
         isDeleting={deleteMutation.isPending}
       />
 
-      {/* ── Per-team ── */}
-      {teamGroups.map(({ team, exercises: teamExercises }) => (
+      {/* ── Selected team ── */}
+      {selectedTeam && (
+        <Section
+          title={selectedTeam.team.name}
+          exercises={selectedTeamExercises}
+          onEdit={openEdit}
+          onDelete={setDeleteConfirm}
+          deleteConfirm={deleteConfirm}
+          onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
+          onDeleteCancel={() => setDeleteConfirm(null)}
+          isDeleting={deleteMutation.isPending}
+        />
+      )}
+
+      {/* ── Rest of teams ── */}
+      {otherTeamGroups.map(({ team, exercises: teamExercises }) => (
         <Section
           key={team.id}
           title={team.name}
@@ -254,66 +280,65 @@ function Section({
   onDeleteCancel: () => void
   isDeleting: boolean
 }) {
+  if (exercises.length === 0) return null
+
   return (
     <div className="space-y-2">
       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
-
-      {exercises.length === 0 ? (
-        <p className="text-sm text-muted-foreground text-center py-6 border rounded-lg border-dashed">
-          Sin ejercicios aún.
-        </p>
-      ) : (
-        <div className="space-y-1.5">
-          {exercises.map((ex) =>
-            deleteConfirm === ex.id ? (
-              <div key={ex.id} className="flex items-center justify-between border rounded-lg px-4 py-3 bg-destructive/5 border-destructive/30">
-                <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{ex.name}</span>?</p>
-                <div className="flex gap-2">
-                  <button
-                    onClick={onDeleteCancel}
-                    className="text-xs px-2.5 py-1 border rounded"
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    onClick={() => onDeleteConfirm(ex.id)}
-                    disabled={isDeleting}
-                    className="text-xs px-2.5 py-1 bg-destructive text-destructive-foreground rounded disabled:opacity-50"
-                  >
-                    Eliminar
-                  </button>
-                </div>
+      <div className="space-y-1.5">
+        {exercises.map((ex) =>
+          deleteConfirm === ex.id ? (
+            <div key={ex.id} className="flex items-center justify-between border rounded-lg px-4 py-3 bg-destructive/5 border-destructive/30">
+              <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{ex.name}</span>?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={onDeleteCancel}
+                  className="text-xs px-2.5 py-1 border rounded"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => onDeleteConfirm(ex.id)}
+                  disabled={isDeleting}
+                  className="text-xs px-2.5 py-1 bg-destructive text-destructive-foreground rounded disabled:opacity-50"
+                >
+                  Eliminar
+                </button>
               </div>
-            ) : (
-              <div key={ex.id} className="flex items-center gap-3 border rounded-lg px-4 py-3 hover:bg-muted/20 transition-colors">
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">{ex.name}</p>
-                  {ex.description && (
-                    <p className="text-xs text-muted-foreground truncate mt-0.5">{ex.description}</p>
-                  )}
-                </div>
-                {ex.isPublic ? (
-                  <GlobeIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
-                ) : (
-                  <LockIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            </div>
+          ) : (
+            <div key={ex.id} className="flex items-center gap-3 border rounded-lg px-4 py-3 hover:bg-muted/20 transition-colors">
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">{ex.name}</p>
+                {ex.description && (
+                  <p className="text-xs text-muted-foreground truncate mt-0.5">{ex.description}</p>
                 )}
-                <button
-                  onClick={() => onEdit(ex)}
-                  className="p-1 text-muted-foreground hover:text-foreground rounded"
-                >
-                  <PencilIcon className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => onDelete(ex.id)}
-                  className="p-1 text-muted-foreground hover:text-destructive rounded"
-                >
-                  <Trash2Icon className="w-3.5 h-3.5" />
-                </button>
               </div>
-            ),
-          )}
-        </div>
-      )}
+              {ex.isPublic ? (
+                <GlobeIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              ) : (
+                <LockIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              )}
+              {ex.editable && (
+                <>
+                  <button
+                    onClick={() => onEdit(ex)}
+                    className="p-1 text-muted-foreground hover:text-foreground rounded"
+                  >
+                    <PencilIcon className="w-3.5 h-3.5" />
+                  </button>
+                  <button
+                    onClick={() => onDelete(ex.id)}
+                    className="p-1 text-muted-foreground hover:text-destructive rounded"
+                  >
+                    <Trash2Icon className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
+          ),
+        )}
+      </div>
     </div>
   )
 }
