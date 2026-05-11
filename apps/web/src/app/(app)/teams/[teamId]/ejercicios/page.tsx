@@ -2,8 +2,8 @@
 
 import { trpc } from "@/lib/trpc/client"
 import { GlobeIcon, LockIcon, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react"
-import { useSearchParams } from "next/navigation"
-import { Suspense, useState } from "react"
+import { useParams } from "next/navigation"
+import { useState } from "react"
 
 type Exercise = {
   id: string
@@ -33,17 +33,8 @@ const EMPTY_FORM = (teamId = ""): FormState => ({
   teamId,
 })
 
-export default function ExercisesPage() {
-  return (
-    <Suspense>
-      <ExercisesContent />
-    </Suspense>
-  )
-}
-
-function ExercisesContent() {
-  const searchParams = useSearchParams()
-  const selectedTeamId = searchParams.get("team")
+export default function EjerciciosPage() {
+  const { teamId } = useParams<{ teamId: string }>()
 
   const { data: exercises, refetch } = trpc.exercises.listAllOwned.useQuery()
   const { data: teams } = trpc.teams.list.useQuery()
@@ -64,19 +55,19 @@ function ExercisesContent() {
 
   const personal = exercises?.filter((ex) => ex.ownerUserId !== null) ?? []
 
-  const selectedTeam = teams?.find((t) => t.team.id === selectedTeamId)
-  const selectedTeamExercises = exercises?.filter((ex) => ex.ownerTeamId === selectedTeamId) ?? []
+  const selectedTeam = teams?.find((t) => t.team.id === teamId)
+  const selectedTeamExercises = exercises?.filter((ex) => ex.ownerTeamId === teamId) ?? []
 
   const otherTeamGroups = (teams ?? [])
-    .filter((t) => t.team.id !== selectedTeamId)
+    .filter((t) => t.team.id !== teamId)
     .map((t) => ({
       team: t.team,
       exercises: exercises?.filter((ex) => ex.ownerTeamId === t.team.id) ?? [],
     }))
     .filter((g) => g.exercises.length > 0)
 
-  function openCreate(ownerType: "user" | "team", teamId = "") {
-    setForm({ ...EMPTY_FORM(teamId), ownerType })
+  function openCreate(ownerType: "user" | "team", tid = "") {
+    setForm({ ...EMPTY_FORM(tid), ownerType })
   }
 
   function openEdit(ex: Exercise) {
@@ -151,7 +142,6 @@ function ExercisesContent() {
             />
           </div>
 
-          {/* Owner selector — only for create */}
           {!form.id && coachTeams.length > 0 && (
             <div className="flex gap-2">
               <button
@@ -267,8 +257,6 @@ function ExercisesContent() {
   )
 }
 
-// ─── Section ─────────────────────────────────────────────────────────────────
-
 function Section({
   title,
   exercises,
@@ -299,10 +287,7 @@ function Section({
             <div key={ex.id} className="flex items-center justify-between border rounded-lg px-4 py-3 bg-destructive/5 border-destructive/30">
               <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{ex.name}</span>?</p>
               <div className="flex gap-2">
-                <button
-                  onClick={onDeleteCancel}
-                  className="text-xs px-2.5 py-1 border rounded"
-                >
+                <button onClick={onDeleteCancel} className="text-xs px-2.5 py-1 border rounded">
                   Cancelar
                 </button>
                 <button
@@ -329,16 +314,10 @@ function Section({
               )}
               {ex.editable && (
                 <>
-                  <button
-                    onClick={() => onEdit(ex)}
-                    className="p-1 text-muted-foreground hover:text-foreground rounded"
-                  >
+                  <button onClick={() => onEdit(ex)} className="p-1 text-muted-foreground hover:text-foreground rounded">
                     <PencilIcon className="w-3.5 h-3.5" />
                   </button>
-                  <button
-                    onClick={() => onDelete(ex.id)}
-                    className="p-1 text-muted-foreground hover:text-destructive rounded"
-                  >
+                  <button onClick={() => onDelete(ex.id)} className="p-1 text-muted-foreground hover:text-destructive rounded">
                     <Trash2Icon className="w-3.5 h-3.5" />
                   </button>
                 </>

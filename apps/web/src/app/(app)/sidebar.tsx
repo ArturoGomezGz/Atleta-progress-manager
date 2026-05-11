@@ -15,12 +15,12 @@ const COACH_NAV: NavItem[] = [
   { key: "plantillas",  label: "Plantillas",  icon: ClipboardListIcon },
   { key: "sesiones",    label: "Sesiones",    icon: DumbbellIcon },
   { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
-  { key: "ejercicios",  label: "Ejercicios",  icon: ListIcon, href: "/exercises" },
+  { key: "ejercicios",  label: "Ejercicios",  icon: ListIcon },
 ]
 
 const ATHLETE_NAV: NavItem[] = [
   { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
-  { key: "ejercicios",  label: "Ejercicios",  icon: ListIcon, href: "/exercises" },
+  { key: "ejercicios",  label: "Ejercicios",  icon: ListIcon },
 ]
 
 function extractTeamId(pathname: string): string | null {
@@ -176,14 +176,10 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 space-y-0.5">
-        {navItems.map(({ key, label, icon: Icon, href: staticHref }) => {
-          const href = staticHref
-            ? (effectiveTeamId ? `${staticHref}?team=${effectiveTeamId}` : staticHref)
-            : (effectiveTeamId ? `/teams/${effectiveTeamId}/${key}` : "#")
-          const isActive = staticHref
-            ? pathname.startsWith(staticHref)
-            : currentSection === key
-          const disabled = !effectiveTeamId && !staticHref
+        {navItems.map(({ key, label, icon: Icon }) => {
+          const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${key}` : "#"
+          const isActive = currentSection === key
+          const disabled = !effectiveTeamId
           return (
             <Link
               key={key}
