@@ -28,7 +28,7 @@ type FormState = {
 const EMPTY_FORM = (teamId = ""): FormState => ({
   name: "",
   description: "",
-  isPublic: false,
+  isPublic: true,
   ownerType: "user",
   teamId,
 })
@@ -183,16 +183,35 @@ export default function EjerciciosPage() {
             </select>
           )}
 
-          <label className="flex items-center gap-2 text-sm cursor-pointer select-none">
-            <input
-              type="checkbox"
-              checked={form.isPublic}
-              onChange={(e) => setForm((f) => f && { ...f, isPublic: e.target.checked })}
-              className="rounded"
-            />
-            <GlobeIcon className="w-3.5 h-3.5 text-muted-foreground" />
-            Público (visible en otros equipos)
-          </label>
+          <div className="space-y-1.5">
+            <p className="text-xs text-muted-foreground">Visibilidad</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setForm((f) => f && { ...f, isPublic: true })}
+                className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded border transition-colors cursor-pointer ${
+                  form.isPublic
+                    ? "bg-primary/10 border-primary text-primary font-medium"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <GlobeIcon className="w-3.5 h-3.5" />
+                Público
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((f) => f && { ...f, isPublic: false })}
+                className={`flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded border transition-colors cursor-pointer ${
+                  !form.isPublic
+                    ? "bg-muted/60 border-border text-foreground font-medium"
+                    : "border-border text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <LockIcon className="w-3.5 h-3.5" />
+                Privado
+              </button>
+            </div>
+          </div>
 
           <div className="flex gap-2 justify-end pt-1">
             <button
