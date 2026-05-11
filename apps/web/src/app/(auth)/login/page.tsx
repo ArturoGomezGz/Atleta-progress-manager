@@ -27,7 +27,6 @@ function LoginForm() {
   const [resendSent, setResendSent] = useState(false)
 
   const redirectTo = searchParams.get("redirect") ?? "/dashboard"
-  const passwordReset = searchParams.get("reset") === "1"
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -70,12 +69,6 @@ function LoginForm() {
           </h1>
           <p className="text-muted-foreground text-sm mt-1">Inicia sesión para continuar</p>
         </div>
-
-        {passwordReset && (
-          <p className="text-sm text-primary bg-primary/10 rounded-lg px-3 py-2">
-            Contraseña restablecida. Ya puedes iniciar sesión.
-          </p>
-        )}
 
         <button
           type="button"

@@ -30,7 +30,7 @@ function ResetPasswordForm() {
       return
     }
 
-    router.push("/login?reset=1")
+    router.push("/dashboard")
   }
 
   if (!token) {
