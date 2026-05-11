@@ -4,3 +4,10 @@ node_modules
 dist
 .next
 .turbo
+
+# Claude Code — local/generated, not project-owned
+.claude/settings.local.json
+.claude/skills/
+
+# TypeScript build cache
+apps/web/tsconfig.tsbuildinfo
