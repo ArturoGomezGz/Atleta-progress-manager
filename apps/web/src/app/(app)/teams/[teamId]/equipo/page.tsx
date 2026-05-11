@@ -267,14 +267,14 @@ function MembersSection({
 
 const ROLE_STYLES = {
   coach: {
-    card: "border-violet-800/60 bg-violet-950/50",
-    avatar: "bg-violet-600 text-white",
-    badge: "bg-violet-900/50 text-violet-300 border-violet-700/60",
+    card: "border-primary/25 bg-primary/5",
+    avatar: "bg-primary/20 text-primary",
+    badge: "bg-primary/10 text-primary border-primary/25",
     icon: <ShieldCheckIcon className="w-3 h-3" />,
     label: "Entrenador",
   },
   athlete: {
-    card: "border-border bg-background",
+    card: "border-border bg-card",
     avatar: "bg-muted text-muted-foreground",
     badge: "bg-muted text-muted-foreground border-border",
     icon: <DumbbellIcon className="w-3 h-3" />,
