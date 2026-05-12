@@ -7,13 +7,14 @@ import { Suspense, useState } from "react"
 function VerifyEmailContent() {
   const searchParams = useSearchParams()
   const email = searchParams.get("email") ?? ""
+  const redirectTo = searchParams.get("redirect") ?? "/dashboard"
   const [sent, setSent] = useState(false)
   const [loading, setLoading] = useState(false)
 
   async function handleResend() {
     setLoading(true)
     setSent(false)
-    await authClient.sendVerificationEmail({ email, callbackURL: "/dashboard" })
+    await authClient.sendVerificationEmail({ email, callbackURL: redirectTo })
     setLoading(false)
     setSent(true)
   }

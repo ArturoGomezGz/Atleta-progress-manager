@@ -1,8 +1,8 @@
 "use client"
 
 import { signIn, signUp } from "@/lib/auth"
-import { useRouter } from "next/navigation"
-import { useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useState } from "react"
 
 function GoogleIcon() {
   return (
@@ -15,8 +15,11 @@ function GoogleIcon() {
   )
 }
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect") ?? "/dashboard"
+
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -31,7 +34,7 @@ export default function RegisterPage() {
     setError("")
     setEmailInUse(false)
 
-    const result = await signUp.email({ name, email, password })
+    const result = await signUp.email({ name, email, password, callbackURL: redirectTo })
 
     if (result.error) {
       if (result.error.status === 422) {
@@ -43,12 +46,14 @@ export default function RegisterPage() {
       return
     }
 
-    router.push(`/verify-email?email=${encodeURIComponent(email)}`)
+    const verifyParams = new URLSearchParams({ email })
+    if (redirectTo !== "/dashboard") verifyParams.set("redirect", redirectTo)
+    router.push(`/verify-email?${verifyParams.toString()}`)
   }
 
   async function handleGoogle() {
     setGoogleLoading(true)
-    await signIn.social({ provider: "google", callbackURL: "/dashboard" })
+    await signIn.social({ provider: "google", callbackURL: redirectTo })
   }
 
   return (
@@ -147,5 +152,13 @@ export default function RegisterPage() {
         </p>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterForm />
+    </Suspense>
   )
 }

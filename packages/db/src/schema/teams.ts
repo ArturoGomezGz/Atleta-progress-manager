@@ -20,3 +20,16 @@ export const teamMember = pgTable("team_member", {
   role: teamRoleEnum("role").notNull(),
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
 })
+
+export const teamInvite = pgTable("team_invite", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  teamId: uuid("team_id")
+    .notNull()
+    .references(() => team.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => user.id, { onDelete: "cascade" }),
+  expiresAt: timestamp("expires_at").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})

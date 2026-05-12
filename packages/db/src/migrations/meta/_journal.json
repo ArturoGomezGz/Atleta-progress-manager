@@ -43,6 +43,13 @@
       "when": 1778220000000,
       "tag": "0005_exercise_ownership",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1778562314258,
+      "tag": "0006_fixed_madelyne_pryor",
+      "breakpoints": true
     }
   ]
 }

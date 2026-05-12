@@ -143,7 +143,10 @@ function LoginForm() {
 
         <p className="text-center text-sm text-muted-foreground">
           ¿No tienes cuenta?{" "}
-          <a href="/register" className="text-primary hover:brightness-110 font-medium">
+          <a
+            href={`/register${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`}
+            className="text-primary hover:brightness-110 font-medium"
+          >
             Regístrate
           </a>
         </p>

@@ -1,27 +1,18 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { DumbbellIcon, PlusIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react"
+import { CheckIcon, ClipboardIcon, DumbbellIcon, LinkIcon, RefreshCwIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react"
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 
 export default function EquipoPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = use(params)
   const router = useRouter()
-
-  const [newMemberEmail, setNewMemberEmail] = useState("")
-  const [newMemberRole, setNewMemberRole] = useState<"coach" | "athlete">("athlete")
-  const [addMemberError, setAddMemberError] = useState("")
-  const [addingMember, setAddingMember] = useState(false)
   const [deleteDialog, setDeleteDialog] = useState<null | "confirm" | "warn">(null)
 
   const { data: teams } = trpc.teams.list.useQuery()
   const { data: members, refetch: refetchMembers } = trpc.teams.members.useQuery({ teamId })
 
-  const addMember = trpc.teams.addMemberByEmail.useMutation({
-    onSuccess: () => { refetchMembers(); setAddingMember(false); setNewMemberEmail(""); setAddMemberError("") },
-    onError: (err) => setAddMemberError(err.message),
-  })
   const updateRole = trpc.teams.updateMemberRole.useMutation({ onSuccess: refetchMembers })
   const removeMember = trpc.teams.removeMember.useMutation({ onSuccess: refetchMembers })
   const deleteTeam = trpc.teams.deleteTeam.useMutation({
@@ -36,13 +27,6 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
     setDeleteDialog(otherMembersCount > 0 ? "warn" : "confirm")
   }
 
-  async function handleAddMember(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newMemberEmail.trim()) return
-    setAddMemberError("")
-    addMember.mutate({ teamId, email: newMemberEmail.trim(), role: newMemberRole })
-  }
-
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
       <h1 className="text-xl font-semibold">Equipo</h1>
@@ -51,19 +35,11 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
         teamId={teamId}
         isCoach={!!isCoach}
         members={members ?? []}
-        addingMember={addingMember}
-        setAddingMember={setAddingMember}
-        newMemberEmail={newMemberEmail}
-        setNewMemberEmail={setNewMemberEmail}
-        newMemberRole={newMemberRole}
-        setNewMemberRole={setNewMemberRole}
-        addMemberError={addMemberError}
-        setAddMemberError={setAddMemberError}
-        onAddMember={handleAddMember}
-        addMemberPending={addMember.isPending}
         onUpdateRole={(userId, role) => updateRole.mutateAsync({ teamId, userId, role })}
         onRemove={(userId) => removeMember.mutateAsync({ teamId, userId })}
       />
+
+      {isCoach && <InviteSection teamId={teamId} />}
 
       {isCoach && (
         <div className="pt-4 border-t border-border">
@@ -117,32 +93,96 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
   )
 }
 
+// ─── Invite section ───────────────────────────────────────────────────────────
+
+function InviteSection({ teamId }: { teamId: string }) {
+  const [token, setToken] = useState<string | null>(null)
+  const [expiresAt, setExpiresAt] = useState<Date | null>(null)
+  const [copied, setCopied] = useState(false)
+
+  const generate = trpc.teams.generateInviteLink.useMutation({
+    onSuccess: (data) => {
+      setToken(data.token)
+      setExpiresAt(new Date(data.expiresAt))
+      setCopied(false)
+    },
+  })
+
+  const inviteUrl = token ? `${window.location.origin}/join/${token}` : null
+
+  async function handleCopy() {
+    if (!inviteUrl) return
+    await navigator.clipboard.writeText(inviteUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  return (
+    <div className="border border-border rounded-lg p-4 space-y-3">
+      <div className="flex items-center gap-2">
+        <LinkIcon className="w-4 h-4 text-muted-foreground" />
+        <p className="text-sm font-medium">Enlace de invitación</p>
+      </div>
+
+      {!inviteUrl ? (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            Genera un enlace para que los atletas puedan unirse al equipo. El enlace es válido por 7 días.
+          </p>
+          <button
+            onClick={() => generate.mutate({ teamId })}
+            disabled={generate.isPending}
+            className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:brightness-110 disabled:opacity-50 transition-all"
+          >
+            <LinkIcon className="w-3.5 h-3.5" />
+            {generate.isPending ? "Generando..." : "Generar enlace"}
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={inviteUrl}
+              className="flex-1 text-xs border border-border rounded-md px-3 py-2 bg-muted text-muted-foreground font-mono truncate"
+            />
+            <button
+              onClick={handleCopy}
+              className="shrink-0 flex items-center gap-1.5 text-sm border border-border px-3 py-2 rounded-md hover:bg-muted transition-colors"
+            >
+              {copied ? <CheckIcon className="w-3.5 h-3.5 text-primary" /> : <ClipboardIcon className="w-3.5 h-3.5" />}
+              {copied ? "Copiado" : "Copiar"}
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Expira el {expiresAt?.toLocaleDateString("es", { day: "numeric", month: "long" })}
+            </p>
+            <button
+              onClick={() => generate.mutate({ teamId })}
+              disabled={generate.isPending}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <RefreshCwIcon className="w-3 h-3" />
+              Regenerar
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Members section ──────────────────────────────────────────────────────────
 
 type Member = { id: string; userId: string; role: string; userName: string; userEmail: string }
 
 function MembersSection({
-  teamId, isCoach, members,
-  addingMember, setAddingMember,
-  newMemberEmail, setNewMemberEmail,
-  newMemberRole, setNewMemberRole,
-  addMemberError, setAddMemberError,
-  onAddMember, addMemberPending,
-  onUpdateRole, onRemove,
+  teamId, isCoach, members, onUpdateRole, onRemove,
 }: {
   teamId: string
   isCoach: boolean
   members: Member[]
-  addingMember: boolean
-  setAddingMember: (v: boolean) => void
-  newMemberEmail: string
-  setNewMemberEmail: (v: string) => void
-  newMemberRole: "coach" | "athlete"
-  setNewMemberRole: (v: "coach" | "athlete") => void
-  addMemberError: string
-  setAddMemberError: (v: string) => void
-  onAddMember: (e: React.FormEvent) => void
-  addMemberPending: boolean
   onUpdateRole: (userId: string, role: "coach" | "athlete") => Promise<unknown>
   onRemove: (userId: string) => Promise<unknown>
 }) {
@@ -184,57 +224,11 @@ function MembersSection({
               </button>
             </>
           ) : (
-            <>
-              <button
-                onClick={() => setAddingMember(true)}
-                className="flex items-center gap-1 text-sm border px-3 py-1.5 rounded-md hover:bg-muted"
-              >
-                <PlusIcon className="w-4 h-4" />
-                Agregar miembro
-              </button>
-              <button onClick={startEditing} className="text-sm border px-3 py-1.5 rounded-md hover:bg-muted">
-                Editar
-              </button>
-            </>
+            <button onClick={startEditing} className="text-sm border px-3 py-1.5 rounded-md hover:bg-muted">
+              Editar miembros
+            </button>
           )}
         </div>
-      )}
-
-      {addingMember && !editing && (
-        <form onSubmit={onAddMember} className="border rounded-lg p-4 space-y-3">
-          <p className="text-sm font-medium">Agregar miembro</p>
-          <div className="flex gap-2 items-end flex-wrap">
-            <div className="flex-1 space-y-1 min-w-48">
-              <label className="text-xs text-muted-foreground">Correo electrónico</label>
-              <input
-                autoFocus
-                type="email"
-                value={newMemberEmail}
-                onChange={(e) => setNewMemberEmail(e.target.value)}
-                placeholder="usuario@ejemplo.com"
-                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Rol</label>
-              <select
-                value={newMemberRole}
-                onChange={(e) => setNewMemberRole(e.target.value as "coach" | "athlete")}
-                className="border rounded-md px-3 py-2 text-sm bg-background"
-              >
-                <option value="athlete">Atleta</option>
-                <option value="coach">Entrenador</option>
-              </select>
-            </div>
-            <button type="submit" disabled={addMemberPending} className="bg-primary text-primary-foreground px-4 py-2 text-sm rounded-md disabled:opacity-50">
-              {addMemberPending ? "Agregando..." : "Agregar"}
-            </button>
-            <button type="button" onClick={() => { setAddingMember(false); setAddMemberError("") }} className="px-4 py-2 text-sm rounded-md border">
-              Cancelar
-            </button>
-          </div>
-          {addMemberError && <p className="text-destructive text-xs">{addMemberError}</p>}
-        </form>
       )}
 
       <div className="space-y-2">
