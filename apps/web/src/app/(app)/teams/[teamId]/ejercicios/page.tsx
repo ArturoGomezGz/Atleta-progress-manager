@@ -42,6 +42,7 @@ export default function EjerciciosPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
   const coachTeams = teams?.filter((t) => t.role === "coach") ?? []
+  const isAthlete = teams?.find((t) => t.team.id === teamId)?.role === "athlete"
 
   const createMutation = trpc.exercises.create.useMutation({
     onSuccess: () => { refetch(); setForm(null) },
@@ -108,7 +109,7 @@ export default function EjerciciosPage() {
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Ejercicios</h1>
-        {!form && (
+        {!form && !isAthlete && (
           <button
             onClick={() => openCreate("user")}
             className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md"

@@ -7,6 +7,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { AccountMenu } from "./account-menu"
+import { cn } from "@/lib/utils"
 
 type NavItem = { key: string; label: string; icon: React.ElementType; href?: string }
 
@@ -84,10 +85,26 @@ export function Sidebar() {
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
-    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso") {
+    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios") {
       router.replace(`/teams/${currentTeamId}/progreso`)
     }
   }, [isAthlete, currentTeamId, currentSection, router])
+
+  // Double-click tracking for athlete "ejercicios" nav item
+  const ejerciciosClickTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [ejerciciosClickCount, setEjerciciosClickCount] = useState(0)
+
+  function handleEjerciciosNavClick() {
+    const next = ejerciciosClickCount + 1
+    setEjerciciosClickCount(next)
+    if (ejerciciosClickTimer.current) clearTimeout(ejerciciosClickTimer.current)
+    if (next >= 2) {
+      setEjerciciosClickCount(0)
+      if (effectiveTeamId) router.push(`/teams/${effectiveTeamId}/ejercicios`)
+    } else {
+      ejerciciosClickTimer.current = setTimeout(() => setEjerciciosClickCount(0), 350)
+    }
+  }
 
   async function handleCreateTeam(e: React.FormEvent) {
     e.preventDefault()
@@ -185,23 +202,42 @@ export function Sidebar() {
           const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${key}` : "#"
           const isActive = currentSection === key
           const disabled = !effectiveTeamId
+          // Athletes must double-click to enter ejercicios
+          const isDoubleClickOnly = isAthlete && key === "ejercicios"
+
+          const itemClass = cn(
+            "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+            isActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+            disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
+          )
+
+          if (isDoubleClickOnly) {
+            return (
+              <button
+                key={key}
+                onClick={handleEjerciciosNavClick}
+                title="Doble clic para abrir"
+                className={cn(itemClass, "w-full text-left", ejerciciosClickCount > 0 && "bg-muted/40 text-foreground")}
+              >
+                {isActive && <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />}
+                <Icon className={cn("w-4 h-4 shrink-0", isActive && "text-primary")} />
+                {label}
+              </button>
+            )
+          }
+
           return (
             <Link
               key={key}
               href={href}
               aria-disabled={disabled}
               onClick={(e) => disabled && e.preventDefault()}
-              className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
-                ${isActive
-                  ? "bg-primary/10 text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"}
-                ${disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer"}
-              `}
+              className={itemClass}
             >
               {isActive && (
                 <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
               )}
-              <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
+              <Icon className={cn("w-4 h-4 shrink-0", isActive && "text-primary")} />
               {label}
             </Link>
           )
