@@ -156,16 +156,13 @@ export const teamsRouter = router({
     .input(z.object({
       teamId: z.string().uuid(),
       logoDataUrl: z.string().optional(),
-      brandPalette: z.object({
-        dark: z.object({ primary: z.string(), secondary: z.string(), accent: z.string(), background: z.string(), foreground: z.string(), card: z.string(), border: z.string() }),
-        light: z.object({ primary: z.string(), secondary: z.string(), accent: z.string(), background: z.string(), foreground: z.string(), card: z.string(), border: z.string() }),
-      }).optional(),
+      brandColor: z.string().regex(/^#[0-9a-f]{6}$/i).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
       await db.update(team).set({
         ...(input.logoDataUrl !== undefined && { logoDataUrl: input.logoDataUrl }),
-        ...(input.brandPalette !== undefined && { brandPalette: input.brandPalette }),
+        ...(input.brandColor !== undefined && { brandPalette: { color: input.brandColor } }),
       }).where(eq(team.id, input.teamId))
     }),
 })

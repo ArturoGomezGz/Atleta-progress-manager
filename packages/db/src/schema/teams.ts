@@ -3,20 +3,7 @@ import { user } from "./auth"
 
 export const teamRoleEnum = pgEnum("team_role", ["coach", "athlete"])
 
-export type BrandPaletteMode = {
-  primary: string
-  secondary: string
-  accent: string
-  background: string
-  foreground: string
-  card: string
-  border: string
-}
-
-export type BrandPalette = {
-  dark: BrandPaletteMode
-  light: BrandPaletteMode
-}
+export type BrandColor = { color: string }
 
 export const team = pgTable("team", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -24,7 +11,7 @@ export const team = pgTable("team", {
   maxAthletes: integer("max_athletes").notNull().default(1),
   maxCoaches: integer("max_coaches").notNull().default(1),
   logoDataUrl: text("logo_data_url"),
-  brandPalette: jsonb("brand_palette").$type<BrandPalette>(),
+  brandPalette: jsonb("brand_palette").$type<BrandColor>(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 
