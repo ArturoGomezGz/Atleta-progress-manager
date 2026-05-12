@@ -34,13 +34,17 @@ function extractSection(pathname: string): string | null {
   return m ? m[1] : null
 }
 
-function TeamInitials({ name }: { name: string }) {
-  const initials = name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
+function TeamLogo({ name, logoDataUrl }: { name: string; logoDataUrl?: string | null }) {
+  if (logoDataUrl) {
+    return (
+      <img
+        src={logoDataUrl}
+        alt={name}
+        className="w-6 h-6 rounded-md object-contain bg-primary/10 p-0.5 shrink-0"
+      />
+    )
+  }
+  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
   return (
     <div className="w-6 h-6 rounded-md bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0 tracking-wide">
       {initials}
@@ -120,7 +124,7 @@ export function Sidebar() {
           onClick={() => setTeamPickerOpen((v) => !v)}
           className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/60 text-sm font-medium transition-colors text-foreground cursor-pointer"
         >
-          {currentTeam && <TeamInitials name={currentTeam.team.name} />}
+          {currentTeam && <TeamLogo name={currentTeam.team.name} logoDataUrl={currentTeam.team.logoDataUrl} />}
           <span className="truncate flex-1 text-left">
             {currentTeam ? currentTeam.team.name : "Seleccionar equipo"}
           </span>
@@ -139,7 +143,7 @@ export function Sidebar() {
                     team.id === currentTeamId ? "font-medium text-primary" : "text-foreground"
                   }`}
                 >
-                  <TeamInitials name={team.name} />
+                  <TeamLogo name={team.name} logoDataUrl={team.logoDataUrl} />
                   {team.name}
                 </button>
               ))}
@@ -222,9 +226,17 @@ export function Sidebar() {
           <MenuIcon className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="w-6 h-6 rounded-md bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
-            <DumbbellIcon className="w-3 h-3 text-primary" />
-          </div>
+          {currentTeam?.team.logoDataUrl ? (
+            <img
+              src={currentTeam.team.logoDataUrl}
+              alt={currentTeam.team.name}
+              className="w-6 h-6 rounded-md object-contain shrink-0"
+            />
+          ) : (
+            <div className="w-6 h-6 rounded-md bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
+              <DumbbellIcon className="w-3 h-3 text-primary" />
+            </div>
+          )}
           <span
             className="font-bold text-sm tracking-widest uppercase text-foreground truncate"
             style={{ fontFamily: "var(--font-barlow-condensed)" }}

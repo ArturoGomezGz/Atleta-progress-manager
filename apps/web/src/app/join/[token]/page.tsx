@@ -44,6 +44,7 @@ export default function JoinPage() {
         <WelcomeState
           teamName={join.data.teamName}
           teamId={join.data.teamId}
+          logoDataUrl={join.data.logoDataUrl}
           alreadyMember={join.data.alreadyMember}
         />
       </Screen>
@@ -85,7 +86,14 @@ function ErrorState({ message }: { message: string }) {
   )
 }
 
-function WelcomeState({ teamName, teamId, alreadyMember }: { teamName: string; teamId: string; alreadyMember: boolean }) {
+function WelcomeState({
+  teamName, teamId, logoDataUrl, alreadyMember,
+}: {
+  teamName: string
+  teamId: string
+  logoDataUrl: string | null
+  alreadyMember: boolean
+}) {
   const router = useRouter()
 
   useEffect(() => {
@@ -96,7 +104,13 @@ function WelcomeState({ teamName, teamId, alreadyMember }: { teamName: string; t
   return (
     <div className="border border-border rounded-xl p-8 space-y-5 bg-card text-center">
       <div className="flex justify-center">
-        {alreadyMember ? (
+        {logoDataUrl ? (
+          <img
+            src={logoDataUrl}
+            alt={teamName}
+            className="w-16 h-16 rounded-2xl object-contain border border-border p-2"
+          />
+        ) : alreadyMember ? (
           <DumbbellIcon className="w-12 h-12 text-primary" />
         ) : (
           <CheckCircleIcon className="w-12 h-12 text-primary" />

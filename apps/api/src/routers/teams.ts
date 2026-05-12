@@ -92,7 +92,7 @@ export const teamsRouter = router({
       await db.delete(teamInvite).where(eq(teamInvite.id, invite.id))
 
       const [teamData] = await db.select().from(team).where(eq(team.id, invite.teamId)).limit(1)
-      return { teamId: invite.teamId, teamName: teamData.name, alreadyMember: !!existing }
+      return { teamId: invite.teamId, teamName: teamData.name, logoDataUrl: teamData.logoDataUrl ?? null, alreadyMember: !!existing }
     }),
 
   updateMemberRole: protectedProcedure
