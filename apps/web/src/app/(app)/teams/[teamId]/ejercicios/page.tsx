@@ -22,16 +22,14 @@ type FormState = {
   description: string
   isPublic: boolean
   ownerType: "user" | "team"
-  teamId: string
 }
 
-const EMPTY_FORM = (teamId = ""): FormState => ({
+const EMPTY_FORM: FormState = {
   name: "",
   description: "",
   isPublic: true,
   ownerType: "user",
-  teamId,
-})
+}
 
 export default function EjerciciosPage() {
   const { teamId } = useParams<{ teamId: string }>()
@@ -41,8 +39,8 @@ export default function EjerciciosPage() {
   const [form, setForm] = useState<FormState | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
 
-  const coachTeams = teams?.filter((t) => t.role === "coach") ?? []
-  const isAthlete = teams?.find((t) => t.team.id === teamId)?.role === "athlete"
+  const currentTeam = teams?.find((t) => t.team.id === teamId)
+  const isCoach = currentTeam?.role === "coach"
 
   const createMutation = trpc.exercises.create.useMutation({
     onSuccess: () => { refetch(); setForm(null) },
@@ -55,21 +53,7 @@ export default function EjerciciosPage() {
   })
 
   const personal = exercises?.filter((ex) => ex.ownerUserId !== null) ?? []
-
-  const selectedTeam = teams?.find((t) => t.team.id === teamId)
-  const selectedTeamExercises = exercises?.filter((ex) => ex.ownerTeamId === teamId) ?? []
-
-  const otherTeamGroups = (teams ?? [])
-    .filter((t) => t.team.id !== teamId)
-    .map((t) => ({
-      team: t.team,
-      exercises: exercises?.filter((ex) => ex.ownerTeamId === t.team.id) ?? [],
-    }))
-    .filter((g) => g.exercises.length > 0)
-
-  function openCreate(ownerType: "user" | "team", tid = "") {
-    setForm({ ...EMPTY_FORM(tid), ownerType })
-  }
+  const teamExercises = exercises?.filter((ex) => ex.ownerTeamId === teamId) ?? []
 
   function openEdit(ex: Exercise) {
     setForm({
@@ -78,7 +62,6 @@ export default function EjerciciosPage() {
       description: ex.description ?? "",
       isPublic: ex.isPublic,
       ownerType: ex.ownerTeamId ? "team" : "user",
-      teamId: ex.ownerTeamId ?? "",
     })
   }
 
@@ -98,7 +81,7 @@ export default function EjerciciosPage() {
         description: form.description || undefined,
         isPublic: form.isPublic,
         ownerType: form.ownerType,
-        teamId: form.ownerType === "team" ? form.teamId : undefined,
+        teamId: form.ownerType === "team" ? teamId : undefined,
       })
     }
   }
@@ -109,10 +92,10 @@ export default function EjerciciosPage() {
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Ejercicios</h1>
-        {!form && !isAthlete && (
+        {!form && (
           <button
-            onClick={() => openCreate("user")}
-            className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md"
+            onClick={() => setForm({ ...EMPTY_FORM })}
+            className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md cursor-pointer"
           >
             <PlusIcon className="w-4 h-4" />
             Nuevo ejercicio
@@ -143,12 +126,13 @@ export default function EjerciciosPage() {
             />
           </div>
 
-          {!form.id && coachTeams.length > 0 && (
+          {/* Owner type toggle — coaches only, not when editing */}
+          {!form.id && isCoach && (
             <div className="flex gap-2">
               <button
                 type="button"
                 onClick={() => setForm((f) => f && { ...f, ownerType: "user" })}
-                className={`flex-1 text-xs py-1.5 rounded border transition-colors ${
+                className={`flex-1 text-xs py-1.5 rounded border transition-colors cursor-pointer ${
                   form.ownerType === "user"
                     ? "bg-primary/10 border-primary text-primary font-medium"
                     : "border-border text-muted-foreground hover:text-foreground"
@@ -158,10 +142,8 @@ export default function EjerciciosPage() {
               </button>
               <button
                 type="button"
-                onClick={() =>
-                  setForm((f) => f && { ...f, ownerType: "team", teamId: coachTeams[0]?.team.id ?? "" })
-                }
-                className={`flex-1 text-xs py-1.5 rounded border transition-colors ${
+                onClick={() => setForm((f) => f && { ...f, ownerType: "team" })}
+                className={`flex-1 text-xs py-1.5 rounded border transition-colors cursor-pointer ${
                   form.ownerType === "team"
                     ? "bg-primary/10 border-primary text-primary font-medium"
                     : "border-border text-muted-foreground hover:text-foreground"
@@ -172,16 +154,12 @@ export default function EjerciciosPage() {
             </div>
           )}
 
-          {!form.id && form.ownerType === "team" && coachTeams.length > 1 && (
-            <select
-              value={form.teamId}
-              onChange={(e) => setForm((f) => f && { ...f, teamId: e.target.value })}
-              className="w-full border rounded-md px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              {coachTeams.map(({ team }) => (
-                <option key={team.id} value={team.id}>{team.name}</option>
-              ))}
-            </select>
+          {/* Team name display when "Del equipo" is selected */}
+          {!form.id && isCoach && form.ownerType === "team" && currentTeam && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/30 border border-border">
+              <span className="text-xs text-muted-foreground">Equipo:</span>
+              <span className="text-xs font-medium">{currentTeam.team.name}</span>
+            </div>
           )}
 
           <div className="space-y-1.5">
@@ -218,14 +196,14 @@ export default function EjerciciosPage() {
             <button
               type="button"
               onClick={() => setForm(null)}
-              className="text-xs px-3 py-1.5 border rounded"
+              className="text-xs px-3 py-1.5 border rounded cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={isPending || !form.name.trim()}
-              className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded disabled:opacity-50"
+              className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded disabled:opacity-50 cursor-pointer"
             >
               {isPending ? "Guardando..." : form.id ? "Guardar" : "Crear"}
             </button>
@@ -245,25 +223,10 @@ export default function EjerciciosPage() {
         isDeleting={deleteMutation.isPending}
       />
 
-      {/* ── Selected team ── */}
-      {selectedTeam && (
+      {/* ── Current team ── */}
+      {currentTeam && (
         <Section
-          title={selectedTeam.team.name}
-          exercises={selectedTeamExercises}
-          onEdit={openEdit}
-          onDelete={setDeleteConfirm}
-          deleteConfirm={deleteConfirm}
-          onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
-          onDeleteCancel={() => setDeleteConfirm(null)}
-          isDeleting={deleteMutation.isPending}
-        />
-      )}
-
-      {/* ── Rest of teams ── */}
-      {otherTeamGroups.map(({ team, exercises: teamExercises }) => (
-        <Section
-          key={team.id}
-          title={team.name}
+          title={currentTeam.team.name}
           exercises={teamExercises}
           onEdit={openEdit}
           onDelete={setDeleteConfirm}
@@ -272,7 +235,7 @@ export default function EjerciciosPage() {
           onDeleteCancel={() => setDeleteConfirm(null)}
           isDeleting={deleteMutation.isPending}
         />
-      ))}
+      )}
     </div>
   )
 }
@@ -307,13 +270,13 @@ function Section({
             <div key={ex.id} className="flex items-center justify-between border rounded-lg px-4 py-3 bg-destructive/5 border-destructive/30">
               <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{ex.name}</span>?</p>
               <div className="flex gap-2">
-                <button onClick={onDeleteCancel} className="text-xs px-2.5 py-1 border rounded">
+                <button onClick={onDeleteCancel} className="text-xs px-2.5 py-1 border rounded cursor-pointer">
                   Cancelar
                 </button>
                 <button
                   onClick={() => onDeleteConfirm(ex.id)}
                   disabled={isDeleting}
-                  className="text-xs px-2.5 py-1 bg-destructive text-destructive-foreground rounded disabled:opacity-50"
+                  className="text-xs px-2.5 py-1 bg-destructive text-destructive-foreground rounded disabled:opacity-50 cursor-pointer"
                 >
                   Eliminar
                 </button>
@@ -334,10 +297,10 @@ function Section({
               )}
               {ex.editable && (
                 <>
-                  <button onClick={() => onEdit(ex)} className="p-1 text-muted-foreground hover:text-foreground rounded">
+                  <button onClick={() => onEdit(ex)} className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer">
                     <PencilIcon className="w-3.5 h-3.5" />
                   </button>
-                  <button onClick={() => onDelete(ex.id)} className="p-1 text-muted-foreground hover:text-destructive rounded">
+                  <button onClick={() => onDelete(ex.id)} className="p-1 text-muted-foreground hover:text-destructive rounded cursor-pointer">
                     <Trash2Icon className="w-3.5 h-3.5" />
                   </button>
                 </>
