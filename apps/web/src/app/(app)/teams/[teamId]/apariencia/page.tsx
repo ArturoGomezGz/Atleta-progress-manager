@@ -402,9 +402,6 @@ function PaletteEditor({
           label={label}
           darkHex={palette.dark[key]}
           lightHex={palette.light[key]}
-          darkBg={palette.dark.background}
-          lightBg={palette.light.background}
-          showContrast={key !== "background"}
           readOnly={readOnly}
           onDarkChange={(v) => update("dark", key, v)}
           onLightChange={(v) => update("light", key, v)}
@@ -417,14 +414,11 @@ function PaletteEditor({
 // ─── Token row ────────────────────────────────────────────────────────────────
 
 function TokenRow({
-  label, darkHex, lightHex, darkBg, lightBg, showContrast, readOnly, onDarkChange, onLightChange,
+  label, darkHex, lightHex, readOnly, onDarkChange, onLightChange,
 }: {
   label: string
   darkHex: string
   lightHex: string
-  darkBg: string
-  lightBg: string
-  showContrast: boolean
   readOnly?: boolean
   onDarkChange: (v: string) => void
   onLightChange: (v: string) => void
@@ -432,20 +426,8 @@ function TokenRow({
   return (
     <div className="flex items-center gap-2 py-2.5 border-b border-border/40 last:border-0">
       <span className="text-xs text-muted-foreground w-28 shrink-0">{label}</span>
-      <Swatch
-        hex={darkHex}
-        bg={darkBg}
-        contrast={showContrast ? contrastRatio(darkHex, darkBg) : null}
-        readOnly={readOnly}
-        onChange={onDarkChange}
-      />
-      <Swatch
-        hex={lightHex}
-        bg={lightBg}
-        contrast={showContrast ? contrastRatio(lightHex, lightBg) : null}
-        readOnly={readOnly}
-        onChange={onLightChange}
-      />
+      <Swatch hex={darkHex} readOnly={readOnly} onChange={onDarkChange} />
+      <Swatch hex={lightHex} readOnly={readOnly} onChange={onLightChange} />
     </div>
   )
 }
@@ -453,11 +435,9 @@ function TokenRow({
 // ─── Swatch ───────────────────────────────────────────────────────────────────
 
 function Swatch({
-  hex, bg, contrast, readOnly, onChange,
+  hex, readOnly, onChange,
 }: {
   hex: string
-  bg: string
-  contrast: number | null
   readOnly?: boolean
   onChange: (v: string) => void
 }) {
@@ -465,10 +445,6 @@ function Swatch({
   const [localHex, setLocalHex] = useState(hex)
 
   useEffect(() => { setLocalHex(hex) }, [hex])
-
-  const isOk = contrast === null || contrast >= 4.5
-  const isWarn = contrast !== null && contrast < 4.5 && contrast >= 3
-  const isFail = contrast !== null && contrast < 3
 
   return (
     <div className="flex-1 flex items-center gap-2 min-w-0">
@@ -506,16 +482,6 @@ function Swatch({
         maxLength={7}
       />
 
-      {contrast !== null && (
-        <span
-          className={`text-[10px] font-medium tabular-nums shrink-0 ${
-            isOk ? "text-primary/50" : isWarn ? "text-amber-400/80" : isFail ? "text-destructive/70" : ""
-          }`}
-          title={`Contraste ${contrast.toFixed(1)}:1 ${isOk ? "(WCAG AA ✓)" : isWarn ? "(WCAG AA parcial)" : "(contraste bajo)"}`}
-        >
-          {contrast.toFixed(1)}
-        </span>
-      )}
     </div>
   )
 }
