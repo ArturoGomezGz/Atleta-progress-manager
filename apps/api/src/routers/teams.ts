@@ -139,6 +139,35 @@ export const teamsRouter = router({
         .innerJoin(user, eq(teamMember.userId, user.id))
         .where(eq(teamMember.teamId, input.teamId))
     }),
+
+  getBranding: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertMember(ctx.session.user.id, input.teamId)
+      const [data] = await db
+        .select({ logoDataUrl: team.logoDataUrl, brandPalette: team.brandPalette })
+        .from(team)
+        .where(eq(team.id, input.teamId))
+        .limit(1)
+      return data ?? null
+    }),
+
+  updateBranding: protectedProcedure
+    .input(z.object({
+      teamId: z.string().uuid(),
+      logoDataUrl: z.string().optional(),
+      brandPalette: z.object({
+        dark: z.object({ primary: z.string(), secondary: z.string(), accent: z.string(), background: z.string(), foreground: z.string(), card: z.string(), border: z.string() }),
+        light: z.object({ primary: z.string(), secondary: z.string(), accent: z.string(), background: z.string(), foreground: z.string(), card: z.string(), border: z.string() }),
+      }).optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      await db.update(team).set({
+        ...(input.logoDataUrl !== undefined && { logoDataUrl: input.logoDataUrl }),
+        ...(input.brandPalette !== undefined && { brandPalette: input.brandPalette }),
+      }).where(eq(team.id, input.teamId))
+    }),
 })
 
 // Helpers — shared with other routers via re-export

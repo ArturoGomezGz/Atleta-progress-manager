@@ -57,6 +57,13 @@
       "when": 1778564284000,
       "tag": "0007_melodic_red_wolf",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1778566926423,
+      "tag": "0008_cultured_abomination",
+      "breakpoints": true
     }
   ]
 }

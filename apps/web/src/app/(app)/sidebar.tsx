@@ -2,7 +2,7 @@
 
 import React from "react"
 import { trpc } from "@/lib/trpc/client"
-import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, ListIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
+import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, ListIcon, MenuIcon, PaletteIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -12,6 +12,7 @@ type NavItem = { key: string; label: string; icon: React.ElementType; href?: str
 
 const COACH_NAV: NavItem[] = [
   { key: "equipo",      label: "Equipo",      icon: UsersIcon },
+  { key: "apariencia",  label: "Apariencia",  icon: PaletteIcon },
   { key: "plantillas",  label: "Plantillas",  icon: ClipboardListIcon },
   { key: "sesiones",    label: "Sesiones",    icon: DumbbellIcon },
   { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
