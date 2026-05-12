@@ -1,4 +1,5 @@
 export * from "./auth"
+export * from "./exercise-catalogs"
 export * from "./exercises"
 export * from "./reports"
 export * from "./routines"

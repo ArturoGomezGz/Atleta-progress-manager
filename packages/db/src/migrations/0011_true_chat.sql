@@ -1,0 +1,1 @@
+ALTER TABLE "muscle" ADD CONSTRAINT "muscle_name_group_unique" UNIQUE("name","muscle_group_id");
