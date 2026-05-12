@@ -238,7 +238,7 @@ export default function AparienciaPage({ params }: { params: Promise<{ teamId: s
                 <img
                   src={logo}
                   alt="Logo del equipo"
-                  className="w-12 h-12 rounded-xl object-contain bg-card border border-border p-1.5 shrink-0"
+                  className="w-12 h-12 rounded-xl object-cover overflow-hidden shrink-0"
                 />
               )}
               {isProcessing ? (
@@ -544,8 +544,7 @@ function LivePreview({
                 <img
                   src={logo}
                   alt=""
-                  className="w-7 h-7 rounded-lg object-contain shrink-0"
-                  style={{ backgroundColor: p.background, padding: 2 }}
+                  className="w-7 h-7 rounded-lg object-cover overflow-hidden shrink-0"
                 />
               ) : (
                 <div

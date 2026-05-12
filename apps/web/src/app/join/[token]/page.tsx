@@ -108,7 +108,7 @@ function WelcomeState({
           <img
             src={logoDataUrl}
             alt={teamName}
-            className="w-16 h-16 rounded-2xl object-contain border border-border p-2"
+            className="w-16 h-16 rounded-2xl object-cover overflow-hidden"
           />
         ) : alreadyMember ? (
           <DumbbellIcon className="w-12 h-12 text-primary" />

@@ -40,7 +40,7 @@ function TeamLogo({ name, logoDataUrl }: { name: string; logoDataUrl?: string | 
       <img
         src={logoDataUrl}
         alt={name}
-        className="w-6 h-6 rounded-md object-contain bg-primary/10 p-0.5 shrink-0"
+        className="w-6 h-6 rounded-md object-cover overflow-hidden shrink-0"
       />
     )
   }
@@ -230,7 +230,7 @@ export function Sidebar() {
             <img
               src={currentTeam.team.logoDataUrl}
               alt={currentTeam.team.name}
-              className="w-6 h-6 rounded-md object-contain shrink-0"
+              className="w-6 h-6 rounded-md object-cover overflow-hidden shrink-0"
             />
           ) : (
             <div className="w-6 h-6 rounded-md bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
