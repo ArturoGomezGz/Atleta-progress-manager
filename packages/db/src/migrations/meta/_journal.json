@@ -64,6 +64,27 @@
       "when": 1778566926423,
       "tag": "0008_cultured_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778628100821,
+      "tag": "0009_complex_saracen",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778628425227,
+      "tag": "0010_wakeful_spot",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1778628506052,
+      "tag": "0011_true_chat",
+      "breakpoints": true
     }
   ]
 }
