@@ -1,7 +1,17 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { CheckIcon, ClipboardIcon, DumbbellIcon, LinkIcon, RefreshCwIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react"
+import {
+  AlertTriangleIcon,
+  CheckIcon,
+  ClipboardIcon,
+  DumbbellIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  ShieldCheckIcon,
+  Trash2Icon,
+  XIcon,
+} from "lucide-react"
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 
@@ -15,36 +25,56 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
 
   const updateRole = trpc.teams.updateMemberRole.useMutation({ onSuccess: refetchMembers })
   const removeMember = trpc.teams.removeMember.useMutation({ onSuccess: refetchMembers })
-  const deleteTeam = trpc.teams.deleteTeam.useMutation({
-    onSuccess: () => router.push("/dashboard"),
-  })
+  const deleteTeam = trpc.teams.deleteTeam.useMutation({ onSuccess: () => router.push("/dashboard") })
 
   const currentTeam = teams?.find((t) => t.team.id === teamId)
   const isCoach = currentTeam?.role === "coach"
+  const maxAthletes = currentTeam?.team.maxAthletes ?? 1
+  const maxCoaches = currentTeam?.team.maxCoaches ?? 1
+  const athleteCount = members?.filter((m) => m.role === "athlete").length ?? 0
+  const coachCount = members?.filter((m) => m.role === "coach").length ?? 0
+  const overLimit = athleteCount > maxAthletes || coachCount > maxCoaches
+  const atCapacity = athleteCount >= maxAthletes
   const otherMembersCount = (members?.length ?? 1) - 1
-
-  function handleDeleteClick() {
-    setDeleteDialog(otherMembersCount > 0 ? "warn" : "confirm")
-  }
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
       <h1 className="text-xl font-semibold">Equipo</h1>
 
+      {isCoach && overLimit && (
+        <div className="flex items-start gap-3 border border-amber-500/40 bg-amber-500/8 rounded-lg px-4 py-3 text-sm">
+          <AlertTriangleIcon className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">Este equipo supera el límite de tu plan actual</p>
+            <p className="text-muted-foreground">
+              No puedes invitar más miembros hasta ajustar el tamaño del equipo.{" "}
+              <a href="mailto:soporte@atletacmw.com" className="text-primary hover:brightness-110 font-medium">
+                Contacta a soporte
+              </a>{" "}
+              para ampliar tu plan.
+            </p>
+          </div>
+        </div>
+      )}
+
       <MembersSection
         teamId={teamId}
         isCoach={!!isCoach}
         members={members ?? []}
+        maxAthletes={maxAthletes}
+        maxCoaches={maxCoaches}
+        athleteCount={athleteCount}
+        coachCount={coachCount}
+        atCapacity={atCapacity}
+        overLimit={overLimit}
         onUpdateRole={(userId, role) => updateRole.mutateAsync({ teamId, userId, role })}
         onRemove={(userId) => removeMember.mutateAsync({ teamId, userId })}
       />
 
-      {isCoach && <InviteSection teamId={teamId} />}
-
       {isCoach && (
         <div className="pt-4 border-t border-border">
           <button
-            onClick={handleDeleteClick}
+            onClick={() => setDeleteDialog(otherMembersCount > 0 ? "warn" : "confirm")}
             className="flex items-center gap-2 text-sm text-destructive border border-destructive/40 px-3 py-1.5 rounded-md hover:bg-destructive/10 transition-colors"
           >
             <Trash2Icon className="w-4 h-4" />
@@ -93,100 +123,30 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
   )
 }
 
-// ─── Invite section ───────────────────────────────────────────────────────────
-
-function InviteSection({ teamId }: { teamId: string }) {
-  const [token, setToken] = useState<string | null>(null)
-  const [expiresAt, setExpiresAt] = useState<Date | null>(null)
-  const [copied, setCopied] = useState(false)
-
-  const generate = trpc.teams.generateInviteLink.useMutation({
-    onSuccess: (data) => {
-      setToken(data.token)
-      setExpiresAt(new Date(data.expiresAt))
-      setCopied(false)
-    },
-  })
-
-  const inviteUrl = token ? `${window.location.origin}/join/${token}` : null
-
-  async function handleCopy() {
-    if (!inviteUrl) return
-    await navigator.clipboard.writeText(inviteUrl)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
-  }
-
-  return (
-    <div className="border border-border rounded-lg p-4 space-y-3">
-      <div className="flex items-center gap-2">
-        <LinkIcon className="w-4 h-4 text-muted-foreground" />
-        <p className="text-sm font-medium">Enlace de invitación</p>
-      </div>
-
-      {!inviteUrl ? (
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            Genera un enlace para que los atletas puedan unirse al equipo. El enlace es válido por 7 días.
-          </p>
-          <button
-            onClick={() => generate.mutate({ teamId })}
-            disabled={generate.isPending}
-            className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:brightness-110 disabled:opacity-50 transition-all"
-          >
-            <LinkIcon className="w-3.5 h-3.5" />
-            {generate.isPending ? "Generando..." : "Generar enlace"}
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          <div className="flex items-center gap-2">
-            <input
-              readOnly
-              value={inviteUrl}
-              className="flex-1 text-xs border border-border rounded-md px-3 py-2 bg-muted text-muted-foreground font-mono truncate"
-            />
-            <button
-              onClick={handleCopy}
-              className="shrink-0 flex items-center gap-1.5 text-sm border border-border px-3 py-2 rounded-md hover:bg-muted transition-colors"
-            >
-              {copied ? <CheckIcon className="w-3.5 h-3.5 text-primary" /> : <ClipboardIcon className="w-3.5 h-3.5" />}
-              {copied ? "Copiado" : "Copiar"}
-            </button>
-          </div>
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">
-              Expira el {expiresAt?.toLocaleDateString("es", { day: "numeric", month: "long" })}
-            </p>
-            <button
-              onClick={() => generate.mutate({ teamId })}
-              disabled={generate.isPending}
-              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors"
-            >
-              <RefreshCwIcon className="w-3 h-3" />
-              Regenerar
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  )
-}
-
 // ─── Members section ──────────────────────────────────────────────────────────
 
 type Member = { id: string; userId: string; role: string; userName: string; userEmail: string }
 
 function MembersSection({
-  teamId, isCoach, members, onUpdateRole, onRemove,
+  teamId, isCoach, members,
+  maxAthletes, maxCoaches, athleteCount, coachCount,
+  atCapacity, overLimit,
+  onUpdateRole, onRemove,
 }: {
   teamId: string
   isCoach: boolean
   members: Member[]
+  maxAthletes: number
+  maxCoaches: number
+  athleteCount: number
+  coachCount: number
+  atCapacity: boolean
+  overLimit: boolean
   onUpdateRole: (userId: string, role: "coach" | "athlete") => Promise<unknown>
   onRemove: (userId: string) => Promise<unknown>
 }) {
   const [editing, setEditing] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
   const [pendingRoles, setPendingRoles] = useState<Record<string, "coach" | "athlete">>({})
   const [saving, setSaving] = useState(false)
 
@@ -197,11 +157,6 @@ function MembersSection({
     setEditing(true)
   }
 
-  function cancelEditing() {
-    setPendingRoles({})
-    setEditing(false)
-  }
-
   async function saveChanges() {
     setSaving(true)
     const changed = members.filter((m) => pendingRoles[m.userId] && pendingRoles[m.userId] !== m.role)
@@ -210,27 +165,63 @@ function MembersSection({
     setEditing(false)
   }
 
+  const canInvite = isCoach && !atCapacity && !overLimit
+
   return (
     <div className="space-y-3">
-      {isCoach && (
-        <div className="flex justify-end gap-2">
-          {editing ? (
-            <>
-              <button onClick={cancelEditing} className="text-sm border px-3 py-1.5 rounded-md hover:bg-muted">
-                Cancelar
-              </button>
-              <button onClick={saveChanges} disabled={saving} className="text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md disabled:opacity-50">
-                {saving ? "Guardando..." : "Guardar cambios"}
-              </button>
-            </>
-          ) : (
-            <button onClick={startEditing} className="text-sm border px-3 py-1.5 rounded-md hover:bg-muted">
-              Editar miembros
-            </button>
-          )}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium">Miembros</span>
+          <span className="text-xs text-muted-foreground">
+            {athleteCount}/{maxAthletes} atleta{maxAthletes !== 1 ? "s" : ""} · {coachCount}/{maxCoaches} entrenador{maxCoaches !== 1 ? "es" : ""}
+          </span>
         </div>
+
+        {isCoach && !editing && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={startEditing}
+              className="text-xs text-muted-foreground border border-border px-2.5 py-1 rounded-md hover:bg-muted transition-colors"
+            >
+              Editar
+            </button>
+            <button
+              onClick={() => setShowInvite((v) => !v)}
+              disabled={!canInvite}
+              title={atCapacity || overLimit ? "Equipo lleno" : "Invitar atleta"}
+              className="flex items-center justify-center w-7 h-7 rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <PlusIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
+
+        {editing && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setPendingRoles({}); setEditing(false) }}
+              className="text-xs border px-2.5 py-1 rounded-md hover:bg-muted"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={saveChanges}
+              disabled={saving}
+              className="text-xs bg-primary text-primary-foreground px-2.5 py-1 rounded-md disabled:opacity-50"
+            >
+              {saving ? "Guardando..." : "Guardar"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Invite panel */}
+      {showInvite && canInvite && (
+        <InvitePanel teamId={teamId} onClose={() => setShowInvite(false)} />
       )}
 
+      {/* Member list */}
       <div className="space-y-2">
         {[...members]
           .sort((a, b) => {
@@ -253,6 +244,98 @@ function MembersSection({
           </p>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─── Invite panel ─────────────────────────────────────────────────────────────
+
+function InvitePanel({ teamId, onClose }: { teamId: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+
+  const { data: existing, isLoading: loadingExisting } = trpc.teams.getInviteLink.useQuery({ teamId })
+
+  const generate = trpc.teams.generateInviteLink.useMutation({
+    onSuccess: () => { /* query cache auto-updates via refetch below */ },
+  })
+
+  const utils = trpc.useUtils()
+  const activeToken = generate.data?.token ?? existing?.token ?? null
+  const activeExpiry = generate.data?.expiresAt ?? existing?.expiresAt ?? null
+
+  const inviteUrl = activeToken ? `${window.location.origin}/join/${activeToken}` : null
+
+  async function handleCopy() {
+    if (!inviteUrl) return
+    await navigator.clipboard.writeText(inviteUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleRegenerate() {
+    await generate.mutateAsync({ teamId })
+    await utils.teams.getInviteLink.invalidate({ teamId })
+    setCopied(false)
+  }
+
+  const isLoading = loadingExisting || generate.isPending
+
+  return (
+    <div className="border border-border rounded-lg p-4 space-y-3 bg-muted/30">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Enlace de invitación</p>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+          <XIcon className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {isLoading && !inviteUrl ? (
+        <p className="text-xs text-muted-foreground">Cargando...</p>
+      ) : inviteUrl ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={inviteUrl}
+              className="flex-1 text-xs border border-border rounded-md px-3 py-2 bg-background text-muted-foreground font-mono truncate"
+            />
+            <button
+              onClick={handleCopy}
+              className="shrink-0 flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-md hover:bg-muted transition-colors whitespace-nowrap"
+            >
+              {copied ? <CheckIcon className="w-3 h-3 text-primary" /> : <ClipboardIcon className="w-3 h-3" />}
+              {copied ? "Copiado" : "Copiar"}
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Un solo uso · expira el{" "}
+              {activeExpiry ? new Date(activeExpiry).toLocaleDateString("es", { day: "numeric", month: "long" }) : "—"}
+            </p>
+            <button
+              onClick={handleRegenerate}
+              disabled={generate.isPending}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              <RefreshCwIcon className="w-3 h-3" />
+              Regenerar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            El enlace es de un solo uso. El atleta podrá unirse al equipo directamente.
+          </p>
+          <button
+            onClick={() => generate.mutate({ teamId })}
+            disabled={generate.isPending}
+            className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:brightness-110 disabled:opacity-50 transition-all"
+          >
+            {generate.isPending ? "Generando..." : "Generar enlace"}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

@@ -1,4 +1,4 @@
-import { pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { integer, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 
 export const teamRoleEnum = pgEnum("team_role", ["coach", "athlete"])
@@ -6,6 +6,8 @@ export const teamRoleEnum = pgEnum("team_role", ["coach", "athlete"])
 export const team = pgTable("team", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  maxAthletes: integer("max_athletes").notNull().default(1),
+  maxCoaches: integer("max_coaches").notNull().default(1),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
 

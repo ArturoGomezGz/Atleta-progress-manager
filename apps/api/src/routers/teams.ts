@@ -1,7 +1,7 @@
 import { db } from "@atleta/db/client"
 import { team, teamInvite, teamMember, user } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, eq } from "drizzle-orm"
+import { and, count, eq, gt } from "drizzle-orm"
 import { randomBytes } from "node:crypto"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
@@ -27,10 +27,33 @@ export const teamsRouter = router({
       .where(eq(teamMember.userId, ctx.session.user.id))
   }),
 
+  getInviteLink: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      const [invite] = await db
+        .select({ token: teamInvite.token, expiresAt: teamInvite.expiresAt })
+        .from(teamInvite)
+        .where(and(eq(teamInvite.teamId, input.teamId), gt(teamInvite.expiresAt, new Date())))
+        .limit(1)
+      return invite ?? null
+    }),
+
   generateInviteLink: protectedProcedure
     .input(z.object({ teamId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
+
+      const [teamData] = await db.select().from(team).where(eq(team.id, input.teamId)).limit(1)
+      const [{ athleteCount }] = await db
+        .select({ athleteCount: count() })
+        .from(teamMember)
+        .where(and(eq(teamMember.teamId, input.teamId), eq(teamMember.role, "athlete")))
+
+      if (athleteCount >= teamData.maxAthletes) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo ha alcanzado el límite de atletas" })
+      }
+
       await db.delete(teamInvite).where(eq(teamInvite.teamId, input.teamId))
       const token = randomBytes(24).toString("hex")
       const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
@@ -52,8 +75,21 @@ export const teamsRouter = router({
         .limit(1)
 
       if (!existing) {
+        const [teamData] = await db.select().from(team).where(eq(team.id, invite.teamId)).limit(1)
+        const [{ athleteCount }] = await db
+          .select({ athleteCount: count() })
+          .from(teamMember)
+          .where(and(eq(teamMember.teamId, invite.teamId), eq(teamMember.role, "athlete")))
+
+        if (athleteCount >= teamData.maxAthletes) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo ya está lleno" })
+        }
+
         await db.insert(teamMember).values({ teamId: invite.teamId, userId: ctx.session.user.id, role: "athlete" })
       }
+
+      // Single-use: delete the invite regardless of whether user was already a member
+      await db.delete(teamInvite).where(eq(teamInvite.id, invite.id))
 
       const [teamData] = await db.select().from(team).where(eq(team.id, invite.teamId)).limit(1)
       return { teamId: invite.teamId, teamName: teamData.name, alreadyMember: !!existing }
