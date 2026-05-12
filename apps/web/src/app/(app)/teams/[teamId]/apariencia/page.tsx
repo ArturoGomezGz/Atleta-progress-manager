@@ -151,6 +151,7 @@ export default function AparienciaPage({ params }: { params: Promise<{ teamId: s
   const [isProcessing, setIsProcessing] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [initialized, setInitialized] = useState(false)
 
   const { data: teams } = trpc.teams.list.useQuery()
   const { data: branding } = trpc.teams.getBranding.useQuery({ teamId })
@@ -161,12 +162,13 @@ export default function AparienciaPage({ params }: { params: Promise<{ teamId: s
   const teamName = currentTeam?.team.name ?? "Mi equipo"
 
   useEffect(() => {
-    if (branding?.brandPalette && branding?.logoDataUrl && !palette) {
+    if (!initialized && branding?.brandPalette && branding?.logoDataUrl) {
+      setInitialized(true)
       setPalette(branding.brandPalette as BrandPalette)
       setOriginalPalette(branding.brandPalette as BrandPalette)
       setLogo(branding.logoDataUrl)
     }
-  }, [branding, palette])
+  }, [branding, initialized])
 
   async function handleFile(file: File) {
     if (!file.type.startsWith("image/")) return
