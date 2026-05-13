@@ -3,6 +3,7 @@
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
+  BookmarkIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   FlameIcon,
@@ -98,8 +99,10 @@ function deriveBodyZone(muscles: { bodyZone: "upper" | "lower" | "core"; role: s
 
 export default function EjerciciosPage() {
   const { teamId } = useParams<{ teamId: string }>()
+  const [tab, setTab] = useState<"propios" | "guardados">("propios")
 
   const { data: exercises, refetch } = trpc.exercises.listAllOwned.useQuery()
+  const { data: saved, refetch: refetchSaved } = trpc.exercises.listSaved.useQuery()
   const { data: teams } = trpc.teams.list.useQuery()
   const { data: muscleGroups } = trpc.exercises.listMuscleGroups.useQuery()
   const { data: equipmentList } = trpc.exercises.listEquipment.useQuery()
@@ -113,9 +116,11 @@ export default function EjerciciosPage() {
   const createMutation = trpc.exercises.create.useMutation({ onSuccess: () => { refetch(); setForm(null) } })
   const updateMutation = trpc.exercises.update.useMutation({ onSuccess: () => { refetch(); setForm(null) } })
   const deleteMutation = trpc.exercises.delete.useMutation({ onSuccess: () => { refetch(); setDeleteConfirm(null) } })
+  const unsaveMutation = trpc.exercises.unsaveExercise.useMutation({ onSuccess: () => refetchSaved() })
 
   const personal = exercises?.filter((ex) => ex.ownerUserId !== null) ?? []
   const teamExercises = exercises?.filter((ex) => ex.ownerTeamId === teamId) ?? []
+  const savedList = saved ?? []
 
   function openCreate() { setForm({ ...EMPTY_FORM, ownerType: "user" }) }
 
@@ -163,41 +168,101 @@ export default function EjerciciosPage() {
   const isPending = createMutation.isPending || updateMutation.isPending
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
+    <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">Ejercicios</h1>
+        <h1 className="text-xl font-semibold">Mis ejercicios</h1>
         <button
           onClick={openCreate}
           className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md cursor-pointer"
         >
           <PlusIcon className="w-4 h-4" />
-          Nuevo ejercicio
+          Nuevo
         </button>
       </div>
 
-      {/* Exercise list */}
-      <Section
-        title="Personales"
-        exercises={personal}
-        onEdit={openEdit}
-        onDelete={setDeleteConfirm}
-        deleteConfirm={deleteConfirm}
-        onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
-        onDeleteCancel={() => setDeleteConfirm(null)}
-        isDeleting={deleteMutation.isPending}
-      />
-      {currentTeam && (
-        <Section
-          title={currentTeam.team.name}
-          exercises={teamExercises}
-          onEdit={openEdit}
-          onDelete={setDeleteConfirm}
-          deleteConfirm={deleteConfirm}
-          onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
-          onDeleteCancel={() => setDeleteConfirm(null)}
-          isDeleting={deleteMutation.isPending}
-        />
+      {/* Tabs */}
+      <div className="flex gap-1 p-1 bg-muted/40 rounded-xl border border-border">
+        {([
+          { key: "propios",   label: "Propios",   count: (personal.length + teamExercises.length) },
+          { key: "guardados", label: "Guardados", count: savedList.length },
+        ] as const).map(({ key, label, count }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            className={cn(
+              "flex-1 flex items-center justify-center gap-1.5 text-sm py-2 rounded-lg transition-colors cursor-pointer font-medium",
+              tab === key
+                ? "bg-background text-foreground shadow-sm border border-border"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {label}
+            {count > 0 && (
+              <span className={cn(
+                "text-xs px-1.5 py-0.5 rounded-full tabular-nums",
+                tab === key ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+              )}>
+                {count}
+              </span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {/* Tab content */}
+      {tab === "propios" && (
+        <div className="space-y-6">
+          <Section
+            title="Personales"
+            exercises={personal}
+            onEdit={openEdit}
+            onDelete={setDeleteConfirm}
+            deleteConfirm={deleteConfirm}
+            onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
+            onDeleteCancel={() => setDeleteConfirm(null)}
+            isDeleting={deleteMutation.isPending}
+          />
+          {currentTeam && (
+            <Section
+              title={currentTeam.team.name}
+              exercises={teamExercises}
+              onEdit={openEdit}
+              onDelete={setDeleteConfirm}
+              deleteConfirm={deleteConfirm}
+              onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
+              onDeleteCancel={() => setDeleteConfirm(null)}
+              isDeleting={deleteMutation.isPending}
+            />
+          )}
+          {personal.length === 0 && teamExercises.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              Aún no tienes ejercicios. Crea uno o explora el catálogo.
+            </p>
+          )}
+        </div>
+      )}
+
+      {tab === "guardados" && (
+        <div className="space-y-2">
+          {savedList.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">
+              No tienes ejercicios guardados. Explora el catálogo para guardar.
+            </p>
+          ) : (
+            savedList.map((ex) => (
+              <ExerciseCard
+                key={ex.id}
+                exercise={ex}
+                onEdit={() => {}}
+                onDelete={() => {}}
+                savedBadge
+                onUnsave={() => unsaveMutation.mutate({ exerciseId: ex.id })}
+              />
+            ))
+          )}
+        </div>
       )}
 
       {/* Sheet overlay */}
@@ -928,10 +993,12 @@ function Section({ title, exercises, onEdit, onDelete, deleteConfirm, onDeleteCo
   )
 }
 
-function ExerciseCard({ exercise: ex, onEdit, onDelete }: {
+function ExerciseCard({ exercise: ex, onEdit, onDelete, savedBadge, onUnsave }: {
   exercise: EnrichedExercise
   onEdit: (ex: EnrichedExercise) => void
   onDelete: (id: string) => void
+  savedBadge?: boolean
+  onUnsave?: () => void
 }) {
   const zone = deriveBodyZone(ex.muscles)
   const zoneConf = zone ? ZONE_CONFIG[zone] : null
@@ -946,18 +1013,30 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete }: {
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium leading-snug">{ex.name}</p>
             <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-              {ex.isPublic
-                ? <GlobeIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                : <LockIcon className="w-3.5 h-3.5 text-muted-foreground" />
-              }
-              {ex.editable && (
+              {savedBadge ? (
+                <button
+                  onClick={onUnsave}
+                  className="p-1 text-primary hover:text-muted-foreground rounded cursor-pointer transition-colors"
+                  title="Quitar de guardados"
+                >
+                  <BookmarkIcon className="w-3.5 h-3.5 fill-current" />
+                </button>
+              ) : (
                 <>
-                  <button onClick={() => onEdit(ex)} className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer">
-                    <PencilIcon className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => onDelete(ex.id)} className="p-1 text-muted-foreground hover:text-destructive rounded cursor-pointer">
-                    <Trash2Icon className="w-3.5 h-3.5" />
-                  </button>
+                  {ex.isPublic
+                    ? <GlobeIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    : <LockIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                  }
+                  {ex.editable && (
+                    <>
+                      <button onClick={() => onEdit(ex)} className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer">
+                        <PencilIcon className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => onDelete(ex.id)} className="p-1 text-muted-foreground hover:text-destructive rounded cursor-pointer">
+                        <Trash2Icon className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
                 </>
               )}
             </div>

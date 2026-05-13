@@ -4,13 +4,14 @@ import {
   exercise,
   exerciseEquipment,
   exerciseMuscle,
+  exerciseSave,
   muscle,
   muscleGroup,
   team,
   teamMember,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, eq, inArray, isNull, or } from "drizzle-orm"
+import { and, asc, eq, ilike, inArray, isNull, or } from "drizzle-orm"
 import { z } from "zod"
 import Anthropic from "@anthropic-ai/sdk"
 import { protectedProcedure, router } from "../trpc"
@@ -505,5 +506,102 @@ Rules:
         muscles: { muscleId: string; role: "primary" | "secondary" }[]
         equipment: string[]
       }
+    }),
+
+  // ── Explore / Save ────────────────────────────────────────────────────────
+
+  listPublic: protectedProcedure
+    .input(z.object({
+      query: z.string().optional(),
+      bodyZone: z.enum(["upper", "lower", "core"]).optional(),
+      difficulty: difficultySchema.optional(),
+      movementPattern: movementPatternSchema.optional(),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+
+      const exercises = await db
+        .select()
+        .from(exercise)
+        .where(
+          and(
+            eq(exercise.isPublic, true),
+            input?.query ? ilike(exercise.name, `%${input.query}%`) : undefined,
+            input?.difficulty ? eq(exercise.difficulty, input.difficulty) : undefined,
+          ),
+        )
+        .orderBy(asc(exercise.name))
+
+      const enriched = await attachDetails(exercises)
+
+      // Fetch which ones the user already saved
+      const saved = await db
+        .select({ exerciseId: exerciseSave.exerciseId })
+        .from(exerciseSave)
+        .where(eq(exerciseSave.userId, userId))
+
+      const savedIds = new Set(saved.map((s) => s.exerciseId))
+
+      return enriched
+        .filter((ex) => {
+          // Exclude exercises the user already owns
+          if (ex.ownerUserId === userId) return false
+          // Filter by bodyZone on primary muscles if requested
+          if (input?.bodyZone) {
+            const primaryZones = ex.muscles
+              .filter((m) => m.role === "primary")
+              .map((m) => m.bodyZone)
+            if (!primaryZones.includes(input.bodyZone)) return false
+          }
+          // Filter by movement pattern if requested
+          if (input?.movementPattern && !ex.movementPatterns.includes(input.movementPattern)) return false
+          return true
+        })
+        .map((ex) => ({ ...ex, isSaved: savedIds.has(ex.id) }))
+    }),
+
+  listSaved: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+
+    const saves = await db
+      .select({ exerciseId: exerciseSave.exerciseId })
+      .from(exerciseSave)
+      .where(eq(exerciseSave.userId, userId))
+
+    if (saves.length === 0) return []
+
+    const exerciseIds = saves.map((s) => s.exerciseId)
+    const exercises = await db
+      .select()
+      .from(exercise)
+      .where(inArray(exercise.id, exerciseIds))
+      .orderBy(asc(exercise.name))
+
+    const enriched = await attachDetails(exercises)
+    return enriched.map((ex) => ({ ...ex, editable: false }))
+  }),
+
+  saveExercise: protectedProcedure
+    .input(z.object({ exerciseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+
+      const [ex] = await db.select({ isPublic: exercise.isPublic }).from(exercise).where(eq(exercise.id, input.exerciseId)).limit(1)
+      if (!ex) throw new TRPCError({ code: "NOT_FOUND" })
+      if (!ex.isPublic) throw new TRPCError({ code: "FORBIDDEN" })
+
+      await db
+        .insert(exerciseSave)
+        .values({ userId, exerciseId: input.exerciseId })
+        .onConflictDoNothing()
+    }),
+
+  unsaveExercise: protectedProcedure
+    .input(z.object({ exerciseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+      await db
+        .delete(exerciseSave)
+        .where(and(eq(exerciseSave.userId, userId), eq(exerciseSave.exerciseId, input.exerciseId)))
     }),
 })

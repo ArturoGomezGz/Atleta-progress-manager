@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm"
-import { boolean, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
+import { boolean, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
 
 export const exerciseSuitableForEnum = pgEnum("exercise_suitable_for", ["warmup", "evaluation"])
 import { user } from "./auth"
@@ -43,4 +43,14 @@ export const exercise = pgTable(
       .on(t.name, t.ownerTeamId)
       .where(sql`"owner_team_id" IS NOT NULL`),
   ],
+)
+
+export const exerciseSave = pgTable(
+  "exercise_save",
+  {
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    exerciseId: uuid("exercise_id").notNull().references(() => exercise.id, { onDelete: "cascade" }),
+    savedAt: timestamp("saved_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.exerciseId] })],
 )
