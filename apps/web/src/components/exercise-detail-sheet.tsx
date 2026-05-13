@@ -2,7 +2,7 @@
 
 import { cn } from "@/lib/utils"
 import { BookmarkIcon, DumbbellIcon, FlameIcon, XIcon, ZapIcon } from "lucide-react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -72,7 +72,19 @@ export function ExerciseDetailSheet({
   const [visible, setVisible] = useState(false)
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
 
+  const scrollRef = useRef<HTMLDivElement>(null)
+  const touchStartY = useRef(0)
+
   function close() { setVisible(false); setTimeout(onClose, 300) }
+
+  function handleTouchStart(e: React.TouchEvent) {
+    touchStartY.current = e.touches[0].clientY
+  }
+
+  function handleTouchMove(e: React.TouchEvent) {
+    const delta = e.touches[0].clientY - touchStartY.current
+    if (scrollRef.current?.scrollTop === 0 && delta > 60) close()
+  }
 
   const zone = deriveBodyZone(ex.muscles)
   const zoneConf = zone ? ZONE_CONFIG[zone] : null
@@ -98,11 +110,6 @@ export function ExerciseDetailSheet({
         "transition-transform duration-300 ease-out",
         visible ? "translate-y-0 md:translate-x-0" : "translate-y-full md:translate-x-full md:translate-y-0",
       )}>
-
-        {/* Drag handle */}
-        <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-        </div>
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
@@ -131,7 +138,12 @@ export function ExerciseDetailSheet({
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div
+          ref={scrollRef}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          className="flex-1 overflow-y-auto overscroll-contain"
+        >
 
           {/* Video hero or zone bar */}
           {ex.videoUrl ? (

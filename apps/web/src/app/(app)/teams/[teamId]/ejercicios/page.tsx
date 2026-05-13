@@ -147,13 +147,12 @@ export default function EjerciciosPage() {
     e.preventDefault()
     if (!form) return
 
-    const payload = {
+    const base = {
       name: form.name,
       description: form.description || undefined,
       difficulty: form.difficulty ?? undefined,
       movementPatterns: form.movementPatterns as ("push" | "pull" | "squat" | "hinge" | "carry" | "rotation" | "isometric" | "mobility")[],
       suitableFor: form.suitableFor,
-      contraindications: form.contraindications || undefined,
       videoUrl: form.videoUrl ?? undefined,
       isPublic: form.isPublic,
       muscles: form.muscles,
@@ -161,9 +160,9 @@ export default function EjerciciosPage() {
     }
 
     if (form.id) {
-      updateMutation.mutate({ id: form.id, ...payload })
+      updateMutation.mutate({ id: form.id, ...base, contraindications: form.contraindications || null })
     } else {
-      createMutation.mutate({ ...payload, ownerType: form.ownerType, teamId: form.ownerType === "team" ? teamId : undefined })
+      createMutation.mutate({ ...base, contraindications: form.contraindications || undefined, ownerType: form.ownerType, teamId: form.ownerType === "team" ? teamId : undefined })
     }
   }
 
@@ -391,7 +390,7 @@ function ExerciseSheet({
             : "translate-y-full md:translate-x-full md:translate-y-0",
         )}
       >
-        <form onSubmit={onSubmit} className="flex flex-col h-full">
+        <form onSubmit={onSubmit} className="flex flex-col flex-1 min-h-0">
 
           {/* Drag handle (mobile only) */}
           <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
