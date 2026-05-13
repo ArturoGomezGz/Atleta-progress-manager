@@ -245,8 +245,7 @@ function ExerciseSheet({
 
       if (data.difficulty) { patch.difficulty = data.difficulty }
       if (data.movementPatterns?.length) { patch.movementPatterns = data.movementPatterns; filled.push("patterns") }
-      if (data.suitableFor !== undefined) { patch.suitableFor = data.suitableFor }
-      if (data.contraindications) { patch.contraindications = data.contraindications; filled.push("context") }
+      if (data.suitableFor !== undefined) { patch.suitableFor = data.suitableFor; filled.push("context") }
       if (data.muscles?.length) { patch.muscles = data.muscles; filled.push("muscles") }
       if (data.equipment?.length) { patch.equipment = data.equipment; filled.push("equipment") }
 

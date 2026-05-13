@@ -450,10 +450,6 @@ export const exercisesRouter = router({
                 enum: ["warmup", "evaluation", null],
                 description: "Special context: warmup, evaluation, or null for general",
               },
-              contraindications: {
-                type: "string",
-                description: "Common contraindications or injuries to watch out for. Empty string if none.",
-              },
               muscles: {
                 type: "array",
                 items: {
@@ -472,7 +468,7 @@ export const exercisesRouter = router({
                 description: "Equipment needed, using IDs from the catalog. Empty array if bodyweight.",
               },
             },
-            required: ["difficulty", "movementPatterns", "suitableFor", "contraindications", "muscles", "equipment"],
+            required: ["difficulty", "movementPatterns", "suitableFor", "muscles", "equipment"],
           },
         }],
         tool_choice: { type: "tool", name: "fill_exercise" },
@@ -492,7 +488,7 @@ Rules:
 - Only use IDs from the catalogs above
 - For muscles, identify primary movers and secondary/stabilizers
 - If bodyweight exercise, return empty equipment array
-- Be conservative with contraindications — only list real clinical ones`,
+- Only use IDs from the catalogs above`,
         }],
       })
 
@@ -505,7 +501,6 @@ Rules:
         difficulty: "beginner" | "intermediate" | "advanced"
         movementPatterns: string[]
         suitableFor: "warmup" | "evaluation" | null
-        contraindications: string
         muscles: { muscleId: string; role: "primary" | "secondary" }[]
         equipment: string[]
       }
