@@ -18,6 +18,7 @@ import { assertCoach } from "./teams"
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
 const difficultySchema = z.enum(["beginner", "intermediate", "advanced"])
+const suitableForSchema = z.enum(["warmup", "evaluation"])
 
 const movementPatternSchema = z.enum([
   "push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility",
@@ -266,8 +267,7 @@ export const exercisesRouter = router({
         description: z.string().optional(),
         difficulty: difficultySchema.optional(),
         movementPatterns: z.array(movementPatternSchema).default([]),
-        isWarmupSuitable: z.boolean().default(false),
-        isEvaluationSuitable: z.boolean().default(false),
+        suitableFor: suitableForSchema.nullable().optional(),
         contraindications: z.string().optional(),
         videoUrl: z.string().url().optional(),
         isPublic: z.boolean().default(false),
@@ -292,8 +292,7 @@ export const exercisesRouter = router({
           description: input.description,
           difficulty: input.difficulty,
           movementPatterns: input.movementPatterns,
-          isWarmupSuitable: input.isWarmupSuitable,
-          isEvaluationSuitable: input.isEvaluationSuitable,
+          suitableFor: input.suitableFor ?? null,
           contraindications: input.contraindications,
           videoUrl: input.videoUrl,
           isPublic: input.isPublic,
@@ -317,8 +316,7 @@ export const exercisesRouter = router({
         description: z.string().optional(),
         difficulty: difficultySchema.nullable().optional(),
         movementPatterns: z.array(movementPatternSchema).optional(),
-        isWarmupSuitable: z.boolean().optional(),
-        isEvaluationSuitable: z.boolean().optional(),
+        suitableFor: suitableForSchema.nullable().optional(),
         contraindications: z.string().nullable().optional(),
         videoUrl: z.string().url().nullable().optional(),
         isPublic: z.boolean().optional(),
@@ -346,8 +344,7 @@ export const exercisesRouter = router({
           ...(input.description !== undefined && { description: input.description }),
           ...(input.difficulty !== undefined && { difficulty: input.difficulty }),
           ...(input.movementPatterns !== undefined && { movementPatterns: input.movementPatterns }),
-          ...(input.isWarmupSuitable !== undefined && { isWarmupSuitable: input.isWarmupSuitable }),
-          ...(input.isEvaluationSuitable !== undefined && { isEvaluationSuitable: input.isEvaluationSuitable }),
+          ...(input.suitableFor !== undefined && { suitableFor: input.suitableFor }),
           ...(input.contraindications !== undefined && { contraindications: input.contraindications }),
           ...(input.videoUrl !== undefined && { videoUrl: input.videoUrl }),
           ...(input.isPublic !== undefined && { isPublic: input.isPublic }),

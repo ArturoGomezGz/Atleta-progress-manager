@@ -49,8 +49,7 @@ type Exercise = {
   description: string | null
   difficulty: "beginner" | "intermediate" | "advanced" | null
   movementPatterns: string[]
-  isWarmupSuitable: boolean
-  isEvaluationSuitable: boolean
+  suitableFor: "warmup" | "evaluation" | null
   contraindications: string | null
   videoUrl?: string | null
   isPublic: boolean
@@ -67,8 +66,7 @@ type FormState = {
   description: string
   difficulty: "beginner" | "intermediate" | "advanced" | null
   movementPatterns: string[]
-  isWarmupSuitable: boolean
-  isEvaluationSuitable: boolean
+  suitableFor: "warmup" | "evaluation" | null
   contraindications: string
   isPublic: boolean
   ownerType: "user" | "team"
@@ -78,7 +76,7 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   name: "", description: "", difficulty: null, movementPatterns: [],
-  isWarmupSuitable: false, isEvaluationSuitable: false, contraindications: "",
+  suitableFor: null, contraindications: "",
   isPublic: false, ownerType: "user", muscles: [], equipment: [],
 }
 
@@ -125,8 +123,7 @@ export default function EjerciciosPage() {
       description: ex.description ?? "",
       difficulty: ex.difficulty ?? null,
       movementPatterns: ex.movementPatterns ?? [],
-      isWarmupSuitable: ex.isWarmupSuitable,
-      isEvaluationSuitable: ex.isEvaluationSuitable,
+      suitableFor: ex.suitableFor ?? null,
       contraindications: ex.contraindications ?? "",
       isPublic: ex.isPublic,
       ownerType: ex.ownerTeamId ? "team" : "user",
@@ -144,8 +141,7 @@ export default function EjerciciosPage() {
       description: form.description || undefined,
       difficulty: form.difficulty ?? undefined,
       movementPatterns: form.movementPatterns as ("push" | "pull" | "squat" | "hinge" | "carry" | "rotation" | "isometric" | "mobility")[],
-      isWarmupSuitable: form.isWarmupSuitable,
-      isEvaluationSuitable: form.isEvaluationSuitable,
+      suitableFor: form.suitableFor,
       contraindications: form.contraindications || undefined,
       isPublic: form.isPublic,
       muscles: form.muscles,
@@ -400,18 +396,24 @@ function ExerciseForm({
           <SectionLabel>Contexto de uso</SectionLabel>
           <div className="flex gap-2">
             <ToggleChip
-              active={form.isWarmupSuitable}
-              onClick={() => set({ isWarmupSuitable: !form.isWarmupSuitable })}
-              icon={<FlameIcon className="w-3.5 h-3.5" />}
+              active={form.suitableFor === null}
+              onClick={() => set({ suitableFor: null })}
             >
-              Apto para calentamiento
+              General
             </ToggleChip>
             <ToggleChip
-              active={form.isEvaluationSuitable}
-              onClick={() => set({ isEvaluationSuitable: !form.isEvaluationSuitable })}
+              active={form.suitableFor === "warmup"}
+              onClick={() => set({ suitableFor: form.suitableFor === "warmup" ? null : "warmup" })}
+              icon={<FlameIcon className="w-3.5 h-3.5" />}
+            >
+              Calentamiento
+            </ToggleChip>
+            <ToggleChip
+              active={form.suitableFor === "evaluation"}
+              onClick={() => set({ suitableFor: form.suitableFor === "evaluation" ? null : "evaluation" })}
               icon={<ZapIcon className="w-3.5 h-3.5" />}
             >
-              Apto para evaluación
+              Evaluación
             </ToggleChip>
           </div>
           <textarea
@@ -623,7 +625,7 @@ function ToggleChip({
 }: {
   active: boolean
   onClick: () => void
-  icon: React.ReactNode
+  icon?: React.ReactNode
   children: React.ReactNode
 }) {
   return (
@@ -648,8 +650,7 @@ type EnrichedExercise = {
   description: string | null
   difficulty: "beginner" | "intermediate" | "advanced" | null
   movementPatterns: string[]
-  isWarmupSuitable: boolean
-  isEvaluationSuitable: boolean
+  suitableFor: "warmup" | "evaluation" | null
   contraindications: string | null
   isPublic: boolean
   ownerUserId: string | null
@@ -742,7 +743,7 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete }: {
         )}
 
         {/* Pills row */}
-        {(primaryMuscles.length > 0 || ex.movementPatterns.length > 0 || ex.difficulty || ex.isWarmupSuitable || ex.isEvaluationSuitable) && (
+        {(primaryMuscles.length > 0 || ex.movementPatterns.length > 0 || ex.difficulty || ex.suitableFor) && (
           <div className="flex flex-wrap gap-1 mt-2">
             {/* Zone pill */}
             {zoneConf && (
@@ -773,13 +774,13 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete }: {
                 {PATTERN_LABELS[p] ?? p}
               </span>
             ))}
-            {/* Context badges */}
-            {ex.isWarmupSuitable && (
+            {/* Context badge */}
+            {ex.suitableFor === "warmup" && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-600 flex items-center gap-0.5">
                 <FlameIcon className="w-2.5 h-2.5" /> Calentamiento
               </span>
             )}
-            {ex.isEvaluationSuitable && (
+            {ex.suitableFor === "evaluation" && (
               <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary flex items-center gap-0.5">
                 <ZapIcon className="w-2.5 h-2.5" /> Evaluación
               </span>

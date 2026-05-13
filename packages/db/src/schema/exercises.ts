@@ -1,5 +1,7 @@
 import { sql } from "drizzle-orm"
 import { boolean, pgEnum, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
+
+export const exerciseSuitableForEnum = pgEnum("exercise_suitable_for", ["warmup", "evaluation"])
 import { user } from "./auth"
 import { team } from "./teams"
 
@@ -17,8 +19,7 @@ export const exercise = pgTable(
     description: text("description"),
     difficulty: exerciseDifficultyEnum("difficulty"),
     movementPatterns: exerciseMovementPatternEnum("movement_patterns").array().notNull().default(sql`'{}'::exercise_movement_pattern[]`),
-    isWarmupSuitable: boolean("is_warmup_suitable").notNull().default(false),
-    isEvaluationSuitable: boolean("is_evaluation_suitable").notNull().default(false),
+    suitableFor: exerciseSuitableForEnum("suitable_for"),
     contraindications: text("contraindications"),
     videoUrl: text("video_url"),
     isPublic: boolean("is_public").notNull().default(false),

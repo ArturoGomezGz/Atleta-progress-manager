@@ -85,6 +85,13 @@
       "when": 1778628506052,
       "tag": "0011_true_chat",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778631017969,
+      "tag": "0012_elite_roulette",
+      "breakpoints": true
     }
   ]
 }
