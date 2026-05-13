@@ -518,46 +518,48 @@ Rules:
       movementPattern: movementPatternSchema.optional(),
     }).optional())
     .query(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id
+      try {
+        const userId = ctx.session.user.id
 
-      const exercises = await db
-        .select()
-        .from(exercise)
-        .where(
-          and(
-            eq(exercise.isPublic, true),
-            input?.query ? ilike(exercise.name, `%${input.query}%`) : undefined,
-            input?.difficulty ? eq(exercise.difficulty, input.difficulty) : undefined,
-          ),
-        )
-        .orderBy(asc(exercise.name))
+        const exercises = await db
+          .select()
+          .from(exercise)
+          .where(
+            and(
+              eq(exercise.isPublic, true),
+              input?.query ? ilike(exercise.name, `%${input.query}%`) : undefined,
+              input?.difficulty ? eq(exercise.difficulty, input.difficulty) : undefined,
+            ),
+          )
+          .orderBy(asc(exercise.name))
 
-      const enriched = await attachDetails(exercises)
+        const enriched = await attachDetails(exercises)
 
-      // Fetch which ones the user already saved
-      const saved = await db
-        .select({ exerciseId: exerciseSave.exerciseId })
-        .from(exerciseSave)
-        .where(eq(exerciseSave.userId, userId))
+        // Fetch which ones the user already saved
+        const saved = await db
+          .select({ exerciseId: exerciseSave.exerciseId })
+          .from(exerciseSave)
+          .where(eq(exerciseSave.userId, userId))
 
-      const savedIds = new Set(saved.map((s) => s.exerciseId))
+        const savedIds = new Set(saved.map((s) => s.exerciseId))
 
-      return enriched
-        .filter((ex) => {
-          // Exclude exercises the user already owns
-          if (ex.ownerUserId === userId) return false
-          // Filter by bodyZone on primary muscles if requested
-          if (input?.bodyZone) {
-            const primaryZones = ex.muscles
-              .filter((m) => m.role === "primary")
-              .map((m) => m.bodyZone)
-            if (!primaryZones.includes(input.bodyZone)) return false
-          }
-          // Filter by movement pattern if requested
-          if (input?.movementPattern && !ex.movementPatterns.includes(input.movementPattern)) return false
-          return true
-        })
-        .map((ex) => ({ ...ex, isSaved: savedIds.has(ex.id) }))
+        return enriched
+          .filter((ex) => {
+            if (ex.ownerUserId === userId) return false
+            if (input?.bodyZone) {
+              const primaryZones = ex.muscles
+                .filter((m) => m.role === "primary")
+                .map((m) => m.bodyZone)
+              if (!primaryZones.includes(input.bodyZone)) return false
+            }
+            if (input?.movementPattern && !ex.movementPatterns.includes(input.movementPattern)) return false
+            return true
+          })
+          .map((ex) => ({ ...ex, isSaved: savedIds.has(ex.id) }))
+      } catch (err) {
+        console.error("[listPublic] ERROR:", err)
+        throw err
+      }
     }),
 
   listSaved: protectedProcedure.query(async ({ ctx }) => {
