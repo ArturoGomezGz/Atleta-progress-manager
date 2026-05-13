@@ -9,6 +9,6 @@ WHERE id NOT IN (
 AND is_global = true AND created_by IS NULL;
 
 -- Add partial unique index: global platform equipment must have unique names
-CREATE UNIQUE INDEX "equipment_global_name_unique"
+CREATE UNIQUE INDEX IF NOT EXISTS "equipment_global_name_unique"
 ON "equipment" (name)
 WHERE is_global = true AND created_by IS NULL;

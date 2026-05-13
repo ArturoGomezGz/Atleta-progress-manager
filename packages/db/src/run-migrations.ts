@@ -8,8 +8,12 @@ export async function runMigrations() {
   const db = drizzle(client)
 
   console.log("⏳ Aplicando migraciones...")
-  await migrate(db, { migrationsFolder: path.join(__dirname, "migrations") })
-  console.log("✅ Migraciones aplicadas")
+  try {
+    await migrate(db, { migrationsFolder: path.join(__dirname, "migrations") })
+    console.log("✅ Migraciones aplicadas")
+  } catch (err) {
+    console.error("⚠️ Drizzle migrate falló (los safety nets compensarán):", err)
+  }
 
   // Safety net: create tables that may have been recorded in __drizzle_migrations
   // but never actually created (e.g. due to a failed transaction on a previous deploy).

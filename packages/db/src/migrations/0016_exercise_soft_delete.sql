@@ -1,1 +1,1 @@
-ALTER TABLE "exercise" ADD COLUMN "deleted_at" timestamp;
+ALTER TABLE "exercise" ADD COLUMN IF NOT EXISTS "deleted_at" timestamp;
