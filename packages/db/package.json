@@ -5,7 +5,7 @@
   "exports": {
     "./schema": "./src/schema/index.ts",
     "./client": "./src/client.ts",
-    "./migrate": "./src/migrate.ts"
+    "./migrate": "./src/run-migrations.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
