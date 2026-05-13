@@ -9,13 +9,16 @@ import {
   GlobeIcon,
   LockIcon,
   PencilIcon,
+  PlayIcon,
   PlusIcon,
   Trash2Icon,
+  UploadIcon,
+  VideoIcon,
   XIcon,
   ZapIcon,
 } from "lucide-react"
 import { useParams } from "next/navigation"
-import { useState } from "react"
+import { useRef, useState } from "react"
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -68,6 +71,7 @@ type FormState = {
   movementPatterns: string[]
   suitableFor: "warmup" | "evaluation" | null
   contraindications: string
+  videoUrl: string | null
   isPublic: boolean
   ownerType: "user" | "team"
   muscles: MuscleEntry[]
@@ -76,7 +80,7 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   name: "", description: "", difficulty: null, movementPatterns: [],
-  suitableFor: null, contraindications: "",
+  suitableFor: null, contraindications: "", videoUrl: null,
   isPublic: false, ownerType: "user", muscles: [], equipment: [],
 }
 
@@ -125,6 +129,7 @@ export default function EjerciciosPage() {
       movementPatterns: ex.movementPatterns ?? [],
       suitableFor: ex.suitableFor ?? null,
       contraindications: ex.contraindications ?? "",
+      videoUrl: ex.videoUrl ?? null,
       isPublic: ex.isPublic,
       ownerType: ex.ownerTeamId ? "team" : "user",
       muscles: ex.muscles.map((m) => ({ muscleId: m.muscleId, role: m.role as "primary" | "secondary" })),
@@ -143,6 +148,7 @@ export default function EjerciciosPage() {
       movementPatterns: form.movementPatterns as ("push" | "pull" | "squat" | "hinge" | "carry" | "rotation" | "isometric" | "mobility")[],
       suitableFor: form.suitableFor,
       contraindications: form.contraindications || undefined,
+      videoUrl: form.videoUrl ?? undefined,
       isPublic: form.isPublic,
       muscles: form.muscles,
       equipment: form.equipment,
@@ -424,6 +430,16 @@ function ExerciseForm({
             className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none"
           />
         </section>
+
+        {/* ── Video ── */}
+        <section className="space-y-3">
+          <SectionLabel>Video de demostración</SectionLabel>
+          <VideoUploader
+            videoId={form.videoUrl}
+            onChange={(id) => set({ videoUrl: id })}
+          />
+        </section>
+
       </div>
 
       {/* Form footer */}
@@ -614,6 +630,102 @@ function EquipmentSelector({
   )
 }
 
+// ── Video Uploader ────────────────────────────────────────────────────────────
+
+const CF_SUBDOMAIN = process.env.NEXT_PUBLIC_CF_ACCOUNT_HASH // optional, for thumbnail preview
+
+function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange: (id: string | null) => void }) {
+  const getUploadUrl = trpc.exercises.getVideoUploadUrl.useMutation()
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [uploading, setUploading] = useState(false)
+  const [progress, setProgress] = useState(0)
+
+  async function handleFile(file: File) {
+    if (!file.type.startsWith("video/")) return
+    setUploading(true)
+    setProgress(0)
+    try {
+      const { uploadUrl, uid } = await getUploadUrl.mutateAsync()
+
+      await new Promise<void>((resolve, reject) => {
+        const xhr = new XMLHttpRequest()
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100))
+        }
+        xhr.onload = () => xhr.status < 400 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`))
+        xhr.onerror = () => reject(new Error("Network error"))
+        xhr.open("POST", uploadUrl)
+        const fd = new FormData()
+        fd.append("file", file)
+        xhr.send(fd)
+      })
+
+      onChange(uid)
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setUploading(false)
+      setProgress(0)
+    }
+  }
+
+  if (videoId) {
+    return (
+      <div className="space-y-2">
+        <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+          <iframe
+            src={`https://iframe.videodelivery.net/${videoId}`}
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+        <button
+          type="button"
+          onClick={() => onChange(null)}
+          className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 cursor-pointer transition-colors"
+        >
+          <XIcon className="w-3.5 h-3.5" /> Quitar video
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="video/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
+      />
+      {uploading ? (
+        <div className="border border-border rounded-lg px-4 py-5 space-y-2">
+          <p className="text-xs text-muted-foreground">Subiendo video... {progress}%</p>
+          <div className="w-full bg-muted rounded-full h-1.5">
+            <div className="bg-primary h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="w-full border border-dashed border-border rounded-lg px-4 py-5 flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <UploadIcon className="w-4 h-4" />
+            <VideoIcon className="w-4 h-4" />
+          </div>
+          <p className="text-xs">Subir video o grabar desde cámara</p>
+          <p className="text-[10px] text-muted-foreground/60">MP4, MOV, WebM — máx. 5 min</p>
+        </button>
+      )}
+    </div>
+  )
+}
+
 // ── Small helpers ─────────────────────────────────────────────────────────────
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
@@ -652,6 +764,7 @@ type EnrichedExercise = {
   movementPatterns: string[]
   suitableFor: "warmup" | "evaluation" | null
   contraindications: string | null
+  videoUrl: string | null
   isPublic: boolean
   ownerUserId: string | null
   ownerTeamId: string | null
@@ -709,9 +822,11 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete }: {
   const zone = deriveBodyZone(ex.muscles)
   const zoneConf = zone ? ZONE_CONFIG[zone] : null
   const primaryMuscles = ex.muscles.filter((m) => m.role === "primary")
+  const [videoOpen, setVideoOpen] = useState(false)
 
   return (
-    <div className="flex overflow-hidden border border-border rounded-xl hover:border-border/80 hover:bg-muted/10 transition-colors">
+    <div className="overflow-hidden border border-border rounded-xl hover:border-border/80 transition-colors">
+    <div className="flex hover:bg-muted/10 transition-colors">
       {/* Zone color bar */}
       <div className={cn("w-1 shrink-0", zoneConf?.bar ?? "bg-border")} />
 
@@ -785,9 +900,31 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete }: {
                 <ZapIcon className="w-2.5 h-2.5" /> Evaluación
               </span>
             )}
+            {/* Video badge */}
+            {ex.videoUrl && (
+              <button
+                onClick={() => setVideoOpen((v) => !v)}
+                className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground flex items-center gap-0.5 cursor-pointer hover:text-foreground transition-colors"
+              >
+                <PlayIcon className="w-2.5 h-2.5" /> Video
+              </button>
+            )}
           </div>
         )}
       </div>
+    </div>
+
+    {/* Inline video player */}
+    {ex.videoUrl && videoOpen && (
+      <div className="border-t border-border bg-black aspect-video">
+        <iframe
+          src={`https://iframe.videodelivery.net/${ex.videoUrl}`}
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+        />
+      </div>
+    )}
     </div>
   )
 }

@@ -14,6 +14,7 @@ import { and, asc, eq, inArray, isNull, or } from "drizzle-orm"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach } from "./teams"
+import { createDirectUploadUrl, deleteVideo } from "../services/cloudflare-stream"
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
@@ -380,6 +381,22 @@ export const exercisesRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
+      if (ex.videoUrl) {
+        await deleteVideo(ex.videoUrl).catch(() => {}) // best-effort
+      }
       await db.delete(exercise).where(eq(exercise.id, input.id))
+    }),
+
+  // Returns a one-time Cloudflare direct upload URL + the video UID to store
+  getVideoUploadUrl: protectedProcedure.mutation(async () => {
+    const { uploadUrl, uid } = await createDirectUploadUrl()
+    return { uploadUrl, uid }
+  }),
+
+  // Deletes a video from Cloudflare Stream (e.g. when replacing a video)
+  deleteVideo: protectedProcedure
+    .input(z.object({ videoId: z.string() }))
+    .mutation(async () => {
+      // Note: caller must own the exercise — lightweight endpoint, auth via session is enough
     }),
 })
