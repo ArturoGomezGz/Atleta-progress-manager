@@ -87,8 +87,8 @@ const EMPTY_FORM: FormState = {
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
-function deriveBodyZone(muscles: { bodyZone: "upper" | "lower" | "core" }[]) {
-  const zones = new Set(muscles.map((m) => m.bodyZone))
+function deriveBodyZone(muscles: { bodyZone: "upper" | "lower" | "core"; role: string }[]) {
+  const zones = new Set(muscles.filter((m) => m.role === "primary").map((m) => m.bodyZone))
   if (zones.size === 0) return null
   if (zones.size === 1) return [...zones][0] as "upper" | "lower" | "core"
   return "full_body" as const

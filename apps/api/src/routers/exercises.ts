@@ -486,9 +486,10 @@ ${equipmentCatalogText}
 
 Rules:
 - Only use IDs from the catalogs above
-- For muscles, identify primary movers and secondary/stabilizers
-- If bodyweight exercise, return empty equipment array
-- Only use IDs from the catalogs above`,
+- primary = muscles that drive the movement (define the exercise's body zone)
+- secondary = stabilizers or assistors — do NOT let them change the body zone classification
+  e.g. Back Squat → primary: quads/glutes (lower), secondary: erector spinae/core — zone is LOWER, not full body
+- If bodyweight exercise, return empty equipment array`,
         }],
       })
 
