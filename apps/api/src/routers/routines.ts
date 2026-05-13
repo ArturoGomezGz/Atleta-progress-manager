@@ -12,12 +12,24 @@ const setTargetInput = z.object({
   targetPercent: z.string().nullable(),
 })
 
+const objectiveEnum = z.enum(["strength", "hypertrophy", "endurance", "power", "cardio", "recovery"])
+
 export const routinesRouter = router({
   create: protectedProcedure
-    .input(z.object({ teamId: z.string().uuid(), name: z.string().min(1) }))
+    .input(z.object({
+      teamId: z.string().uuid(),
+      name: z.string().min(1),
+      description: z.string().optional(),
+      type: z.enum(["sequential", "circuit"]).default("sequential"),
+      rounds: z.number().int().min(1).optional(),
+      durationSeconds: z.number().int().min(1).optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
-      const [r] = await db.insert(routine).values({ ...input, createdBy: ctx.session.user.id }).returning()
+      const [r] = await db
+        .insert(routine)
+        .values({ ...input, createdBy: ctx.session.user.id })
+        .returning()
       return r
     }),
 
@@ -41,6 +53,10 @@ export const routinesRouter = router({
           exerciseId: routineExercise.exerciseId,
           exerciseName: exercise.name,
           order: routineExercise.order,
+          targetSets: routineExercise.targetSets,
+          objective: routineExercise.objective,
+          tempo: routineExercise.tempo,
+          restBetweenSetsSeconds: routineExercise.restBetweenSetsSeconds,
         })
         .from(routineExercise)
         .innerJoin(exercise, eq(routineExercise.exerciseId, exercise.id))
@@ -61,13 +77,39 @@ export const routinesRouter = router({
       return { ...r, exercises: exercisesWithSets }
     }),
 
+  update: protectedProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+      name: z.string().min(1).optional(),
+      description: z.string().nullable().optional(),
+      type: z.enum(["sequential", "circuit"]).optional(),
+      rounds: z.number().int().min(1).nullable().optional(),
+      durationSeconds: z.number().int().min(1).nullable().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...fields } = input
+      const [r] = await db.select().from(routine).where(eq(routine.id, id)).limit(1)
+      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, r.teamId)
+      const [updated] = await db
+        .update(routine)
+        .set({ ...fields, updatedAt: new Date() })
+        .where(eq(routine.id, id))
+        .returning()
+      return updated
+    }),
+
   addExercise: protectedProcedure
     .input(
       z.object({
         routineId: z.string().uuid(),
         exerciseId: z.string().uuid(),
         order: z.number().int().min(0),
-        sets: z.array(setTargetInput).min(1),
+        sets: z.array(setTargetInput).default([]),
+        targetSets: z.number().int().min(1).optional(),
+        objective: objectiveEnum.optional(),
+        tempo: z.string().optional(),
+        restBetweenSetsSeconds: z.number().int().min(0).optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -78,18 +120,52 @@ export const routinesRouter = router({
       return db.transaction(async (tx) => {
         const [re] = await tx
           .insert(routineExercise)
-          .values({ routineId: input.routineId, exerciseId: input.exerciseId, order: input.order })
+          .values({
+            routineId: input.routineId,
+            exerciseId: input.exerciseId,
+            order: input.order,
+            targetSets: input.targetSets,
+            objective: input.objective,
+            tempo: input.tempo,
+            restBetweenSetsSeconds: input.restBetweenSetsSeconds,
+          })
           .returning()
-        await tx.insert(routineSetTarget).values(
-          input.sets.map((s) => ({
-            routineExerciseId: re.id,
-            setNumber: s.setNumber,
-            targetReps: s.targetReps,
-            targetPercent: s.targetPercent,
-          })),
-        )
+
+        if (input.sets.length > 0) {
+          await tx.insert(routineSetTarget).values(
+            input.sets.map((s) => ({
+              routineExerciseId: re.id,
+              setNumber: s.setNumber,
+              targetReps: s.targetReps,
+              targetPercent: s.targetPercent,
+            })),
+          )
+        }
+
         return re
       })
+    }),
+
+  updateExercise: protectedProcedure
+    .input(z.object({
+      routineExerciseId: z.string().uuid(),
+      targetSets: z.number().int().min(1).nullable().optional(),
+      objective: objectiveEnum.nullable().optional(),
+      tempo: z.string().nullable().optional(),
+      restBetweenSetsSeconds: z.number().int().min(0).nullable().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { routineExerciseId, ...fields } = input
+      const [re] = await db.select().from(routineExercise).where(eq(routineExercise.id, routineExerciseId)).limit(1)
+      if (!re) throw new TRPCError({ code: "NOT_FOUND" })
+      const [r] = await db.select().from(routine).where(eq(routine.id, re.routineId)).limit(1)
+      await assertCoach(ctx.session.user.id, r!.teamId)
+      const [updated] = await db
+        .update(routineExercise)
+        .set(fields)
+        .where(eq(routineExercise.id, routineExerciseId))
+        .returning()
+      return updated
     }),
 
   updateSets: protectedProcedure
@@ -144,7 +220,11 @@ export const routinesRouter = router({
       const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
-      const [updated] = await db.update(routine).set({ name: input.name }).where(eq(routine.id, input.id)).returning()
+      const [updated] = await db
+        .update(routine)
+        .set({ name: input.name, updatedAt: new Date() })
+        .where(eq(routine.id, input.id))
+        .returning()
       return updated
     }),
 })

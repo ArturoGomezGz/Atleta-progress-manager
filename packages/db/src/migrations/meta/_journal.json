@@ -64,6 +64,13 @@
       "when": 1778566926423,
       "tag": "0008_cultured_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778706392696,
+      "tag": "0009_ancient_slapstick",
+      "breakpoints": true
     }
   ]
 }

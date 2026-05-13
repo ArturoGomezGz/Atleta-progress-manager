@@ -8,6 +8,7 @@ import {
   routineExercise,
   routineSetTarget,
   sessionExercise,
+  sessionFeedback,
   sessionSetTarget,
   setRecord,
   trainingSession,
@@ -29,14 +30,44 @@ export const sessionsRouter = router({
         .select({
           id: trainingSession.id,
           status: trainingSession.status,
+          sessionType: trainingSession.sessionType,
+          scheduledDate: trainingSession.scheduledDate,
           startedAt: trainingSession.startedAt,
           routineId: trainingSession.routineId,
           routineName: routine.name,
         })
         .from(trainingSession)
-        .innerJoin(routine, eq(trainingSession.routineId, routine.id))
+        .leftJoin(routine, eq(trainingSession.routineId, routine.id))
         .where(eq(trainingSession.teamId, input.teamId))
         .orderBy(desc(trainingSession.startedAt))
+    }),
+
+  mySessions: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertMember(ctx.session.user.id, input.teamId)
+      return db
+        .select({
+          athleteSessionId: athleteSession.id,
+          athleteSessionStatus: athleteSession.status,
+          sessionId: trainingSession.id,
+          sessionType: trainingSession.sessionType,
+          sessionStatus: trainingSession.status,
+          scheduledDate: trainingSession.scheduledDate,
+          startedAt: trainingSession.startedAt,
+          routineId: trainingSession.routineId,
+          routineName: routine.name,
+        })
+        .from(athleteSession)
+        .innerJoin(trainingSession, eq(athleteSession.sessionId, trainingSession.id))
+        .leftJoin(routine, eq(trainingSession.routineId, routine.id))
+        .where(
+          and(
+            eq(athleteSession.athleteId, ctx.session.user.id),
+            eq(trainingSession.teamId, input.teamId),
+          ),
+        )
+        .orderBy(desc(trainingSession.scheduledDate), desc(trainingSession.startedAt))
     }),
 
   create: protectedProcedure
@@ -44,6 +75,8 @@ export const sessionsRouter = router({
       routineId: z.string().uuid(),
       teamId: z.string().uuid(),
       athleteIds: z.array(z.string()).min(1),
+      sessionType: z.enum(["normal", "evaluation"]).default("evaluation"),
+      scheduledDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
@@ -60,10 +93,15 @@ export const sessionsRouter = router({
       return db.transaction(async (tx) => {
         const [session] = await tx
           .insert(trainingSession)
-          .values({ routineId: input.routineId, teamId: input.teamId, startedBy: ctx.session.user.id })
+          .values({
+            routineId: input.routineId,
+            teamId: input.teamId,
+            startedBy: ctx.session.user.id,
+            sessionType: input.sessionType,
+            scheduledDate: input.scheduledDate,
+          })
           .returning()
 
-        // Snapshot exercises + set targets
         for (const re of routineExercises) {
           const [se] = await tx
             .insert(sessionExercise)
@@ -141,6 +179,88 @@ export const sessionsRouter = router({
       return { ...session, exercises: exercisesWithTargets, athletes }
     }),
 
+  completeNormal: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      if (session.sessionType !== "normal") throw new TRPCError({ code: "BAD_REQUEST", message: "Solo aplica a sesiones normales" })
+      if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
+      await assertMember(ctx.session.user.id, session.teamId)
+
+      const [as] = await db
+        .select()
+        .from(athleteSession)
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, ctx.session.user.id)))
+        .limit(1)
+      if (!as) throw new TRPCError({ code: "NOT_FOUND" })
+      if (as.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "Tu sesión está cancelada" })
+
+      const [updated] = await db
+        .update(athleteSession)
+        .set({ status: "completed" })
+        .where(eq(athleteSession.id, as.id))
+        .returning()
+      return updated
+    }),
+
+  submitFeedback: protectedProcedure
+    .input(z.object({
+      sessionId: z.string().uuid(),
+      effort: z.number().int().min(1).max(5).nullable(),
+      mood: z.number().int().min(1).max(5).nullable(),
+      notes: z.string().max(1000).nullable(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertMember(ctx.session.user.id, session.teamId)
+
+      const [as] = await db
+        .select()
+        .from(athleteSession)
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, ctx.session.user.id)))
+        .limit(1)
+      if (!as) throw new TRPCError({ code: "NOT_FOUND" })
+
+      const [feedback] = await db
+        .insert(sessionFeedback)
+        .values({
+          athleteSessionId: as.id,
+          effort: input.effort,
+          mood: input.mood,
+          notes: input.notes,
+        })
+        .onConflictDoUpdate({
+          target: sessionFeedback.athleteSessionId,
+          set: { effort: input.effort, mood: input.mood, notes: input.notes, recordedAt: new Date() },
+        })
+        .returning()
+      return feedback
+    }),
+
+  getFeedback: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid(), athleteId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertMember(ctx.session.user.id, session.teamId)
+
+      const [as] = await db
+        .select()
+        .from(athleteSession)
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, input.athleteId)))
+        .limit(1)
+      if (!as) return null
+
+      const [feedback] = await db
+        .select()
+        .from(sessionFeedback)
+        .where(eq(sessionFeedback.athleteSessionId, as.id))
+        .limit(1)
+      return feedback ?? null
+    }),
+
   athleteSets: protectedProcedure
     .input(z.object({ sessionId: z.string().uuid(), athleteId: z.string() }))
     .query(async ({ ctx, input }) => {
@@ -173,6 +293,7 @@ export const sessionsRouter = router({
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
+      if (session.sessionType !== "evaluation") throw new TRPCError({ code: "BAD_REQUEST", message: "Solo se registran series en sesiones de evaluación" })
       await assertCoach(ctx.session.user.id, session.teamId)
 
       const [as] = await db
@@ -272,7 +393,7 @@ export const sessionsRouter = router({
         setNumber: z.number().int().min(1),
         targetReps: z.number().int().min(1).nullable(),
         targetPercent: z.string().nullable(),
-      })).min(1),
+      })).default([]),
     }))
     .mutation(async ({ ctx, input }) => {
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
@@ -285,14 +406,18 @@ export const sessionsRouter = router({
           .insert(sessionExercise)
           .values({ sessionId: input.sessionId, exerciseId: input.exerciseId, order: input.order })
           .returning()
-        await tx.insert(sessionSetTarget).values(
-          input.sets.map((s) => ({
-            sessionExerciseId: se.id,
-            setNumber: s.setNumber,
-            targetReps: s.targetReps,
-            targetPercent: s.targetPercent,
-          })),
-        )
+
+        if (input.sets.length > 0) {
+          await tx.insert(sessionSetTarget).values(
+            input.sets.map((s) => ({
+              sessionExerciseId: se.id,
+              setNumber: s.setNumber,
+              targetReps: s.targetReps,
+              targetPercent: s.targetPercent,
+            })),
+          )
+        }
+
         return se
       })
     }),
@@ -373,7 +498,9 @@ export const sessionsRouter = router({
           .where(eq(trainingSession.id, input.id))
           .returning()
 
-        // Calculate RMs from valid sets (Epley formula: 1RM = weight × (1 + reps/30))
+        // Only calculate RMs for evaluation sessions
+        if (session.sessionType !== "evaluation") return updated
+
         const validSets = await tx
           .select({
             athleteId: athleteSession.athleteId,
@@ -394,7 +521,6 @@ export const sessionsRouter = router({
             ),
           )
 
-        // Max estimated RM per (athleteId, exerciseId)
         const rmMap = new Map<string, { athleteId: string; exerciseId: string; rmLbs: number }>()
         for (const s of validSets) {
           const key = `${s.athleteId}:${s.exerciseId}`
@@ -405,7 +531,6 @@ export const sessionsRouter = router({
           }
         }
 
-        // Upsert only if new value exceeds current RM
         for (const { athleteId, exerciseId, rmLbs } of rmMap.values()) {
           const [current] = await tx
             .select({ rmLbs: athleteExerciseRm.rmLbs })

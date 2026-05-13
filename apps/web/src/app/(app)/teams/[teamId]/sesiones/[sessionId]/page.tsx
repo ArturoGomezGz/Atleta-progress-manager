@@ -1,7 +1,11 @@
 import { use } from "react"
-import { SessionView } from "./session-view"
+import { SessionRouter } from "./session-router"
 
-export default function SessionPage({ params }: { params: Promise<{ sessionId: string }> }) {
-  const { sessionId } = use(params)
-  return <SessionView sessionId={sessionId} />
+export default function SessionPage({
+  params,
+}: {
+  params: Promise<{ teamId: string; sessionId: string }>
+}) {
+  const { sessionId, teamId } = use(params)
+  return <SessionRouter sessionId={sessionId} teamId={teamId} />
 }

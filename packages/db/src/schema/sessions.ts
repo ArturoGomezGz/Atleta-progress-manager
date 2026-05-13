@@ -1,4 +1,4 @@
-import { integer, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { date, integer, numeric, pgEnum, pgTable, primaryKey, text, timestamp, unique, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
 import { routine, routineSetTarget } from "./routines"
@@ -6,13 +6,16 @@ import { team } from "./teams"
 
 export const rmSourceEnum = pgEnum("rm_source", ["auto", "manual"])
 
+export const sessionTypeEnum = pgEnum("session_type", ["normal", "evaluation"])
 export const sessionStatusEnum = pgEnum("session_status", ["active", "completed", "cancelled"])
-export const athleteSessionStatusEnum = pgEnum("athlete_session_status", ["active", "cancelled"])
+export const athleteSessionStatusEnum = pgEnum("athlete_session_status", ["active", "completed", "cancelled"])
 export const setStatusEnum = pgEnum("set_status", ["valid", "invalid"])
 
 export const trainingSession = pgTable("training_session", {
   id: uuid("id").primaryKey().defaultRandom(),
   routineId: uuid("routine_id").references(() => routine.id, { onDelete: "set null" }),
+  sessionType: sessionTypeEnum("session_type").notNull().default("evaluation"),
+  scheduledDate: date("scheduled_date"),
   teamId: uuid("team_id")
     .notNull()
     .references(() => team.id, { onDelete: "cascade" }),
@@ -54,6 +57,17 @@ export const athleteSession = pgTable("athlete_session", {
     .references(() => user.id),
   status: athleteSessionStatusEnum("status").notNull().default("active"),
 })
+
+export const sessionFeedback = pgTable("session_feedback", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  athleteSessionId: uuid("athlete_session_id")
+    .notNull()
+    .references(() => athleteSession.id, { onDelete: "cascade" }),
+  effort: integer("effort"),
+  mood: integer("mood"),
+  notes: text("notes"),
+  recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
+}, (t) => [unique().on(t.athleteSessionId)])
 
 export const athleteExerciseRm = pgTable("athlete_exercise_rm", {
   id: uuid("id").primaryKey().defaultRandom(),

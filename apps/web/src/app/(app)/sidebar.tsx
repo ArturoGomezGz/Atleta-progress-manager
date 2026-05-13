@@ -21,6 +21,7 @@ const COACH_NAV: NavItem[] = [
 ]
 
 const ATHLETE_NAV: NavItem[] = [
+  { key: "sesiones",    label: "Sesiones",    icon: DumbbellIcon },
   { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
   { key: "ejercicios",  label: "Ejercicios",  icon: ListIcon },
 ]
