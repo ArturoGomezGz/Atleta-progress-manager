@@ -638,6 +638,7 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
   const [error, setError] = useState<string | null>(null)
+  const [justUploaded, setJustUploaded] = useState(false)
 
   async function handleFile(file: File) {
     if (!file.type.startsWith("video/")) return
@@ -660,6 +661,7 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
         xhr.send(fd)
       })
 
+      setJustUploaded(true)
       onChange(uid)
     } catch (err) {
       console.error(err)
@@ -673,17 +675,27 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
   if (videoId) {
     return (
       <div className="space-y-2">
-        <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
-          <iframe
-            src={`https://iframe.videodelivery.net/${videoId}`}
-            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          />
-        </div>
+        {justUploaded ? (
+          <div className="border border-border rounded-lg px-4 py-5 flex items-center gap-3 bg-muted/20">
+            <VideoIcon className="w-4 h-4 shrink-0 text-primary" />
+            <div>
+              <p className="text-foreground font-medium text-xs">Video subido correctamente</p>
+              <p className="text-[10px] mt-0.5 text-muted-foreground">Cloudflare está procesando el video. Estará disponible para reproducir en unos segundos después de guardar.</p>
+            </div>
+          </div>
+        ) : (
+          <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+            <iframe
+              src={`https://iframe.videodelivery.net/${videoId}`}
+              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+              className="w-full h-full"
+            />
+          </div>
+        )}
         <button
           type="button"
-          onClick={() => onChange(null)}
+          onClick={() => { onChange(null); setJustUploaded(false) }}
           className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 cursor-pointer transition-colors"
         >
           <XIcon className="w-3.5 h-3.5" /> Quitar video
