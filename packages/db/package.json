@@ -4,7 +4,8 @@
   "private": true,
   "exports": {
     "./schema": "./src/schema/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./migrate": "./src/migrate.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",

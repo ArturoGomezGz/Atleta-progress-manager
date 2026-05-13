@@ -9,18 +9,23 @@ import { seedCatalogs } from "./seed-catalogs"
 // Loads packages/db/.env locally; silently no-ops in Railway where vars are injected
 config()
 
-async function main() {
+export async function runMigrations() {
   const client = postgres(process.env.DATABASE_URL!, { max: 1 })
   const db = drizzle(client)
 
   console.log("⏳ Aplicando migraciones...")
   await migrate(db, { migrationsFolder: path.join(__dirname, "migrations") })
-  console.log("✓ Migraciones aplicadas\n")
-
-  await seedExercises()
-  await seedCatalogs()
+  console.log("✅ Migraciones aplicadas")
 
   await client.end()
 }
 
-main().catch(console.error).finally(() => process.exit())
+async function main() {
+  await runMigrations()
+  await seedExercises()
+  await seedCatalogs()
+}
+
+if (require.main === module) {
+  main().catch(console.error).finally(() => process.exit())
+}
