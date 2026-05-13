@@ -113,6 +113,13 @@
       "when": 1747267200000,
       "tag": "0015_routine_exercise_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1747353600000,
+      "tag": "0016_exercise_soft_delete",
+      "breakpoints": true
     }
   ]
 }

@@ -190,11 +190,14 @@ export const exercisesRouter = router({
         .select()
         .from(exercise)
         .where(
-          or(
-            and(isNull(exercise.ownerUserId), isNull(exercise.ownerTeamId)),
-            eq(exercise.isPublic, true),
-            eq(exercise.ownerUserId, userId),
-            ...(teamIds.length > 0 ? [inArray(exercise.ownerTeamId, teamIds)] : []),
+          and(
+            isNull(exercise.deletedAt),
+            or(
+              and(isNull(exercise.ownerUserId), isNull(exercise.ownerTeamId)),
+              eq(exercise.isPublic, true),
+              eq(exercise.ownerUserId, userId),
+              ...(teamIds.length > 0 ? [inArray(exercise.ownerTeamId, teamIds)] : []),
+            ),
           ),
         )
         .orderBy(asc(exercise.name))
@@ -228,9 +231,12 @@ export const exercisesRouter = router({
       .select()
       .from(exercise)
       .where(
-        or(
-          eq(exercise.ownerUserId, userId),
-          ...(coachedTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, coachedTeamIds)] : []),
+        and(
+          isNull(exercise.deletedAt),
+          or(
+            eq(exercise.ownerUserId, userId),
+            ...(coachedTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, coachedTeamIds)] : []),
+          ),
         ),
       )
       .orderBy(asc(exercise.name))
@@ -256,9 +262,12 @@ export const exercisesRouter = router({
       .select()
       .from(exercise)
       .where(
-        or(
-          eq(exercise.ownerUserId, userId),
-          ...(allTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, allTeamIds)] : []),
+        and(
+          isNull(exercise.deletedAt),
+          or(
+            eq(exercise.ownerUserId, userId),
+            ...(allTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, allTeamIds)] : []),
+          ),
         ),
       )
       .orderBy(asc(exercise.name))
@@ -393,10 +402,19 @@ export const exercisesRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
+      // Delete video from Cloudflare — it's the creator's resource and no longer needed
       if (ex.videoUrl) {
-        await deleteVideo(ex.videoUrl).catch(() => {}) // best-effort
+        await deleteVideo(ex.videoUrl).catch(() => {})
       }
-      await db.delete(exercise).where(eq(exercise.id, input.id))
+
+      // Remove all saves — exercise won't be visible to anyone anyway
+      await db.delete(exerciseSave).where(eq(exerciseSave.exerciseId, input.id))
+
+      // Soft delete: keep the row for history (PRs, session logs, routines)
+      await db
+        .update(exercise)
+        .set({ deletedAt: new Date(), videoUrl: null })
+        .where(eq(exercise.id, input.id))
     }),
 
   // Returns a one-time Cloudflare direct upload URL + the video UID to store
@@ -535,6 +553,7 @@ Rules:
           .where(
             and(
               eq(exercise.isPublic, true),
+              isNull(exercise.deletedAt),
               input?.query ? ilike(exercise.name, `%${input.query}%`) : undefined,
               input?.difficulty ? eq(exercise.difficulty, input.difficulty) : undefined,
             ),
@@ -584,7 +603,7 @@ Rules:
     const exercises = await db
       .select()
       .from(exercise)
-      .where(inArray(exercise.id, exerciseIds))
+      .where(and(inArray(exercise.id, exerciseIds), isNull(exercise.deletedAt)))
       .orderBy(asc(exercise.name))
 
     const enriched = await attachDetails(exercises)
