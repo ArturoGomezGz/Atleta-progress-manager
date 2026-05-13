@@ -51,6 +51,11 @@ export async function runMigrations() {
       ADD CONSTRAINT "routine_exercise_exercise_id_exercise_id_fk"
       FOREIGN KEY ("exercise_id") REFERENCES "exercise"("id") ON DELETE CASCADE
   `
+  // Safety net: add deleted_at column if migration 0016 hasn't applied yet
+  await client`
+    ALTER TABLE "exercise" ADD COLUMN IF NOT EXISTS "deleted_at" timestamp
+  `
+
   console.log("✅ Tablas verificadas")
 
   await client.end()
