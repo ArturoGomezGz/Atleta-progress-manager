@@ -85,7 +85,7 @@ type FormState = {
 const EMPTY_FORM: FormState = {
   name: "", description: "", difficulty: null, movementPatterns: [],
   suitableFor: null, contraindications: "", videoUrl: null,
-  isPublic: false, ownerType: "user", muscles: [], equipment: [],
+  isPublic: true, ownerType: "user", muscles: [], equipment: [],
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -544,7 +544,7 @@ function ExerciseSheet({
                   onClick={() => set({ isPublic: false })}
                   className={cn(
                     "flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl border transition-colors cursor-pointer",
-                    !form.isPublic ? "bg-muted/60 border-border text-foreground font-medium" : "border-border text-muted-foreground hover:text-foreground",
+                    !form.isPublic ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
                   )}
                 >
                   <LockIcon className="w-3.5 h-3.5" /> Privado
