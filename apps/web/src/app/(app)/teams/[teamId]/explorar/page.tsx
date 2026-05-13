@@ -1,10 +1,10 @@
 "use client"
 
+import { ExerciseDetailSheet, type ExerciseDetail } from "@/components/exercise-detail-sheet"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
   BookmarkIcon,
-  DumbbellIcon,
   FlameIcon,
   SearchIcon,
   XIcon,
@@ -68,7 +68,7 @@ export default function ExplorarPage() {
   const [query, setQuery] = useState("")
   const [bodyZone, setBodyZone] = useState<"upper" | "lower" | "core" | undefined>(undefined)
   const [difficulty, setDifficulty] = useState<"beginner" | "intermediate" | "advanced" | undefined>(undefined)
-  const [selected, setSelected] = useState<PublicExercise | null>(null)
+  const [selected, setSelected] = useState<(ExerciseDetail & { isSaved: boolean }) | null>(null)
 
   const { data: exercises, isLoading, refetch } = trpc.exercises.listPublic.useQuery({
     query: query || undefined,
@@ -159,6 +159,7 @@ export default function ExplorarPage() {
                 onToggleSave={(e) => { e.stopPropagation(); toggleSave(ex.id, ex.isSaved) }}
                 isMutating={isMutating}
               />
+
             ))
           )}
         </div>
@@ -169,6 +170,7 @@ export default function ExplorarPage() {
         <ExerciseDetailSheet
           exercise={selected}
           onClose={() => setSelected(null)}
+          isSaved={selected.isSaved}
           onToggleSave={() => toggleSave(selected.id, selected.isSaved)}
           isMutating={isMutating}
         />
@@ -249,202 +251,3 @@ function ExploreCard({ exercise: ex, onOpen, onToggleSave, isMutating }: {
   )
 }
 
-// ── Exercise Detail Sheet ─────────────────────────────────────────────────────
-
-function ExerciseDetailSheet({ exercise: ex, onClose, onToggleSave, isMutating }: {
-  exercise: PublicExercise
-  onClose: () => void
-  onToggleSave: () => void
-  isMutating: boolean
-}) {
-  const [visible, setVisible] = useState(false)
-  useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
-
-  function close() { setVisible(false); setTimeout(onClose, 300) }
-
-  const zone = deriveBodyZone(ex.muscles)
-  const zoneConf = zone ? ZONE_CONFIG[zone] : null
-  const primaryMuscles = ex.muscles.filter((m) => m.role === "primary")
-  const secondaryMuscles = ex.muscles.filter((m) => m.role === "secondary")
-
-  // Group muscles by muscle group
-  const primaryGroups = groupByMuscleGroup(primaryMuscles)
-  const secondaryGroups = groupByMuscleGroup(secondaryMuscles)
-
-  return (
-    <>
-      {/* Backdrop */}
-      <div
-        onClick={close}
-        className={cn(
-          "fixed inset-0 bg-black/50 z-40 transition-opacity duration-300",
-          visible ? "opacity-100" : "opacity-0",
-        )}
-      />
-
-      {/* Sheet */}
-      <div className={cn(
-        "fixed z-50 bg-background flex flex-col",
-        "bottom-0 left-0 right-0 rounded-t-2xl max-h-[90dvh]",
-        "md:bottom-0 md:top-0 md:left-auto md:right-0 md:w-[480px] md:rounded-none md:rounded-l-2xl md:max-h-full md:h-full",
-        "transition-transform duration-300 ease-out",
-        visible ? "translate-y-0 md:translate-x-0" : "translate-y-full md:translate-x-full md:translate-y-0",
-      )}>
-
-        {/* Drag handle (mobile) */}
-        <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
-          <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
-        </div>
-
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <p className="text-base font-semibold truncate pr-4">{ex.name}</p>
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={onToggleSave}
-              disabled={isMutating}
-              className={cn(
-                "p-2 rounded-lg cursor-pointer transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center",
-                ex.isSaved ? "text-primary hover:text-muted-foreground" : "text-muted-foreground hover:text-primary",
-              )}
-              title={ex.isSaved ? "Quitar de guardados" : "Guardar"}
-            >
-              <BookmarkIcon className={cn("w-4 h-4", ex.isSaved && "fill-current")} />
-            </button>
-            <button onClick={close} className="p-2 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors">
-              <XIcon className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto overscroll-contain">
-
-          {/* Video hero */}
-          {ex.videoUrl ? (
-            <div className="aspect-video bg-black shrink-0">
-              <iframe
-                src={`https://iframe.videodelivery.net/${ex.videoUrl}`}
-                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
-              />
-            </div>
-          ) : (
-            /* Zone color banner when no video */
-            zoneConf && (
-              <div className={cn("h-2 w-full", zoneConf.bar)} />
-            )
-          )}
-
-          <div className="px-5 py-5 space-y-5">
-
-            {/* Pills row */}
-            <div className="flex flex-wrap gap-1.5">
-              {zoneConf && (
-                <span className={cn("text-xs px-2.5 py-1 rounded-full border font-medium", zoneConf.pill)}>{zoneConf.label}</span>
-              )}
-              {ex.difficulty && (
-                <span className={cn("text-xs px-2.5 py-1 rounded-full border font-medium", DIFFICULTY_CONFIG[ex.difficulty].pill)}>
-                  {DIFFICULTY_CONFIG[ex.difficulty].label}
-                </span>
-              )}
-              {ex.movementPatterns.map((p) => (
-                <span key={p} className="text-xs px-2.5 py-1 rounded-full border border-border text-muted-foreground">
-                  {PATTERN_LABELS[p] ?? p}
-                </span>
-              ))}
-              {ex.suitableFor === "warmup" && (
-                <span className="text-xs px-2.5 py-1 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-600 flex items-center gap-1">
-                  <FlameIcon className="w-3 h-3" /> Calentamiento
-                </span>
-              )}
-              {ex.suitableFor === "evaluation" && (
-                <span className="text-xs px-2.5 py-1 rounded-full border border-primary/20 bg-primary/10 text-primary flex items-center gap-1">
-                  <ZapIcon className="w-3 h-3" /> Evaluación
-                </span>
-              )}
-            </div>
-
-            {/* Description */}
-            {ex.description && (
-              <p className="text-sm text-muted-foreground leading-relaxed">{ex.description}</p>
-            )}
-
-            {/* Muscles */}
-            {ex.muscles.length > 0 && (
-              <section className="space-y-3">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <DumbbellIcon className="w-3.5 h-3.5" /> Músculos
-                </h3>
-
-                {primaryGroups.length > 0 && (
-                  <div className="space-y-1.5">
-                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Primarios</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {primaryMuscles.map((m) => (
-                        <span key={m.muscleId} className="text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/5 text-foreground font-medium">
-                          {m.muscleName}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {secondaryMuscles.length > 0 && (
-                  <div className="space-y-1.5">
-                    <p className="text-[11px] text-muted-foreground font-medium uppercase tracking-wide">Secundarios / Estabilizadores</p>
-                    <div className="flex flex-wrap gap-1.5">
-                      {secondaryMuscles.map((m) => (
-                        <span key={m.muscleId} className="text-xs px-2.5 py-1 rounded-full border border-border bg-muted/20 text-muted-foreground">
-                          {m.muscleName}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </section>
-            )}
-
-            {/* Equipment */}
-            {ex.equipment.length > 0 && (
-              <section className="space-y-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Equipamiento</h3>
-                <div className="flex flex-wrap gap-1.5">
-                  {ex.equipment.map((e) => (
-                    <span key={e.equipmentId} className="text-xs px-2.5 py-1 rounded-full border border-border bg-muted/20 text-foreground">
-                      {e.equipmentName}
-                    </span>
-                  ))}
-                </div>
-              </section>
-            )}
-
-            {/* Contraindications */}
-            {ex.contraindications && (
-              <section className="space-y-2">
-                <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Contraindicaciones</h3>
-                <p className="text-sm text-muted-foreground leading-relaxed border border-border rounded-xl px-4 py-3 bg-muted/10">
-                  {ex.contraindications}
-                </p>
-              </section>
-            )}
-
-          </div>
-        </div>
-      </div>
-    </>
-  )
-}
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function groupByMuscleGroup(muscles: PublicExercise["muscles"]) {
-  const map = new Map<string, { groupName: string; muscles: typeof muscles }>()
-  for (const m of muscles) {
-    const entry = map.get(m.muscleGroupId) ?? { groupName: m.muscleGroupName, muscles: [] }
-    entry.muscles.push(m)
-    map.set(m.muscleGroupId, entry)
-  }
-  return [...map.values()]
-}

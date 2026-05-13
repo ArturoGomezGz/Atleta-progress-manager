@@ -1,5 +1,6 @@
 "use client"
 
+import { ExerciseDetailSheet, type ExerciseDetail } from "@/components/exercise-detail-sheet"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
@@ -109,6 +110,7 @@ export default function EjerciciosPage() {
 
   const [form, setForm] = useState<FormState | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [detailExercise, setDetailExercise] = useState<ExerciseDetail | null>(null)
 
   const currentTeam = teams?.find((t) => t.team.id === teamId)
   const isCoach = currentTeam?.role === "coach"
@@ -219,6 +221,7 @@ export default function EjerciciosPage() {
             exercises={personal}
             onEdit={openEdit}
             onDelete={setDeleteConfirm}
+            onOpen={setDetailExercise}
             deleteConfirm={deleteConfirm}
             onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
             onDeleteCancel={() => setDeleteConfirm(null)}
@@ -230,6 +233,7 @@ export default function EjerciciosPage() {
               exercises={teamExercises}
               onEdit={openEdit}
               onDelete={setDeleteConfirm}
+              onOpen={setDetailExercise}
               deleteConfirm={deleteConfirm}
               onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
               onDeleteCancel={() => setDeleteConfirm(null)}
@@ -257,6 +261,7 @@ export default function EjerciciosPage() {
                 exercise={ex}
                 onEdit={() => {}}
                 onDelete={() => {}}
+                onOpen={setDetailExercise}
                 savedBadge
                 onUnsave={() => unsaveMutation.mutate({ exerciseId: ex.id })}
               />
@@ -276,6 +281,14 @@ export default function EjerciciosPage() {
           currentTeamName={currentTeam?.team.name}
           muscleGroups={muscleGroups ?? []}
           equipmentList={equipmentList ?? []}
+        />
+      )}
+
+      {/* Detail sheet (read-only, no bookmark) */}
+      {detailExercise && (
+        <ExerciseDetailSheet
+          exercise={detailExercise}
+          onClose={() => setDetailExercise(null)}
         />
       )}
     </div>
@@ -960,11 +973,12 @@ type EnrichedExercise = {
   equipment: { equipmentId: string; equipmentName: string }[]
 }
 
-function Section({ title, exercises, onEdit, onDelete, deleteConfirm, onDeleteConfirm, onDeleteCancel, isDeleting }: {
+function Section({ title, exercises, onEdit, onDelete, onOpen, deleteConfirm, onDeleteConfirm, onDeleteCancel, isDeleting }: {
   title: string
   exercises: EnrichedExercise[]
   onEdit: (ex: EnrichedExercise) => void
   onDelete: (id: string) => void
+  onOpen: (ex: EnrichedExercise) => void
   deleteConfirm: string | null
   onDeleteConfirm: (id: string) => void
   onDeleteCancel: () => void
@@ -985,7 +999,7 @@ function Section({ title, exercises, onEdit, onDelete, deleteConfirm, onDeleteCo
               </div>
             </div>
           ) : (
-            <ExerciseCard key={ex.id} exercise={ex} onEdit={onEdit} onDelete={onDelete} />
+            <ExerciseCard key={ex.id} exercise={ex} onEdit={onEdit} onDelete={onDelete} onOpen={onOpen} />
           ),
         )}
       </div>
@@ -993,10 +1007,11 @@ function Section({ title, exercises, onEdit, onDelete, deleteConfirm, onDeleteCo
   )
 }
 
-function ExerciseCard({ exercise: ex, onEdit, onDelete, savedBadge, onUnsave }: {
+function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUnsave }: {
   exercise: EnrichedExercise
   onEdit: (ex: EnrichedExercise) => void
   onDelete: (id: string) => void
+  onOpen?: (ex: EnrichedExercise) => void
   savedBadge?: boolean
   onUnsave?: () => void
 }) {
@@ -1006,13 +1021,16 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, savedBadge, onUnsave }: 
   const [videoOpen, setVideoOpen] = useState(false)
 
   return (
-    <div className="overflow-hidden border border-border rounded-xl hover:border-border/80 transition-colors">
+    <div
+      onClick={() => onOpen?.(ex)}
+      className={cn("overflow-hidden border border-border rounded-xl hover:border-border/80 transition-colors", onOpen && "cursor-pointer")}
+    >
       <div className="flex hover:bg-muted/10 transition-colors">
         <div className={cn("w-1 shrink-0", zoneConf?.bar ?? "bg-border")} />
         <div className="flex-1 min-w-0 px-4 py-3">
           <div className="flex items-start justify-between gap-2">
             <p className="text-sm font-medium leading-snug">{ex.name}</p>
-            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+            <div className="flex items-center gap-1.5 shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
               {savedBadge ? (
                 <button
                   onClick={onUnsave}
@@ -1073,7 +1091,7 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, savedBadge, onUnsave }: 
               )}
               {ex.videoUrl && (
                 <button
-                  onClick={() => setVideoOpen((v) => !v)}
+                  onClick={(e) => { e.stopPropagation(); setVideoOpen((v) => !v) }}
                   className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground flex items-center gap-0.5 cursor-pointer hover:text-foreground transition-colors"
                 >
                   <PlayIcon className="w-2.5 h-2.5" /> Video
