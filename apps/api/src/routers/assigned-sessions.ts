@@ -9,9 +9,10 @@ import {
   routineSetTarget,
   teamGroup,
   teamGroupMember,
+  user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, eq, inArray } from "drizzle-orm"
+import { and, asc, eq, inArray, or } from "drizzle-orm"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
@@ -61,7 +62,32 @@ export const assignedSessionsRouter = router({
       const conditions = [eq(assignedSession.teamId, input.teamId)]
       if (input.athleteId) conditions.push(eq(assignedSession.assignedToAthleteId, input.athleteId))
       if (input.status) conditions.push(eq(assignedSession.status, input.status))
-      return db.select().from(assignedSession).where(and(...conditions)).orderBy(asc(assignedSession.scheduledDate))
+
+      const athleteUser = db.$with("athlete_user").as(
+        db.select({ id: user.id, name: user.name }).from(user)
+      )
+
+      return db
+        .select({
+          id: assignedSession.id,
+          routineId: assignedSession.routineId,
+          routineName: routine.name,
+          teamId: assignedSession.teamId,
+          assignedBy: assignedSession.assignedBy,
+          assignedToAthleteId: assignedSession.assignedToAthleteId,
+          athleteName: athleteUser.name,
+          assignedToGroupId: assignedSession.assignedToGroupId,
+          groupName: teamGroup.name,
+          scheduledDate: assignedSession.scheduledDate,
+          status: assignedSession.status,
+          createdAt: assignedSession.createdAt,
+        })
+        .from(assignedSession)
+        .leftJoin(routine, eq(assignedSession.routineId, routine.id))
+        .leftJoin(athleteUser, eq(assignedSession.assignedToAthleteId, athleteUser.id))
+        .leftJoin(teamGroup, eq(assignedSession.assignedToGroupId, teamGroup.id))
+        .where(and(...conditions))
+        .orderBy(asc(assignedSession.scheduledDate))
     }),
 
   myList: protectedProcedure
@@ -70,7 +96,6 @@ export const assignedSessionsRouter = router({
       await assertMember(ctx.session.user.id, input.teamId)
       const athleteId = ctx.session.user.id
 
-      // Groups this athlete belongs to
       const myGroups = await db
         .select({ groupId: teamGroupMember.groupId })
         .from(teamGroupMember)
@@ -79,44 +104,26 @@ export const assignedSessionsRouter = router({
 
       const groupIds = myGroups.map((g) => g.groupId)
 
-      // Sessions assigned directly or via group
-      const directCondition = eq(assignedSession.assignedToAthleteId, athleteId)
-      const sessions =
-        groupIds.length > 0
-          ? await db
-              .select()
-              .from(assignedSession)
-              .where(
-                and(
-                  eq(assignedSession.teamId, input.teamId),
-                  // direct OR via group — use OR via sql raw or union
-                ),
-              )
-          : await db
-              .select()
-              .from(assignedSession)
-              .where(and(eq(assignedSession.teamId, input.teamId), directCondition))
-              .orderBy(asc(assignedSession.scheduledDate))
+      const targetCondition = groupIds.length > 0
+        ? or(eq(assignedSession.assignedToAthleteId, athleteId), inArray(assignedSession.assignedToGroupId, groupIds))!
+        : eq(assignedSession.assignedToAthleteId, athleteId)
 
-      if (groupIds.length > 0) {
-        const [direct, viaGroup] = await Promise.all([
-          db
-            .select()
-            .from(assignedSession)
-            .where(and(eq(assignedSession.teamId, input.teamId), directCondition))
-            .orderBy(asc(assignedSession.scheduledDate)),
-          db
-            .select()
-            .from(assignedSession)
-            .where(and(eq(assignedSession.teamId, input.teamId), inArray(assignedSession.assignedToGroupId, groupIds)))
-            .orderBy(asc(assignedSession.scheduledDate)),
-        ])
-        // Deduplicate by id
-        const seen = new Set<string>()
-        return [...direct, ...viaGroup].filter((s) => (seen.has(s.id) ? false : seen.add(s.id))).sort((a, b) => a.scheduledDate.localeCompare(b.scheduledDate))
-      }
-
-      return sessions
+      return db
+        .select({
+          id: assignedSession.id,
+          routineId: assignedSession.routineId,
+          routineName: routine.name,
+          scheduledDate: assignedSession.scheduledDate,
+          status: assignedSession.status,
+          assignedToAthleteId: assignedSession.assignedToAthleteId,
+          assignedToGroupId: assignedSession.assignedToGroupId,
+          groupName: teamGroup.name,
+        })
+        .from(assignedSession)
+        .leftJoin(routine, eq(assignedSession.routineId, routine.id))
+        .leftJoin(teamGroup, eq(assignedSession.assignedToGroupId, teamGroup.id))
+        .where(and(eq(assignedSession.teamId, input.teamId), targetCondition))
+        .orderBy(asc(assignedSession.scheduledDate))
     }),
 
   cancel: protectedProcedure
