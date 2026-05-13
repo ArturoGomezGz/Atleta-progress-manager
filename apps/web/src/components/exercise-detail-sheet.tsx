@@ -1,7 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
-import { BookmarkIcon, DumbbellIcon, FlameIcon, XIcon, ZapIcon } from "lucide-react"
+import { BookmarkIcon, DumbbellIcon, FlameIcon, UserIcon, XIcon, ZapIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -15,6 +15,7 @@ export type ExerciseDetail = {
   suitableFor: "warmup" | "evaluation" | null
   contraindications: string | null
   videoUrl?: string | null
+  authorName?: string | null
   muscles: {
     muscleId: string
     muscleName: string
@@ -113,7 +114,15 @@ export function ExerciseDetailSheet({
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
-          <p className="text-base font-semibold truncate pr-4">{ex.name}</p>
+          <div className="min-w-0 pr-4">
+            <p className="text-base font-semibold truncate">{ex.name}</p>
+            {ex.authorName && (
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+                <UserIcon className="w-3 h-3 shrink-0" />
+                {ex.authorName}
+              </p>
+            )}
+          </div>
           <div className="flex items-center gap-1 shrink-0">
             {onToggleSave !== undefined && isSaved !== undefined && (
               <button

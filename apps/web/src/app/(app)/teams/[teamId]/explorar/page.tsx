@@ -7,6 +7,7 @@ import {
   BookmarkIcon,
   FlameIcon,
   SearchIcon,
+  UserIcon,
   XIcon,
   ZapIcon,
 } from "lucide-react"
@@ -58,6 +59,7 @@ type PublicExercise = {
   contraindications: string | null
   videoUrl: string | null | undefined
   isSaved: boolean
+  authorName: string | null
   muscles: { muscleId: string; muscleName: string; role: string; muscleGroupId: string; muscleGroupName: string; bodyZone: "upper" | "lower" | "core" }[]
   equipment: { equipmentId: string; equipmentName: string }[]
 }
@@ -202,6 +204,11 @@ function ExploreCard({ exercise: ex, onOpen, onToggleSave, isMutating }: {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-sm font-medium leading-snug">{ex.name}</p>
+              {ex.authorName && (
+                <p className="text-[10px] text-muted-foreground/70 flex items-center gap-0.5 mt-0.5">
+                  <UserIcon className="w-2.5 h-2.5 shrink-0" />{ex.authorName}
+                </p>
+              )}
               {ex.description && <p className="text-xs text-muted-foreground truncate mt-0.5">{ex.description}</p>}
             </div>
             <button

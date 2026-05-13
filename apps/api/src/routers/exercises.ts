@@ -9,6 +9,7 @@ import {
   muscleGroup,
   team,
   teamMember,
+  user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
 import { and, asc, eq, ilike, inArray, isNull, or } from "drizzle-orm"
@@ -40,8 +41,9 @@ async function attachDetails(exercises: (typeof exercise.$inferSelect)[]) {
   if (exercises.length === 0) return []
 
   const ids = exercises.map((e) => e.id)
+  const creatorIds = [...new Set(exercises.map((e) => e.createdBy).filter((id): id is string => !!id))]
 
-  const [muscles, equipments] = await Promise.all([
+  const [muscles, equipments, creators] = await Promise.all([
     db
       .select({
         exerciseId: exerciseMuscle.exerciseId,
@@ -65,7 +67,12 @@ async function attachDetails(exercises: (typeof exercise.$inferSelect)[]) {
       .from(exerciseEquipment)
       .innerJoin(equipment, eq(exerciseEquipment.equipmentId, equipment.id))
       .where(inArray(exerciseEquipment.exerciseId, ids)),
+    creatorIds.length > 0
+      ? db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, creatorIds))
+      : Promise.resolve([]),
   ])
+
+  const creatorMap = new Map(creators.map((c) => [c.id, c.name]))
 
   const musclesByExercise = new Map<string, typeof muscles>()
   for (const m of muscles) {
@@ -83,6 +90,7 @@ async function attachDetails(exercises: (typeof exercise.$inferSelect)[]) {
 
   return exercises.map((ex) => ({
     ...ex,
+    authorName: ex.createdBy ? (creatorMap.get(ex.createdBy) ?? null) : null,
     muscles: (musclesByExercise.get(ex.id) ?? []).map((m) => ({
       muscleId: m.muscleId,
       muscleName: m.muscleName,

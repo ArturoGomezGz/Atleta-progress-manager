@@ -109,7 +109,7 @@ export default function EjerciciosPage() {
   const { data: equipmentList } = trpc.exercises.listEquipment.useQuery()
 
   const [form, setForm] = useState<FormState | null>(null)
-  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; hasVideo: boolean } | null>(null)
   const [detailExercise, setDetailExercise] = useState<ExerciseDetail | null>(null)
 
   const currentTeam = teams?.find((t) => t.team.id === teamId)
@@ -117,7 +117,7 @@ export default function EjerciciosPage() {
 
   const createMutation = trpc.exercises.create.useMutation({ onSuccess: () => { refetch(); setForm(null) } })
   const updateMutation = trpc.exercises.update.useMutation({ onSuccess: () => { refetch(); setForm(null) } })
-  const deleteMutation = trpc.exercises.delete.useMutation({ onSuccess: () => { refetch(); setDeleteConfirm(null) } })
+  const deleteMutation = trpc.exercises.delete.useMutation({ onSuccess: () => { refetch(); setDeleteTarget(null) } })
   const unsaveMutation = trpc.exercises.unsaveExercise.useMutation({ onSuccess: () => refetchSaved() })
 
   const personal = exercises?.filter((ex) => ex.ownerUserId !== null) ?? []
@@ -219,24 +219,16 @@ export default function EjerciciosPage() {
             title="Personales"
             exercises={personal}
             onEdit={openEdit}
-            onDelete={setDeleteConfirm}
+            onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name, hasVideo: !!ex.videoUrl })}
             onOpen={setDetailExercise}
-            deleteConfirm={deleteConfirm}
-            onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
-            onDeleteCancel={() => setDeleteConfirm(null)}
-            isDeleting={deleteMutation.isPending}
           />
           {currentTeam && (
             <Section
               title={currentTeam.team.name}
               exercises={teamExercises}
               onEdit={openEdit}
-              onDelete={setDeleteConfirm}
+              onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name, hasVideo: !!ex.videoUrl })}
               onOpen={setDetailExercise}
-              deleteConfirm={deleteConfirm}
-              onDeleteConfirm={(id) => deleteMutation.mutate({ id })}
-              onDeleteCancel={() => setDeleteConfirm(null)}
-              isDeleting={deleteMutation.isPending}
             />
           )}
           {personal.length === 0 && teamExercises.length === 0 && (
@@ -289,6 +281,42 @@ export default function EjerciciosPage() {
           exercise={detailExercise}
           onClose={() => setDetailExercise(null)}
         />
+      )}
+
+      {/* Delete confirmation modal */}
+      {deleteTarget && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setDeleteTarget(null)} />
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center px-4 pb-6 sm:pb-0">
+            <div className="bg-background border border-border rounded-2xl p-6 w-full max-w-sm space-y-4">
+              <div className="space-y-1.5">
+                <p className="text-base font-semibold">Eliminar ejercicio</p>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  <span className="text-foreground font-medium">{deleteTarget.name}</span> se eliminará permanentemente
+                  {deleteTarget.hasVideo && ", incluyendo su video"}.
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setDeleteTarget(null)}
+                  className="flex-1 text-sm py-2.5 border border-border rounded-xl cursor-pointer hover:bg-muted/40 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => deleteMutation.mutate({ id: deleteTarget.id })}
+                  disabled={deleteMutation.isPending}
+                  className="flex-1 text-sm bg-destructive text-destructive-foreground py-2.5 rounded-xl disabled:opacity-50 cursor-pointer font-medium transition-opacity"
+                >
+                  {deleteMutation.isPending ? "Eliminando..." : "Eliminar"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
       )}
     </div>
   )
@@ -972,35 +1000,21 @@ type EnrichedExercise = {
   equipment: { equipmentId: string; equipmentName: string }[]
 }
 
-function Section({ title, exercises, onEdit, onDelete, onOpen, deleteConfirm, onDeleteConfirm, onDeleteCancel, isDeleting }: {
+function Section({ title, exercises, onEdit, onDelete, onOpen }: {
   title: string
   exercises: EnrichedExercise[]
   onEdit: (ex: EnrichedExercise) => void
-  onDelete: (id: string) => void
+  onDelete: (ex: EnrichedExercise) => void
   onOpen: (ex: EnrichedExercise) => void
-  deleteConfirm: string | null
-  onDeleteConfirm: (id: string) => void
-  onDeleteCancel: () => void
-  isDeleting: boolean
 }) {
   if (exercises.length === 0) return null
   return (
     <div className="space-y-2">
       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
       <div className="space-y-1.5">
-        {exercises.map((ex) =>
-          deleteConfirm === ex.id ? (
-            <div key={ex.id} className="flex items-center justify-between border rounded-xl px-4 py-3 bg-destructive/5 border-destructive/30">
-              <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{ex.name}</span>?</p>
-              <div className="flex gap-2">
-                <button onClick={onDeleteCancel} className="text-xs px-2.5 py-1 border border-border rounded-lg cursor-pointer">Cancelar</button>
-                <button onClick={() => onDeleteConfirm(ex.id)} disabled={isDeleting} className="text-xs px-2.5 py-1 bg-destructive text-destructive-foreground rounded-lg disabled:opacity-50 cursor-pointer">Eliminar</button>
-              </div>
-            </div>
-          ) : (
-            <ExerciseCard key={ex.id} exercise={ex} onEdit={onEdit} onDelete={onDelete} onOpen={onOpen} />
-          ),
-        )}
+        {exercises.map((ex) => (
+          <ExerciseCard key={ex.id} exercise={ex} onEdit={onEdit} onDelete={onDelete} onOpen={onOpen} />
+        ))}
       </div>
     </div>
   )
@@ -1009,7 +1023,7 @@ function Section({ title, exercises, onEdit, onDelete, onOpen, deleteConfirm, on
 function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUnsave }: {
   exercise: EnrichedExercise
   onEdit: (ex: EnrichedExercise) => void
-  onDelete: (id: string) => void
+  onDelete: (ex: EnrichedExercise) => void
   onOpen?: (ex: EnrichedExercise) => void
   savedBadge?: boolean
   onUnsave?: () => void
@@ -1049,7 +1063,7 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUn
                       <button onClick={() => onEdit(ex)} className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer">
                         <PencilIcon className="w-3.5 h-3.5" />
                       </button>
-                      <button onClick={() => onDelete(ex.id)} className="p-1 text-muted-foreground hover:text-destructive rounded cursor-pointer">
+                      <button onClick={() => onDelete(ex)} className="p-1 text-muted-foreground hover:text-destructive rounded cursor-pointer">
                         <Trash2Icon className="w-3.5 h-3.5" />
                       </button>
                     </>
