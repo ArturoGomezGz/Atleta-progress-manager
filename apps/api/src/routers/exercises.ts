@@ -12,9 +12,12 @@ import {
 import { TRPCError } from "@trpc/server"
 import { and, asc, eq, inArray, isNull, or } from "drizzle-orm"
 import { z } from "zod"
+import Anthropic from "@anthropic-ai/sdk"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach } from "./teams"
 import { createDirectUploadUrl, deleteVideo } from "../services/cloudflare-stream"
+
+const anthropic = new Anthropic()
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
@@ -398,5 +401,113 @@ export const exercisesRouter = router({
     .input(z.object({ videoId: z.string() }))
     .mutation(async () => {
       // Note: caller must own the exercise — lightweight endpoint, auth via session is enough
+    }),
+
+  autofill: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      description: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const [muscleGroups, muscles, equipmentCatalog] = await Promise.all([
+        db.select().from(muscleGroup).orderBy(asc(muscleGroup.name)),
+        db.select().from(muscle).orderBy(asc(muscle.name)),
+        db.select({ id: equipment.id, name: equipment.name })
+          .from(equipment)
+          .where(eq(equipment.isGlobal, true))
+          .orderBy(asc(equipment.name)),
+      ])
+
+      const musclesCatalogText = muscleGroups.map((g) => {
+        const ms = muscles.filter((m) => m.muscleGroupId === g.id)
+        return `${g.name}: ${ms.map((m) => `${m.name} (${m.id})`).join(", ")}`
+      }).join("\n")
+
+      const equipmentCatalogText = equipmentCatalog
+        .map((e) => `${e.name} (${e.id})`).join(", ")
+
+      const response = await anthropic.messages.create({
+        model: "claude-haiku-4-5",
+        max_tokens: 1024,
+        tools: [{
+          name: "fill_exercise",
+          description: "Fill in the exercise metadata based on its name and description",
+          input_schema: {
+            type: "object" as const,
+            properties: {
+              difficulty: {
+                type: "string",
+                enum: ["beginner", "intermediate", "advanced"],
+                description: "Exercise difficulty level",
+              },
+              movementPatterns: {
+                type: "array",
+                items: { type: "string", enum: ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility"] },
+                description: "Movement patterns this exercise belongs to",
+              },
+              suitableFor: {
+                type: ["string", "null"],
+                enum: ["warmup", "evaluation", null],
+                description: "Special context: warmup, evaluation, or null for general",
+              },
+              contraindications: {
+                type: "string",
+                description: "Common contraindications or injuries to watch out for. Empty string if none.",
+              },
+              muscles: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    muscleId: { type: "string", description: "UUID from the catalog" },
+                    role: { type: "string", enum: ["primary", "secondary"] },
+                  },
+                  required: ["muscleId", "role"],
+                },
+                description: "Muscles worked, using IDs from the catalog",
+              },
+              equipment: {
+                type: "array",
+                items: { type: "string", description: "Equipment UUID from the catalog" },
+                description: "Equipment needed, using IDs from the catalog. Empty array if bodyweight.",
+              },
+            },
+            required: ["difficulty", "movementPatterns", "suitableFor", "contraindications", "muscles", "equipment"],
+          },
+        }],
+        tool_choice: { type: "tool", name: "fill_exercise" },
+        messages: [{
+          role: "user",
+          content: `You are a certified strength & conditioning coach. Fill in the metadata for this exercise.
+
+Exercise name: ${input.name}${input.description ? `\nDescription: ${input.description}` : ""}
+
+MUSCLE CATALOG (use exact IDs):
+${musclesCatalogText}
+
+EQUIPMENT CATALOG (use exact IDs):
+${equipmentCatalogText}
+
+Rules:
+- Only use IDs from the catalogs above
+- For muscles, identify primary movers and secondary/stabilizers
+- If bodyweight exercise, return empty equipment array
+- Be conservative with contraindications — only list real clinical ones`,
+        }],
+      })
+
+      const toolUse = response.content.find((b) => b.type === "tool_use")
+      if (!toolUse || toolUse.type !== "tool_use") {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No response from AI" })
+      }
+
+      return toolUse.input as {
+        difficulty: "beginner" | "intermediate" | "advanced"
+        movementPatterns: string[]
+        suitableFor: "warmup" | "evaluation" | null
+        contraindications: string
+        muscles: { muscleId: string; role: "primary" | "secondary" }[]
+        equipment: string[]
+      }
     }),
 })

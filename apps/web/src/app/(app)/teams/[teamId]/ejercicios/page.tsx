@@ -11,6 +11,7 @@ import {
   PencilIcon,
   PlayIcon,
   PlusIcon,
+  SparklesIcon,
   Trash2Icon,
   UploadIcon,
   VideoIcon,
@@ -234,6 +235,32 @@ function ExerciseSheet({
 }) {
   const set = (patch: Partial<FormState>) => setForm((f) => f && { ...f, ...patch })
   const [visible, setVisible] = useState(false)
+  const [aiHighlight, setAiHighlight] = useState(false)
+  const [aiFilledSections, setAiFilledSections] = useState<string[]>([])
+
+  const autofillMutation = trpc.exercises.autofill.useMutation({
+    onSuccess: (data) => {
+      const filled: string[] = []
+      const patch: Partial<FormState> = {}
+
+      if (data.difficulty) { patch.difficulty = data.difficulty }
+      if (data.movementPatterns?.length) { patch.movementPatterns = data.movementPatterns; filled.push("patterns") }
+      if (data.suitableFor !== undefined) { patch.suitableFor = data.suitableFor }
+      if (data.contraindications) { patch.contraindications = data.contraindications; filled.push("context") }
+      if (data.muscles?.length) { patch.muscles = data.muscles; filled.push("muscles") }
+      if (data.equipment?.length) { patch.equipment = data.equipment; filled.push("equipment") }
+
+      set(patch)
+      setAiFilledSections(filled)
+      setAiHighlight(true)
+      setTimeout(() => setAiHighlight(false), 2000)
+    },
+  })
+
+  function handleAutofill() {
+    if (!form.name.trim()) return
+    autofillMutation.mutate({ name: form.name, description: form.description || undefined })
+  }
 
   // Animate in on mount
   useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
@@ -321,6 +348,27 @@ function ExerciseSheet({
                 rows={2}
                 className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
               />
+              {/* AI autofill */}
+              <button
+                type="button"
+                onClick={handleAutofill}
+                disabled={!form.name.trim() || autofillMutation.isPending}
+                className={cn(
+                  "w-full flex items-center justify-center gap-2 text-xs py-2.5 rounded-xl border transition-colors cursor-pointer",
+                  autofillMutation.isPending
+                    ? "border-primary/30 text-primary/60 bg-primary/5 cursor-wait"
+                    : "border-primary/40 text-primary bg-primary/5 hover:bg-primary/10",
+                  !form.name.trim() && "opacity-40 pointer-events-none",
+                )}
+              >
+                <SparklesIcon className="w-3.5 h-3.5" />
+                {autofillMutation.isPending ? "Analizando con IA..." : "Completar con IA"}
+              </button>
+              {autofillMutation.isError && (
+                <p className="text-xs text-destructive flex items-center gap-1">
+                  <XIcon className="w-3 h-3" /> Error al analizar el ejercicio
+                </p>
+              )}
               {/* Dificultad */}
               <div className="flex gap-2">
                 {(["beginner", "intermediate", "advanced"] as const).map((d) => (
@@ -404,6 +452,8 @@ function ExerciseSheet({
               label="Músculos"
               summary={muscleSummary()}
               badge={form.muscles.length > 0 ? form.muscles.length : undefined}
+              forceOpen={aiFilledSections.includes("muscles")}
+              highlight={aiHighlight && aiFilledSections.includes("muscles")}
             >
               <MuscleSelector value={form.muscles} onChange={(muscles) => set({ muscles })} muscleGroups={muscleGroups} />
             </CollapsibleSection>
@@ -413,6 +463,8 @@ function ExerciseSheet({
               label="Equipamiento"
               summary={equipmentSummary()}
               badge={form.equipment.length > 0 ? form.equipment.length : undefined}
+              forceOpen={aiFilledSections.includes("equipment")}
+              highlight={aiHighlight && aiFilledSections.includes("equipment")}
             >
               <EquipmentSelector value={form.equipment} onChange={(equipment) => set({ equipment })} equipmentList={equipmentList} />
             </CollapsibleSection>
@@ -422,6 +474,8 @@ function ExerciseSheet({
               label="Patrones de movimiento"
               summary={patternSummary()}
               badge={form.movementPatterns.length > 0 ? form.movementPatterns.length : undefined}
+              forceOpen={aiFilledSections.includes("patterns")}
+              highlight={aiHighlight && aiFilledSections.includes("patterns")}
             >
               <div className="flex flex-wrap gap-1.5">
                 {ALL_PATTERNS.map((p) => {
@@ -451,6 +505,8 @@ function ExerciseSheet({
             <CollapsibleSection
               label="Contexto de uso"
               summary={form.suitableFor === "warmup" ? "Calentamiento" : form.suitableFor === "evaluation" ? "Evaluación" : form.contraindications ? "Con contraindicaciones" : null}
+              forceOpen={aiFilledSections.includes("context")}
+              highlight={aiHighlight && aiFilledSections.includes("context")}
             >
               <div className="space-y-3">
                 <div className="flex gap-2">
@@ -519,18 +575,25 @@ function ExerciseSheet({
 // ── Collapsible Section ───────────────────────────────────────────────────────
 
 function CollapsibleSection({
-  label, summary, badge, children, defaultOpen = false,
+  label, summary, badge, children, defaultOpen = false, forceOpen, highlight,
 }: {
   label: string
   summary?: string | null
   badge?: number
   children: React.ReactNode
   defaultOpen?: boolean
+  forceOpen?: boolean
+  highlight?: boolean
 }) {
   const [open, setOpen] = useState(defaultOpen)
 
+  useEffect(() => { if (forceOpen) setOpen(true) }, [forceOpen])
+
   return (
-    <div className="border border-border rounded-xl overflow-hidden">
+    <div className={cn(
+      "border rounded-xl overflow-hidden transition-colors duration-500",
+      highlight ? "border-primary/50 ring-1 ring-primary/30" : "border-border",
+    )}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
