@@ -8,7 +8,13 @@ import { appRouter } from "./routers"
 import { createContext } from "./trpc"
 
 async function main() {
-  await runMigrations()
+  console.log("🚀 Iniciando API...")
+  try {
+    await runMigrations()
+  } catch (err) {
+    console.error("❌ Error en migraciones:", err)
+    throw err
+  }
 
   const app = Fastify({ logger: true })
 
