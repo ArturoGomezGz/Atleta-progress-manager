@@ -1,7 +1,10 @@
-import { integer, numeric, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { integer, numeric, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
 import { team } from "./teams"
+
+export const routineTypeEnum = pgEnum("routine_type", ["sequential", "circuit"])
+export const exerciseGoalEnum = pgEnum("exercise_goal", ["strength", "hypertrophy", "endurance", "power", "cardio", "recovery"])
 
 export const routine = pgTable("routine", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -12,6 +15,9 @@ export const routine = pgTable("routine", {
   createdBy: text("created_by")
     .notNull()
     .references(() => user.id),
+  type: routineTypeEnum("type").notNull().default("sequential"),
+  circuitRounds: integer("circuit_rounds"),
+  circuitDurationSeconds: integer("circuit_duration_seconds"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 })
@@ -25,6 +31,10 @@ export const routineExercise = pgTable("routine_exercise", {
     .notNull()
     .references(() => exercise.id, { onDelete: "cascade" }),
   order: integer("order").notNull(),
+  tempo: text("tempo"),
+  restSeconds: integer("rest_seconds"),
+  goal: exerciseGoalEnum("goal"),
+  notes: text("notes"),
 })
 
 export const routineSetTarget = pgTable("routine_set_target", {

@@ -1,5 +1,7 @@
 import { router } from "../trpc"
+import { assignedSessionsRouter, athleteSessionsRouter } from "./assigned-sessions"
 import { exercisesRouter } from "./exercises"
+import { groupsRouter } from "./groups"
 import { rmsRouter } from "./rms"
 import { routinesRouter } from "./routines"
 import { sessionsRouter } from "./sessions"
@@ -11,6 +13,9 @@ export const appRouter = router({
   routines: routinesRouter,
   sessions: sessionsRouter,
   rms: rmsRouter,
+  groups: groupsRouter,
+  assignedSessions: assignedSessionsRouter,
+  athleteSessions: athleteSessionsRouter,
 })
 
 export type AppRouter = typeof appRouter

@@ -1,3 +1,4 @@
+export * from "./assigned-sessions"
 export * from "./auth"
 export * from "./exercise-catalogs"
 export * from "./exercises"
