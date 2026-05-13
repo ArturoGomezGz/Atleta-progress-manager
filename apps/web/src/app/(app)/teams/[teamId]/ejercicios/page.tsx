@@ -18,7 +18,7 @@ import {
   ZapIcon,
 } from "lucide-react"
 import { useParams } from "next/navigation"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 // ── Config ────────────────────────────────────────────────────────────────────
 
@@ -116,9 +116,7 @@ export default function EjerciciosPage() {
   const personal = exercises?.filter((ex) => ex.ownerUserId !== null) ?? []
   const teamExercises = exercises?.filter((ex) => ex.ownerTeamId === teamId) ?? []
 
-  function openCreate() {
-    setForm({ ...EMPTY_FORM, ownerType: "user" })
-  }
+  function openCreate() { setForm({ ...EMPTY_FORM, ownerType: "user" }) }
 
   function openEdit(ex: Exercise) {
     setForm({
@@ -157,11 +155,7 @@ export default function EjerciciosPage() {
     if (form.id) {
       updateMutation.mutate({ id: form.id, ...payload })
     } else {
-      createMutation.mutate({
-        ...payload,
-        ownerType: form.ownerType,
-        teamId: form.ownerType === "team" ? teamId : undefined,
-      })
+      createMutation.mutate({ ...payload, ownerType: form.ownerType, teamId: form.ownerType === "team" ? teamId : undefined })
     }
   }
 
@@ -169,36 +163,19 @@ export default function EjerciciosPage() {
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-8">
-
       {/* Header */}
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Ejercicios</h1>
-        {!form && (
-          <button
-            onClick={openCreate}
-            className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md cursor-pointer"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Nuevo ejercicio
-          </button>
-        )}
+        <button
+          onClick={openCreate}
+          className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md cursor-pointer"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Nuevo ejercicio
+        </button>
       </div>
 
-      {/* Form */}
-      {form && (
-        <ExerciseForm
-          form={form}
-          setForm={setForm}
-          onSubmit={handleSubmit}
-          isPending={isPending}
-          isCoach={isCoach}
-          currentTeamName={currentTeam?.team.name}
-          muscleGroups={muscleGroups ?? []}
-          equipmentList={equipmentList ?? []}
-        />
-      )}
-
-      {/* Personal */}
+      {/* Exercise list */}
       <Section
         title="Personales"
         exercises={personal}
@@ -209,8 +186,6 @@ export default function EjerciciosPage() {
         onDeleteCancel={() => setDeleteConfirm(null)}
         isDeleting={deleteMutation.isPending}
       />
-
-      {/* Team */}
       {currentTeam && (
         <Section
           title={currentTeam.team.name}
@@ -223,13 +198,29 @@ export default function EjerciciosPage() {
           isDeleting={deleteMutation.isPending}
         />
       )}
+
+      {/* Sheet overlay */}
+      {form && (
+        <ExerciseSheet
+          form={form}
+          setForm={setForm}
+          onSubmit={handleSubmit}
+          isPending={isPending}
+          isCoach={isCoach}
+          currentTeamName={currentTeam?.team.name}
+          muscleGroups={muscleGroups ?? []}
+          equipmentList={equipmentList ?? []}
+        />
+      )}
     </div>
   )
 }
 
-// ── Exercise Form ─────────────────────────────────────────────────────────────
+// ── Exercise Sheet ────────────────────────────────────────────────────────────
 
-function ExerciseForm({
+type MuscleGroupData = { id: string; name: string; bodyZone: "upper" | "lower" | "core"; muscles: { id: string; name: string }[] }
+
+function ExerciseSheet({
   form, setForm, onSubmit, isPending, isCoach, currentTeamName, muscleGroups, equipmentList,
 }: {
   form: FormState
@@ -238,265 +229,359 @@ function ExerciseForm({
   isPending: boolean
   isCoach: boolean
   currentTeamName?: string
-  muscleGroups: { id: string; name: string; bodyZone: "upper" | "lower" | "core"; muscles: { id: string; name: string }[] }[]
+  muscleGroups: MuscleGroupData[]
   equipmentList: { id: string; name: string }[]
 }) {
   const set = (patch: Partial<FormState>) => setForm((f) => f && { ...f, ...patch })
+  const [visible, setVisible] = useState(false)
+
+  // Animate in on mount
+  useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
+
+  function close() {
+    setVisible(false)
+    setTimeout(() => setForm(null), 300)
+  }
+
+  // Muscle summary for collapsed header
+  const muscleNameById = new Map(muscleGroups.flatMap((g) => g.muscles.map((m) => [m.id, m.name])))
+  function muscleSummary() {
+    if (form.muscles.length === 0) return null
+    const names = form.muscles.slice(0, 2).map((m) => muscleNameById.get(m.muscleId) ?? "")
+    return names.join(", ") + (form.muscles.length > 2 ? ` +${form.muscles.length - 2}` : "")
+  }
+  function equipmentSummary() {
+    if (form.equipment.length === 0) return null
+    const map = new Map(equipmentList.map((e) => [e.id, e.name]))
+    const names = form.equipment.slice(0, 2).map((id) => map.get(id) ?? "")
+    return names.join(", ") + (form.equipment.length > 2 ? ` +${form.equipment.length - 2}` : "")
+  }
+  function patternSummary() {
+    if (form.movementPatterns.length === 0) return null
+    return form.movementPatterns.slice(0, 2).map((p) => PATTERN_LABELS[p] ?? p).join(", ")
+      + (form.movementPatterns.length > 2 ? ` +${form.movementPatterns.length - 2}` : "")
+  }
 
   return (
-    <form onSubmit={onSubmit} className="border border-border rounded-xl bg-card/60 overflow-hidden">
+    <>
+      {/* Backdrop */}
+      <div
+        onClick={close}
+        className={cn(
+          "fixed inset-0 bg-black/50 z-40 transition-opacity duration-300",
+          visible ? "opacity-100" : "opacity-0",
+        )}
+      />
 
-      {/* Form header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border">
-        <p className="text-sm font-semibold">{form.id ? "Editar ejercicio" : "Nuevo ejercicio"}</p>
-        <button type="button" onClick={() => setForm(null)} className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer">
-          <XIcon className="w-4 h-4" />
-        </button>
-      </div>
+      {/* Sheet — bottom on mobile, right side on md+ */}
+      <div
+        className={cn(
+          "fixed z-50 bg-background flex flex-col",
+          // Mobile: bottom sheet
+          "bottom-0 left-0 right-0 rounded-t-2xl max-h-[92dvh]",
+          // Desktop: right panel
+          "md:bottom-0 md:top-0 md:left-auto md:right-0 md:w-[480px] md:rounded-none md:rounded-l-2xl md:max-h-full md:h-full",
+          "transition-transform duration-300 ease-out",
+          visible
+            ? "translate-y-0 md:translate-x-0"
+            : "translate-y-full md:translate-x-full md:translate-y-0",
+        )}
+      >
+        <form onSubmit={onSubmit} className="flex flex-col h-full">
 
-      <div className="px-5 py-5 space-y-6">
-
-        {/* ── Info básica ── */}
-        <section className="space-y-3">
-          <SectionLabel>Info básica</SectionLabel>
-          <input
-            autoFocus required
-            value={form.name}
-            onChange={(e) => set({ name: e.target.value })}
-            placeholder="Nombre del ejercicio"
-            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring"
-          />
-          <textarea
-            value={form.description}
-            onChange={(e) => set({ description: e.target.value })}
-            placeholder="Descripción (opcional)"
-            rows={2}
-            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-          />
-          {/* Difficulty */}
-          <div className="flex gap-2">
-            {(["beginner", "intermediate", "advanced"] as const).map((d) => (
-              <button
-                key={d}
-                type="button"
-                onClick={() => set({ difficulty: form.difficulty === d ? null : d })}
-                className={cn(
-                  "flex-1 text-xs py-1.5 rounded-lg border transition-colors cursor-pointer",
-                  form.difficulty === d
-                    ? `${DIFFICULTY_CONFIG[d].pill} font-medium`
-                    : "border-border text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {DIFFICULTY_CONFIG[d].label}
-              </button>
-            ))}
+          {/* Drag handle (mobile only) */}
+          <div className="md:hidden flex justify-center pt-3 pb-1 shrink-0">
+            <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
           </div>
-        </section>
 
-        {/* ── Owner / Visibilidad ── */}
-        <section className="space-y-3">
-          <SectionLabel>Propiedad y visibilidad</SectionLabel>
-          {!form.id && isCoach && (
-            <div className="flex gap-2">
-              {(["user", "team"] as const).map((type) => (
-                <button
-                  key={type}
-                  type="button"
-                  onClick={() => set({ ownerType: type })}
-                  className={cn(
-                    "flex-1 text-xs py-1.5 rounded-lg border transition-colors cursor-pointer",
-                    form.ownerType === type
-                      ? "bg-primary/10 border-primary text-primary font-medium"
-                      : "border-border text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  {type === "user" ? "Personal" : "Del equipo"}
-                </button>
-              ))}
+          {/* Header */}
+          <div className="flex items-center justify-between px-5 py-4 border-b border-border shrink-0">
+            <p className="text-base font-semibold">{form.id ? "Editar ejercicio" : "Nuevo ejercicio"}</p>
+            <button type="button" onClick={close} className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors">
+              <XIcon className="w-4 h-4" />
+            </button>
+          </div>
+
+          {/* Scrollable body */}
+          <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 space-y-2">
+
+            {/* ── Nombre + descripción (siempre visible) ── */}
+            <div className="space-y-3 pb-4 border-b border-border">
+              <input
+                autoFocus required
+                value={form.name}
+                onChange={(e) => set({ name: e.target.value })}
+                placeholder="Nombre del ejercicio"
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring"
+              />
+              <textarea
+                value={form.description}
+                onChange={(e) => set({ description: e.target.value })}
+                placeholder="Descripción (opcional)"
+                rows={2}
+                className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+              />
+              {/* Dificultad */}
+              <div className="flex gap-2">
+                {(["beginner", "intermediate", "advanced"] as const).map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => set({ difficulty: form.difficulty === d ? null : d })}
+                    className={cn(
+                      "flex-1 text-xs py-2 rounded-xl border transition-colors cursor-pointer",
+                      form.difficulty === d ? `${DIFFICULTY_CONFIG[d].pill} font-medium` : "border-border text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    {DIFFICULTY_CONFIG[d].label}
+                  </button>
+                ))}
+              </div>
             </div>
-          )}
-          {!form.id && isCoach && form.ownerType === "team" && currentTeamName && (
-            <p className="text-xs text-muted-foreground px-1">
-              Se creará bajo <span className="text-foreground font-medium">{currentTeamName}</span>
-            </p>
-          )}
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => set({ isPublic: true })}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg border transition-colors cursor-pointer",
-                form.isPublic ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
-              )}
+
+            {/* ── Propiedad (si es coach y nuevo ejercicio) ── */}
+            {!form.id && isCoach && (
+              <CollapsibleSection
+                label="Propiedad"
+                summary={form.ownerType === "team" && currentTeamName ? currentTeamName : "Personal"}
+              >
+                <div className="space-y-2">
+                  <div className="flex gap-2">
+                    {(["user", "team"] as const).map((type) => (
+                      <button
+                        key={type}
+                        type="button"
+                        onClick={() => set({ ownerType: type })}
+                        className={cn(
+                          "flex-1 text-xs py-2 rounded-xl border transition-colors cursor-pointer",
+                          form.ownerType === type ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
+                        )}
+                      >
+                        {type === "user" ? "Personal" : "Del equipo"}
+                      </button>
+                    ))}
+                  </div>
+                  {form.ownerType === "team" && currentTeamName && (
+                    <p className="text-xs text-muted-foreground px-1">
+                      Se creará bajo <span className="text-foreground font-medium">{currentTeamName}</span>
+                    </p>
+                  )}
+                </div>
+              </CollapsibleSection>
+            )}
+
+            {/* ── Visibilidad ── */}
+            <CollapsibleSection
+              label="Visibilidad"
+              summary={form.isPublic ? "Público" : "Privado"}
             >
-              <GlobeIcon className="w-3.5 h-3.5" /> Público
-            </button>
-            <button
-              type="button"
-              onClick={() => set({ isPublic: false })}
-              className={cn(
-                "flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg border transition-colors cursor-pointer",
-                !form.isPublic ? "bg-muted/60 border-border text-foreground font-medium" : "border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <LockIcon className="w-3.5 h-3.5" /> Privado
-            </button>
-          </div>
-        </section>
-
-        {/* ── Músculos ── */}
-        {muscleGroups.length > 0 && (
-          <section className="space-y-3">
-            <SectionLabel>Músculos</SectionLabel>
-            <MuscleSelector
-              value={form.muscles}
-              onChange={(muscles) => set({ muscles })}
-              muscleGroups={muscleGroups}
-            />
-          </section>
-        )}
-
-        {/* ── Equipamiento ── */}
-        {equipmentList.length > 0 && (
-          <section className="space-y-3">
-            <SectionLabel>Equipamiento</SectionLabel>
-            <EquipmentSelector
-              value={form.equipment}
-              onChange={(equipment) => set({ equipment })}
-              equipmentList={equipmentList}
-            />
-          </section>
-        )}
-
-        {/* ── Patrones de movimiento ── */}
-        <section className="space-y-3">
-          <SectionLabel>Patrones de movimiento</SectionLabel>
-          <div className="flex flex-wrap gap-1.5">
-            {ALL_PATTERNS.map((p) => {
-              const active = form.movementPatterns.includes(p)
-              return (
+              <div className="flex gap-2">
                 <button
-                  key={p}
                   type="button"
-                  onClick={() => set({
-                    movementPatterns: active
-                      ? form.movementPatterns.filter((x) => x !== p)
-                      : [...form.movementPatterns, p],
-                  })}
+                  onClick={() => set({ isPublic: true })}
                   className={cn(
-                    "text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer",
-                    active
-                      ? "bg-primary/10 border-primary text-primary font-medium"
-                      : "border-border text-muted-foreground hover:text-foreground",
+                    "flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl border transition-colors cursor-pointer",
+                    form.isPublic ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
                   )}
                 >
-                  {PATTERN_LABELS[p]}
+                  <GlobeIcon className="w-3.5 h-3.5" /> Público
                 </button>
-              )
-            })}
+                <button
+                  type="button"
+                  onClick={() => set({ isPublic: false })}
+                  className={cn(
+                    "flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl border transition-colors cursor-pointer",
+                    !form.isPublic ? "bg-muted/60 border-border text-foreground font-medium" : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <LockIcon className="w-3.5 h-3.5" /> Privado
+                </button>
+              </div>
+            </CollapsibleSection>
+
+            {/* ── Músculos ── */}
+            <CollapsibleSection
+              label="Músculos"
+              summary={muscleSummary()}
+              badge={form.muscles.length > 0 ? form.muscles.length : undefined}
+            >
+              <MuscleSelector value={form.muscles} onChange={(muscles) => set({ muscles })} muscleGroups={muscleGroups} />
+            </CollapsibleSection>
+
+            {/* ── Equipamiento ── */}
+            <CollapsibleSection
+              label="Equipamiento"
+              summary={equipmentSummary()}
+              badge={form.equipment.length > 0 ? form.equipment.length : undefined}
+            >
+              <EquipmentSelector value={form.equipment} onChange={(equipment) => set({ equipment })} equipmentList={equipmentList} />
+            </CollapsibleSection>
+
+            {/* ── Patrones de movimiento ── */}
+            <CollapsibleSection
+              label="Patrones de movimiento"
+              summary={patternSummary()}
+              badge={form.movementPatterns.length > 0 ? form.movementPatterns.length : undefined}
+            >
+              <div className="flex flex-wrap gap-1.5">
+                {ALL_PATTERNS.map((p) => {
+                  const active = form.movementPatterns.includes(p)
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => set({
+                        movementPatterns: active
+                          ? form.movementPatterns.filter((x) => x !== p)
+                          : [...form.movementPatterns, p],
+                      })}
+                      className={cn(
+                        "text-xs px-3 py-1.5 rounded-full border transition-colors cursor-pointer",
+                        active ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {PATTERN_LABELS[p]}
+                    </button>
+                  )
+                })}
+              </div>
+            </CollapsibleSection>
+
+            {/* ── Contexto ── */}
+            <CollapsibleSection
+              label="Contexto de uso"
+              summary={form.suitableFor === "warmup" ? "Calentamiento" : form.suitableFor === "evaluation" ? "Evaluación" : form.contraindications ? "Con contraindicaciones" : null}
+            >
+              <div className="space-y-3">
+                <div className="flex gap-2">
+                  {([
+                    { value: null,         label: "General",        icon: null },
+                    { value: "warmup",     label: "Calentamiento",  icon: <FlameIcon className="w-3.5 h-3.5" /> },
+                    { value: "evaluation", label: "Evaluación",     icon: <ZapIcon className="w-3.5 h-3.5" /> },
+                  ] as const).map((opt) => (
+                    <button
+                      key={String(opt.value)}
+                      type="button"
+                      onClick={() => set({ suitableFor: opt.value })}
+                      className={cn(
+                        "flex-1 flex items-center justify-center gap-1.5 text-xs py-2 rounded-xl border transition-colors cursor-pointer",
+                        form.suitableFor === opt.value ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      {opt.icon} {opt.label}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={form.contraindications}
+                  onChange={(e) => set({ contraindications: e.target.value })}
+                  placeholder="Contraindicaciones (opcional)"
+                  rows={2}
+                  className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
+                />
+              </div>
+            </CollapsibleSection>
+
+            {/* ── Video ── */}
+            <CollapsibleSection
+              label="Video de demostración"
+              summary={form.videoUrl ? "Video adjunto" : null}
+            >
+              <VideoUploader videoId={form.videoUrl} onChange={(id) => set({ videoUrl: id })} />
+            </CollapsibleSection>
+
           </div>
-        </section>
 
-        {/* ── Contexto ── */}
-        <section className="space-y-3">
-          <SectionLabel>Contexto de uso</SectionLabel>
-          <div className="flex gap-2">
-            <ToggleChip
-              active={form.suitableFor === null}
-              onClick={() => set({ suitableFor: null })}
+          {/* Footer */}
+          <div className="flex gap-3 px-5 py-4 border-t border-border bg-background shrink-0">
+            <button
+              type="button"
+              onClick={close}
+              className="flex-1 text-sm py-2.5 border border-border rounded-xl cursor-pointer hover:bg-muted/40 transition-colors"
             >
-              General
-            </ToggleChip>
-            <ToggleChip
-              active={form.suitableFor === "warmup"}
-              onClick={() => set({ suitableFor: form.suitableFor === "warmup" ? null : "warmup" })}
-              icon={<FlameIcon className="w-3.5 h-3.5" />}
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              disabled={isPending || !form.name.trim()}
+              className="flex-1 text-sm bg-primary text-primary-foreground py-2.5 rounded-xl disabled:opacity-50 cursor-pointer font-medium"
             >
-              Calentamiento
-            </ToggleChip>
-            <ToggleChip
-              active={form.suitableFor === "evaluation"}
-              onClick={() => set({ suitableFor: form.suitableFor === "evaluation" ? null : "evaluation" })}
-              icon={<ZapIcon className="w-3.5 h-3.5" />}
-            >
-              Evaluación
-            </ToggleChip>
+              {isPending ? "Guardando..." : form.id ? "Guardar cambios" : "Crear ejercicio"}
+            </button>
           </div>
-          <textarea
-            value={form.contraindications}
-            onChange={(e) => set({ contraindications: e.target.value })}
-            placeholder="Contraindicaciones (opcional) — ej. lesión de rodilla, embarazo"
-            rows={2}
-            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring resize-none"
-          />
-        </section>
 
-        {/* ── Video ── */}
-        <section className="space-y-3">
-          <SectionLabel>Video de demostración</SectionLabel>
-          <VideoUploader
-            videoId={form.videoUrl}
-            onChange={(id) => set({ videoUrl: id })}
-          />
-        </section>
-
+        </form>
       </div>
+    </>
+  )
+}
 
-      {/* Form footer */}
-      <div className="flex gap-2 justify-end px-5 py-4 border-t border-border bg-muted/10">
-        <button
-          type="button"
-          onClick={() => setForm(null)}
-          className="text-xs px-3 py-1.5 border border-border rounded-lg cursor-pointer hover:bg-muted/40 transition-colors"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isPending || !form.name.trim()}
-          className="text-xs bg-primary text-primary-foreground px-4 py-1.5 rounded-lg disabled:opacity-50 cursor-pointer"
-        >
-          {isPending ? "Guardando..." : form.id ? "Guardar cambios" : "Crear ejercicio"}
-        </button>
-      </div>
-    </form>
+// ── Collapsible Section ───────────────────────────────────────────────────────
+
+function CollapsibleSection({
+  label, summary, badge, children, defaultOpen = false,
+}: {
+  label: string
+  summary?: string | null
+  badge?: number
+  children: React.ReactNode
+  defaultOpen?: boolean
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  return (
+    <div className="border border-border rounded-xl overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-muted/20 transition-colors cursor-pointer text-left"
+      >
+        <span className="flex-1 text-sm font-medium">{label}</span>
+        {badge !== undefined && (
+          <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium tabular-nums">{badge}</span>
+        )}
+        {!open && summary && (
+          <span className="text-xs text-muted-foreground truncate max-w-[140px]">{summary}</span>
+        )}
+        {open
+          ? <ChevronDownIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+          : <ChevronRightIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+        }
+      </button>
+      {open && (
+        <div className="px-4 pb-4 pt-1 border-t border-border bg-muted/5">
+          {children}
+        </div>
+      )}
+    </div>
   )
 }
 
 // ── Muscle Selector ───────────────────────────────────────────────────────────
 
-function MuscleSelector({
-  value, onChange, muscleGroups,
-}: {
+function MuscleSelector({ value, onChange, muscleGroups }: {
   value: MuscleEntry[]
   onChange: (v: MuscleEntry[]) => void
-  muscleGroups: { id: string; name: string; bodyZone: "upper" | "lower" | "core"; muscles: { id: string; name: string }[] }[]
+  muscleGroups: MuscleGroupData[]
 }) {
   const [openGroupId, setOpenGroupId] = useState<string | null>(null)
   const selectedIds = new Set(value.map((m) => m.muscleId))
 
   function toggleMuscle(muscleId: string) {
-    if (selectedIds.has(muscleId)) {
-      onChange(value.filter((m) => m.muscleId !== muscleId))
-    } else {
-      onChange([...value, { muscleId, role: "primary" }])
-    }
+    if (selectedIds.has(muscleId)) onChange(value.filter((m) => m.muscleId !== muscleId))
+    else onChange([...value, { muscleId, role: "primary" }])
   }
 
   function toggleRole(muscleId: string) {
-    onChange(value.map((m) =>
-      m.muscleId === muscleId ? { ...m, role: m.role === "primary" ? "secondary" : "primary" } : m,
-    ))
+    onChange(value.map((m) => m.muscleId === muscleId ? { ...m, role: m.role === "primary" ? "secondary" : "primary" } : m))
   }
 
-  const muscleNameById = new Map(
-    muscleGroups.flatMap((g) => g.muscles.map((m) => [m.id, m.name])),
-  )
+  const muscleNameById = new Map(muscleGroups.flatMap((g) => g.muscles.map((m) => [m.id, m.name])))
 
   return (
-    <div className="space-y-2">
-      {/* Accordion */}
-      <div className="border border-border rounded-lg overflow-hidden divide-y divide-border">
+    <div className="space-y-3">
+      {/* Group accordion */}
+      <div className="border border-border rounded-xl overflow-hidden divide-y divide-border">
         {muscleGroups.map((group) => {
           const zoneConf = ZONE_CONFIG[group.bodyZone]
           const isOpen = openGroupId === group.id
@@ -510,18 +595,15 @@ function MuscleSelector({
                 className="w-full flex items-center gap-2.5 px-3 py-2.5 hover:bg-muted/30 transition-colors cursor-pointer text-left"
               >
                 <span className={cn("w-2 h-2 rounded-full shrink-0", zoneConf.bar)} />
-                <span className="text-sm font-medium flex-1">{group.name}</span>
+                <span className="text-sm flex-1">{group.name}</span>
                 {selectedInGroup > 0 && (
-                  <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">
-                    {selectedInGroup}
-                  </span>
+                  <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded-full font-medium">{selectedInGroup}</span>
                 )}
                 {isOpen
                   ? <ChevronDownIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                   : <ChevronRightIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
                 }
               </button>
-
               {isOpen && (
                 <div className="px-3 pb-3 pt-1 flex flex-wrap gap-1.5 bg-muted/10">
                   {group.muscles.map((m) => {
@@ -534,15 +616,10 @@ function MuscleSelector({
                         onClick={() => toggleMuscle(m.id)}
                         className={cn(
                           "text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer",
-                          selected
-                            ? "bg-primary/10 border-primary text-primary font-medium"
-                            : "border-border text-muted-foreground hover:text-foreground",
+                          selected ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        {m.name}
-                        {selected && entry && (
-                          <span className="ml-1 opacity-60">{entry.role === "primary" ? "P" : "S"}</span>
-                        )}
+                        {m.name}{selected && entry && <span className="ml-1 opacity-60">{entry.role === "primary" ? " P" : " S"}</span>}
                       </button>
                     )
                   })}
@@ -553,24 +630,18 @@ function MuscleSelector({
         })}
       </div>
 
-      {/* Selected summary with role toggle */}
+      {/* Selected chips with role toggle */}
       {value.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 pt-1">
+        <div className="flex flex-wrap gap-1.5">
           {value.map((entry) => (
-            <div
-              key={entry.muscleId}
-              className="flex items-center gap-1 text-xs bg-card border border-border rounded-full pl-2.5 pr-1 py-0.5"
-            >
-              <span className="text-foreground">{muscleNameById.get(entry.muscleId)}</span>
+            <div key={entry.muscleId} className="flex items-center gap-1 text-xs bg-card border border-border rounded-full pl-2.5 pr-1 py-0.5">
+              <span>{muscleNameById.get(entry.muscleId)}</span>
               <button
                 type="button"
                 onClick={() => toggleRole(entry.muscleId)}
-                title="Cambiar a primario/secundario"
                 className={cn(
                   "px-1.5 py-0.5 rounded-full text-[10px] font-semibold cursor-pointer transition-colors",
-                  entry.role === "primary"
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80",
+                  entry.role === "primary" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground",
                 )}
               >
                 {entry.role === "primary" ? "P" : "S"}
@@ -592,14 +663,16 @@ function MuscleSelector({
 
 // ── Equipment Selector ────────────────────────────────────────────────────────
 
-function EquipmentSelector({
-  value, onChange, equipmentList,
-}: {
+function EquipmentSelector({ value, onChange, equipmentList }: {
   value: string[]
   onChange: (v: string[]) => void
   equipmentList: { id: string; name: string }[]
 }) {
+  const [filter, setFilter] = useState("")
   const selected = new Set(value)
+  const filtered = filter.trim()
+    ? equipmentList.filter((e) => e.name.toLowerCase().includes(filter.toLowerCase()))
+    : equipmentList
 
   function toggle(id: string) {
     if (selected.has(id)) onChange(value.filter((v) => v !== id))
@@ -607,25 +680,34 @@ function EquipmentSelector({
   }
 
   return (
-    <div className="flex flex-wrap gap-1.5">
-      {equipmentList.map((eq) => {
-        const active = selected.has(eq.id)
-        return (
-          <button
-            key={eq.id}
-            type="button"
-            onClick={() => toggle(eq.id)}
-            className={cn(
-              "text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer",
-              active
-                ? "bg-primary/10 border-primary text-primary font-medium"
-                : "border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {eq.name}
-          </button>
-        )
-      })}
+    <div className="space-y-2">
+      <input
+        value={filter}
+        onChange={(e) => setFilter(e.target.value)}
+        placeholder="Filtrar equipamiento..."
+        className="w-full border border-border rounded-lg px-3 py-2 text-xs bg-background focus:outline-none focus:ring-1 focus:ring-ring"
+      />
+      <div className="flex flex-wrap gap-1.5">
+        {filtered.map((eq) => {
+          const active = selected.has(eq.id)
+          return (
+            <button
+              key={eq.id}
+              type="button"
+              onClick={() => toggle(eq.id)}
+              className={cn(
+                "text-xs px-2.5 py-1.5 rounded-full border transition-colors cursor-pointer",
+                active ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {eq.name}
+            </button>
+          )
+        })}
+        {filtered.length === 0 && (
+          <p className="text-xs text-muted-foreground py-1">Sin resultados</p>
+        )}
+      </div>
     </div>
   )
 }
@@ -647,12 +729,9 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
     setError(null)
     try {
       const { uploadUrl, uid } = await getUploadUrl.mutateAsync()
-
       await new Promise<void>((resolve, reject) => {
         const xhr = new XMLHttpRequest()
-        xhr.upload.onprogress = (e) => {
-          if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100))
-        }
+        xhr.upload.onprogress = (e) => { if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100)) }
         xhr.onload = () => xhr.status < 400 ? resolve() : reject(new Error(`Error al subir (${xhr.status})`))
         xhr.onerror = () => reject(new Error("Error de red"))
         xhr.open("POST", uploadUrl)
@@ -660,11 +739,9 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
         fd.append("file", file)
         xhr.send(fd)
       })
-
       setJustUploaded(true)
       onChange(uid)
     } catch (err) {
-      console.error(err)
       setError(err instanceof Error ? err.message : "Error desconocido")
     } finally {
       setUploading(false)
@@ -676,15 +753,15 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
     return (
       <div className="space-y-2">
         {justUploaded ? (
-          <div className="border border-border rounded-lg px-4 py-5 flex items-center gap-3 bg-muted/20">
-            <VideoIcon className="w-4 h-4 shrink-0 text-primary" />
+          <div className="border border-border rounded-xl px-4 py-4 flex items-start gap-3 bg-muted/20">
+            <VideoIcon className="w-4 h-4 shrink-0 text-primary mt-0.5" />
             <div>
-              <p className="text-foreground font-medium text-xs">Video subido correctamente</p>
-              <p className="text-[10px] mt-0.5 text-muted-foreground">Cloudflare está procesando el video. Estará disponible para reproducir en unos segundos después de guardar.</p>
+              <p className="text-sm font-medium">Video subido</p>
+              <p className="text-xs text-muted-foreground mt-0.5">Cloudflare está procesando el video. Estará listo en unos segundos después de guardar.</p>
             </div>
           </div>
         ) : (
-          <div className="relative rounded-lg overflow-hidden bg-black aspect-video">
+          <div className="rounded-xl overflow-hidden bg-black aspect-video">
             <iframe
               src={`https://iframe.videodelivery.net/${videoId}`}
               allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
@@ -706,70 +783,34 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
 
   return (
     <div className="space-y-2">
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept="video/*"
-        className="hidden"
+      <input ref={fileInputRef} type="file" accept="video/*" className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
       />
       {uploading ? (
-        <div className="border border-border rounded-lg px-4 py-5 space-y-2">
-          <p className="text-xs text-muted-foreground">Subiendo video... {progress}%</p>
+        <div className="border border-border rounded-xl px-4 py-5 space-y-2">
+          <p className="text-xs text-muted-foreground">Subiendo... {progress}%</p>
           <div className="w-full bg-muted rounded-full h-1.5">
             <div className="bg-primary h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
           </div>
         </div>
       ) : (
         <>
-        {error && (
-          <p className="text-xs text-destructive flex items-center gap-1">
-            <XIcon className="w-3 h-3" /> {error}
-          </p>
-        )}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="w-full border border-dashed border-border rounded-lg px-4 py-5 flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors cursor-pointer"
-        >
-          <div className="flex items-center gap-3">
-            <UploadIcon className="w-4 h-4" />
-            <VideoIcon className="w-4 h-4" />
-          </div>
-          <p className="text-xs">Subir video o grabar desde cámara</p>
-          <p className="text-[10px] text-muted-foreground/60">MP4, MOV, WebM — máx. 5 min</p>
-        </button>
+          {error && <p className="text-xs text-destructive flex items-center gap-1"><XIcon className="w-3 h-3" /> {error}</p>}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full border border-dashed border-border rounded-xl px-4 py-5 flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors cursor-pointer"
+          >
+            <div className="flex items-center gap-3">
+              <UploadIcon className="w-4 h-4" />
+              <VideoIcon className="w-4 h-4" />
+            </div>
+            <p className="text-xs">Subir video o grabar desde cámara</p>
+            <p className="text-[10px] text-muted-foreground/60">MP4, MOV, WebM — máx. 5 min</p>
+          </button>
         </>
       )}
     </div>
-  )
-}
-
-// ── Small helpers ─────────────────────────────────────────────────────────────
-
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{children}</p>
-}
-
-function ToggleChip({
-  active, onClick, icon, children,
-}: {
-  active: boolean
-  onClick: () => void
-  icon?: React.ReactNode
-  children: React.ReactNode
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={cn(
-        "flex-1 flex items-center justify-center gap-1.5 text-xs py-1.5 rounded-lg border transition-colors cursor-pointer",
-        active ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
-      )}
-    >
-      {icon} {children}
-    </button>
   )
 }
 
@@ -792,9 +833,7 @@ type EnrichedExercise = {
   equipment: { equipmentId: string; equipmentName: string }[]
 }
 
-function Section({
-  title, exercises, onEdit, onDelete, deleteConfirm, onDeleteConfirm, onDeleteCancel, isDeleting,
-}: {
+function Section({ title, exercises, onEdit, onDelete, deleteConfirm, onDeleteConfirm, onDeleteCancel, isDeleting }: {
   title: string
   exercises: EnrichedExercise[]
   onEdit: (ex: EnrichedExercise) => void
@@ -805,7 +844,6 @@ function Section({
   isDeleting: boolean
 }) {
   if (exercises.length === 0) return null
-
   return (
     <div className="space-y-2">
       <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
@@ -820,12 +858,7 @@ function Section({
               </div>
             </div>
           ) : (
-            <ExerciseCard
-              key={ex.id}
-              exercise={ex}
-              onEdit={onEdit}
-              onDelete={onDelete}
-            />
+            <ExerciseCard key={ex.id} exercise={ex} onEdit={onEdit} onDelete={onDelete} />
           ),
         )}
       </div>
@@ -845,105 +878,80 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete }: {
 
   return (
     <div className="overflow-hidden border border-border rounded-xl hover:border-border/80 transition-colors">
-    <div className="flex hover:bg-muted/10 transition-colors">
-      {/* Zone color bar */}
-      <div className={cn("w-1 shrink-0", zoneConf?.bar ?? "bg-border")} />
-
-      <div className="flex-1 min-w-0 px-4 py-3">
-        {/* Name + visibility */}
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-sm font-medium leading-snug">{ex.name}</p>
-          <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
-            {ex.isPublic
-              ? <GlobeIcon className="w-3.5 h-3.5 text-muted-foreground" />
-              : <LockIcon className="w-3.5 h-3.5 text-muted-foreground" />
-            }
-            {ex.editable && (
-              <>
-                <button onClick={() => onEdit(ex)} className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer">
-                  <PencilIcon className="w-3.5 h-3.5" />
-                </button>
-                <button onClick={() => onDelete(ex.id)} className="p-1 text-muted-foreground hover:text-destructive rounded cursor-pointer">
-                  <Trash2Icon className="w-3.5 h-3.5" />
-                </button>
-              </>
-            )}
+      <div className="flex hover:bg-muted/10 transition-colors">
+        <div className={cn("w-1 shrink-0", zoneConf?.bar ?? "bg-border")} />
+        <div className="flex-1 min-w-0 px-4 py-3">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-sm font-medium leading-snug">{ex.name}</p>
+            <div className="flex items-center gap-1.5 shrink-0 mt-0.5">
+              {ex.isPublic
+                ? <GlobeIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                : <LockIcon className="w-3.5 h-3.5 text-muted-foreground" />
+              }
+              {ex.editable && (
+                <>
+                  <button onClick={() => onEdit(ex)} className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer">
+                    <PencilIcon className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => onDelete(ex.id)} className="p-1 text-muted-foreground hover:text-destructive rounded cursor-pointer">
+                    <Trash2Icon className="w-3.5 h-3.5" />
+                  </button>
+                </>
+              )}
+            </div>
           </div>
+          {ex.description && <p className="text-xs text-muted-foreground truncate mt-0.5">{ex.description}</p>}
+          {(primaryMuscles.length > 0 || ex.movementPatterns.length > 0 || ex.difficulty || ex.suitableFor || ex.videoUrl) && (
+            <div className="flex flex-wrap gap-1 mt-2">
+              {zoneConf && (
+                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border font-medium", zoneConf.pill)}>{zoneConf.label}</span>
+              )}
+              {primaryMuscles.slice(0, 2).map((m) => (
+                <span key={m.muscleId} className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground">{m.muscleName}</span>
+              ))}
+              {primaryMuscles.length > 2 && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground">+{primaryMuscles.length - 2}</span>
+              )}
+              {ex.difficulty && (
+                <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border font-medium", DIFFICULTY_CONFIG[ex.difficulty].pill)}>
+                  {DIFFICULTY_CONFIG[ex.difficulty].label}
+                </span>
+              )}
+              {ex.movementPatterns.slice(0, 2).map((p) => (
+                <span key={p} className="text-[10px] px-1.5 py-0.5 rounded-full border border-border text-muted-foreground">{PATTERN_LABELS[p] ?? p}</span>
+              ))}
+              {ex.suitableFor === "warmup" && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-600 flex items-center gap-0.5">
+                  <FlameIcon className="w-2.5 h-2.5" /> Calentamiento
+                </span>
+              )}
+              {ex.suitableFor === "evaluation" && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary flex items-center gap-0.5">
+                  <ZapIcon className="w-2.5 h-2.5" /> Evaluación
+                </span>
+              )}
+              {ex.videoUrl && (
+                <button
+                  onClick={() => setVideoOpen((v) => !v)}
+                  className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground flex items-center gap-0.5 cursor-pointer hover:text-foreground transition-colors"
+                >
+                  <PlayIcon className="w-2.5 h-2.5" /> Video
+                </button>
+              )}
+            </div>
+          )}
         </div>
-
-        {/* Description */}
-        {ex.description && (
-          <p className="text-xs text-muted-foreground truncate mt-0.5">{ex.description}</p>
-        )}
-
-        {/* Pills row */}
-        {(primaryMuscles.length > 0 || ex.movementPatterns.length > 0 || ex.difficulty || ex.suitableFor) && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {/* Zone pill */}
-            {zoneConf && (
-              <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border font-medium", zoneConf.pill)}>
-                {zoneConf.label}
-              </span>
-            )}
-            {/* Primary muscles (max 2) */}
-            {primaryMuscles.slice(0, 2).map((m) => (
-              <span key={m.muscleId} className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground">
-                {m.muscleName}
-              </span>
-            ))}
-            {primaryMuscles.length > 2 && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground">
-                +{primaryMuscles.length - 2}
-              </span>
-            )}
-            {/* Difficulty */}
-            {ex.difficulty && (
-              <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border font-medium", DIFFICULTY_CONFIG[ex.difficulty].pill)}>
-                {DIFFICULTY_CONFIG[ex.difficulty].label}
-              </span>
-            )}
-            {/* Movement patterns (max 2) */}
-            {ex.movementPatterns.slice(0, 2).map((p) => (
-              <span key={p} className="text-[10px] px-1.5 py-0.5 rounded-full border border-border text-muted-foreground">
-                {PATTERN_LABELS[p] ?? p}
-              </span>
-            ))}
-            {/* Context badge */}
-            {ex.suitableFor === "warmup" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-orange-500/20 bg-orange-500/10 text-orange-600 flex items-center gap-0.5">
-                <FlameIcon className="w-2.5 h-2.5" /> Calentamiento
-              </span>
-            )}
-            {ex.suitableFor === "evaluation" && (
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-primary/20 bg-primary/10 text-primary flex items-center gap-0.5">
-                <ZapIcon className="w-2.5 h-2.5" /> Evaluación
-              </span>
-            )}
-            {/* Video badge */}
-            {ex.videoUrl && (
-              <button
-                onClick={() => setVideoOpen((v) => !v)}
-                className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground flex items-center gap-0.5 cursor-pointer hover:text-foreground transition-colors"
-              >
-                <PlayIcon className="w-2.5 h-2.5" /> Video
-              </button>
-            )}
-          </div>
-        )}
       </div>
-    </div>
-
-    {/* Inline video player */}
-    {ex.videoUrl && videoOpen && (
-      <div className="border-t border-border bg-black aspect-video">
-        <iframe
-          src={`https://iframe.videodelivery.net/${ex.videoUrl}`}
-          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-          allowFullScreen
-          className="w-full h-full"
-        />
-      </div>
-    )}
+      {ex.videoUrl && videoOpen && (
+        <div className="border-t border-border bg-black aspect-video">
+          <iframe
+            src={`https://iframe.videodelivery.net/${ex.videoUrl}`}
+            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+            allowFullScreen
+            className="w-full h-full"
+          />
+        </div>
+      )}
     </div>
   )
 }
