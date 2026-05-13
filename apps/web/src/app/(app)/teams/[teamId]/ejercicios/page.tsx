@@ -632,18 +632,18 @@ function EquipmentSelector({
 
 // ── Video Uploader ────────────────────────────────────────────────────────────
 
-const CF_SUBDOMAIN = process.env.NEXT_PUBLIC_CF_ACCOUNT_HASH // optional, for thumbnail preview
-
 function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange: (id: string | null) => void }) {
   const getUploadUrl = trpc.exercises.getVideoUploadUrl.useMutation()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [uploading, setUploading] = useState(false)
   const [progress, setProgress] = useState(0)
+  const [error, setError] = useState<string | null>(null)
 
   async function handleFile(file: File) {
     if (!file.type.startsWith("video/")) return
     setUploading(true)
     setProgress(0)
+    setError(null)
     try {
       const { uploadUrl, uid } = await getUploadUrl.mutateAsync()
 
@@ -652,8 +652,8 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
         xhr.upload.onprogress = (e) => {
           if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100))
         }
-        xhr.onload = () => xhr.status < 400 ? resolve() : reject(new Error(`Upload failed: ${xhr.status}`))
-        xhr.onerror = () => reject(new Error("Network error"))
+        xhr.onload = () => xhr.status < 400 ? resolve() : reject(new Error(`Error al subir (${xhr.status})`))
+        xhr.onerror = () => reject(new Error("Error de red"))
         xhr.open("POST", uploadUrl)
         const fd = new FormData()
         fd.append("file", file)
@@ -663,6 +663,7 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
       onChange(uid)
     } catch (err) {
       console.error(err)
+      setError(err instanceof Error ? err.message : "Error desconocido")
     } finally {
       setUploading(false)
       setProgress(0)
@@ -692,12 +693,11 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
   }
 
   return (
-    <div>
+    <div className="space-y-2">
       <input
         ref={fileInputRef}
         type="file"
         accept="video/*"
-        capture="environment"
         className="hidden"
         onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
       />
@@ -709,6 +709,12 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
           </div>
         </div>
       ) : (
+        <>
+        {error && (
+          <p className="text-xs text-destructive flex items-center gap-1">
+            <XIcon className="w-3 h-3" /> {error}
+          </p>
+        )}
         <button
           type="button"
           onClick={() => fileInputRef.current?.click()}
@@ -721,6 +727,7 @@ function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange
           <p className="text-xs">Subir video o grabar desde cámara</p>
           <p className="text-[10px] text-muted-foreground/60">MP4, MOV, WebM — máx. 5 min</p>
         </button>
+        </>
       )}
     </div>
   )
