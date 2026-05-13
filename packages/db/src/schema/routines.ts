@@ -23,7 +23,7 @@ export const routineExercise = pgTable("routine_exercise", {
     .references(() => routine.id, { onDelete: "cascade" }),
   exerciseId: uuid("exercise_id")
     .notNull()
-    .references(() => exercise.id),
+    .references(() => exercise.id, { onDelete: "cascade" }),
   order: integer("order").notNull(),
 })
 
