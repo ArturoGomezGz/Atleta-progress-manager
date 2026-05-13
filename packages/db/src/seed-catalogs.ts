@@ -78,7 +78,7 @@ const EQUIPMENT: string[] = [
 
 // ── Seed ─────────────────────────────────────────────────────────────────────
 
-async function seed() {
+export async function seedCatalogs() {
   console.log("⏳ Seeding catalogs...")
 
   // Muscle groups + muscles (upsert by name to make it idempotent)
@@ -111,6 +111,9 @@ async function seed() {
   console.log(`  • ${EQUIPMENT.length} equipment items`)
 }
 
-seed()
-  .catch((e) => { console.error(e); process.exit(1) })
-  .finally(() => process.exit(0))
+// Standalone runner
+if (require.main === module) {
+  seedCatalogs()
+    .catch((e) => { console.error(e); process.exit(1) })
+    .finally(() => process.exit(0))
+}
