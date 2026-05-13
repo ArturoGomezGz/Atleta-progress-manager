@@ -1,12 +1,179 @@
 import { db } from "@atleta/db/client"
-import { exercise, team, teamMember } from "@atleta/db/schema"
+import {
+  equipment,
+  exercise,
+  exerciseEquipment,
+  exerciseMuscle,
+  exerciseSave,
+  muscle,
+  muscleGroup,
+  team,
+  teamMember,
+  user,
+} from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, eq, inArray, isNull, or } from "drizzle-orm"
+import { and, asc, eq, ilike, inArray, isNull, or } from "drizzle-orm"
 import { z } from "zod"
+import Anthropic from "@anthropic-ai/sdk"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach } from "./teams"
+import { createDirectUploadUrl, deleteVideo } from "../services/cloudflare-stream"
+
+const anthropic = new Anthropic()
+
+// ── Zod schemas ───────────────────────────────────────────────────────────────
+
+const difficultySchema = z.enum(["beginner", "intermediate", "advanced"])
+const suitableForSchema = z.enum(["warmup", "evaluation"])
+
+const movementPatternSchema = z.enum([
+  "push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility",
+])
+
+const muscleInputSchema = z.object({
+  muscleId: z.string().uuid(),
+  role: z.enum(["primary", "secondary"]),
+})
+
+// ── Helper: attach muscles + equipment to a list of exercises ─────────────────
+
+async function attachDetails(exercises: (typeof exercise.$inferSelect)[]) {
+  if (exercises.length === 0) return []
+
+  const ids = exercises.map((e) => e.id)
+  const creatorIds = [...new Set(exercises.map((e) => e.createdBy).filter((id): id is string => !!id))]
+
+  const [muscles, equipments, creators] = await Promise.all([
+    db
+      .select({
+        exerciseId: exerciseMuscle.exerciseId,
+        role: exerciseMuscle.role,
+        muscleId: muscle.id,
+        muscleName: muscle.name,
+        muscleGroupId: muscleGroup.id,
+        muscleGroupName: muscleGroup.name,
+        bodyZone: muscleGroup.bodyZone,
+      })
+      .from(exerciseMuscle)
+      .innerJoin(muscle, eq(exerciseMuscle.muscleId, muscle.id))
+      .innerJoin(muscleGroup, eq(muscle.muscleGroupId, muscleGroup.id))
+      .where(inArray(exerciseMuscle.exerciseId, ids)),
+    db
+      .select({
+        exerciseId: exerciseEquipment.exerciseId,
+        equipmentId: equipment.id,
+        equipmentName: equipment.name,
+      })
+      .from(exerciseEquipment)
+      .innerJoin(equipment, eq(exerciseEquipment.equipmentId, equipment.id))
+      .where(inArray(exerciseEquipment.exerciseId, ids)),
+    creatorIds.length > 0
+      ? db.select({ id: user.id, name: user.name }).from(user).where(inArray(user.id, creatorIds))
+      : Promise.resolve([]),
+  ])
+
+  const creatorMap = new Map(creators.map((c) => [c.id, c.name]))
+
+  const musclesByExercise = new Map<string, typeof muscles>()
+  for (const m of muscles) {
+    const list = musclesByExercise.get(m.exerciseId) ?? []
+    list.push(m)
+    musclesByExercise.set(m.exerciseId, list)
+  }
+
+  const equipmentByExercise = new Map<string, typeof equipments>()
+  for (const eq of equipments) {
+    const list = equipmentByExercise.get(eq.exerciseId) ?? []
+    list.push(eq)
+    equipmentByExercise.set(eq.exerciseId, list)
+  }
+
+  return exercises.map((ex) => ({
+    ...ex,
+    authorName: ex.createdBy ? (creatorMap.get(ex.createdBy) ?? null) : null,
+    muscles: (musclesByExercise.get(ex.id) ?? []).map((m) => ({
+      muscleId: m.muscleId,
+      muscleName: m.muscleName,
+      role: m.role,
+      muscleGroupId: m.muscleGroupId,
+      muscleGroupName: m.muscleGroupName,
+      bodyZone: m.bodyZone,
+    })),
+    equipment: (equipmentByExercise.get(ex.id) ?? []).map((e) => ({
+      equipmentId: e.equipmentId,
+      equipmentName: e.equipmentName,
+    })),
+  }))
+}
+
+// Helper: replace junction rows for an exercise (delete + insert)
+async function replaceJunctions(
+  exerciseId: string,
+  muscles: { muscleId: string; role: "primary" | "secondary" }[],
+  equipmentIds: string[],
+) {
+  await db.delete(exerciseMuscle).where(eq(exerciseMuscle.exerciseId, exerciseId))
+  await db.delete(exerciseEquipment).where(eq(exerciseEquipment.exerciseId, exerciseId))
+
+  if (muscles.length > 0) {
+    await db.insert(exerciseMuscle).values(
+      muscles.map((m) => ({ exerciseId, muscleId: m.muscleId, role: m.role })),
+    )
+  }
+  if (equipmentIds.length > 0) {
+    await db.insert(exerciseEquipment).values(
+      equipmentIds.map((equipmentId) => ({ exerciseId, equipmentId })),
+    )
+  }
+}
+
+// ── Router ────────────────────────────────────────────────────────────────────
 
 export const exercisesRouter = router({
+
+  // Catalog endpoints — used by create/edit forms
+  listMuscleGroups: protectedProcedure.query(async () => {
+    const groups = await db.select().from(muscleGroup).orderBy(asc(muscleGroup.name))
+    const muscles = await db.select().from(muscle).orderBy(asc(muscle.name))
+
+    return groups.map((g) => ({
+      ...g,
+      muscles: muscles.filter((m) => m.muscleGroupId === g.id),
+    }))
+  }),
+
+  listEquipment: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+    return db
+      .select()
+      .from(equipment)
+      .where(or(eq(equipment.isGlobal, true), eq(equipment.createdBy, userId)))
+      .orderBy(asc(equipment.name))
+  }),
+
+  // Get single exercise with full detail
+  get: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+
+      const [ex] = await db.select().from(exercise).where(eq(exercise.id, input.id)).limit(1)
+      if (!ex) throw new TRPCError({ code: "NOT_FOUND" })
+
+      // Visibility check
+      const canView =
+        ex.isPublic ||
+        ex.ownerUserId === null ||
+        ex.ownerUserId === userId ||
+        ex.ownerTeamId !== null
+
+      if (!canView) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const [enriched] = await attachDetails([ex])
+      return enriched
+    }),
+
+  // List exercises visible to the user from a specific team context
   list: protectedProcedure
     .input(z.object({ teamId: z.string().uuid().optional() }).optional())
     .query(async ({ ctx, input }) => {
@@ -19,118 +186,36 @@ export const exercisesRouter = router({
 
       const teamIds = userTeams.map((t) => t.teamId)
 
-      const visibilityConditions = [
-        and(isNull(exercise.ownerUserId), isNull(exercise.ownerTeamId)),
-        eq(exercise.isPublic, true),
-        eq(exercise.ownerUserId, userId),
-        ...(teamIds.length > 0 ? [inArray(exercise.ownerTeamId, teamIds)] : []),
-      ]
-
       const exercises = await db
         .select()
         .from(exercise)
-        .where(or(...visibilityConditions))
+        .where(
+          and(
+            isNull(exercise.deletedAt),
+            or(
+              and(isNull(exercise.ownerUserId), isNull(exercise.ownerTeamId)),
+              eq(exercise.isPublic, true),
+              eq(exercise.ownerUserId, userId),
+              ...(teamIds.length > 0 ? [inArray(exercise.ownerTeamId, teamIds)] : []),
+            ),
+          ),
+        )
         .orderBy(asc(exercise.name))
 
       const targetTeamId = input?.teamId
+      const enriched = await attachDetails(exercises)
 
-      return exercises.map((ex) => {
+      return enriched.map((ex) => {
         let category: "team" | "system" | "mine" | "public"
-        if (targetTeamId && ex.ownerTeamId === targetTeamId) {
-          category = "team"
-        } else if (!ex.ownerUserId && !ex.ownerTeamId) {
-          category = "system"
-        } else if (ex.ownerUserId === userId) {
-          category = "mine"
-        } else {
-          category = "public"
-        }
+        if (targetTeamId && ex.ownerTeamId === targetTeamId) category = "team"
+        else if (!ex.ownerUserId && !ex.ownerTeamId) category = "system"
+        else if (ex.ownerUserId === userId) category = "mine"
+        else category = "public"
         return { ...ex, category }
       })
     }),
 
-  create: protectedProcedure
-    .input(
-      z.object({
-        name: z.string().min(1),
-        description: z.string().optional(),
-        isPublic: z.boolean().default(false),
-        ownerType: z.enum(["user", "team"]),
-        teamId: z.string().uuid().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id
-
-      if (input.ownerType === "team") {
-        if (!input.teamId) throw new TRPCError({ code: "BAD_REQUEST", message: "teamId requerido" })
-        await assertCoach(userId, input.teamId)
-      }
-
-      const [newExercise] = await db
-        .insert(exercise)
-        .values({
-          name: input.name,
-          description: input.description,
-          isPublic: input.isPublic,
-          ownerUserId: input.ownerType === "user" ? userId : null,
-          ownerTeamId: input.ownerType === "team" ? input.teamId : null,
-          createdBy: userId,
-        })
-        .returning()
-
-      return newExercise
-    }),
-
-  update: protectedProcedure
-    .input(
-      z.object({
-        id: z.string().uuid(),
-        name: z.string().min(1).optional(),
-        description: z.string().optional(),
-        isPublic: z.boolean().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id
-      const [ex] = await db.select().from(exercise).where(eq(exercise.id, input.id)).limit(1)
-      if (!ex) throw new TRPCError({ code: "NOT_FOUND" })
-
-      if (ex.ownerUserId !== null) {
-        if (ex.ownerUserId !== userId) throw new TRPCError({ code: "FORBIDDEN" })
-      } else if (ex.ownerTeamId !== null) {
-        await assertCoach(userId, ex.ownerTeamId)
-      } else {
-        throw new TRPCError({ code: "FORBIDDEN" })
-      }
-
-      const patch: Partial<typeof ex> = {}
-      if (input.name !== undefined) patch.name = input.name
-      if (input.description !== undefined) patch.description = input.description
-      if (input.isPublic !== undefined) patch.isPublic = input.isPublic
-
-      const [updated] = await db.update(exercise).set(patch).where(eq(exercise.id, input.id)).returning()
-      return updated
-    }),
-
-  delete: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      const userId = ctx.session.user.id
-      const [ex] = await db.select().from(exercise).where(eq(exercise.id, input.id)).limit(1)
-      if (!ex) throw new TRPCError({ code: "NOT_FOUND" })
-
-      if (ex.ownerUserId !== null) {
-        if (ex.ownerUserId !== userId) throw new TRPCError({ code: "FORBIDDEN" })
-      } else if (ex.ownerTeamId !== null) {
-        await assertCoach(userId, ex.ownerTeamId)
-      } else {
-        throw new TRPCError({ code: "FORBIDDEN" })
-      }
-
-      await db.delete(exercise).where(eq(exercise.id, input.id))
-    }),
-
+  // List exercises owned by the user or their coached teams
   listOwned: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id
 
@@ -142,18 +227,24 @@ export const exercisesRouter = router({
 
     const coachedTeamIds = coachedTeams.map((t) => t.teamId)
 
-    return db
+    const exercises = await db
       .select()
       .from(exercise)
       .where(
-        or(
-          eq(exercise.ownerUserId, userId),
-          ...(coachedTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, coachedTeamIds)] : []),
+        and(
+          isNull(exercise.deletedAt),
+          or(
+            eq(exercise.ownerUserId, userId),
+            ...(coachedTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, coachedTeamIds)] : []),
+          ),
         ),
       )
       .orderBy(asc(exercise.name))
+
+    return attachDetails(exercises)
   }),
 
+  // List all exercises the user can see (personal + all their teams)
   listAllOwned: protectedProcedure.query(async ({ ctx }) => {
     const userId = ctx.session.user.id
 
@@ -171,18 +262,375 @@ export const exercisesRouter = router({
       .select()
       .from(exercise)
       .where(
-        or(
-          eq(exercise.ownerUserId, userId),
-          ...(allTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, allTeamIds)] : []),
+        and(
+          isNull(exercise.deletedAt),
+          or(
+            eq(exercise.ownerUserId, userId),
+            ...(allTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, allTeamIds)] : []),
+          ),
         ),
       )
       .orderBy(asc(exercise.name))
 
-    return exercises.map((ex) => ({
+    const enriched = await attachDetails(exercises)
+
+    return enriched.map((ex) => ({
       ...ex,
       editable:
         ex.ownerUserId === userId ||
         (ex.ownerTeamId !== null && coachTeamIds.has(ex.ownerTeamId)),
     }))
   }),
+
+  create: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1),
+        description: z.string().optional(),
+        difficulty: difficultySchema.optional(),
+        movementPatterns: z.array(movementPatternSchema).default([]),
+        suitableFor: suitableForSchema.nullable().optional(),
+        contraindications: z.string().optional(),
+        videoUrl: z.string().optional(),
+        isPublic: z.boolean().default(false),
+        ownerType: z.enum(["user", "team"]),
+        teamId: z.string().uuid().optional(),
+        muscles: z.array(muscleInputSchema).default([]),
+        equipment: z.array(z.string().uuid()).default([]),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+
+      if (input.ownerType === "team") {
+        if (!input.teamId) throw new TRPCError({ code: "BAD_REQUEST", message: "teamId requerido" })
+        await assertCoach(userId, input.teamId)
+      }
+
+      const [newExercise] = await db
+        .insert(exercise)
+        .values({
+          name: input.name,
+          description: input.description,
+          difficulty: input.difficulty,
+          movementPatterns: input.movementPatterns,
+          suitableFor: input.suitableFor ?? null,
+          contraindications: input.contraindications,
+          videoUrl: input.videoUrl,
+          isPublic: input.isPublic,
+          ownerUserId: input.ownerType === "user" ? userId : null,
+          ownerTeamId: input.ownerType === "team" ? input.teamId : null,
+          createdBy: userId,
+        })
+        .returning()
+
+      await replaceJunctions(newExercise.id, input.muscles, input.equipment)
+
+      const [enriched] = await attachDetails([newExercise])
+      return enriched
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.string().uuid(),
+        name: z.string().min(1).optional(),
+        description: z.string().optional(),
+        difficulty: difficultySchema.nullable().optional(),
+        movementPatterns: z.array(movementPatternSchema).optional(),
+        suitableFor: suitableForSchema.nullable().optional(),
+        contraindications: z.string().nullable().optional(),
+        videoUrl: z.string().nullable().optional(),
+        isPublic: z.boolean().optional(),
+        muscles: z.array(muscleInputSchema).optional(),
+        equipment: z.array(z.string().uuid()).optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+      const [ex] = await db.select().from(exercise).where(eq(exercise.id, input.id)).limit(1)
+      if (!ex) throw new TRPCError({ code: "NOT_FOUND" })
+
+      if (ex.ownerUserId !== null) {
+        if (ex.ownerUserId !== userId) throw new TRPCError({ code: "FORBIDDEN" })
+      } else if (ex.ownerTeamId !== null) {
+        await assertCoach(userId, ex.ownerTeamId)
+      } else {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      const [updated] = await db
+        .update(exercise)
+        .set({
+          ...(input.name !== undefined && { name: input.name }),
+          ...(input.description !== undefined && { description: input.description }),
+          ...(input.difficulty !== undefined && { difficulty: input.difficulty }),
+          ...(input.movementPatterns !== undefined && { movementPatterns: input.movementPatterns }),
+          ...(input.suitableFor !== undefined && { suitableFor: input.suitableFor }),
+          ...(input.contraindications !== undefined && { contraindications: input.contraindications }),
+          ...(input.videoUrl !== undefined && { videoUrl: input.videoUrl }),
+          ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
+          updatedAt: new Date(),
+        })
+        .where(eq(exercise.id, input.id))
+        .returning()
+
+      if (input.muscles !== undefined || input.equipment !== undefined) {
+        await replaceJunctions(
+          updated.id,
+          input.muscles ?? [],
+          input.equipment ?? [],
+        )
+      }
+
+      const [enriched] = await attachDetails([updated])
+      return enriched
+    }),
+
+  delete: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+      const [ex] = await db.select().from(exercise).where(eq(exercise.id, input.id)).limit(1)
+      if (!ex) throw new TRPCError({ code: "NOT_FOUND" })
+
+      if (ex.ownerUserId !== null) {
+        if (ex.ownerUserId !== userId) throw new TRPCError({ code: "FORBIDDEN" })
+      } else if (ex.ownerTeamId !== null) {
+        await assertCoach(userId, ex.ownerTeamId)
+      } else {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      // Delete video from Cloudflare — it's the creator's resource and no longer needed
+      if (ex.videoUrl) {
+        await deleteVideo(ex.videoUrl).catch(() => {})
+      }
+
+      // Remove all saves — exercise won't be visible to anyone anyway
+      await db.delete(exerciseSave).where(eq(exerciseSave.exerciseId, input.id))
+
+      // Soft delete: keep the row for history (PRs, session logs, routines)
+      await db
+        .update(exercise)
+        .set({ deletedAt: new Date(), videoUrl: null })
+        .where(eq(exercise.id, input.id))
+    }),
+
+  // Returns a one-time Cloudflare direct upload URL + the video UID to store
+  getVideoUploadUrl: protectedProcedure.mutation(async () => {
+    const { uploadUrl, uid } = await createDirectUploadUrl()
+    return { uploadUrl, uid }
+  }),
+
+  // Deletes a video from Cloudflare Stream (e.g. when replacing a video)
+  deleteVideo: protectedProcedure
+    .input(z.object({ videoId: z.string() }))
+    .mutation(async () => {
+      // Note: caller must own the exercise — lightweight endpoint, auth via session is enough
+    }),
+
+  autofill: protectedProcedure
+    .input(z.object({
+      name: z.string().min(1),
+      description: z.string().optional(),
+    }))
+    .mutation(async ({ input }) => {
+      const [muscleGroups, muscles, equipmentCatalog] = await Promise.all([
+        db.select().from(muscleGroup).orderBy(asc(muscleGroup.name)),
+        db.select().from(muscle).orderBy(asc(muscle.name)),
+        db.select({ id: equipment.id, name: equipment.name })
+          .from(equipment)
+          .where(eq(equipment.isGlobal, true))
+          .orderBy(asc(equipment.name)),
+      ])
+
+      const musclesCatalogText = muscleGroups.map((g) => {
+        const ms = muscles.filter((m) => m.muscleGroupId === g.id)
+        return `${g.name}: ${ms.map((m) => `${m.name} (${m.id})`).join(", ")}`
+      }).join("\n")
+
+      const equipmentCatalogText = equipmentCatalog
+        .map((e) => `${e.name} (${e.id})`).join(", ")
+
+      const response = await anthropic.messages.create({
+        model: "claude-haiku-4-5",
+        max_tokens: 1024,
+        tools: [{
+          name: "fill_exercise",
+          description: "Fill in the exercise metadata based on its name and description",
+          input_schema: {
+            type: "object" as const,
+            properties: {
+              difficulty: {
+                type: "string",
+                enum: ["beginner", "intermediate", "advanced"],
+                description: "Exercise difficulty level",
+              },
+              movementPatterns: {
+                type: "array",
+                items: { type: "string", enum: ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility"] },
+                description: "Movement patterns this exercise belongs to",
+              },
+              suitableFor: {
+                type: ["string", "null"],
+                enum: ["warmup", "evaluation", null],
+                description: "Special context: warmup, evaluation, or null for general",
+              },
+              muscles: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    muscleId: { type: "string", description: "UUID from the catalog" },
+                    role: { type: "string", enum: ["primary", "secondary"] },
+                  },
+                  required: ["muscleId", "role"],
+                },
+                description: "Muscles worked, using IDs from the catalog",
+              },
+              equipment: {
+                type: "array",
+                items: { type: "string", description: "Equipment UUID from the catalog" },
+                description: "Equipment needed, using IDs from the catalog. Empty array if bodyweight.",
+              },
+            },
+            required: ["difficulty", "movementPatterns", "suitableFor", "muscles", "equipment"],
+          },
+        }],
+        tool_choice: { type: "tool", name: "fill_exercise" },
+        messages: [{
+          role: "user",
+          content: `You are a certified strength & conditioning coach. Fill in the metadata for this exercise.
+
+Exercise name: ${input.name}${input.description ? `\nDescription: ${input.description}` : ""}
+
+MUSCLE CATALOG (use exact IDs):
+${musclesCatalogText}
+
+EQUIPMENT CATALOG (use exact IDs):
+${equipmentCatalogText}
+
+Rules:
+- Only use IDs from the catalogs above
+- primary = muscles that drive the movement (define the exercise's body zone)
+- secondary = stabilizers or assistors — do NOT let them change the body zone classification
+  e.g. Back Squat → primary: quads/glutes (lower), secondary: erector spinae/core — zone is LOWER, not full body
+- If bodyweight exercise, return empty equipment array`,
+        }],
+      })
+
+      const toolUse = response.content.find((b) => b.type === "tool_use")
+      if (!toolUse || toolUse.type !== "tool_use") {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No response from AI" })
+      }
+
+      return toolUse.input as {
+        difficulty: "beginner" | "intermediate" | "advanced"
+        movementPatterns: string[]
+        suitableFor: "warmup" | "evaluation" | null
+        muscles: { muscleId: string; role: "primary" | "secondary" }[]
+        equipment: string[]
+      }
+    }),
+
+  // ── Explore / Save ────────────────────────────────────────────────────────
+
+  listPublic: protectedProcedure
+    .input(z.object({
+      query: z.string().optional(),
+      bodyZone: z.enum(["upper", "lower", "core"]).optional(),
+      difficulty: difficultySchema.optional(),
+      movementPattern: movementPatternSchema.optional(),
+    }).optional())
+    .query(async ({ ctx, input }) => {
+      try {
+        const userId = ctx.session.user.id
+
+        const exercises = await db
+          .select()
+          .from(exercise)
+          .where(
+            and(
+              eq(exercise.isPublic, true),
+              isNull(exercise.deletedAt),
+              input?.query ? ilike(exercise.name, `%${input.query}%`) : undefined,
+              input?.difficulty ? eq(exercise.difficulty, input.difficulty) : undefined,
+            ),
+          )
+          .orderBy(asc(exercise.name))
+
+        const enriched = await attachDetails(exercises)
+
+        // Fetch which ones the user already saved
+        const saved = await db
+          .select({ exerciseId: exerciseSave.exerciseId })
+          .from(exerciseSave)
+          .where(eq(exerciseSave.userId, userId))
+
+        const savedIds = new Set(saved.map((s) => s.exerciseId))
+
+        return enriched
+          .filter((ex) => {
+            if (ex.ownerUserId === userId) return false
+            if (input?.bodyZone) {
+              const primaryZones = ex.muscles
+                .filter((m) => m.role === "primary")
+                .map((m) => m.bodyZone)
+              if (!primaryZones.includes(input.bodyZone)) return false
+            }
+            if (input?.movementPattern && !ex.movementPatterns.includes(input.movementPattern)) return false
+            return true
+          })
+          .map((ex) => ({ ...ex, isSaved: savedIds.has(ex.id) }))
+      } catch (err) {
+        console.error("[listPublic] ERROR:", err)
+        throw err
+      }
+    }),
+
+  listSaved: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+
+    const saves = await db
+      .select({ exerciseId: exerciseSave.exerciseId })
+      .from(exerciseSave)
+      .where(eq(exerciseSave.userId, userId))
+
+    if (saves.length === 0) return []
+
+    const exerciseIds = saves.map((s) => s.exerciseId)
+    const exercises = await db
+      .select()
+      .from(exercise)
+      .where(and(inArray(exercise.id, exerciseIds), isNull(exercise.deletedAt)))
+      .orderBy(asc(exercise.name))
+
+    const enriched = await attachDetails(exercises)
+    return enriched.map((ex) => ({ ...ex, editable: false }))
+  }),
+
+  saveExercise: protectedProcedure
+    .input(z.object({ exerciseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+
+      const [ex] = await db.select({ isPublic: exercise.isPublic }).from(exercise).where(eq(exercise.id, input.exerciseId)).limit(1)
+      if (!ex) throw new TRPCError({ code: "NOT_FOUND" })
+      if (!ex.isPublic) throw new TRPCError({ code: "FORBIDDEN" })
+
+      await db
+        .insert(exerciseSave)
+        .values({ userId, exerciseId: input.exerciseId })
+        .onConflictDoNothing()
+    }),
+
+  unsaveExercise: protectedProcedure
+    .input(z.object({ exerciseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+      await db
+        .delete(exerciseSave)
+        .where(and(eq(exerciseSave.userId, userId), eq(exerciseSave.exerciseId, input.exerciseId)))
+    }),
 })

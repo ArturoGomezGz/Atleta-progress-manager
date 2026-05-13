@@ -2,7 +2,7 @@
 
 import React from "react"
 import { trpc } from "@/lib/trpc/client"
-import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, ListIcon, MenuIcon, PaletteIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
+import { ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, PaletteIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
@@ -17,12 +17,14 @@ const COACH_NAV: NavItem[] = [
   { key: "plantillas",  label: "Plantillas",  icon: ClipboardListIcon },
   { key: "sesiones",    label: "Sesiones",    icon: DumbbellIcon },
   { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
-  { key: "ejercicios",  label: "Ejercicios",  icon: ListIcon },
+  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon },
+  { key: "explorar",    label: "Explorar",    icon: CompassIcon },
 ]
 
 const ATHLETE_NAV: NavItem[] = [
   { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
-  { key: "ejercicios",  label: "Ejercicios",  icon: ListIcon },
+  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon },
+  { key: "explorar",    label: "Explorar",    icon: CompassIcon },
 ]
 
 function extractTeamId(pathname: string): string | null {
@@ -85,7 +87,7 @@ export function Sidebar() {
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
-    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios") {
+    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar") {
       router.replace(`/teams/${currentTeamId}/progreso`)
     }
   }, [isAthlete, currentTeamId, currentSection, router])

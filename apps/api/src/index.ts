@@ -2,11 +2,20 @@ import cors from "@fastify/cors"
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify"
 import { fromNodeHeaders } from "better-auth/node"
 import Fastify from "fastify"
+import { runMigrations } from "./migrate"
 import { auth } from "./auth"
 import { appRouter } from "./routers"
 import { createContext } from "./trpc"
 
 async function main() {
+  console.log("🚀 Iniciando API...")
+  try {
+    await runMigrations()
+  } catch (err) {
+    console.error("❌ Error en migraciones:", err)
+    throw err
+  }
+
   const app = Fastify({ logger: true })
 
   await app.register(cors, {

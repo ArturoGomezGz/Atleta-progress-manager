@@ -31,6 +31,9 @@ importers:
       fastify:
         specifier: ^5.0.0
         version: 5.8.5
+      postgres:
+        specifier: ^3.4.5
+        version: 3.4.9
       resend:
         specifier: ^6.12.3
         version: 6.12.3

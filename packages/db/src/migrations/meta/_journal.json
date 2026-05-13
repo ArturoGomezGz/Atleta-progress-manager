@@ -64,6 +64,62 @@
       "when": 1778566926423,
       "tag": "0008_cultured_abomination",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1778628100821,
+      "tag": "0009_complex_saracen",
+      "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1778628425227,
+      "tag": "0010_wakeful_spot",
+      "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1778628506052,
+      "tag": "0011_true_chat",
+      "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1778631017969,
+      "tag": "0012_elite_roulette",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1778700000000,
+      "tag": "0013_exercise_saves",
+      "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1747180800000,
+      "tag": "0014_equipment_unique",
+      "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1747267200000,
+      "tag": "0015_routine_exercise_cascade",
+      "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1747353600000,
+      "tag": "0016_exercise_soft_delete",
+      "breakpoints": true
     }
   ]
 }
