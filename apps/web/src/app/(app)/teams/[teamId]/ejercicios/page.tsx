@@ -16,6 +16,7 @@ import {
   SparklesIcon,
   Trash2Icon,
   UploadIcon,
+  UserIcon,
   VideoIcon,
   XIcon,
   ZapIcon,
@@ -996,6 +997,7 @@ type EnrichedExercise = {
   ownerUserId: string | null
   ownerTeamId: string | null
   editable: boolean
+  authorName: string | null
   muscles: { muscleId: string; muscleName: string; role: "primary" | "secondary"; muscleGroupId: string; muscleGroupName: string; bodyZone: "upper" | "lower" | "core" }[]
   equipment: { equipmentId: string; equipmentName: string }[]
 }
@@ -1042,7 +1044,14 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUn
         <div className={cn("w-1 shrink-0", zoneConf?.bar ?? "bg-border")} />
         <div className="flex-1 min-w-0 px-4 py-3">
           <div className="flex items-start justify-between gap-2">
-            <p className="text-sm font-medium leading-snug">{ex.name}</p>
+            <div className="min-w-0">
+              <p className="text-sm font-medium leading-snug">{ex.name}</p>
+              {ex.authorName && (
+                <p className="text-[10px] text-muted-foreground/70 flex items-center gap-0.5 mt-0.5">
+                  <UserIcon className="w-2.5 h-2.5 shrink-0" />{ex.authorName}
+                </p>
+              )}
+            </div>
             <div className="flex items-center gap-1.5 shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
               {savedBadge ? (
                 <button

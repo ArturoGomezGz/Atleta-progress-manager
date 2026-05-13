@@ -21,6 +21,24 @@ export async function runMigrations() {
       PRIMARY KEY ("user_id", "exercise_id")
     )
   `
+
+  // Safety net: deduplicate global equipment and ensure unique index exists
+  // (the migration may have failed on DBs where seed ran multiple times)
+  await client`
+    DELETE FROM "equipment"
+    WHERE id NOT IN (
+      SELECT DISTINCT ON (name) id
+      FROM "equipment"
+      WHERE is_global = true AND created_by IS NULL
+      ORDER BY name, id
+    )
+    AND is_global = true AND created_by IS NULL
+  `
+  await client`
+    CREATE UNIQUE INDEX IF NOT EXISTS "equipment_global_name_unique"
+    ON "equipment" (name)
+    WHERE is_global = true AND created_by IS NULL
+  `
   console.log("✅ Tablas verificadas")
 
   await client.end()
