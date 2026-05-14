@@ -269,7 +269,7 @@ export const athleteSessionsRouter = router({
       // Aplanar ejercicios del content preservando bloque de origen
       type ExerciseWithBlock = RoutineExerciseContent & { blockId?: string; blockRounds?: number }
       const flatExercises: ExerciseWithBlock[] = routineData
-        ? routineData.content.items.flatMap((item) =>
+        ? routineData.content.items.flatMap((item): ExerciseWithBlock[] =>
             item.type === "exercise"
               ? [item]
               : item.exercises.map((ex) => ({ ...ex, blockId: item.id, blockRounds: item.rounds })),
