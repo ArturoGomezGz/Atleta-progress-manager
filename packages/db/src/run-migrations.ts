@@ -50,6 +50,11 @@ export async function runMigrations() {
     ALTER TABLE "exercise" ADD COLUMN IF NOT EXISTS "deleted_at" timestamp
   `
 
+  // Safety net: migración 0003 — schema híbrido de routine.content
+  await client`
+    ALTER TABLE "routine" ADD COLUMN IF NOT EXISTS "content" jsonb DEFAULT '{"v":1,"items":[]}'::jsonb NOT NULL
+  `
+
   console.log("✅ Tablas verificadas")
 
   await client.end()
