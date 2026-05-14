@@ -5,8 +5,6 @@ import {
   athleteSessionExerciseCancelled,
   exercise,
   routine,
-  routineExercise,
-  routineSetTarget,
   sessionExercise,
   sessionSetTarget,
   setRecord,
@@ -14,7 +12,8 @@ import {
   user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, desc, eq, gt, gte, inArray, lte } from "drizzle-orm"
+import { and, desc, eq, gt, gte, inArray, lte } from "drizzle-orm"
+import type { RoutineExerciseContent } from "@atleta/db/schema"
 import { z } from "zod"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { protectedProcedure, router } from "../trpc"
@@ -51,11 +50,10 @@ export const sessionsRouter = router({
       const [r] = await db.select().from(routine).where(eq(routine.id, input.routineId)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
 
-      const routineExercises = await db
-        .select()
-        .from(routineExercise)
-        .where(eq(routineExercise.routineId, input.routineId))
-        .orderBy(asc(routineExercise.order))
+      // Aplanar ejercicios del content (ejercicios individuales + ejercicios dentro de bloques)
+      const allExercises: RoutineExerciseContent[] = r.content.items.flatMap((item) =>
+        item.type === "exercise" ? [item] : item.exercises,
+      ).sort((a, b) => a.order - b.order)
 
       return db.transaction(async (tx) => {
         const [session] = await tx
@@ -63,28 +61,26 @@ export const sessionsRouter = router({
           .values({ routineId: input.routineId, teamId: input.teamId, startedBy: ctx.session.user.id })
           .returning()
 
-        // Snapshot exercises + set targets
-        for (const re of routineExercises) {
+        // Snapshot exercises + set targets desde el content JSON
+        for (const ex of allExercises) {
           const [se] = await tx
             .insert(sessionExercise)
-            .values({ sessionId: session.id, exerciseId: re.exerciseId, order: re.order })
+            .values({ sessionId: session.id, exerciseId: ex.exerciseId, order: ex.order })
             .returning()
 
-          const targets = await tx
-            .select()
-            .from(routineSetTarget)
-            .where(eq(routineSetTarget.routineExerciseId, re.id))
-            .orderBy(asc(routineSetTarget.setNumber))
+          const repsTargets = ex.sets
+            .filter((s) => s.setType === "reps" && (s.targetReps != null || s.loadType === "percent_rm"))
+            .map((s) => ({
+              sessionExerciseId: se.id,
+              setNumber: s.setNumber,
+              targetReps: s.targetReps ?? null,
+              targetPercent: s.loadType === "percent_rm" && s.loadValue != null
+                ? String(s.loadValue)
+                : null,
+            }))
 
-          if (targets.length > 0) {
-            await tx.insert(sessionSetTarget).values(
-              targets.map((t) => ({
-                sessionExerciseId: se.id,
-                setNumber: t.setNumber,
-                targetReps: t.targetReps,
-                targetPercent: t.targetPercent,
-              })),
-            )
+          if (repsTargets.length > 0) {
+            await tx.insert(sessionSetTarget).values(repsTargets)
           }
         }
 

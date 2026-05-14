@@ -1,6 +1,6 @@
 import { date, integer, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
-import { routineExercise, routine } from "./routines"
+import { routine } from "./routines"
 import { team } from "./teams"
 
 export const assignedSessionStatusEnum = pgEnum("assigned_session_status", ["pending", "in_progress", "completed", "skipped"])
@@ -65,7 +65,7 @@ export const athleteSetCompletion = pgTable("athlete_set_completion", {
   executionId: uuid("execution_id")
     .notNull()
     .references(() => athleteSessionExecution.id, { onDelete: "cascade" }),
-  routineExerciseId: uuid("routine_exercise_id").references(() => routineExercise.id, { onDelete: "set null" }),
+  routineExerciseId: uuid("routine_exercise_id"),  // referencia lógica al id del ejercicio en routine.content — sin FK
   setNumber: integer("set_number").notNull(),
   completedAt: timestamp("completed_at", { withTimezone: true }).notNull().defaultNow(),
 })

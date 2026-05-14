@@ -4,6 +4,7 @@ import { migrate } from "drizzle-orm/postgres-js/migrator"
 import postgres from "postgres"
 import path from "path"
 import { seedCatalogs } from "./seed-catalogs"
+import { seedDevUsers } from "./seed-dev-users"
 
 // Loads packages/db/.env locally; silently no-ops in Railway where vars are injected
 config()
@@ -22,6 +23,7 @@ export async function runMigrations() {
 async function main() {
   await runMigrations()
   await seedCatalogs()
+  await seedDevUsers()
 }
 
 if (require.main === module) {

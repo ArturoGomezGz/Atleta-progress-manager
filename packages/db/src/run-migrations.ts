@@ -44,17 +44,6 @@ export async function runMigrations() {
     WHERE is_global = true AND created_by IS NULL
   `
 
-  // Safety net: ensure routine_exercise FK uses CASCADE (migration 0015 may have
-  // run without statement-breakpoints and silently failed)
-  await client`
-    ALTER TABLE "routine_exercise"
-      DROP CONSTRAINT IF EXISTS "routine_exercise_exercise_id_exercise_id_fk"
-  `
-  await client`
-    ALTER TABLE "routine_exercise"
-      ADD CONSTRAINT "routine_exercise_exercise_id_exercise_id_fk"
-      FOREIGN KEY ("exercise_id") REFERENCES "exercise"("id") ON DELETE CASCADE
-  `
   // Safety net: add deleted_at column if migration 0016 hasn't applied yet
   await client`
     ALTER TABLE "exercise" ADD COLUMN IF NOT EXISTS "deleted_at" timestamp

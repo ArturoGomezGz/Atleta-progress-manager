@@ -6,14 +6,13 @@ import {
   athleteSetCompletion,
   exercise,
   routine,
-  routineExercise,
-  routineSetTarget,
   teamGroup,
   teamGroupMember,
   user,
 } from "@atleta/db/schema"
+import type { RoutineExerciseContent } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
+import { and, desc, eq, inArray, or } from "drizzle-orm"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
@@ -267,67 +266,66 @@ export const athleteSessionsRouter = router({
         ? await db.select().from(routine).where(eq(routine.id, session.routineId)).limit(1)
         : [null]
 
-      const exercises =
-        session?.routineId
-          ? await db
-              .select({
-                id: routineExercise.id,
-                exerciseId: routineExercise.exerciseId,
-                exerciseName: exercise.name,
-                order: routineExercise.order,
-                tempo: routineExercise.tempo,
-                restSeconds: routineExercise.restSeconds,
-                goal: routineExercise.goal,
-                notes: routineExercise.notes,
-              })
-              .from(routineExercise)
-              .innerJoin(exercise, eq(routineExercise.exerciseId, exercise.id))
-              .where(eq(routineExercise.routineId, session.routineId))
-              .orderBy(asc(routineExercise.order))
-          : []
-
-      // Latest RM per exercise for the athlete (for % RM weight suggestion)
-      const athleteId = exec.athleteId
-      const exerciseIds = exercises.map((e) => e.exerciseId)
-      const rmsRaw = exerciseIds.length > 0
-        ? await db
-            .select({ exerciseId: athleteExerciseRm.exerciseId, rmLbs: athleteExerciseRm.rmLbs })
-            .from(athleteExerciseRm)
-            .where(and(eq(athleteExerciseRm.athleteId, athleteId), inArray(athleteExerciseRm.exerciseId, exerciseIds)))
-            .orderBy(desc(athleteExerciseRm.recordedAt))
+      // Aplanar ejercicios del content preservando bloque de origen
+      type ExerciseWithBlock = RoutineExerciseContent & { blockId?: string; blockRounds?: number }
+      const flatExercises: ExerciseWithBlock[] = routineData
+        ? routineData.content.items.flatMap((item) =>
+            item.type === "exercise"
+              ? [item]
+              : item.exercises.map((ex) => ({ ...ex, blockId: item.id, blockRounds: item.rounds })),
+          ).sort((a, b) => a.order - b.order)
         : []
+
+      // Resolver nombres de ejercicios (una sola query)
+      const athleteId = exec.athleteId
+      const exerciseIds = [...new Set(flatExercises.map((e) => e.exerciseId))]
+
+      const [exerciseRows, rmsRaw] = await Promise.all([
+        exerciseIds.length > 0
+          ? db.select({ id: exercise.id, name: exercise.name })
+              .from(exercise)
+              .where(inArray(exercise.id, exerciseIds))
+          : Promise.resolve([]),
+        exerciseIds.length > 0
+          ? db.select({ exerciseId: athleteExerciseRm.exerciseId, rmLbs: athleteExerciseRm.rmLbs })
+              .from(athleteExerciseRm)
+              .where(and(eq(athleteExerciseRm.athleteId, athleteId), inArray(athleteExerciseRm.exerciseId, exerciseIds)))
+              .orderBy(desc(athleteExerciseRm.recordedAt))
+          : Promise.resolve([]),
+      ])
+
+      const nameById = Object.fromEntries(exerciseRows.map((e) => [e.id, e.name ?? "Ejercicio eliminado"]))
       const rmByExercise = new Map<string, string>()
       for (const rm of rmsRaw) {
         if (!rmByExercise.has(rm.exerciseId)) rmByExercise.set(rm.exerciseId, rm.rmLbs)
       }
 
-      const exercisesWithSets = await Promise.all(
-        exercises.map(async (ex) => {
-          const sets = await db
-            .select()
-            .from(routineSetTarget)
-            .where(eq(routineSetTarget.routineExerciseId, ex.id))
-            .orderBy(asc(routineSetTarget.setNumber))
+      // Obtener completions del atleta en esta ejecución (una sola query)
+      const completions = await db
+        .select({ routineExerciseId: athleteSetCompletion.routineExerciseId, setNumber: athleteSetCompletion.setNumber })
+        .from(athleteSetCompletion)
+        .where(eq(athleteSetCompletion.executionId, input.executionId))
 
-          const completedSets = await db
-            .select({ setNumber: athleteSetCompletion.setNumber })
-            .from(athleteSetCompletion)
-            .where(and(eq(athleteSetCompletion.executionId, input.executionId), eq(athleteSetCompletion.routineExerciseId, ex.id)))
+      const completedKey = new Set(completions.map((c) => `${c.routineExerciseId}:${c.setNumber}`))
 
-          const completedSetNumbers = new Set(completedSets.map((c) => c.setNumber))
-          const athleteRmLbs = rmByExercise.get(ex.exerciseId) ?? null  // string (numeric from pg)
-          return {
-            ...ex,
-            athleteRmLbs,
-            sets: sets.map((s) => ({ ...s, completed: completedSetNumbers.has(s.setNumber) })),
-          }
-        }),
-      )
+      const exercisesWithSets = flatExercises.map((ex) => ({
+        id:           ex.id,
+        exerciseId:   ex.exerciseId,
+        exerciseName: nameById[ex.exerciseId] ?? "Ejercicio eliminado",
+        order:        ex.order,
+        tempo:        ex.tempo ?? null,
+        restSeconds:  ex.restSeconds ?? null,
+        goal:         ex.goal ?? null,
+        notes:        ex.notes ?? null,
+        blockId:      ex.blockId ?? null,
+        blockRounds:  ex.blockRounds ?? null,
+        athleteRmLbs: rmByExercise.get(ex.exerciseId) ?? null,
+        sets: ex.sets.map((s) => ({ ...s, completed: completedKey.has(`${ex.id}:${s.setNumber}`) })),
+      }))
 
       return {
         execution: exec,
-        routineType: routineData?.type ?? "sequential",
-        circuitRounds: routineData?.circuitRounds ?? null,
+        content: routineData?.content ?? null,
         exercises: exercisesWithSets,
       }
     }),
