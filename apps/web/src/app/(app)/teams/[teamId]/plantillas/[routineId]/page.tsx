@@ -90,12 +90,20 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
   function addExercise(exerciseId: string) {
     const maxOrder = Math.max(-1, ...content.items.map((i) => i.order))
+    const defaultSets: RoutineSet[] = routineData?.category === "evaluation"
+      ? [
+          { setNumber: 1, setType: "reps", targetReps: 5, loadType: "percent_rm", loadValue: 80 },
+          { setNumber: 2, setType: "reps", targetReps: 3, loadType: "percent_rm", loadValue: 90 },
+          { setNumber: 3, setType: "reps",               loadType: "percent_rm", loadValue: 100 },
+        ]
+      : [{ setNumber: 1, setType: "reps" }]
+
     const newEx: RoutineItemExercise = {
       type: "exercise",
       id: crypto.randomUUID(),
       exerciseId,
       order: maxOrder + 1,
-      sets: [{ setNumber: 1, setType: "reps" }],
+      sets: defaultSets,
     }
     mutate((c) => ({ ...c, items: [...c.items, newEx] }))
   }
