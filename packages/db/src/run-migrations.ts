@@ -56,6 +56,9 @@ export async function runMigrations() {
   `
 
   // Safety net: migración 0005 — agregar estado scheduled y scheduled_date
+  // ALTER TYPE ADD VALUE no puede correr dentro de una transacción, por eso Drizzle migrate falla.
+  // Lo ejecutamos aquí fuera de cualquier transacción para garantizar que el valor exista.
+  await client`ALTER TYPE "public"."session_status" ADD VALUE IF NOT EXISTS 'scheduled'`
   await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "scheduled_date" date`
 
   // Safety net: migración 0004 — eliminar sistema antiguo de sesiones asignadas
