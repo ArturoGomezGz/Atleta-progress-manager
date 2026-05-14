@@ -3,7 +3,6 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import { migrate } from "drizzle-orm/postgres-js/migrator"
 import postgres from "postgres"
 import path from "path"
-import { seedExercises } from "./seed-exercises"
 import { seedCatalogs } from "./seed-catalogs"
 
 // Loads packages/db/.env locally; silently no-ops in Railway where vars are injected
@@ -22,7 +21,6 @@ export async function runMigrations() {
 
 async function main() {
   await runMigrations()
-  await seedExercises()
   await seedCatalogs()
 }
 
