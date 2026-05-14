@@ -37,9 +37,9 @@ export function SessionView({ sessionId }: Props) {
   const { data: session, refetch: refetchSession } = trpc.sessions.get.useQuery({ id: sessionId }, { refetchInterval: 4000 })
   const completeSession  = trpc.sessions.complete.useMutation({ onSuccess: () => { setConfirming(null); if (session) router.push(`/teams/${session.teamId}/rutinas?tab=${session.routineCategory === "training" ? "entrenamientos" : "evaluaciones"}`) } })
   const cancelSession    = trpc.sessions.cancel.useMutation({ onSuccess: () => { refetchSession(); setConfirming(null) } })
-  const activateSession  = trpc.sessions.activate.useMutation({ onSuccess: refetchSession })
-  const cancelAthlete    = trpc.sessions.cancelAthlete.useMutation({ onSuccess: refetchSession })
-  const reactivateAthlete = trpc.sessions.reactivateAthlete.useMutation({ onSuccess: refetchSession })
+  const activateSession  = trpc.sessions.activate.useMutation({ onSuccess: () => refetchSession() })
+  const cancelAthlete    = trpc.sessions.cancelAthlete.useMutation({ onSuccess: () => refetchSession() })
+  const reactivateAthlete = trpc.sessions.reactivateAthlete.useMutation({ onSuccess: () => refetchSession() })
 
   if (!session) return <div className="p-8 text-muted-foreground">Cargando sesión...</div>
 
