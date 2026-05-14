@@ -3,16 +3,10 @@
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
-  AlertTriangleIcon,
-  CalendarIcon,
-  ChevronDownIcon,
-  ClipboardListIcon,
   DumbbellIcon,
   PencilIcon,
   PlusIcon,
   Trash2Icon,
-  UsersIcon,
-  XIcon,
   ZapIcon,
 } from "lucide-react"
 import Link from "next/link"
@@ -99,15 +93,6 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
 
   return (
     <div className="space-y-5">
-      {/* Info banner */}
-      <div className="flex gap-3 p-3.5 bg-amber-500/8 border border-amber-500/20 rounded-xl">
-        <AlertTriangleIcon className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-        <p className="text-xs text-amber-300/90 leading-relaxed">
-          Usa ejercicios de tu propiedad o de total confianza. Los ejercicios de terceros pueden modificarse
-          o desaparecer, afectando el historial de evaluaciones.
-        </p>
-      </div>
-
       {/* Templates */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -313,12 +298,9 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
   const [creating, setCreating] = useState(false)
   const [routineName, setRoutineName] = useState("")
   const [action, setAction] = useState<RoutineAction | null>(null)
-  const [showAssign, setShowAssign] = useState(false)
-  const [showPast, setShowPast] = useState(false)
 
-  const { data: routines, refetch: refetchRoutines } = trpc.routines.list.useQuery({ teamId, category: "training" })
-  const { data: sessions, refetch: refetchSessions } = trpc.assignedSessions.list.useQuery({ teamId })
-  const cancelSession = trpc.assignedSessions.cancel.useMutation({ onSuccess: () => refetchSessions() })
+  const { data: routines, refetch } = trpc.routines.list.useQuery({ teamId, category: "training" })
+  const { data: sessions }          = trpc.sessions.list.useQuery({ teamId })
 
   const createRoutine = trpc.routines.create.useMutation({
     onSuccess: (r) => {
@@ -327,8 +309,8 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
       router.push(`/teams/${teamId}/plantillas/${r.id}`)
     },
   })
-  const renameRoutine = trpc.routines.rename.useMutation({ onSuccess: () => { refetchRoutines(); setAction(null) } })
-  const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetchRoutines(); setAction(null) } })
+  const renameRoutine = trpc.routines.rename.useMutation({ onSuccess: () => { refetch(); setAction(null) } })
+  const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetch(); setAction(null) } })
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
@@ -342,11 +324,11 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
     renameRoutine.mutate({ id: action.id, name: action.name.trim() })
   }
 
-  const activeSessions = sessions?.filter((s) => s.status === "pending" || s.status === "in_progress") ?? []
-  const pastSessions   = sessions?.filter((s) => s.status === "completed" || s.status === "skipped") ?? []
+  const active = sessions?.filter((s) => s.status === "active") ?? []
+  const past   = sessions?.filter((s) => s.status !== "active") ?? []
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {/* Templates */}
       <section className="space-y-3">
         <div className="flex items-center justify-between">
@@ -440,7 +422,7 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
               </div>
               <div>
                 <p className="text-sm font-medium text-foreground">Sin plantillas de entrenamiento</p>
-                {isCoach && <p className="text-xs text-muted-foreground mt-0.5">Crea una plantilla para empezar a asignar rutinas.</p>}
+                {isCoach && <p className="text-xs text-muted-foreground mt-0.5">Crea una para empezar a trabajar con el equipo.</p>}
               </div>
               {isCoach && (
                 <button
@@ -456,264 +438,52 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
         </div>
       </section>
 
-      {/* Divider */}
-      <div className="border-t border-border" />
+      {/* Sessions */}
+      {sessions && sessions.length > 0 && (
+        <section className="space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Sesiones</p>
+            {isCoach && (
+              <Link
+                href={`/teams/${teamId}/sesiones/new?category=training`}
+                className="flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 transition-colors cursor-pointer"
+              >
+                <PlusIcon className="w-3.5 h-3.5" />
+                Nueva sesión
+              </Link>
+            )}
+          </div>
 
-      {/* Asignaciones */}
-      <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Asignaciones</p>
-          {isCoach && (
-            <button
-              onClick={() => setShowAssign(true)}
-              className="flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 transition-colors cursor-pointer"
-            >
-              <PlusIcon className="w-3.5 h-3.5" />
-              Asignar rutina
-            </button>
+          {active.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">En curso</p>
+              </div>
+              {active.map((s) => <EvalSessionCard key={s.id} teamId={teamId} session={s} />)}
+            </div>
           )}
-        </div>
 
-        {activeSessions.length > 0 && (
-          <div className="space-y-2">
-            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Próximas</p>
-            {activeSessions.map((s) => (
-              <AssignedSessionCard
-                key={s.id}
-                session={s as AssignedSession}
-                onCancel={(id) => cancelSession.mutate({ assignedSessionId: id })}
-                isCoach={isCoach}
-              />
-            ))}
-          </div>
-        )}
-
-        {pastSessions.length > 0 && (
-          <div className="space-y-2">
-            <button
-              onClick={() => setShowPast((v) => !v)}
-              className="flex items-center gap-2 text-[11px] font-semibold text-muted-foreground uppercase tracking-widest hover:text-foreground transition-colors cursor-pointer"
-            >
-              <ChevronDownIcon className={cn("w-3.5 h-3.5 transition-transform", showPast && "rotate-180")} />
-              Historial ({pastSessions.length})
-            </button>
-            {showPast && pastSessions.map((s) => (
-              <AssignedSessionCard
-                key={s.id}
-                session={s as AssignedSession}
-                onCancel={(id) => cancelSession.mutate({ assignedSessionId: id })}
-                isCoach={isCoach}
-              />
-            ))}
-          </div>
-        )}
-
-        {activeSessions.length === 0 && pastSessions.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl gap-3 text-center">
-            <div className="w-10 h-10 rounded-full bg-muted/60 flex items-center justify-center">
-              <CalendarIcon className="w-5 h-5 text-muted-foreground" />
+          {past.length > 0 && (
+            <div className="space-y-2">
+              <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Historial</p>
+              {past.slice(0, 5).map((s) => <EvalSessionCard key={s.id} teamId={teamId} session={s} />)}
             </div>
-            <div>
-              <p className="text-sm font-medium text-foreground">Sin rutinas asignadas</p>
-              {isCoach && <p className="text-xs text-muted-foreground mt-0.5">Asigna una plantilla a un atleta o grupo.</p>}
-            </div>
-          </div>
-        )}
-      </section>
-
-      {showAssign && (
-        <AssignModal
-          teamId={teamId}
-          onClose={() => setShowAssign(false)}
-          onSuccess={() => { refetchSessions(); setShowAssign(false) }}
-        />
+          )}
+        </section>
       )}
-    </div>
-  )
-}
 
-// ─── Assigned session card ────────────────────────────────────────────────────
-
-type AssignedSession = {
-  id: string
-  routineName: string | null
-  scheduledDate: string
-  status: string
-  assignedToAthleteId: string | null
-  athleteName: string | null
-  assignedToGroupId: string | null
-  groupName: string | null
-}
-
-const ASSIGN_STATUS_CONFIG = {
-  pending:     { label: "Pendiente",  dot: "bg-amber-400",            badge: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-  in_progress: { label: "En curso",   dot: "bg-blue-400 animate-pulse", badge: "bg-blue-500/10 text-blue-400 border-blue-500/20" },
-  completed:   { label: "Completada", dot: "bg-emerald-400",           badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
-  skipped:     { label: "Omitida",    dot: "bg-rose-400",              badge: "bg-rose-500/10 text-rose-400 border-rose-500/20" },
-} as const
-
-function AssignedSessionCard({ session, onCancel, isCoach }: { session: AssignedSession; onCancel: (id: string) => void; isCoach: boolean }) {
-  const config = ASSIGN_STATUS_CONFIG[session.status as keyof typeof ASSIGN_STATUS_CONFIG] ?? {
-    label: session.status, dot: "bg-muted-foreground", badge: "bg-muted/20 text-muted-foreground border-border",
-  }
-  const target  = session.athleteName ?? session.groupName ?? "—"
-  const isGroup = !!session.assignedToGroupId
-  const isPending = session.status === "pending" || session.status === "in_progress"
-
-  return (
-    <div className="group flex items-center gap-3 p-3.5 border border-border rounded-xl hover:border-primary/20 bg-card/60 transition-all duration-200">
-      <div className={cn("w-1 h-8 rounded-full shrink-0", config.dot)} />
-      <div className="flex-1 min-w-0 space-y-0.5">
-        <p className="font-medium text-sm text-foreground truncate">{session.routineName ?? "Rutina eliminada"}</p>
-        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-          {isGroup && <UsersIcon className="w-3 h-3 shrink-0" />}
-          <span className="truncate">{target}</span>
-          <span className="text-border">·</span>
-          <span className="shrink-0">
-            {new Date(session.scheduledDate + "T12:00:00").toLocaleDateString("es", { weekday: "short", day: "numeric", month: "short" })}
-          </span>
+      {isCoach && (!sessions || sessions.length === 0) && (
+        <div className="flex justify-end">
+          <Link
+            href={`/teams/${teamId}/sesiones/new?category=training`}
+            className="flex items-center gap-1.5 text-sm border border-border px-3.5 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Nueva sesión de entrenamiento
+          </Link>
         </div>
-      </div>
-      <div className="flex items-center gap-2 shrink-0">
-        <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border", config.badge)}>{config.label}</span>
-        {isCoach && isPending && (
-          <button
-            onClick={() => onCancel(session.id)}
-            className="opacity-0 group-hover:opacity-100 p-1.5 text-muted-foreground hover:text-destructive rounded-lg transition-all cursor-pointer"
-            title="Cancelar asignación"
-          >
-            <XIcon className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ─── Assign modal ─────────────────────────────────────────────────────────────
-
-function AssignModal({ teamId, onClose, onSuccess }: { teamId: string; onClose: () => void; onSuccess: () => void }) {
-  const [routineId, setRoutineId]   = useState("")
-  const [targetType, setTargetType] = useState<"athlete" | "group">("athlete")
-  const [targetId, setTargetId]     = useState("")
-  const [date, setDate]             = useState(() => new Date().toISOString().split("T")[0])
-  const [error, setError]           = useState<string | null>(null)
-
-  const { data: routines } = trpc.routines.list.useQuery({ teamId, category: "training" })
-  const { data: members }  = trpc.teams.members.useQuery({ teamId })
-  const { data: groups }   = trpc.groups.list.useQuery({ teamId })
-
-  const assign = trpc.assignedSessions.create.useMutation({
-    onSuccess,
-    onError: (e) => setError(e.message),
-  })
-
-  const athletes = members?.filter((m) => m.role === "athlete") ?? []
-
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault()
-    setError(null)
-    if (!routineId) { setError("Selecciona una plantilla"); return }
-    if (!targetId)  { setError(targetType === "athlete" ? "Selecciona un atleta" : "Selecciona un grupo"); return }
-    if (!date)      { setError("Selecciona una fecha"); return }
-    assign.mutate({
-      teamId,
-      routineId,
-      scheduledDate: date,
-      assignedToAthleteId: targetType === "athlete" ? targetId : undefined,
-      assignedToGroupId:   targetType === "group"   ? targetId : undefined,
-    })
-  }
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 px-4 pb-4 sm:pb-0">
-      <div className="bg-card border border-border rounded-xl p-6 w-full max-w-sm space-y-5">
-        <div className="flex items-center justify-between">
-          <h2
-            className="text-base font-bold tracking-wider uppercase"
-            style={{ fontFamily: "var(--font-barlow-condensed)" }}
-          >
-            Asignar rutina
-          </h2>
-          <button onClick={onClose} className="p-1 text-muted-foreground hover:text-foreground rounded transition-colors cursor-pointer">
-            <XIcon className="w-4 h-4" />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Plantilla</label>
-            <select
-              value={routineId}
-              onChange={(e) => setRoutineId(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground cursor-pointer"
-            >
-              <option value="">Seleccionar...</option>
-              {routines?.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
-            </select>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Asignar a</label>
-            <div className="flex rounded-lg border border-border overflow-hidden">
-              {(["athlete", "group"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => { setTargetType(t); setTargetId("") }}
-                  className={cn(
-                    "flex-1 py-2 text-sm font-medium transition-colors cursor-pointer",
-                    targetType === t ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                  )}
-                >
-                  {t === "athlete" ? "Atleta" : "Grupo"}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <select
-            value={targetId}
-            onChange={(e) => setTargetId(e.target.value)}
-            className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground cursor-pointer"
-          >
-            <option value="">{targetType === "athlete" ? "Seleccionar atleta..." : "Seleccionar grupo..."}</option>
-            {targetType === "athlete"
-              ? athletes.map((m) => <option key={m.userId} value={m.userId}>{m.userName}</option>)
-              : groups?.map((g)   => <option key={g.id}    value={g.id}>{g.name} ({g.members.length})</option>)
-            }
-          </select>
-
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Fecha</label>
-            <input
-              type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
-              className="w-full bg-background border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground cursor-pointer"
-            />
-          </div>
-
-          {error && <p className="text-xs text-destructive">{error}</p>}
-
-          <div className="flex gap-2 pt-1">
-            <button
-              type="button"
-              onClick={onClose}
-              className="flex-1 border border-border text-sm py-2.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={assign.isPending}
-              className="flex-1 bg-primary text-primary-foreground text-sm py-2.5 rounded-lg font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors cursor-pointer"
-            >
-              {assign.isPending ? "Asignando..." : "Asignar"}
-            </button>
-          </div>
-        </form>
-      </div>
+      )}
     </div>
   )
 }
