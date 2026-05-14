@@ -63,10 +63,6 @@ export const assignedSessionsRouter = router({
       if (input.athleteId) conditions.push(eq(assignedSession.assignedToAthleteId, input.athleteId))
       if (input.status) conditions.push(eq(assignedSession.status, input.status))
 
-      const athleteUser = db.$with("athlete_user").as(
-        db.select({ id: user.id, name: user.name }).from(user)
-      )
-
       return db
         .select({
           id: assignedSession.id,
@@ -75,7 +71,7 @@ export const assignedSessionsRouter = router({
           teamId: assignedSession.teamId,
           assignedBy: assignedSession.assignedBy,
           assignedToAthleteId: assignedSession.assignedToAthleteId,
-          athleteName: athleteUser.name,
+          athleteName: user.name,
           assignedToGroupId: assignedSession.assignedToGroupId,
           groupName: teamGroup.name,
           scheduledDate: assignedSession.scheduledDate,
@@ -84,7 +80,7 @@ export const assignedSessionsRouter = router({
         })
         .from(assignedSession)
         .leftJoin(routine, eq(assignedSession.routineId, routine.id))
-        .leftJoin(athleteUser, eq(assignedSession.assignedToAthleteId, athleteUser.id))
+        .leftJoin(user, eq(assignedSession.assignedToAthleteId, user.id))
         .leftJoin(teamGroup, eq(assignedSession.assignedToGroupId, teamGroup.id))
         .where(and(...conditions))
         .orderBy(asc(assignedSession.scheduledDate))
