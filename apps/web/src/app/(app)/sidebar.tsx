@@ -12,14 +12,12 @@ import { cn } from "@/lib/utils"
 type NavItem = { key: string; label: string; icon: React.ElementType; href?: string }
 
 const COACH_NAV: NavItem[] = [
-  { key: "equipo",      label: "Equipo",      icon: UsersIcon },
-  { key: "apariencia",  label: "Apariencia",  icon: PaletteIcon },
-  { key: "plantillas",  label: "Plantillas",  icon: ClipboardListIcon },
-  { key: "sesiones",    label: "Sesiones",    icon: DumbbellIcon },
-  { key: "rutinas",     label: "Rutinas",     icon: CalendarIcon },
-  { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
+  { key: "equipo",      label: "Equipo",         icon: UsersIcon },
+  { key: "apariencia",  label: "Apariencia",     icon: PaletteIcon },
+  { key: "rutinas",     label: "Rutinas",        icon: CalendarIcon },
+  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon },
   { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon },
-  { key: "explorar",    label: "Explorar",    icon: CompassIcon },
+  { key: "explorar",    label: "Explorar",       icon: CompassIcon },
 ]
 
 const ATHLETE_NAV: NavItem[] = [
@@ -79,7 +77,9 @@ export function Sidebar() {
   })
 
   const currentTeamId = extractTeamId(pathname)
-  const currentSection = extractSection(pathname)
+  const rawSection = extractSection(pathname)
+  // sesiones/* y plantillas/* ahora viven dentro de rutinas
+  const currentSection = (rawSection === "sesiones" || rawSection === "plantillas") ? "rutinas" : rawSection
   const currentTeam = teams?.find((t) => t.team.id === currentTeamId)
   // When on a non-team page (/exercises, etc.) fall back to the first team so nav links stay usable
   const effectiveTeamId = currentTeamId ?? teams?.[0]?.team.id ?? null
@@ -89,7 +89,7 @@ export function Sidebar() {
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
-    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar" && currentSection !== "mis-rutinas") {
+    if (isAthlete && currentTeamId && rawSection && rawSection !== "progreso" && rawSection !== "ejercicios" && rawSection !== "explorar" && rawSection !== "mis-rutinas") {
       router.replace(`/teams/${currentTeamId}/progreso`)
     }
   }, [isAthlete, currentTeamId, currentSection, router])
