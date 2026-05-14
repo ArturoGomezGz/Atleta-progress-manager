@@ -327,6 +327,8 @@ export const athleteSessionsRouter = router({
         execution: exec,
         content: routineData?.content ?? null,
         exercises: exercisesWithSets,
+        routineType: routineData?.content?.mode ?? null,
+        circuitRounds: routineData?.content?.circuitRounds ?? null,
       }
     }),
 })

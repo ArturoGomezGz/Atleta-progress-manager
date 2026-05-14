@@ -42,6 +42,8 @@ export type RoutineItemBlock = {
 
 export type RoutineContent = {
   v: 1
+  mode?: "sequential" | "circuit"
+  circuitRounds?: number
   items: Array<RoutineItemExercise | RoutineItemBlock>
 }
 
