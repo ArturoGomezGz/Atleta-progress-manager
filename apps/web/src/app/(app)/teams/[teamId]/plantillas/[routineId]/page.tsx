@@ -8,8 +8,10 @@ import {
   ChevronLeftIcon,
   ClockIcon,
   GripVerticalIcon,
+  InfoIcon,
   PlusIcon,
   Trash2Icon,
+  XIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { use, useCallback, useEffect, useState } from "react"
@@ -123,10 +125,13 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     }))
   }
 
+  const isEvaluation = routineData?.category === "evaluation"
   const usedIds = new Set(content.items.flatMap((i) =>
     i.type === "exercise" ? [i.exerciseId] : i.exercises.map((e) => e.exerciseId)
   ))
-  const available = (catalog ?? []).filter((e) => !usedIds.has(e.id))
+  const available = isEvaluation
+    ? (catalog ?? []).filter((e) => !usedIds.has(e.id))
+    : (catalog ?? [])
 
   if (!routineData) return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
@@ -210,7 +215,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
       {/* Add exercise */}
       {available.length > 0 && (
-        <AddExerciseRow exercises={available} onAdd={addExercise} />
+        <AddExerciseRow exercises={available} onAdd={addExercise} isEvaluation={isEvaluation} />
       )}
     </div>
   )
@@ -218,45 +223,19 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
 // ─── Add exercise row ─────────────────────────────────────────────────────────
 
-function AddExerciseRow({ exercises, onAdd }: { exercises: PickerExercise[]; onAdd: (id: string) => void }) {
-  const [open, setOpen] = useState(false)
-  const [selected, setSelected] = useState("")
-
-  function handleAdd() {
-    if (!selected) return
-    onAdd(selected)
-    setSelected("")
-    setOpen(false)
-  }
-
-  if (!open) return (
-    <button
-      onClick={() => setOpen(true)}
-      className="flex items-center justify-center gap-1.5 text-sm border border-border border-dashed px-3 py-3 rounded-xl hover:border-primary/50 hover:text-primary text-muted-foreground w-full transition-colors cursor-pointer"
-    >
-      <PlusIcon className="w-4 h-4" />
-      Agregar ejercicio
-    </button>
-  )
-
+function AddExerciseRow({ exercises, onAdd, isEvaluation }: { exercises: PickerExercise[]; onAdd: (id: string) => void; isEvaluation: boolean }) {
+  const [value, setValue] = useState("")
   return (
-    <div className="border border-border rounded-xl bg-card/60">
-      <div className="px-4 py-3 border-b border-border bg-muted/10 space-y-2">
-        <p className="text-sm font-semibold">Agregar ejercicio</p>
-        <ExercisePicker exercises={exercises} value={selected} onChange={setSelected} />
-      </div>
-      <div className="flex items-center justify-end gap-2 px-4 py-2.5 bg-muted/10">
-        <button onClick={() => setOpen(false)} className="text-xs px-3 py-1.5 rounded-lg border border-border text-muted-foreground hover:text-foreground cursor-pointer">
-          Cancelar
-        </button>
-        <button
-          onClick={handleAdd}
-          disabled={!selected}
-          className="text-xs bg-primary text-primary-foreground px-3.5 py-1.5 rounded-lg disabled:opacity-50 font-medium cursor-pointer hover:bg-primary/90 transition-colors"
-        >
-          Agregar
-        </button>
-      </div>
+    <div className="space-y-1">
+      <ExercisePicker
+        exercises={exercises}
+        value={value}
+        onChange={(id) => { onAdd(id); setValue("") }}
+        placeholder="Agregar ejercicio..."
+      />
+      {!isEvaluation && (
+        <p className="text-[11px] text-muted-foreground px-1">Los ejercicios pueden repetirse en rutinas de entrenamiento.</p>
+      )}
     </div>
   )
 }
@@ -273,9 +252,10 @@ function ExerciseCard({
   onRemove: () => void
   onUpdate: (patch: Partial<RoutineItemExercise>) => void
 }) {
-  const [expanded, setExpanded] = useState(false)
-  const [drafts, setDrafts]     = useState<DraftSet[]>(() => item.sets.map(draftFromSet))
-  const [meta, setMeta]         = useState({ tempo: item.tempo ?? "", restSeconds: item.restSeconds?.toString() ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
+  const [expanded, setExpanded]       = useState(false)
+  const [drafts, setDrafts]           = useState<DraftSet[]>(() => item.sets.map(draftFromSet))
+  const [meta, setMeta]               = useState({ tempo: item.tempo ?? "", restSeconds: item.restSeconds?.toString() ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
+  const [showTempoInfo, setShowTempoInfo] = useState(false)
 
   const handleSave = useCallback(() => {
     onUpdate({
@@ -332,13 +312,42 @@ function ExerciseCard({
             ))}
           </div>
 
+          {/* Agregar serie — justo debajo de las series */}
+          <div className="px-4 py-2 border-t border-border">
+            <button
+              onClick={() => setDrafts((prev) => [...prev, defaultDraft(prev.length + 1)])}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+            >
+              <PlusIcon className="w-3.5 h-3.5" />
+              Agregar serie
+            </button>
+          </div>
+
           {/* Meta fields — solo para rutinas de entrenamiento */}
           {!isEvaluation && (
           <div className="px-4 py-3 border-t border-border space-y-3 bg-muted/5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Detalles del ejercicio</p>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Tempo</label>
+                <div className="flex items-center gap-1">
+                  <label className="text-xs text-muted-foreground">Tempo</label>
+                  <button
+                    type="button"
+                    onClick={() => setShowTempoInfo((v) => !v)}
+                    className="text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-pointer"
+                  >
+                    {showTempoInfo ? <XIcon className="w-3 h-3" /> : <InfoIcon className="w-3 h-3" />}
+                  </button>
+                </div>
+                {showTempoInfo && (
+                  <div className="text-[11px] text-muted-foreground bg-muted/30 rounded-lg px-2.5 py-2 leading-relaxed">
+                    <p className="font-semibold text-foreground mb-1">Ejemplo: 3-1-2-0</p>
+                    <p><span className="text-foreground font-medium">3</span> — excéntrica (bajar)</p>
+                    <p><span className="text-foreground font-medium">1</span> — pausa abajo</p>
+                    <p><span className="text-foreground font-medium">2</span> — concéntrica (subir)</p>
+                    <p><span className="text-foreground font-medium">0</span> — pausa arriba</p>
+                  </div>
+                )}
                 <input
                   type="text"
                   placeholder="3-1-2-0"
@@ -348,7 +357,8 @@ function ExerciseCard({
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Descanso (segundos)</label>
+                <label className="text-xs text-muted-foreground">Descanso entre series</label>
+                <div className="flex items-center gap-1.5">
                 <input
                   type="number"
                   min={0}
@@ -357,6 +367,8 @@ function ExerciseCard({
                   onChange={(e) => setMeta((m) => ({ ...m, restSeconds: e.target.value }))}
                   className="w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
                 />
+                <span className="text-xs text-muted-foreground shrink-0">seg</span>
+                </div>
               </div>
             </div>
             <div className="space-y-1">
@@ -389,14 +401,7 @@ function ExerciseCard({
           )}
 
           {/* Footer */}
-          <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-muted/10">
-            <button
-              onClick={() => setDrafts((prev) => [...prev, defaultDraft(prev.length + 1)])}
-              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
-            >
-              <PlusIcon className="w-3.5 h-3.5" />
-              Agregar serie
-            </button>
+          <div className="flex items-center justify-end px-4 py-2.5 border-t border-border bg-muted/10">
             <button
               onClick={handleSave}
               className="text-xs bg-primary text-primary-foreground px-3.5 py-1.5 rounded-lg font-medium cursor-pointer hover:bg-primary/90 transition-colors"
