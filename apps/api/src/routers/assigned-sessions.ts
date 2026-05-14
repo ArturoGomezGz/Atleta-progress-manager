@@ -12,7 +12,7 @@ import {
 } from "@atleta/db/schema"
 import type { RoutineExerciseContent } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, desc, eq, inArray, or } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
