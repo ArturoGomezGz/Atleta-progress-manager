@@ -1,4 +1,4 @@
-import { integer, jsonb, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 
 export const teamRoleEnum = pgEnum("team_role", ["coach", "athlete"])
@@ -39,3 +39,28 @@ export const teamInvite = pgTable("team_invite", {
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 })
+
+export const teamGroup = pgTable("team_group", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  name: text("name").notNull(),
+  teamId: uuid("team_id")
+    .notNull()
+    .references(() => team.id, { onDelete: "cascade" }),
+  createdBy: text("created_by")
+    .notNull()
+    .references(() => user.id),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+})
+
+export const teamGroupMember = pgTable(
+  "team_group_member",
+  {
+    groupId: uuid("group_id")
+      .notNull()
+      .references(() => teamGroup.id, { onDelete: "cascade" }),
+    athleteId: text("athlete_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+  },
+  (t) => [primaryKey({ columns: [t.groupId, t.athleteId] })],
+)

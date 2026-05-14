@@ -1,71 +1,67 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { CalendarIcon, ChevronRightIcon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import { DumbbellIcon } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 
-type SessionStatus = "pending" | "in_progress" | "completed" | "skipped"
+type SessionStatus = "active" | "completed" | "cancelled"
 
-const STATUS_CONFIG: Record<SessionStatus, { label: string; cls: string }> = {
-  pending:     { label: "Pendiente",   cls: "bg-amber-500/15 text-amber-400 border-amber-500/30" },
-  in_progress: { label: "En progreso", cls: "bg-blue-500/15 text-blue-400 border-blue-500/30" },
-  completed:   { label: "Completada",  cls: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
-  skipped:     { label: "Saltada",     cls: "bg-rose-500/15 text-rose-400 border-rose-500/30" },
+const STATUS_CONFIG: Record<SessionStatus, { label: string; dot: string; badge: string }> = {
+  active:    { label: "En curso",    dot: "bg-green-400 animate-pulse", badge: "bg-green-500/10 text-green-400 border-green-500/20" },
+  completed: { label: "Completada",  dot: "bg-emerald-400",             badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" },
+  cancelled: { label: "Cancelada",   dot: "bg-rose-400",                badge: "bg-rose-500/10 text-rose-400 border-rose-500/20" },
 }
 
-interface SessionCardProps {
+function SessionCard({
+  teamId,
+  session,
+}: {
   teamId: string
-  session: {
-    id: string
-    routineName: string | null
-    scheduledDate: string
-    status: SessionStatus
-    groupName: string | null
+  session: { id: string; routineName: string | null; startedAt: string; status: string }
+}) {
+  const cfg = STATUS_CONFIG[session.status as SessionStatus] ?? {
+    dot: "bg-muted-foreground", badge: "bg-muted/20 text-muted-foreground border-border", label: session.status,
   }
-}
+  const isClickable = session.status !== "cancelled"
 
-function SessionCard({ teamId, session: s }: SessionCardProps) {
-  const cfg = STATUS_CONFIG[s.status]
-  const isClickable = s.status === "pending" || s.status === "in_progress"
   return (
     <Link
-      href={isClickable ? `/teams/${teamId}/mis-rutinas/${s.id}` : "#"}
+      href={isClickable ? `/teams/${teamId}/mis-rutinas/${session.id}` : "#"}
       onClick={(e) => !isClickable && e.preventDefault()}
-      className={`flex items-center gap-3 px-4 py-3.5 border border-border rounded-xl bg-card/60 transition-all ${isClickable ? "hover:border-primary/30 cursor-pointer" : "cursor-default"}`}
+      className={cn(
+        "flex items-center gap-3 px-4 py-3.5 border border-border rounded-xl bg-card/60 transition-all",
+        isClickable ? "hover:border-primary/30 cursor-pointer" : "cursor-default opacity-60",
+      )}
     >
+      <div className={cn("w-1.5 h-1.5 rounded-full shrink-0", cfg.dot)} />
       <div className="flex-1 min-w-0">
-        <div className="font-medium text-sm text-foreground truncate">{s.routineName ?? "Rutina"}</div>
-        <div className="text-xs text-muted-foreground mt-0.5">
-          {new Date(s.scheduledDate + "T12:00:00").toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })}
-          {s.groupName && ` · ${s.groupName}`}
-        </div>
+        <p className="font-medium text-sm text-foreground truncate">{session.routineName ?? "Rutina"}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {new Date(session.startedAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}
+        </p>
       </div>
-      <span className={`shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full border ${cfg.cls}`}>
+      <span className={cn("shrink-0 text-[10px] font-semibold px-2 py-0.5 rounded-full border", cfg.badge)}>
         {cfg.label}
       </span>
-      {isClickable && <ChevronRightIcon className="w-4 h-4 text-muted-foreground shrink-0" />}
     </Link>
   )
 }
 
 export default function MisRutinasPage() {
   const { teamId } = useParams<{ teamId: string }>()
-  const { data: sessions, isLoading } = trpc.assignedSessions.myList.useQuery({ teamId })
+  const { data: sessions, isLoading } = trpc.sessions.myList.useQuery({ teamId })
 
-  const todayStr = new Date().toISOString().split("T")[0]
-  const todaySessions    = sessions?.filter((s) => s.scheduledDate === todayStr) ?? []
-  const upcomingSessions = sessions?.filter((s) => s.scheduledDate > todayStr) ?? []
-  const pastSessions     = sessions?.filter((s) => s.scheduledDate < todayStr) ?? []
+  const active    = sessions?.filter((s) => s.status === "active") ?? []
+  const past      = sessions?.filter((s) => s.status !== "active") ?? []
 
   if (isLoading) {
     return (
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div className="h-7 w-36 bg-muted/40 rounded animate-pulse" />
         <div className="space-y-3">
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="h-16 bg-muted/40 rounded-xl animate-pulse" />
-          ))}
+          {[1, 2, 3].map((i) => <div key={i} className="h-16 bg-muted/40 rounded-xl animate-pulse" />)}
         </div>
       </div>
     )
@@ -84,33 +80,24 @@ export default function MisRutinasPage() {
 
       {isEmpty ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-center">
-          <CalendarIcon className="w-10 h-10 text-muted-foreground/40" />
-          <p className="text-muted-foreground text-sm">Tu coach aún no te ha asignado ninguna rutina.</p>
+          <DumbbellIcon className="w-10 h-10 text-muted-foreground/40" />
+          <p className="text-muted-foreground text-sm">Tu coach aún no ha iniciado ninguna sesión contigo.</p>
         </div>
       ) : (
         <>
-          {todaySessions.length > 0 && (
+          {active.length > 0 && (
             <section className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Hoy</p>
-              {todaySessions.map((s) => (
-                <SessionCard key={s.id} teamId={teamId} session={s} />
-              ))}
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">En curso</p>
+              </div>
+              {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
             </section>
           )}
-          {upcomingSessions.length > 0 && (
+          {past.length > 0 && (
             <section className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Próximas</p>
-              {upcomingSessions.map((s) => (
-                <SessionCard key={s.id} teamId={teamId} session={s} />
-              ))}
-            </section>
-          )}
-          {pastSessions.length > 0 && (
-            <section className="space-y-2">
-              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Pasadas</p>
-              {pastSessions.map((s) => (
-                <SessionCard key={s.id} teamId={teamId} session={s} />
-              ))}
+              <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Historial</p>
+              {past.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
             </section>
           )}
         </>

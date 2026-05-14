@@ -55,6 +55,13 @@ export async function runMigrations() {
     ALTER TABLE "routine" ADD COLUMN IF NOT EXISTS "content" jsonb DEFAULT '{"v":1,"items":[]}'::jsonb NOT NULL
   `
 
+  // Safety net: migración 0004 — eliminar sistema antiguo de sesiones asignadas
+  await client`DROP TABLE IF EXISTS "athlete_set_completion"`
+  await client`DROP TABLE IF EXISTS "athlete_session_execution"`
+  await client`DROP TABLE IF EXISTS "assigned_session"`
+  await client`DROP TYPE IF EXISTS "public"."assigned_session_status"`
+  await client`DROP TYPE IF EXISTS "public"."athlete_session_execution_status"`
+
   console.log("✅ Tablas verificadas")
 
   await client.end()

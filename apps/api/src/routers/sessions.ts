@@ -19,7 +19,88 @@ import { triggerExerciseReport } from "../services/report-trigger"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
 
+
+
 export const sessionsRouter = router({
+  myList: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertMember(ctx.session.user.id, input.teamId)
+      const athleteId = ctx.session.user.id
+      return db
+        .select({
+          id: trainingSession.id,
+          status: trainingSession.status,
+          startedAt: trainingSession.startedAt,
+          routineName: routine.name,
+          routineId: trainingSession.routineId,
+          athleteSessionStatus: athleteSession.status,
+        })
+        .from(athleteSession)
+        .innerJoin(trainingSession, eq(athleteSession.sessionId, trainingSession.id))
+        .leftJoin(routine, eq(trainingSession.routineId, routine.id))
+        .where(and(eq(trainingSession.teamId, input.teamId), eq(athleteSession.athleteId, athleteId)))
+        .orderBy(desc(trainingSession.startedAt))
+    }),
+
+  myProgress: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const athleteId = ctx.session.user.id
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertMember(athleteId, session.teamId)
+
+      const [as] = await db
+        .select()
+        .from(athleteSession)
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, athleteId)))
+        .limit(1)
+      if (!as) throw new TRPCError({ code: "FORBIDDEN" })
+
+      const [r] = session.routineId
+        ? await db.select({ name: routine.name }).from(routine).where(eq(routine.id, session.routineId)).limit(1)
+        : [null]
+
+      const exercises = await db
+        .select({
+          id: sessionExercise.id,
+          exerciseId: sessionExercise.exerciseId,
+          exerciseName: exercise.name,
+          order: sessionExercise.order,
+        })
+        .from(sessionExercise)
+        .innerJoin(exercise, eq(sessionExercise.exerciseId, exercise.id))
+        .where(eq(sessionExercise.sessionId, input.sessionId))
+        .orderBy(asc(sessionExercise.order))
+
+      if (exercises.length === 0) {
+        return { id: session.id, status: session.status, startedAt: session.startedAt, routineName: r?.name ?? null, exercises: [] as never[] }
+      }
+
+      const exerciseIds = exercises.map((e) => e.id)
+      const [targets, mySets] = await Promise.all([
+        db.select().from(sessionSetTarget)
+          .where(inArray(sessionSetTarget.sessionExerciseId, exerciseIds))
+          .orderBy(asc(sessionSetTarget.setNumber)),
+        db.select().from(setRecord)
+          .where(eq(setRecord.athleteSessionId, as.id))
+          .orderBy(asc(setRecord.setNumber)),
+      ])
+
+      return {
+        id: session.id,
+        status: session.status,
+        startedAt: session.startedAt,
+        routineName: r?.name ?? null,
+        exercises: exercises.map((ex) => ({
+          ...ex,
+          targets: targets.filter((t) => t.sessionExerciseId === ex.id),
+          sets: mySets.filter((s) => s.sessionExerciseId === ex.id),
+        })),
+      }
+    }),
+
   list: protectedProcedure
     .input(z.object({
       teamId:   z.string().uuid(),
