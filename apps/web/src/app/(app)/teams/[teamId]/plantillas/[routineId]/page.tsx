@@ -220,7 +220,7 @@ function AddExerciseRow({ exercises, onAdd }: { exercises: PickerExercise[]; onA
   )
 
   return (
-    <div className="border border-border rounded-xl overflow-hidden bg-card/60">
+    <div className="border border-border rounded-xl bg-card/60">
       <div className="px-4 py-3 border-b border-border bg-muted/10 space-y-2">
         <p className="text-sm font-semibold">Agregar ejercicio</p>
         <ExercisePicker exercises={exercises} value={selected} onChange={setSelected} />
