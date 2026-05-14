@@ -173,6 +173,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
               key={item.id}
               item={item}
               index={idx}
+              isEvaluation={routineData?.category === "evaluation"}
               exerciseName={exerciseNames[item.exerciseId] ?? "…"}
               onRemove={() => removeItem(item.id)}
               onUpdate={(patch) => updateItem(item.id, patch)}
@@ -252,10 +253,11 @@ function AddExerciseRow({ exercises, onAdd }: { exercises: PickerExercise[]; onA
 // ─── Exercise card ────────────────────────────────────────────────────────────
 
 function ExerciseCard({
-  item, index, exerciseName, onRemove, onUpdate,
+  item, index, isEvaluation, exerciseName, onRemove, onUpdate,
 }: {
   item: RoutineItemExercise
   index: number
+  isEvaluation: boolean
   exerciseName: string
   onRemove: () => void
   onUpdate: (patch: Partial<RoutineItemExercise>) => void
@@ -267,13 +269,15 @@ function ExerciseCard({
   const handleSave = useCallback(() => {
     onUpdate({
       sets:        drafts.map(draftToSet),
-      tempo:       meta.tempo || undefined,
-      restSeconds: meta.restSeconds ? Number(meta.restSeconds) : undefined,
-      goal:        (meta.goal as RoutineExerciseContent["goal"]) || undefined,
-      notes:       meta.notes || undefined,
+      ...(isEvaluation ? {} : {
+        tempo:       meta.tempo || undefined,
+        restSeconds: meta.restSeconds ? Number(meta.restSeconds) : undefined,
+        goal:        (meta.goal as RoutineExerciseContent["goal"]) || undefined,
+        notes:       meta.notes || undefined,
+      }),
     })
     setExpanded(false)
-  }, [drafts, meta, onUpdate])
+  }, [drafts, meta, isEvaluation, onUpdate])
 
   return (
     <div className="border border-border rounded-xl overflow-hidden bg-card/60">
@@ -309,6 +313,7 @@ function ExerciseCard({
               <SetEditorRow
                 key={i}
                 set={s}
+                isEvaluation={isEvaluation}
                 onUpdate={(patch) => setDrafts((prev) => prev.map((d, j) => j === i ? { ...d, ...patch } : d))}
                 onRemove={() => setDrafts((prev) => prev.filter((_, j) => j !== i).map((d, j) => ({ ...d, setNumber: j + 1 })))}
                 canRemove={drafts.length > 1}
@@ -316,7 +321,8 @@ function ExerciseCard({
             ))}
           </div>
 
-          {/* Meta fields */}
+          {/* Meta fields — solo para rutinas de entrenamiento */}
+          {!isEvaluation && (
           <div className="px-4 py-3 border-t border-border space-y-3 bg-muted/5">
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Detalles del ejercicio</p>
             <div className="grid grid-cols-2 gap-3">
@@ -369,6 +375,7 @@ function ExerciseCard({
               />
             </div>
           </div>
+          )}
 
           {/* Footer */}
           <div className="flex items-center justify-between px-4 py-2.5 border-t border-border bg-muted/10">
@@ -460,14 +467,52 @@ function SetPreviewRow({ set }: { set: RoutineSet }) {
 // ─── Set editor row ───────────────────────────────────────────────────────────
 
 function SetEditorRow({
-  set, onUpdate, onRemove, canRemove,
+  set, isEvaluation, onUpdate, onRemove, canRemove,
 }: {
   set: DraftSet
+  isEvaluation: boolean
   onUpdate: (patch: Partial<DraftSet>) => void
   onRemove: () => void
   canRemove: boolean
 }) {
   const isTime = set.setType === "time"
+
+  if (isEvaluation) {
+    return (
+      <div className="flex items-center gap-3 px-4 py-3">
+        <span className="text-xs font-medium text-muted-foreground w-14 shrink-0">Serie {set.setNumber}</span>
+        <div className="flex items-center gap-1.5">
+          <input
+            type="number" min={1}
+            value={set.targetReps}
+            onChange={(e) => onUpdate({ targetReps: e.target.value, setType: "reps", loadType: "percent_rm" })}
+            placeholder="libre"
+            className="w-16 bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+          />
+          <span className="text-xs text-muted-foreground">reps</span>
+        </div>
+        <span className="text-xs text-muted-foreground">@</span>
+        <div className="flex items-center gap-1.5">
+          <input
+            type="number" min={1} max={110} step={5}
+            value={set.loadValue}
+            onChange={(e) => onUpdate({ loadValue: e.target.value, loadType: "percent_rm" })}
+            placeholder="—"
+            className="w-16 bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+          />
+          <span className="text-xs text-muted-foreground">% RM</span>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={!canRemove}
+          className="ml-auto p-1 text-muted-foreground hover:text-destructive disabled:opacity-30 transition-colors cursor-pointer"
+        >
+          <Trash2Icon className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div className="px-4 py-3 space-y-2.5">
