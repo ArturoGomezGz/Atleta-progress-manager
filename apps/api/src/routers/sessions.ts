@@ -12,7 +12,7 @@ import {
   user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, desc, eq, gt, gte, inArray, lte } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, inArray, lte } from "drizzle-orm"
 import type { RoutineExerciseContent } from "@atleta/db/schema"
 import { z } from "zod"
 import { triggerExerciseReport } from "../services/report-trigger"
