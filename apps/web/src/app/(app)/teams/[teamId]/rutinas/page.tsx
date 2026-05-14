@@ -232,7 +232,7 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
             <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Sesiones</p>
             {isCoach && (
               <Link
-                href={`/teams/${teamId}/sesiones/new`}
+                href={`/teams/${teamId}/sesiones/new?category=evaluation`}
                 className="flex items-center gap-1.5 text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-lg font-medium hover:bg-primary/90 transition-colors cursor-pointer"
               >
                 <PlusIcon className="w-3.5 h-3.5" />
@@ -263,7 +263,7 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
       {isCoach && (!sessions || sessions.length === 0) && (
         <div className="flex justify-end">
           <Link
-            href={`/teams/${teamId}/sesiones/new`}
+            href={`/teams/${teamId}/sesiones/new?category=evaluation`}
             className="flex items-center gap-1.5 text-sm border border-border px-3.5 py-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
           >
             <PlusIcon className="w-4 h-4" />

@@ -1,17 +1,18 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { use, useState } from "react"
-import { useRouter } from "next/navigation"
+import { use, useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 
-export default function NewSessionPage({ params }: { params: Promise<{ teamId: string }> }) {
-  const { teamId } = use(params)
+function NewSessionForm({ teamId }: { teamId: string }) {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const category = searchParams.get("category") as "evaluation" | "training" | null
 
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null)
   const [selectedAthleteIds, setSelectedAthleteIds] = useState<Set<string>>(new Set())
 
-  const { data: routines } = trpc.routines.list.useQuery({ teamId })
+  const { data: routines } = trpc.routines.list.useQuery({ teamId, ...(category ? { category } : {}) })
   const { data: members } = trpc.teams.members.useQuery({ teamId })
   const createSession = trpc.sessions.create.useMutation({
     onSuccess: (session) => router.push(`/teams/${teamId}/sesiones/${session.id}`),
@@ -118,5 +119,14 @@ export default function NewSessionPage({ params }: { params: Promise<{ teamId: s
         </button>
       </form>
     </div>
+  )
+}
+
+export default function NewSessionPage({ params }: { params: Promise<{ teamId: string }> }) {
+  const { teamId } = use(params)
+  return (
+    <Suspense>
+      <NewSessionForm teamId={teamId} />
+    </Suspense>
   )
 }
