@@ -10,6 +10,10 @@ const setTargetInput = z.object({
   setNumber: z.number().int().min(1),
   targetReps: z.number().int().min(1).nullable(),
   targetPercent: z.string().nullable(),
+  setType: z.enum(["reps", "time"]).default("reps"),
+  targetDurationSeconds: z.number().int().min(1).nullable(),
+  loadType: z.enum(["fixed_kg", "percent_rm", "rpe"]).nullable(),
+  loadValue: z.string().nullable(),
 })
 
 export const routinesRouter = router({
@@ -86,6 +90,10 @@ export const routinesRouter = router({
             setNumber: s.setNumber,
             targetReps: s.targetReps,
             targetPercent: s.targetPercent,
+            setType: s.setType,
+            targetDurationSeconds: s.targetDurationSeconds ?? null,
+            loadType: s.loadType ?? null,
+            loadValue: s.loadValue ?? null,
           })),
         )
         return re
@@ -113,6 +121,10 @@ export const routinesRouter = router({
             setNumber: s.setNumber,
             targetReps: s.targetReps,
             targetPercent: s.targetPercent,
+            setType: s.setType,
+            targetDurationSeconds: s.targetDurationSeconds ?? null,
+            loadType: s.loadType ?? null,
+            loadValue: s.loadValue ?? null,
           })),
         )
       })
@@ -145,6 +157,24 @@ export const routinesRouter = router({
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
       const [updated] = await db.update(routine).set({ name: input.name }).where(eq(routine.id, input.id)).returning()
+      return updated
+    }),
+
+  updateType: protectedProcedure
+    .input(z.object({
+      id: z.string().uuid(),
+      type: z.enum(["sequential", "circuit"]),
+      circuitRounds: z.number().int().min(1).nullable(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
+      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, r.teamId)
+      const [updated] = await db
+        .update(routine)
+        .set({ type: input.type, circuitRounds: input.circuitRounds })
+        .where(eq(routine.id, input.id))
+        .returning()
       return updated
     }),
 })

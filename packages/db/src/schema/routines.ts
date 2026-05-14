@@ -1,10 +1,12 @@
-import { integer, numeric, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { boolean, integer, numeric, pgEnum, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
 import { team } from "./teams"
 
 export const routineTypeEnum = pgEnum("routine_type", ["sequential", "circuit"])
 export const exerciseGoalEnum = pgEnum("exercise_goal", ["strength", "hypertrophy", "endurance", "power", "cardio", "recovery"])
+export const setTypeEnum = pgEnum("set_type", ["reps", "time"])
+export const loadTypeEnum = pgEnum("load_type", ["fixed_kg", "percent_rm", "rpe"])
 
 export const routine = pgTable("routine", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -45,4 +47,9 @@ export const routineSetTarget = pgTable("routine_set_target", {
   setNumber: integer("set_number").notNull(),
   targetReps: integer("target_reps"),
   targetPercent: numeric("target_percent", { precision: 5, scale: 2 }),
+  // v2
+  setType: setTypeEnum("set_type").notNull().default("reps"),
+  targetDurationSeconds: integer("target_duration_seconds"),
+  loadType: loadTypeEnum("load_type"),
+  loadValue: numeric("load_value", { precision: 7, scale: 2 }),
 })

@@ -188,6 +188,9 @@ function SetsEditor({
         setNumber: s.setNumber,
         targetReps: s.targetReps !== "" ? Number(s.targetReps) : null,
         targetPercent: s.targetPercent !== "" ? s.targetPercent : null,
+        targetDurationSeconds: null,
+        loadType: null,
+        loadValue: null,
       })),
     })
   }
@@ -268,7 +271,7 @@ function AddExerciseForm({
   routineId: string
   nextOrder: number
   exercises: CatalogExercise[]
-  onAdd: (v: { routineId: string; exerciseId: string; order: number; sets: { setNumber: number; targetReps: number | null; targetPercent: string | null }[] }) => void
+  onAdd: (v: { routineId: string; exerciseId: string; order: number; sets: { setNumber: number; targetReps: number | null; targetPercent: string | null; targetDurationSeconds: number | null; loadType: "fixed_kg" | "percent_rm" | "rpe" | null; loadValue: string | null }[] }) => void
   onCancel: () => void
   isPending: boolean
 }) {
@@ -298,6 +301,9 @@ function AddExerciseForm({
         setNumber: s.setNumber,
         targetReps: s.targetReps !== "" ? Number(s.targetReps) : null,
         targetPercent: s.targetPercent !== "" ? s.targetPercent : null,
+        targetDurationSeconds: null,
+        loadType: null,
+        loadValue: null,
       })),
     })
   }

@@ -1,6 +1,7 @@
 import { db } from "@atleta/db/client"
 import {
   assignedSession,
+  athleteExerciseRm,
   athleteSessionExecution,
   athleteSetCompletion,
   exercise,
@@ -12,7 +13,7 @@ import {
   user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, eq, inArray, or } from "drizzle-orm"
+import { and, asc, desc, eq, inArray, or } from "drizzle-orm"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
@@ -262,6 +263,9 @@ export const athleteSessionsRouter = router({
       if (!exec) throw new TRPCError({ code: "NOT_FOUND" })
 
       const [session] = await db.select().from(assignedSession).where(eq(assignedSession.id, exec.assignedSessionId)).limit(1)
+      const [routineData] = session?.routineId
+        ? await db.select().from(routine).where(eq(routine.id, session.routineId)).limit(1)
+        : [null]
 
       const exercises =
         session?.routineId
@@ -282,6 +286,21 @@ export const athleteSessionsRouter = router({
               .orderBy(asc(routineExercise.order))
           : []
 
+      // Latest RM per exercise for the athlete (for % RM weight suggestion)
+      const athleteId = exec.athleteId
+      const exerciseIds = exercises.map((e) => e.exerciseId)
+      const rmsRaw = exerciseIds.length > 0
+        ? await db
+            .select({ exerciseId: athleteExerciseRm.exerciseId, rmLbs: athleteExerciseRm.rmLbs })
+            .from(athleteExerciseRm)
+            .where(and(eq(athleteExerciseRm.athleteId, athleteId), inArray(athleteExerciseRm.exerciseId, exerciseIds)))
+            .orderBy(desc(athleteExerciseRm.recordedAt))
+        : []
+      const rmByExercise = new Map<string, string>()
+      for (const rm of rmsRaw) {
+        if (!rmByExercise.has(rm.exerciseId)) rmByExercise.set(rm.exerciseId, rm.rmLbs)
+      }
+
       const exercisesWithSets = await Promise.all(
         exercises.map(async (ex) => {
           const sets = await db
@@ -296,13 +315,20 @@ export const athleteSessionsRouter = router({
             .where(and(eq(athleteSetCompletion.executionId, input.executionId), eq(athleteSetCompletion.routineExerciseId, ex.id)))
 
           const completedSetNumbers = new Set(completedSets.map((c) => c.setNumber))
+          const athleteRmLbs = rmByExercise.get(ex.exerciseId) ?? null  // string (numeric from pg)
           return {
             ...ex,
+            athleteRmLbs,
             sets: sets.map((s) => ({ ...s, completed: completedSetNumbers.has(s.setNumber) })),
           }
         }),
       )
 
-      return { execution: exec, exercises: exercisesWithSets }
+      return {
+        execution: exec,
+        routineType: routineData?.type ?? "sequential",
+        circuitRounds: routineData?.circuitRounds ?? null,
+        exercises: exercisesWithSets,
+      }
     }),
 })
