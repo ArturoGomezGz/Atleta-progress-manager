@@ -64,7 +64,7 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
   const [action, setAction] = useState<RoutineAction | null>(null)
 
   const { data: routines, refetch } = trpc.routines.list.useQuery({ teamId, category: "evaluation" })
-  const { data: sessions } = trpc.sessions.list.useQuery({ teamId })
+  const { data: sessions } = trpc.sessions.list.useQuery({ teamId, category: "evaluation" })
 
   const createRoutine = trpc.routines.create.useMutation({
     onSuccess: (r) => {
@@ -300,7 +300,7 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
   const [action, setAction] = useState<RoutineAction | null>(null)
 
   const { data: routines, refetch } = trpc.routines.list.useQuery({ teamId, category: "training" })
-  const { data: sessions }          = trpc.sessions.list.useQuery({ teamId })
+  const { data: sessions }          = trpc.sessions.list.useQuery({ teamId, category: "training" })
 
   const createRoutine = trpc.routines.create.useMutation({
     onSuccess: (r) => {

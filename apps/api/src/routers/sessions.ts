@@ -12,7 +12,7 @@ import {
   user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, desc, eq, gt, gte, inArray, lte } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, inArray, lte, SQL } from "drizzle-orm"
 import type { RoutineExerciseContent } from "@atleta/db/schema"
 import { z } from "zod"
 import { triggerExerciseReport } from "../services/report-trigger"
@@ -21,9 +21,14 @@ import { assertCoach, assertMember } from "./teams"
 
 export const sessionsRouter = router({
   list: protectedProcedure
-    .input(z.object({ teamId: z.string().uuid() }))
+    .input(z.object({
+      teamId:   z.string().uuid(),
+      category: z.enum(["evaluation", "training"]).optional(),
+    }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
+      const conditions: SQL[] = [eq(trainingSession.teamId, input.teamId)]
+      if (input.category) conditions.push(eq(routine.category, input.category))
       return db
         .select({
           id: trainingSession.id,
@@ -34,7 +39,7 @@ export const sessionsRouter = router({
         })
         .from(trainingSession)
         .innerJoin(routine, eq(trainingSession.routineId, routine.id))
-        .where(eq(trainingSession.teamId, input.teamId))
+        .where(and(...conditions))
         .orderBy(desc(trainingSession.startedAt))
     }),
 
