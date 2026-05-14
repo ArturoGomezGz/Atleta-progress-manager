@@ -32,6 +32,7 @@ export const sessionsRouter = router({
           id: trainingSession.id,
           status: trainingSession.status,
           startedAt: trainingSession.startedAt,
+          scheduledDate: trainingSession.scheduledDate,
           routineName: routine.name,
           routineId: trainingSession.routineId,
           athleteSessionStatus: athleteSession.status,
@@ -115,6 +116,7 @@ export const sessionsRouter = router({
           id: trainingSession.id,
           status: trainingSession.status,
           startedAt: trainingSession.startedAt,
+          scheduledDate: trainingSession.scheduledDate,
           routineId: trainingSession.routineId,
           routineName: routine.name,
         })
@@ -129,6 +131,7 @@ export const sessionsRouter = router({
       routineId: z.string().uuid(),
       teamId: z.string().uuid(),
       athleteIds: z.array(z.string()).min(1),
+      scheduledDate: z.string().date().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
@@ -141,10 +144,19 @@ export const sessionsRouter = router({
         item.type === "exercise" ? [item] : item.exercises,
       ).sort((a, b) => a.order - b.order)
 
+      const today = new Date().toISOString().split("T")[0]
+      const isScheduled = input.scheduledDate != null && input.scheduledDate > today
+
       return db.transaction(async (tx) => {
         const [session] = await tx
           .insert(trainingSession)
-          .values({ routineId: input.routineId, teamId: input.teamId, startedBy: ctx.session.user.id })
+          .values({
+            routineId: input.routineId,
+            teamId: input.teamId,
+            startedBy: ctx.session.user.id,
+            scheduledDate: input.scheduledDate ?? null,
+            status: isScheduled ? "scheduled" : "active",
+          })
           .returning()
 
         // Snapshot exercises + set targets desde el content JSON
@@ -183,6 +195,11 @@ export const sessionsRouter = router({
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       await assertMember(ctx.session.user.id, session.teamId)
 
+      const [r] = session.routineId
+        ? await db.select({ name: routine.name, category: routine.category })
+            .from(routine).where(eq(routine.id, session.routineId)).limit(1)
+        : [null]
+
       const exercises = await db
         .select({
           id: sessionExercise.id,
@@ -218,7 +235,28 @@ export const sessionsRouter = router({
         .innerJoin(user, eq(athleteSession.athleteId, user.id))
         .where(eq(athleteSession.sessionId, input.id))
 
-      return { ...session, exercises: exercisesWithTargets, athletes }
+      return {
+        ...session,
+        routineName: r?.name ?? null,
+        routineCategory: r?.category ?? null,
+        exercises: exercisesWithTargets,
+        athletes,
+      }
+    }),
+
+  activate: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.id)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      if (session.status !== "scheduled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está programada" })
+      await assertCoach(ctx.session.user.id, session.teamId)
+      const [updated] = await db
+        .update(trainingSession)
+        .set({ status: "active" })
+        .where(eq(trainingSession.id, input.id))
+        .returning()
+      return updated
     }),
 
   athleteSets: protectedProcedure

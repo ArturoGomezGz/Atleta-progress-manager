@@ -1,4 +1,4 @@
-import { integer, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { date, integer, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
 import { routine } from "./routines"
@@ -6,7 +6,7 @@ import { team } from "./teams"
 
 export const rmSourceEnum = pgEnum("rm_source", ["auto", "manual"])
 
-export const sessionStatusEnum = pgEnum("session_status", ["active", "completed", "cancelled"])
+export const sessionStatusEnum = pgEnum("session_status", ["scheduled", "active", "completed", "cancelled"])
 export const athleteSessionStatusEnum = pgEnum("athlete_session_status", ["active", "cancelled"])
 export const setStatusEnum = pgEnum("set_status", ["valid", "invalid"])
 
@@ -20,6 +20,7 @@ export const trainingSession = pgTable("training_session", {
     .notNull()
     .references(() => user.id),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  scheduledDate: date("scheduled_date"),
   status: sessionStatusEnum("status").notNull().default("active"),
 })
 

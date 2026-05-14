@@ -96,8 +96,9 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
     createRoutine.mutate({ teamId, name: routineName.trim().toLowerCase(), category: "evaluation" })
   }
 
-  const active = sessions?.filter((s) => s.status === "active") ?? []
-  const past   = sessions?.filter((s) => s.status !== "active") ?? []
+  const scheduled = sessions?.filter((s) => s.status === "scheduled") ?? []
+  const active     = sessions?.filter((s) => s.status === "active") ?? []
+  const past       = sessions?.filter((s) => s.status !== "active" && s.status !== "scheduled") ?? []
 
   return (
     <div className="space-y-5">
@@ -213,6 +214,16 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
             )}
           </div>
 
+          {scheduled.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Programadas</p>
+              </div>
+              {scheduled.map((s) => <EvalSessionCard key={s.id} teamId={teamId} session={s} />)}
+            </div>
+          )}
+
           {active.length > 0 && (
             <div className="space-y-2">
               <div className="flex items-center gap-2">
@@ -248,15 +259,21 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
 }
 
 const EVAL_STATUS_CONFIG = {
-  active:    { dot: "bg-green-400",   badge: "bg-green-500/10 text-green-400 border-green-500/20",     label: "Activa" },
+  scheduled: { dot: "bg-amber-400",   badge: "bg-amber-500/10 text-amber-400 border-amber-500/20",       label: "Programada" },
+  active:    { dot: "bg-green-400 animate-pulse", badge: "bg-green-500/10 text-green-400 border-green-500/20", label: "En curso" },
   completed: { dot: "bg-emerald-400", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", label: "Completada" },
-  cancelled: { dot: "bg-rose-400",    badge: "bg-rose-500/10 text-rose-400 border-rose-500/20",         label: "Cancelada" },
+  cancelled: { dot: "bg-rose-400",    badge: "bg-rose-500/10 text-rose-400 border-rose-500/20",           label: "Cancelada" },
 } as const
 
-function EvalSessionCard({ teamId, session }: { teamId: string; session: { id: string; status: string; startedAt: string; routineName: string } }) {
+type SessionListItem = { id: string; status: string; startedAt: string; scheduledDate: string | null; routineName: string }
+
+function EvalSessionCard({ teamId, session }: { teamId: string; session: SessionListItem }) {
   const config = EVAL_STATUS_CONFIG[session.status as keyof typeof EVAL_STATUS_CONFIG] ?? {
     dot: "bg-muted-foreground", badge: "bg-muted/20 text-muted-foreground border-border", label: session.status,
   }
+  const dateLabel = session.status === "scheduled" && session.scheduledDate
+    ? new Date(session.scheduledDate + "T12:00:00").toLocaleDateString("es", { dateStyle: "medium" })
+    : new Date(session.startedAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })
   return (
     <Link
       href={`/teams/${teamId}/sesiones/${session.id}`}
@@ -265,9 +282,7 @@ function EvalSessionCard({ teamId, session }: { teamId: string; session: { id: s
       <div className={cn("w-1 h-8 rounded-full shrink-0", config.dot)} />
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">{session.routineName}</p>
-        <p className="text-xs text-muted-foreground mt-0.5">
-          {new Date(session.startedAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}
-        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">{dateLabel}</p>
       </div>
       <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border shrink-0", config.badge)}>{config.label}</span>
     </Link>
@@ -302,8 +317,9 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
     createRoutine.mutate({ teamId, name: routineName.trim().toLowerCase(), category: "training" })
   }
 
-  const active = sessions?.filter((s) => s.status === "active") ?? []
-  const past   = sessions?.filter((s) => s.status !== "active") ?? []
+  const scheduled = sessions?.filter((s) => s.status === "scheduled") ?? []
+  const active     = sessions?.filter((s) => s.status === "active") ?? []
+  const past       = sessions?.filter((s) => s.status !== "active" && s.status !== "scheduled") ?? []
 
   return (
     <div className="space-y-5">
@@ -410,6 +426,16 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
               </Link>
             )}
           </div>
+
+          {scheduled.length > 0 && (
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+                <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Programadas</p>
+              </div>
+              {scheduled.map((s) => <EvalSessionCard key={s.id} teamId={teamId} session={s} />)}
+            </div>
+          )}
 
           {active.length > 0 && (
             <div className="space-y-2">

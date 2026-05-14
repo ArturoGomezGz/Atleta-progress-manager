@@ -55,6 +55,9 @@ export async function runMigrations() {
     ALTER TABLE "routine" ADD COLUMN IF NOT EXISTS "content" jsonb DEFAULT '{"v":1,"items":[]}'::jsonb NOT NULL
   `
 
+  // Safety net: migración 0005 — agregar estado scheduled y scheduled_date
+  await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "scheduled_date" date`
+
   // Safety net: migración 0004 — eliminar sistema antiguo de sesiones asignadas
   await client`DROP TABLE IF EXISTS "athlete_set_completion"`
   await client`DROP TABLE IF EXISTS "athlete_session_execution"`

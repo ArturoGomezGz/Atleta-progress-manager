@@ -1,8 +1,12 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
+import { cn } from "@/lib/utils"
 import { use, useState, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+
+const today = new Date().toISOString().split("T")[0]
+const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0]
 
 function NewSessionForm({ teamId }: { teamId: string }) {
   const router = useRouter()
@@ -11,6 +15,8 @@ function NewSessionForm({ teamId }: { teamId: string }) {
 
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null)
   const [selectedAthleteIds, setSelectedAthleteIds] = useState<Set<string>>(new Set())
+  const [startMode, setStartMode] = useState<"now" | "scheduled">("now")
+  const [scheduledDate, setScheduledDate] = useState(tomorrow)
 
   const { data: routines } = trpc.routines.list.useQuery({ teamId, ...(category ? { category } : {}) })
   const { data: members } = trpc.teams.members.useQuery({ teamId })
@@ -43,6 +49,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
       routineId: selectedRoutineId,
       teamId,
       athleteIds: Array.from(selectedAthleteIds),
+      ...(startMode === "scheduled" ? { scheduledDate } : {}),
     })
   }
 
@@ -50,15 +57,14 @@ function NewSessionForm({ teamId }: { teamId: string }) {
 
   return (
     <div className="max-w-lg mx-auto px-6 py-8 space-y-8">
-      <h1 className="text-xl font-semibold">Comenzar rutina</h1>
+      <h1 className="text-xl font-semibold">Nueva sesión</h1>
 
       <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Plantilla */}
         <section className="space-y-3">
           <h2 className="text-sm font-medium">Plantilla</h2>
           {routines?.length === 0 && (
-            <p className="text-sm text-muted-foreground">
-              Este equipo no tiene plantillas. Crea una primero.
-            </p>
+            <p className="text-sm text-muted-foreground">Este equipo no tiene plantillas. Crea una primero.</p>
           )}
           <div className="space-y-2">
             {routines?.map((r) => (
@@ -80,6 +86,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
           </div>
         </section>
 
+        {/* Atletas */}
         <section className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-medium">Atletas</h2>
@@ -110,12 +117,56 @@ function NewSessionForm({ teamId }: { teamId: string }) {
           </div>
         </section>
 
+        {/* Fecha */}
+        <section className="space-y-3">
+          <h2 className="text-sm font-medium">Cuándo</h2>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={() => setStartMode("now")}
+              className={cn(
+                "flex-1 py-2.5 text-sm rounded-lg border transition-colors cursor-pointer",
+                startMode === "now"
+                  ? "border-primary bg-primary/10 text-primary font-medium"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Ahora
+            </button>
+            <button
+              type="button"
+              onClick={() => setStartMode("scheduled")}
+              className={cn(
+                "flex-1 py-2.5 text-sm rounded-lg border transition-colors cursor-pointer",
+                startMode === "scheduled"
+                  ? "border-primary bg-primary/10 text-primary font-medium"
+                  : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              Programar fecha
+            </button>
+          </div>
+          {startMode === "scheduled" && (
+            <input
+              type="date"
+              value={scheduledDate}
+              min={tomorrow}
+              onChange={(e) => setScheduledDate(e.target.value)}
+              className="w-full border border-border rounded-lg px-3 py-2.5 text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+            />
+          )}
+        </section>
+
         <button
           type="submit"
           disabled={!canSubmit}
           className="w-full bg-primary text-primary-foreground py-2.5 rounded-md text-sm font-medium disabled:opacity-40"
         >
-          {createSession.isPending ? "Iniciando..." : "Comenzar rutina"}
+          {createSession.isPending
+            ? "Creando..."
+            : startMode === "scheduled"
+            ? "Programar sesión"
+            : "Comenzar sesión"}
         </button>
       </form>
     </div>
