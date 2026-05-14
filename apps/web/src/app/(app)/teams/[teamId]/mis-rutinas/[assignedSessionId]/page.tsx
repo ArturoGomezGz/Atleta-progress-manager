@@ -438,12 +438,12 @@ function SequentialView({
                     <div key={set.setNumber} className="flex items-center gap-2">
                       <SetButton
                         setNumber={set.setNumber}
-                        targetReps={set.targetReps}
+                        targetReps={set.targetReps ?? null}
                         completed={set.completed}
                         disabled={isPending}
                         onToggle={() => onToggleSet(ex.id, set.setNumber, set.completed)}
                       />
-                      <WeightHint loadType={set.loadType} loadValue={set.loadValue} rmLbs={ex.athleteRmLbs} />
+                      <WeightHint loadType={set.loadType ?? null} loadValue={set.loadValue != null ? String(set.loadValue) : null} rmLbs={ex.athleteRmLbs} />
                     </div>
                   )
                 })}
@@ -541,12 +541,12 @@ function CircuitView({
                         <div className="flex items-center gap-2 shrink-0">
                           <SetButton
                             setNumber={round}
-                            targetReps={set.targetReps}
+                            targetReps={set.targetReps ?? null}
                             completed={set.completed}
                             disabled={isPending}
                             onToggle={() => onToggleSet(ex.id, set.setNumber, set.completed)}
                           />
-                          <WeightHint loadType={set.loadType} loadValue={set.loadValue} rmLbs={ex.athleteRmLbs} />
+                          <WeightHint loadType={set.loadType ?? null} loadValue={set.loadValue != null ? String(set.loadValue) : null} rmLbs={ex.athleteRmLbs} />
                         </div>
                       )}
                     </div>
