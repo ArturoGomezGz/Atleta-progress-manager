@@ -332,14 +332,13 @@ export default function SessionExecutionPage() {
 // ─── Sequential view ──────────────────────────────────────────────────────────
 
 type ProgressSet = {
-  id: string
   setNumber: number
-  targetReps: number | null
-  targetPercent: string | null
-  setType: "reps" | "time"
-  targetDurationSeconds: number | null
-  loadType: "fixed_kg" | "percent_rm" | "rpe" | null
-  loadValue: string | null
+  setType: "reps" | "time" | "distance" | "amrap"
+  targetReps?: number
+  targetDurationSeconds?: number
+  targetDistanceMeters?: number
+  loadType?: "fixed_kg" | "percent_rm" | "rpe"
+  loadValue?: number
   completed: boolean
 }
 
