@@ -157,7 +157,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
             onBlur={() => {
               const trimmed = name.trim()
               if (!trimmed) { setName(routineData.name); return }
-              if (trimmed !== routineData.name) renameRoutine.mutate({ id: routineId, name: trimmed })
+              if (trimmed.toLowerCase() !== routineData.name) renameRoutine.mutate({ id: routineId, name: trimmed.toLowerCase() })
             }}
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
             className="text-2xl font-bold tracking-wider uppercase bg-transparent outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary/60 transition-colors w-full min-h-[44px] cursor-text"

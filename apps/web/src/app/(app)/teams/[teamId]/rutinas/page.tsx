@@ -14,6 +14,8 @@ import { useRouter, useSearchParams } from "next/navigation"
 
 type Tab = "evaluaciones" | "entrenamientos"
 
+const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+
 function RutinasContent({ teamId }: { teamId: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -91,7 +93,7 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!routineName.trim()) return
-    createRoutine.mutate({ teamId, name: routineName.trim(), category: "evaluation" })
+    createRoutine.mutate({ teamId, name: routineName.trim().toLowerCase(), category: "evaluation" })
   }
 
   const active = sessions?.filter((s) => s.status === "active") ?? []
@@ -144,7 +146,7 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
           {routines?.map((r) => {
             if (deleting?.id === r.id) return (
               <div key={r.id} className="flex items-center justify-between p-4 border border-destructive/30 rounded-xl bg-destructive/5">
-                <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{r.name}</span>?</p>
+                <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{sc(r.name)}</span>?</p>
                 <div className="flex gap-2">
                   <button onClick={() => setDeleting(null)} className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">Cancelar</button>
                   <button onClick={() => deleteRoutine.mutate({ id: r.id })} disabled={deleteRoutine.isPending} className="text-xs px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg disabled:opacity-50 cursor-pointer">Eliminar</button>
@@ -156,7 +158,7 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
               <div key={r.id} className="group flex items-center border border-border rounded-xl hover:border-primary/20 bg-card/60 transition-colors">
                 <Link href={`/teams/${teamId}/plantillas/${r.id}`} className="flex-1 flex items-center gap-3 px-4 py-3.5">
                   <ZapIcon className="w-4 h-4 text-amber-400/70 shrink-0" />
-                  <span className="font-medium text-sm flex-1 truncate">{r.name}</span>
+                  <span className="font-medium text-sm flex-1 truncate">{sc(r.name)}</span>
                   <span className="text-xs text-muted-foreground shrink-0">
                     {new Date(r.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
                   </span>
@@ -297,7 +299,7 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!routineName.trim()) return
-    createRoutine.mutate({ teamId, name: routineName.trim(), category: "training" })
+    createRoutine.mutate({ teamId, name: routineName.trim().toLowerCase(), category: "training" })
   }
 
   const active = sessions?.filter((s) => s.status === "active") ?? []
@@ -342,7 +344,7 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
           {routines?.map((r) => {
             if (deleting?.id === r.id) return (
               <div key={r.id} className="flex items-center justify-between p-4 border border-destructive/30 rounded-xl bg-destructive/5">
-                <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{r.name}</span>?</p>
+                <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{sc(r.name)}</span>?</p>
                 <div className="flex gap-2">
                   <button onClick={() => setDeleting(null)} className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">Cancelar</button>
                   <button onClick={() => deleteRoutine.mutate({ id: r.id })} disabled={deleteRoutine.isPending} className="text-xs px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg disabled:opacity-50 cursor-pointer">Eliminar</button>
@@ -354,7 +356,7 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
               <div key={r.id} className="group flex items-center border border-border rounded-xl hover:border-primary/20 bg-card/60 transition-colors">
                 <Link href={`/teams/${teamId}/plantillas/${r.id}`} className="flex-1 flex items-center gap-3 px-4 py-3.5">
                   <DumbbellIcon className="w-4 h-4 text-muted-foreground shrink-0" />
-                  <span className="font-medium text-sm flex-1 truncate">{r.name}</span>
+                  <span className="font-medium text-sm flex-1 truncate">{sc(r.name)}</span>
                   <span className="text-xs text-muted-foreground shrink-0">
                     {new Date(r.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
                   </span>
