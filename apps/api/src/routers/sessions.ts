@@ -154,19 +154,17 @@ export const sessionsRouter = router({
             .values({ sessionId: session.id, exerciseId: ex.exerciseId, order: ex.order })
             .returning()
 
-          const repsTargets = ex.sets
-            .filter((s) => s.setType === "reps" && (s.targetReps != null || s.loadType === "percent_rm"))
-            .map((s) => ({
-              sessionExerciseId: se.id,
-              setNumber: s.setNumber,
-              targetReps: s.targetReps ?? null,
-              targetPercent: s.loadType === "percent_rm" && s.loadValue != null
-                ? String(s.loadValue)
-                : null,
-            }))
+          const targets = ex.sets.map((s) => ({
+            sessionExerciseId: se.id,
+            setNumber: s.setNumber,
+            targetReps: s.targetReps ?? null,
+            targetPercent: s.loadType === "percent_rm" && s.loadValue != null
+              ? String(s.loadValue)
+              : null,
+          }))
 
-          if (repsTargets.length > 0) {
-            await tx.insert(sessionSetTarget).values(repsTargets)
+          if (targets.length > 0) {
+            await tx.insert(sessionSetTarget).values(targets)
           }
         }
 
