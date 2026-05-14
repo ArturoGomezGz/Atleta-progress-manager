@@ -1,15 +1,18 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
+import { cn } from "@/lib/utils"
 import {
   AlertTriangleIcon,
   CheckIcon,
+  ChevronRightIcon,
   ClipboardIcon,
   DumbbellIcon,
   PlusIcon,
   RefreshCwIcon,
   ShieldCheckIcon,
   Trash2Icon,
+  UsersIcon,
   XIcon,
 } from "lucide-react"
 import { use, useState } from "react"
@@ -70,6 +73,8 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
         onUpdateRole={(userId, role) => updateRole.mutateAsync({ teamId, userId, role })}
         onRemove={(userId) => removeMember.mutateAsync({ teamId, userId })}
       />
+
+      <GruposSection teamId={teamId} isCoach={!!isCoach} />
 
       {isCoach && (
         <div className="pt-4 border-t border-border">
@@ -401,6 +406,156 @@ function MemberRow({
             {styles.icon}
             {styles.label}
           </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Grupos section ───────────────────────────────────────────────────────────
+
+function GruposSection({ teamId, isCoach }: { teamId: string; isCoach: boolean }) {
+  const [creating, setCreating]         = useState(false)
+  const [newGroupName, setNewGroupName] = useState("")
+  const [expanded, setExpanded]         = useState<string | null>(null)
+  const [addingTo, setAddingTo]         = useState<string | null>(null)
+
+  const { data: groups, refetch } = trpc.groups.list.useQuery({ teamId })
+  const { data: members }         = trpc.teams.members.useQuery({ teamId })
+
+  const createGroup  = trpc.groups.create.useMutation({ onSuccess: () => { refetch(); setCreating(false); setNewGroupName("") } })
+  const deleteGroup  = trpc.groups.delete.useMutation({ onSuccess: refetch })
+  const addMember    = trpc.groups.addMember.useMutation({ onSuccess: refetch })
+  const removeMember = trpc.groups.removeMember.useMutation({ onSuccess: refetch })
+
+  const athletes = members?.filter((m) => m.role === "athlete") ?? []
+
+  return (
+    <div className="space-y-3 pt-4 border-t border-border">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium">Grupos</span>
+        {isCoach && (
+          !creating ? (
+            <button
+              onClick={() => setCreating(true)}
+              className="flex items-center justify-center w-7 h-7 rounded-md border border-border hover:bg-muted transition-colors cursor-pointer"
+            >
+              <PlusIcon className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <form
+              onSubmit={(e) => { e.preventDefault(); if (newGroupName.trim()) createGroup.mutate({ teamId, name: newGroupName.trim() }) }}
+              className="flex gap-2"
+            >
+              <input
+                autoFocus
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                placeholder="Nombre del grupo"
+                className="border border-border rounded-md px-3 py-1 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+              />
+              <button type="submit" disabled={createGroup.isPending} className="text-sm bg-primary text-primary-foreground px-3 py-1 rounded-md disabled:opacity-50 cursor-pointer font-medium">
+                Crear
+              </button>
+              <button type="button" onClick={() => setCreating(false)} className="text-sm border border-border px-2.5 py-1 rounded-md text-muted-foreground hover:text-foreground cursor-pointer">
+                Cancelar
+              </button>
+            </form>
+          )
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {groups?.map((g) => {
+          const isExpanded   = expanded === g.id
+          const isAddingHere = addingTo === g.id
+          const groupIds     = new Set(g.members.map((m) => m.athleteId))
+          const available    = athletes.filter((a) => !groupIds.has(a.userId))
+
+          return (
+            <div key={g.id} className="border border-border rounded-lg overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                <button
+                  onClick={() => setExpanded(isExpanded ? null : g.id)}
+                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer text-left"
+                >
+                  <ChevronRightIcon className={cn("w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200", isExpanded && "rotate-90")} />
+                  <UsersIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="font-medium text-sm flex-1">{g.name}</span>
+                  <span className="text-xs text-muted-foreground">{g.members.length} {g.members.length === 1 ? "atleta" : "atletas"}</span>
+                </button>
+                {isCoach && (
+                  <button
+                    onClick={() => deleteGroup.mutate({ groupId: g.id })}
+                    className="p-1.5 text-muted-foreground hover:text-destructive rounded-md transition-colors cursor-pointer"
+                  >
+                    <Trash2Icon className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {isExpanded && (
+                <div className="border-t border-border bg-muted/10 divide-y divide-border">
+                  {g.members.map((m) => (
+                    <div key={m.athleteId} className="flex items-center gap-3 px-5 py-2.5">
+                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground shrink-0">
+                        {m.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate">{m.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+                      </div>
+                      {isCoach && (
+                        <button
+                          onClick={() => removeMember.mutate({ groupId: g.id, athleteId: m.athleteId })}
+                          className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer shrink-0"
+                        >
+                          Quitar
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {g.members.length === 0 && (
+                    <p className="text-xs text-muted-foreground px-5 py-3">Sin atletas en este grupo.</p>
+                  )}
+                  {isCoach && (
+                    <div className="px-5 py-3">
+                      {!isAddingHere ? (
+                        <button
+                          onClick={() => setAddingTo(isAddingHere ? null : g.id)}
+                          disabled={available.length === 0}
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        >
+                          <PlusIcon className="w-3.5 h-3.5" />
+                          {available.length === 0 ? "Todos los atletas están en el grupo" : "Agregar atleta"}
+                        </button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <select
+                            defaultValue=""
+                            onChange={(e) => { if (e.target.value) { addMember.mutate({ groupId: g.id, athleteId: e.target.value }); setAddingTo(null) } }}
+                            className="flex-1 bg-background border border-border rounded-md px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground cursor-pointer"
+                          >
+                            <option value="">Seleccionar atleta...</option>
+                            {available.map((a) => <option key={a.userId} value={a.userId}>{a.userName}</option>)}
+                          </select>
+                          <button type="button" onClick={() => setAddingTo(null)} className="text-xs text-muted-foreground hover:text-foreground border border-border px-2 py-1.5 rounded-md cursor-pointer">
+                            Cancelar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {groups?.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8 border rounded-lg">
+            Sin grupos todavía.{isCoach ? " Crea uno para asignar rutinas a varios atletas a la vez." : ""}
+          </p>
         )}
       </div>
     </div>

@@ -72,7 +72,7 @@ export function Sidebar() {
       setNewTeamName("")
       setTeamPickerOpen(false)
       setMobileOpen(false)
-      router.push(`/teams/${team.id}/sesiones`)
+      router.push(`/teams/${team.id}/equipo`)
     },
   })
 
@@ -144,7 +144,7 @@ export function Sidebar() {
               {teams?.map(({ team }) => (
                 <button
                   key={team.id}
-                  onClick={() => { router.push(`/teams/${team.id}/sesiones`); setTeamPickerOpen(false) }}
+                  onClick={() => { router.push(`/teams/${team.id}/equipo`); setTeamPickerOpen(false) }}
                   className={`w-full flex items-center gap-2.5 text-left px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors cursor-pointer ${
                     team.id === currentTeamId ? "font-medium text-primary" : "text-foreground"
                   }`}

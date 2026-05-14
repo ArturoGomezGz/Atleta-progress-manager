@@ -4,6 +4,7 @@ import { exercise } from "./exercises"
 import { team } from "./teams"
 
 export const routineTypeEnum = pgEnum("routine_type", ["sequential", "circuit"])
+export const routineCategoryEnum = pgEnum("routine_category", ["evaluation", "training"])
 export const exerciseGoalEnum = pgEnum("exercise_goal", ["strength", "hypertrophy", "endurance", "power", "cardio", "recovery"])
 export const setTypeEnum = pgEnum("set_type", ["reps", "time"])
 export const loadTypeEnum = pgEnum("load_type", ["fixed_kg", "percent_rm", "rpe"])
@@ -18,6 +19,7 @@ export const routine = pgTable("routine", {
     .notNull()
     .references(() => user.id),
   type: routineTypeEnum("type").notNull().default("sequential"),
+  category: routineCategoryEnum("category").notNull().default("training"),
   circuitRounds: integer("circuit_rounds"),
   circuitDurationSeconds: integer("circuit_duration_seconds"),
   createdAt: timestamp("created_at").notNull().defaultNow(),

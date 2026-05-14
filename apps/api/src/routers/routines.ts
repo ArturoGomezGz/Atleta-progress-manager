@@ -1,7 +1,7 @@
 import { db } from "@atleta/db/client"
 import { exercise, routine, routineExercise, routineSetTarget } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { asc, eq } from "drizzle-orm"
+import { and, asc, eq } from "drizzle-orm"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
@@ -18,7 +18,11 @@ const setTargetInput = z.object({
 
 export const routinesRouter = router({
   create: protectedProcedure
-    .input(z.object({ teamId: z.string().uuid(), name: z.string().min(1) }))
+    .input(z.object({
+      teamId: z.string().uuid(),
+      name: z.string().min(1),
+      category: z.enum(["evaluation", "training"]).default("training"),
+    }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
       const [r] = await db.insert(routine).values({ ...input, createdBy: ctx.session.user.id }).returning()
@@ -26,10 +30,15 @@ export const routinesRouter = router({
     }),
 
   list: protectedProcedure
-    .input(z.object({ teamId: z.string().uuid() }))
+    .input(z.object({
+      teamId: z.string().uuid(),
+      category: z.enum(["evaluation", "training"]).optional(),
+    }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
-      return db.select().from(routine).where(eq(routine.teamId, input.teamId))
+      const conditions = [eq(routine.teamId, input.teamId)]
+      if (input.category) conditions.push(eq(routine.category, input.category))
+      return db.select().from(routine).where(and(...conditions))
     }),
 
   get: protectedProcedure
