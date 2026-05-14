@@ -10,17 +10,22 @@ import {
   ZapIcon,
 } from "lucide-react"
 import Link from "next/link"
-import { use, useState } from "react"
-import { useRouter } from "next/navigation"
+import { use, useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 
 type Tab = "evaluaciones" | "entrenamientos"
 
-export default function RutinasPage({ params }: { params: Promise<{ teamId: string }> }) {
-  const { teamId } = use(params)
-  const [tab, setTab] = useState<Tab>("evaluaciones")
+function RutinasContent({ teamId }: { teamId: string }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const tab = (searchParams.get("tab") as Tab) ?? "evaluaciones"
 
   const { data: teams } = trpc.teams.list.useQuery()
   const isCoach = teams?.find((t) => t.team.id === teamId)?.role === "coach"
+
+  function setTab(t: Tab) {
+    router.replace(`/teams/${teamId}/rutinas?tab=${t}`)
+  }
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
@@ -52,6 +57,15 @@ export default function RutinasPage({ params }: { params: Promise<{ teamId: stri
       {tab === "evaluaciones"  && <EvaluacionesTab  teamId={teamId} isCoach={!!isCoach} />}
       {tab === "entrenamientos" && <EntrenamientosTab teamId={teamId} isCoach={!!isCoach} />}
     </div>
+  )
+}
+
+export default function RutinasPage({ params }: { params: Promise<{ teamId: string }> }) {
+  const { teamId } = use(params)
+  return (
+    <Suspense>
+      <RutinasContent teamId={teamId} />
+    </Suspense>
   )
 }
 

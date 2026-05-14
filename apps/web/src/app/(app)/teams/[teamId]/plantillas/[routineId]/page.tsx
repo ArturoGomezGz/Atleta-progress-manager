@@ -141,7 +141,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       <div className="flex items-start justify-between gap-4">
         <div>
           <Link
-            href={`/teams/${teamId}/rutinas`}
+            href={`/teams/${teamId}/rutinas?tab=${routineData?.category === "training" ? "entrenamientos" : "evaluaciones"}`}
             className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
           >
             <ChevronLeftIcon className="w-3.5 h-3.5" />
