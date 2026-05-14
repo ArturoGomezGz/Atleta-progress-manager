@@ -12,7 +12,7 @@ import {
   Trash2Icon,
 } from "lucide-react"
 import Link from "next/link"
-import { use, useCallback, useState } from "react"
+import { use, useCallback, useEffect, useState } from "react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -70,9 +70,13 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   const { data: routineData, refetch } = trpc.routines.get.useQuery({ id: routineId })
   const { data: catalog }              = trpc.exercises.list.useQuery({ teamId })
   const updateContent                  = trpc.routines.updateContent.useMutation({ onSuccess: () => refetch() })
+  const renameRoutine                  = trpc.routines.rename.useMutation({ onSuccess: () => refetch() })
 
   const [localContent, setLocalContent] = useState<RoutineContent | null>(null)
   const [dirty, setDirty]               = useState(false)
+  const [name, setName]                 = useState("")
+
+  useEffect(() => { if (routineData) setName(routineData.name) }, [routineData])
 
   const content: RoutineContent = localContent ?? routineData?.content ?? { v: 1, items: [] }
   const exerciseNames = routineData?.exerciseNames ?? {}
@@ -147,12 +151,19 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
             <ChevronLeftIcon className="w-3.5 h-3.5" />
             Rutinas
           </Link>
-          <h1
-            className="text-2xl font-bold tracking-wider uppercase"
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => {
+              const trimmed = name.trim()
+              if (!trimmed) { setName(routineData.name); return }
+              if (trimmed !== routineData.name) renameRoutine.mutate({ id: routineId, name: trimmed })
+            }}
+            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
+            className="text-2xl font-bold tracking-wider uppercase bg-transparent outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary/60 transition-colors w-full min-h-[44px] cursor-text"
             style={{ fontFamily: "var(--font-barlow-condensed)" }}
-          >
-            {routineData.name}
-          </h1>
+            aria-label="Nombre de la plantilla"
+          />
         </div>
         {dirty && (
           <button

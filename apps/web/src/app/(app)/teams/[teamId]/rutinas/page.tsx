@@ -4,7 +4,6 @@ import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
   DumbbellIcon,
-  PencilIcon,
   PlusIcon,
   Trash2Icon,
   ZapIcon,
@@ -75,7 +74,7 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
   const router = useRouter()
   const [creating, setCreating] = useState(false)
   const [routineName, setRoutineName] = useState("")
-  const [action, setAction] = useState<RoutineAction | null>(null)
+  const [deleting, setDeleting] = useState<RoutineAction | null>(null)
 
   const { data: routines, refetch } = trpc.routines.list.useQuery({ teamId, category: "evaluation" })
   const { data: sessions } = trpc.sessions.list.useQuery({ teamId, category: "evaluation" })
@@ -87,19 +86,12 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
       router.push(`/teams/${teamId}/plantillas/${r.id}`)
     },
   })
-  const renameRoutine = trpc.routines.rename.useMutation({ onSuccess: () => { refetch(); setAction(null) } })
-  const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetch(); setAction(null) } })
+  const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetch(); setDeleting(null) } })
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!routineName.trim()) return
     createRoutine.mutate({ teamId, name: routineName.trim(), category: "evaluation" })
-  }
-
-  function handleRename(e: React.FormEvent) {
-    e.preventDefault()
-    if (action?.type !== "rename" || !action.name.trim()) return
-    renameRoutine.mutate({ id: action.id, name: action.name.trim() })
   }
 
   const active = sessions?.filter((s) => s.status === "active") ?? []
@@ -150,32 +142,14 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
 
         <div className="space-y-2">
           {routines?.map((r) => {
-            const isRenaming = action?.type === "rename" && action.id === r.id
-            const isDeleting = action?.type === "delete" && action.id === r.id
-
-            if (isDeleting) return (
+            if (deleting?.id === r.id) return (
               <div key={r.id} className="flex items-center justify-between p-4 border border-destructive/30 rounded-xl bg-destructive/5">
                 <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{r.name}</span>?</p>
                 <div className="flex gap-2">
-                  <button onClick={() => setAction(null)} className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">Cancelar</button>
+                  <button onClick={() => setDeleting(null)} className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">Cancelar</button>
                   <button onClick={() => deleteRoutine.mutate({ id: r.id })} disabled={deleteRoutine.isPending} className="text-xs px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg disabled:opacity-50 cursor-pointer">Eliminar</button>
                 </div>
               </div>
-            )
-
-            if (isRenaming) return (
-              <form key={r.id} onSubmit={handleRename} className="flex gap-2 p-2 border border-border rounded-xl bg-muted/10">
-                <input
-                  autoFocus
-                  value={action.name}
-                  onChange={(e) => setAction({ ...action, name: e.target.value })}
-                  className="flex-1 border border-border rounded-lg px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
-                />
-                <button type="submit" disabled={renameRoutine.isPending || !action.name.trim()} className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg disabled:opacity-50 cursor-pointer">
-                  {renameRoutine.isPending ? "…" : "Guardar"}
-                </button>
-                <button type="button" onClick={() => setAction(null)} className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">Cancelar</button>
-              </form>
             )
 
             return (
@@ -189,10 +163,7 @@ function EvaluacionesTab({ teamId, isCoach }: { teamId: string; isCoach: boolean
                 </Link>
                 {isCoach && (
                   <div className="flex items-center gap-1 pr-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => setAction({ type: "rename", id: r.id, name: r.name })} className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer">
-                      <PencilIcon className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => setAction({ type: "delete", id: r.id, name: r.name })} className="p-1.5 text-muted-foreground hover:text-destructive rounded-lg cursor-pointer">
+                    <button onClick={() => setDeleting({ id: r.id, name: r.name })} className="p-1.5 text-muted-foreground hover:text-destructive rounded-lg cursor-pointer">
                       <Trash2Icon className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -303,15 +274,13 @@ function EvalSessionCard({ teamId, session }: { teamId: string; session: { id: s
 
 // ─── Entrenamientos tab ───────────────────────────────────────────────────────
 
-type RoutineAction =
-  | { type: "rename"; id: string; name: string }
-  | { type: "delete"; id: string; name: string }
+type RoutineAction = { id: string; name: string }
 
 function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boolean }) {
   const router = useRouter()
   const [creating, setCreating] = useState(false)
   const [routineName, setRoutineName] = useState("")
-  const [action, setAction] = useState<RoutineAction | null>(null)
+  const [deleting, setDeleting] = useState<RoutineAction | null>(null)
 
   const { data: routines, refetch } = trpc.routines.list.useQuery({ teamId, category: "training" })
   const { data: sessions }          = trpc.sessions.list.useQuery({ teamId, category: "training" })
@@ -323,19 +292,12 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
       router.push(`/teams/${teamId}/plantillas/${r.id}`)
     },
   })
-  const renameRoutine = trpc.routines.rename.useMutation({ onSuccess: () => { refetch(); setAction(null) } })
-  const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetch(); setAction(null) } })
+  const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetch(); setDeleting(null) } })
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
     if (!routineName.trim()) return
     createRoutine.mutate({ teamId, name: routineName.trim(), category: "training" })
-  }
-
-  function handleRename(e: React.FormEvent) {
-    e.preventDefault()
-    if (action?.type !== "rename" || !action.name.trim()) return
-    renameRoutine.mutate({ id: action.id, name: action.name.trim() })
   }
 
   const active = sessions?.filter((s) => s.status === "active") ?? []
@@ -378,32 +340,14 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
 
         <div className="space-y-2">
           {routines?.map((r) => {
-            const isRenaming = action?.type === "rename" && action.id === r.id
-            const isDeleting = action?.type === "delete" && action.id === r.id
-
-            if (isDeleting) return (
+            if (deleting?.id === r.id) return (
               <div key={r.id} className="flex items-center justify-between p-4 border border-destructive/30 rounded-xl bg-destructive/5">
                 <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{r.name}</span>?</p>
                 <div className="flex gap-2">
-                  <button onClick={() => setAction(null)} className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">Cancelar</button>
+                  <button onClick={() => setDeleting(null)} className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">Cancelar</button>
                   <button onClick={() => deleteRoutine.mutate({ id: r.id })} disabled={deleteRoutine.isPending} className="text-xs px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg disabled:opacity-50 cursor-pointer">Eliminar</button>
                 </div>
               </div>
-            )
-
-            if (isRenaming) return (
-              <form key={r.id} onSubmit={handleRename} className="flex gap-2 p-2 border border-border rounded-xl bg-muted/10">
-                <input
-                  autoFocus
-                  value={action.name}
-                  onChange={(e) => setAction({ ...action, name: e.target.value })}
-                  className="flex-1 border border-border rounded-lg px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground"
-                />
-                <button type="submit" disabled={renameRoutine.isPending || !action.name.trim()} className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg disabled:opacity-50 cursor-pointer">
-                  {renameRoutine.isPending ? "…" : "Guardar"}
-                </button>
-                <button type="button" onClick={() => setAction(null)} className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">Cancelar</button>
-              </form>
             )
 
             return (
@@ -417,10 +361,7 @@ function EntrenamientosTab({ teamId, isCoach }: { teamId: string; isCoach: boole
                 </Link>
                 {isCoach && (
                   <div className="flex items-center gap-1 pr-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onClick={() => setAction({ type: "rename", id: r.id, name: r.name })} className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer">
-                      <PencilIcon className="w-3.5 h-3.5" />
-                    </button>
-                    <button onClick={() => setAction({ type: "delete", id: r.id, name: r.name })} className="p-1.5 text-muted-foreground hover:text-destructive rounded-lg cursor-pointer">
+                    <button onClick={() => setDeleting({ id: r.id, name: r.name })} className="p-1.5 text-muted-foreground hover:text-destructive rounded-lg cursor-pointer">
                       <Trash2Icon className="w-3.5 h-3.5" />
                     </button>
                   </div>
