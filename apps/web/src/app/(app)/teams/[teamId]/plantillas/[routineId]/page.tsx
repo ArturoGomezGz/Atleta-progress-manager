@@ -245,7 +245,7 @@ function SetPreviewRow({ set }: { set: SetTarget }) {
 
   const load = (() => {
     if (set.loadType === "percent_rm" && set.loadValue) return `${set.loadValue}% RM`
-    if (set.loadType === "fixed_kg"  && set.loadValue) return `${set.loadValue} kg`
+    if (set.loadType === "fixed_kg"  && set.loadValue) return `${set.loadValue} lbs`
     if (set.loadType === "rpe"       && set.loadValue) return `RPE ${set.loadValue}`
     if (set.targetPercent)                              return `${set.targetPercent}% RM`
     return null
@@ -438,7 +438,7 @@ function SetEditorRow({
           >
             <option value="">Sin carga</option>
             <option value="percent_rm">% RM</option>
-            <option value="fixed_kg">Peso fijo (kg)</option>
+            <option value="fixed_kg">Peso fijo (lbs)</option>
             <option value="rpe">RPE</option>
           </select>
 
@@ -455,7 +455,7 @@ function SetEditorRow({
                 className="w-16 bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
               />
               <span className="text-xs text-muted-foreground">
-                {set.loadType === "percent_rm" ? "%" : set.loadType === "fixed_kg" ? "kg" : "RPE"}
+                {set.loadType === "percent_rm" ? "%" : set.loadType === "fixed_kg" ? "lbs" : "RPE"}
               </span>
             </div>
           )}

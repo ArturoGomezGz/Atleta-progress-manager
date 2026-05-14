@@ -133,11 +133,11 @@ function SetButton({
 
 function WeightHint({ loadType, loadValue, rmLbs }: { loadType: string | null; loadValue: string | null; rmLbs: string | null }) {
   if (loadType === "percent_rm" && loadValue && rmLbs) {
-    const kg  = (parseFloat(rmLbs) * 0.453592 * parseFloat(loadValue) / 100).toFixed(1)
-    return <span className="text-[10px] text-primary/70 ml-1">≈ {kg} kg</span>
+    const lbs = (parseFloat(rmLbs) * parseFloat(loadValue) / 100).toFixed(1)
+    return <span className="text-[10px] text-primary/70 ml-1">≈ {lbs} lbs</span>
   }
   if (loadType === "fixed_kg" && loadValue) {
-    return <span className="text-[10px] text-muted-foreground ml-1">{loadValue} kg</span>
+    return <span className="text-[10px] text-muted-foreground ml-1">{loadValue} lbs</span>
   }
   if (loadType === "rpe" && loadValue) {
     return <span className="text-[10px] text-muted-foreground ml-1">RPE {loadValue}</span>
