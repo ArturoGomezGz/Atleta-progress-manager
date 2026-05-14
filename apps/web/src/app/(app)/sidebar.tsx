@@ -23,9 +23,10 @@ const COACH_NAV: NavItem[] = [
 ]
 
 const ATHLETE_NAV: NavItem[] = [
-  { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
-  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon },
-  { key: "explorar",    label: "Explorar",    icon: CompassIcon },
+  { key: "mis-rutinas", label: "Mis rutinas",    icon: CalendarIcon },
+  { key: "progreso",    label: "Progreso",        icon: ChartBarIcon },
+  { key: "ejercicios",  label: "Mis ejercicios",  icon: ListIcon },
+  { key: "explorar",    label: "Explorar",        icon: CompassIcon },
 ]
 
 function extractTeamId(pathname: string): string | null {
@@ -88,7 +89,7 @@ export function Sidebar() {
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
-    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar") {
+    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar" && currentSection !== "mis-rutinas") {
       router.replace(`/teams/${currentTeamId}/progreso`)
     }
   }, [isAthlete, currentTeamId, currentSection, router])
