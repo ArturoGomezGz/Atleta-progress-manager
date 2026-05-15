@@ -11,7 +11,6 @@ import {
   InfoIcon,
   PlusIcon,
   Trash2Icon,
-  XIcon,
 } from "lucide-react"
 import Link from "next/link"
 import { use, useCallback, useEffect, useState } from "react"
@@ -257,7 +256,6 @@ function ExerciseCard({
   const [expanded, setExpanded]       = useState(false)
   const [drafts, setDrafts]           = useState<DraftSet[]>(() => item.sets.map(draftFromSet))
   const [meta, setMeta]               = useState({ tempo: item.tempo ?? "", restSeconds: item.restSeconds?.toString() ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
-  const [showTempoInfo, setShowTempoInfo] = useState(false)
 
   const handleSave = useCallback(() => {
     onUpdate({
@@ -333,23 +331,24 @@ function ExerciseCard({
               <div className="space-y-1">
                 <div className="flex items-center gap-1">
                   <label className="text-xs text-muted-foreground">Tempo</label>
-                  <button
-                    type="button"
-                    onClick={() => setShowTempoInfo((v) => !v)}
-                    className="text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-pointer"
-                  >
-                    {showTempoInfo ? <XIcon className="w-3 h-3" /> : <InfoIcon className="w-3 h-3" />}
-                  </button>
-                </div>
-                {showTempoInfo && (
-                  <div className="text-[11px] text-muted-foreground bg-muted/30 rounded-lg px-2.5 py-2 leading-relaxed">
-                    <p className="font-semibold text-foreground mb-1">Ejemplo: 3-1-2-0</p>
-                    <p><span className="text-foreground font-medium">3</span> — excéntrica (bajar)</p>
-                    <p><span className="text-foreground font-medium">1</span> — pausa abajo</p>
-                    <p><span className="text-foreground font-medium">2</span> — concéntrica (subir)</p>
-                    <p><span className="text-foreground font-medium">0</span> — pausa arriba</p>
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      className="text-muted-foreground/40 hover:text-muted-foreground transition-colors cursor-pointer"
+                    >
+                      <InfoIcon className="w-3 h-3" />
+                    </button>
+                    <div className="absolute left-0 top-5 z-50 w-44 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                      <div className="text-[11px] text-muted-foreground bg-card border border-border rounded-lg px-2.5 py-2 leading-relaxed shadow-lg">
+                        <p className="font-semibold text-foreground mb-1">Ejemplo: 3-1-2-0</p>
+                        <p><span className="text-foreground font-medium">3</span> — excéntrica (bajar)</p>
+                        <p><span className="text-foreground font-medium">1</span> — pausa abajo</p>
+                        <p><span className="text-foreground font-medium">2</span> — concéntrica (subir)</p>
+                        <p><span className="text-foreground font-medium">0</span> — pausa arriba</p>
+                      </div>
+                    </div>
                   </div>
-                )}
+                </div>
                 <input
                   type="text"
                   placeholder="3-1-2-0"
