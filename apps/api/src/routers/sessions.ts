@@ -27,7 +27,7 @@ export const sessionsRouter = router({
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
       const athleteId = ctx.session.user.id
-      return db
+      const rows = await db
         .select({
           id: trainingSession.id,
           status: trainingSession.status,
@@ -43,6 +43,11 @@ export const sessionsRouter = router({
         .leftJoin(routine, eq(trainingSession.routineId, routine.id))
         .where(and(eq(trainingSession.teamId, input.teamId), eq(athleteSession.athleteId, athleteId)))
         .orderBy(desc(trainingSession.startedAt))
+
+      return rows.map((row) => ({
+        ...row,
+        status: row.athleteSessionStatus === "completed" ? "completed" as const : row.status,
+      }))
     }),
 
   myProgress: protectedProcedure
