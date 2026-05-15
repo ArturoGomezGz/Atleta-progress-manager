@@ -2,20 +2,14 @@
 
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import { DumbbellIcon, PlusIcon, SearchIcon, Trash2Icon, ZapIcon } from "lucide-react"
+import { getRoutineTypeConfig } from "@/lib/routine-types"
+import { PlusIcon, SearchIcon, Trash2Icon } from "lucide-react"
 import Link from "next/link"
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 
 type Category = "evaluation" | "training"
 type Filter = "all" | Category
-
-const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
-
-const CATEGORY_CONFIG = {
-  evaluation: { label: "Evaluación",    icon: ZapIcon,      color: "text-amber-400",       bg: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
-  training:   { label: "Entrenamiento", icon: DumbbellIcon, color: "text-muted-foreground", bg: "bg-muted/40 text-muted-foreground border-border" },
-} as const
 
 export default function PlantillasPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = use(params)
@@ -79,32 +73,25 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
             className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
           />
           <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={() => setNewCategory("training")}
-              className={cn(
-                "flex items-center gap-1.5 flex-1 justify-center py-2 text-xs rounded-lg border transition-colors cursor-pointer font-medium",
-                newCategory === "training"
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <DumbbellIcon className="w-3.5 h-3.5" />
-              Entrenamiento
-            </button>
-            <button
-              type="button"
-              onClick={() => setNewCategory("evaluation")}
-              className={cn(
-                "flex items-center gap-1.5 flex-1 justify-center py-2 text-xs rounded-lg border transition-colors cursor-pointer font-medium",
-                newCategory === "evaluation"
-                  ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
-                  : "border-border text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <ZapIcon className="w-3.5 h-3.5" />
-              Evaluación
-            </button>
+            {(["training", "evaluation"] as Category[]).map((cat) => {
+              const cfg = getRoutineTypeConfig(cat)
+              const Icon = cfg.icon
+              const isSelected = newCategory === cat
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setNewCategory(cat)}
+                  className={cn(
+                    "flex items-center gap-1.5 flex-1 justify-center py-2 text-xs rounded-lg border transition-colors cursor-pointer font-medium",
+                    isSelected ? cn(cfg.bg, cfg.text, cfg.border) : "border-border text-muted-foreground hover:text-foreground",
+                  )}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {cfg.label}
+                </button>
+              )
+            })}
           </div>
           <div className="flex gap-2 justify-end">
             <button
@@ -155,7 +142,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
       {/* List */}
       <div className="space-y-2">
         {filtered.map((r) => {
-          const cfg  = CATEGORY_CONFIG[r.category as Category]
+          const cfg  = getRoutineTypeConfig(r.category)
           const Icon = cfg.icon
 
           if (deleting?.id === r.id) return (
@@ -171,9 +158,9 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
           return (
             <div key={r.id} className="group flex items-center border border-border rounded-xl hover:border-primary/20 bg-card/60 transition-colors">
               <Link href={`/teams/${teamId}/plantillas/${r.id}`} className="flex-1 flex items-center gap-3 px-4 py-3.5 min-w-0">
-                <Icon className={cn("w-4 h-4 shrink-0", cfg.color)} />
+                <Icon className={cn("w-4 h-4 shrink-0", cfg.text)} />
                 <span className="font-medium text-sm flex-1 truncate">{sc(r.name)}</span>
-                <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0", cfg.bg)}>
+                <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0", cfg.bg, cfg.text, cfg.border)}>
                   {cfg.label}
                 </span>
                 <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
