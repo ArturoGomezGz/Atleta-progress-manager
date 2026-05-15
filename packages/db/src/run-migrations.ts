@@ -61,6 +61,16 @@ export async function runMigrations() {
   await client`ALTER TYPE "public"."session_status" ADD VALUE IF NOT EXISTS 'scheduled'`
   await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "scheduled_date" date`
 
+  // Safety net: migración 0006 — snapshot JSON de rutina en sesión y preferencias de usuario
+  await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "content" jsonb`
+  await client`
+    CREATE TABLE IF NOT EXISTS "user_preferences" (
+      "user_id"              text     PRIMARY KEY NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+      "rest_timer_enabled"   boolean  NOT NULL DEFAULT false,
+      "rest_timer_seconds"   integer  NOT NULL DEFAULT 90
+    )
+  `
+
   // Safety net: migración 0004 — eliminar sistema antiguo de sesiones asignadas
   await client`DROP TABLE IF EXISTS "athlete_set_completion"`
   await client`DROP TABLE IF EXISTS "athlete_session_execution"`
