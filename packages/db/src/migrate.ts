@@ -12,9 +12,13 @@ config()
 export async function runMigrations() {
   const client = postgres(process.env.DATABASE_URL!, { max: 1 })
 
-  // ALTER TYPE ADD VALUE no puede ejecutarse dentro de una transacción (restricción de PostgreSQL).
-  // El migrador de Drizzle envuelve todo en una transacción, así que estos se corren antes.
+  // Las alteraciones de schema se corren directamente (fuera de la transacción de Drizzle)
+  // porque ALTER TYPE ADD VALUE no está permitido dentro de transacciones en PostgreSQL,
+  // y el migrador de Drizzle envuelve todo en una sola transacción.
   await client`ALTER TYPE "public"."athlete_session_status" ADD VALUE IF NOT EXISTS 'scheduled'`
+  await client`ALTER TABLE "athlete_session" ADD COLUMN IF NOT EXISTS "started_at" timestamp with time zone`
+  await client`ALTER TABLE "athlete_session" ADD COLUMN IF NOT EXISTS "completed_at" timestamp with time zone`
+  await client`ALTER TABLE "athlete_session" ADD COLUMN IF NOT EXISTS "rpe" integer`
 
   const db = drizzle(client)
 
