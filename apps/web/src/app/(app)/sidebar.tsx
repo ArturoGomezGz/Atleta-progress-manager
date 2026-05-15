@@ -28,10 +28,10 @@ const COACH_NAV: NavItem[] = [
 ]
 
 const ATHLETE_NAV: NavItem[] = [
-  { key: "mis-rutinas", label: "Mis rutinas",    icon: CalendarIcon },
-  { key: "progreso",    label: "Progreso",        icon: ChartBarIcon },
-  { key: "ejercicios",  label: "Mis ejercicios",  icon: ListIcon },
-  { key: "explorar",    label: "Explorar",        icon: CompassIcon },
+  { key: "mis-rutinas", label: "Mis rutinas",   icon: CalendarIcon, hrefSuffix: "mis-rutinas" },
+  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
+  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",    label: "Explorar",        icon: CompassIcon,  hrefSuffix: "explorar" },
 ]
 
 function extractTeamId(pathname: string): string | null {
