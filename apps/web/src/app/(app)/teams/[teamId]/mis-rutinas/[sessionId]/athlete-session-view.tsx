@@ -680,15 +680,6 @@ function VideoModal({ name, videoUrl, onClose }: {
       className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center"
       onClick={onClose}
     >
-      {/* Botón cerrar */}
-      <button
-        onClick={onClose}
-        className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-        aria-label="Cerrar video"
-      >
-        <XIcon className="w-5 h-5" />
-      </button>
-
       {/* Video 9:16 — ocupa el máximo alto disponible */}
       <div
         className="relative h-[90dvh] w-auto overflow-hidden rounded-lg"
@@ -696,6 +687,15 @@ function VideoModal({ name, videoUrl, onClose }: {
         onClick={(e) => e.stopPropagation()}
       >
         <HlsVideoPlayer videoId={videoUrl} className="w-full h-full" />
+
+        {/* Botón cerrar — encima del player (z-30 > z-20 del flash) */}
+        <button
+          onClick={onClose}
+          className="absolute top-3 right-3 z-30 w-11 h-11 flex items-center justify-center rounded-full bg-black/50 hover:bg-black/70 text-white transition-colors cursor-pointer"
+          aria-label="Cerrar video"
+        >
+          <XIcon className="w-5 h-5" />
+        </button>
       </div>
 
       {/* Nombre del ejercicio — sutil, debajo del video */}
