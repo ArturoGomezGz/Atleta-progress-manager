@@ -11,6 +11,8 @@ import { useRouter } from "next/navigation"
 type Category = "evaluation" | "training"
 type Filter = "all" | Category
 
+const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+
 export default function PlantillasPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = use(params)
   const router = useRouter()
