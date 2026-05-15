@@ -35,6 +35,7 @@ export const sessionsRouter = router({
           scheduledDate: trainingSession.scheduledDate,
           routineName: routine.name,
           routineId: trainingSession.routineId,
+          routineCategory: routine.category,
           athleteSessionStatus: athleteSession.status,
         })
         .from(athleteSession)
@@ -68,6 +69,7 @@ export const sessionsRouter = router({
           id: sessionExercise.id,
           exerciseId: sessionExercise.exerciseId,
           exerciseName: exercise.name,
+          videoUrl: exercise.videoUrl,
           order: sessionExercise.order,
         })
         .from(sessionExercise)
@@ -77,6 +79,19 @@ export const sessionsRouter = router({
 
       if (exercises.length === 0) {
         return { id: session.id, status: session.status, startedAt: session.startedAt, routineName: r?.name ?? null, exercises: [] as never[] }
+      }
+
+      // Construir mapa de metadata desde el snapshot JSON (tempo, restSeconds, etc.)
+      const contentItems = session.content?.items ?? []
+      const exerciseMeta = new Map<string, { tempo?: string; restSeconds?: number; notes?: string }>()
+      for (const item of contentItems) {
+        if (item.type === "exercise") {
+          exerciseMeta.set(item.exerciseId, { tempo: item.tempo, restSeconds: item.restSeconds, notes: item.notes })
+        } else {
+          for (const ex of item.exercises) {
+            exerciseMeta.set(ex.exerciseId, { tempo: ex.tempo, restSeconds: ex.restSeconds, notes: ex.notes })
+          }
+        }
       }
 
       const exerciseIds = exercises.map((e) => e.id)
@@ -94,11 +109,17 @@ export const sessionsRouter = router({
         status: session.status,
         startedAt: session.startedAt,
         routineName: r?.name ?? null,
-        exercises: exercises.map((ex) => ({
-          ...ex,
-          targets: targets.filter((t) => t.sessionExerciseId === ex.id),
-          sets: mySets.filter((s) => s.sessionExerciseId === ex.id),
-        })),
+        exercises: exercises.map((ex) => {
+          const meta = exerciseMeta.get(ex.exerciseId) ?? {}
+          return {
+            ...ex,
+            tempo: meta.tempo ?? null,
+            restSeconds: meta.restSeconds ?? null,
+            notes: meta.notes ?? null,
+            targets: targets.filter((t) => t.sessionExerciseId === ex.id),
+            sets: mySets.filter((s) => s.sessionExerciseId === ex.id),
+          }
+        }),
       }
     }),
 
@@ -156,6 +177,7 @@ export const sessionsRouter = router({
             startedBy: ctx.session.user.id,
             scheduledDate: input.scheduledDate ?? null,
             status: isScheduled ? "scheduled" : "active",
+            content: r.content,
           })
           .returning()
 
@@ -247,10 +269,22 @@ export const sessionsRouter = router({
   activate: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.id)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       if (session.status !== "scheduled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está programada" })
-      await assertCoach(ctx.session.user.id, session.teamId)
+
+      // Coach del equipo O atleta participante pueden activar
+      const member = await assertMember(userId, session.teamId)
+      if (member.role !== "coach") {
+        const [participation] = await db
+          .select({ id: athleteSession.id })
+          .from(athleteSession)
+          .where(and(eq(athleteSession.sessionId, input.id), eq(athleteSession.athleteId, userId)))
+          .limit(1)
+        if (!participation) throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
       const [updated] = await db
         .update(trainingSession)
         .set({ status: "active" })
@@ -288,10 +322,14 @@ export const sessionsRouter = router({
       status: z.enum(["valid", "invalid"]).default("valid"),
     }))
     .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
-      await assertCoach(ctx.session.user.id, session.teamId)
+
+      // Coach puede registrar para cualquier atleta; atleta solo para sí mismo
+      const member = await assertMember(userId, session.teamId)
+      if (member.role !== "coach" && input.athleteId !== userId) throw new TRPCError({ code: "FORBIDDEN" })
 
       const [as] = await db
         .select()

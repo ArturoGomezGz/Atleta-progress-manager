@@ -1,7 +1,7 @@
-import { date, integer, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { date, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
-import { routine } from "./routines"
+import { routine, type RoutineContent } from "./routines"
 import { team } from "./teams"
 
 export const rmSourceEnum = pgEnum("rm_source", ["auto", "manual"])
@@ -22,6 +22,7 @@ export const trainingSession = pgTable("training_session", {
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
   scheduledDate: date("scheduled_date"),
   status: sessionStatusEnum("status").notNull().default("active"),
+  content: jsonb("content").$type<RoutineContent>(),
 })
 
 export const sessionExercise = pgTable("session_exercise", {
