@@ -255,7 +255,7 @@ export function Sidebar() {
             return (
               <NavGroup
                 key={item.key}
-                item={item}
+                item={item as NavItem & { children: SubNavItem[] }}
                 currentSection={currentSection}
                 effectiveTeamId={effectiveTeamId}
                 disabled={disabled}
