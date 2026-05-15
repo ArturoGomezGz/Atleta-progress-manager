@@ -11,6 +11,11 @@ config()
 
 export async function runMigrations() {
   const client = postgres(process.env.DATABASE_URL!, { max: 1 })
+
+  // ALTER TYPE ADD VALUE no puede ejecutarse dentro de una transacción (restricción de PostgreSQL).
+  // El migrador de Drizzle envuelve todo en una transacción, así que estos se corren antes.
+  await client`ALTER TYPE "public"."athlete_session_status" ADD VALUE IF NOT EXISTS 'scheduled'`
+
   const db = drizzle(client)
 
   console.log("⏳ Aplicando migraciones...")

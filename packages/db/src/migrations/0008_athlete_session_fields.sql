@@ -1,6 +1,5 @@
--- Agregar estado "scheduled" al enum de athlete_session (activación por atleta en entrenamiento)
---> statement-breakpoint
-ALTER TYPE "public"."athlete_session_status" ADD VALUE IF NOT EXISTS 'scheduled';
+-- Nuevos campos en athlete_session para seguimiento por atleta
+-- (ALTER TYPE 'scheduled' se aplica fuera de transacción en migrate.ts)
 --> statement-breakpoint
 ALTER TABLE "athlete_session" ADD COLUMN IF NOT EXISTS "started_at" timestamp with time zone;
 --> statement-breakpoint

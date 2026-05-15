@@ -33,34 +33,6 @@
     {
       "idx": 4,
       "version": "7",
-      "when": 1747267200000,
-      "tag": "0004_remove_assigned_sessions",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1747353600000,
-      "tag": "0005_scheduled_sessions",
-      "breakpoints": true
-    },
-    {
-      "idx": 6,
-      "version": "7",
-      "when": 1747440000000,
-      "tag": "0006_session_content_preferences",
-      "breakpoints": true
-    },
-    {
-      "idx": 7,
-      "version": "7",
-      "when": 1747526400000,
-      "tag": "0007_athlete_session_completed",
-      "breakpoints": true
-    },
-    {
-      "idx": 8,
-      "version": "7",
       "when": 1747612800000,
       "tag": "0008_athlete_session_fields",
       "breakpoints": true
