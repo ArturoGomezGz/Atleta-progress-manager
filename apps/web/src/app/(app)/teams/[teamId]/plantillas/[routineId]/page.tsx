@@ -13,7 +13,7 @@ import {
   Trash2Icon,
 } from "lucide-react"
 import Link from "next/link"
-import { use, useCallback, useEffect, useState } from "react"
+import { use, useCallback, useEffect, useRef, useState } from "react"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -256,6 +256,21 @@ function ExerciseCard({
   const [expanded, setExpanded]       = useState(false)
   const [drafts, setDrafts]           = useState<DraftSet[]>(() => item.sets.map(draftFromSet))
   const [meta, setMeta]               = useState({ tempo: item.tempo ?? "", restSeconds: item.restSeconds?.toString() ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
+  const [tempoInfo, setTempoInfo]     = useState(false)
+  const tempoRef                      = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!tempoInfo) return
+    function handleClick(e: MouseEvent) {
+      if (tempoRef.current && !tempoRef.current.contains(e.target as Node))
+        setTempoInfo(false)
+    }
+    document.addEventListener("mousedown", handleClick)
+    document.addEventListener("touchstart", handleClick)
+    return () => {
+      document.removeEventListener("mousedown", handleClick)
+      document.removeEventListener("touchstart", handleClick)
+    }
+  }, [tempoInfo])
 
   const handleSave = useCallback(() => {
     onUpdate({
@@ -331,14 +346,19 @@ function ExerciseCard({
               <div className="space-y-1">
                 <div className="flex items-center gap-1">
                   <label className="text-xs text-muted-foreground">Tempo</label>
-                  <div className="relative group">
+                  <div ref={tempoRef} className="relative group">
                     <button
                       type="button"
+                      onClick={() => setTempoInfo((v) => !v)}
                       className="text-muted-foreground/40 hover:text-muted-foreground transition-colors cursor-pointer"
                     >
                       <InfoIcon className="w-3 h-3" />
                     </button>
-                    <div className="absolute left-0 top-5 z-50 w-44 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                    <div className={cn(
+                      "absolute left-0 top-5 z-50 w-44 transition-opacity duration-150",
+                      "pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto",
+                      tempoInfo && "opacity-100 pointer-events-auto",
+                    )}>
                       <div className="text-[11px] text-muted-foreground bg-card border border-border rounded-lg px-2.5 py-2 leading-relaxed shadow-lg">
                         <p className="font-semibold text-foreground mb-1">Ejemplo: 3-1-2-0</p>
                         <p><span className="text-foreground font-medium">3</span> — excéntrica (bajar)</p>
