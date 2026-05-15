@@ -61,6 +61,9 @@ export async function runMigrations() {
   await client`ALTER TYPE "public"."session_status" ADD VALUE IF NOT EXISTS 'scheduled'`
   await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "scheduled_date" date`
 
+  // Safety net: migración 0007 — agregar estado "completed" a athlete_session_status
+  await client`ALTER TYPE "public"."athlete_session_status" ADD VALUE IF NOT EXISTS 'completed'`
+
   // Safety net: migración 0006 — snapshot JSON de rutina en sesión y preferencias de usuario
   await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "content" jsonb`
   await client`
