@@ -52,7 +52,8 @@ export const sessionsRouter = router({
 
       return rows.map((row) => ({
         ...row,
-        status: row.athleteSessionStatus === "completed" ? "completed" as const : row.status,
+        // Si la sesión entera fue cancelada por el coach, tiene precedencia sobre el estado individual
+        status: row.status === "cancelled" ? "cancelled" as const : row.athleteSessionStatus,
       }))
     }),
 
@@ -115,7 +116,8 @@ export const sessionsRouter = router({
           .orderBy(asc(setRecord.setNumber)),
       ])
 
-      const effectiveStatus = as.status === "completed" ? "completed" as const : session.status
+      // Si la sesión entera fue cancelada por el coach, tiene precedencia
+      const effectiveStatus = session.status === "cancelled" ? "cancelled" as const : as.status
 
       return {
         id: session.id,
@@ -215,8 +217,10 @@ export const sessionsRouter = router({
           }
         }
 
+        // En entrenamiento el atleta activa su propia sesión; en evaluación el coach controla todo
+        const athleteInitialStatus = r.category === "training" ? "scheduled" as const : "active" as const
         await tx.insert(athleteSession).values(
-          input.athleteIds.map((athleteId) => ({ sessionId: session.id, athleteId })),
+          input.athleteIds.map((athleteId) => ({ sessionId: session.id, athleteId, status: athleteInitialStatus })),
         )
 
         return session
@@ -285,18 +289,34 @@ export const sessionsRouter = router({
       const userId = ctx.session.user.id
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.id)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
-      if (session.status !== "scheduled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está programada" })
 
-      // Coach del equipo O atleta participante pueden activar
       const member = await assertMember(userId, session.teamId)
-      if (member.role !== "coach") {
-        const [participation] = await db
-          .select({ id: athleteSession.id })
+      const category = await getRoutineCategory(session.routineId)
+
+      if (category === "training") {
+        // En entrenamiento cada atleta activa su propia sesión
+        const [as] = await db
+          .select()
           .from(athleteSession)
           .where(and(eq(athleteSession.sessionId, input.id), eq(athleteSession.athleteId, userId)))
           .limit(1)
-        if (!participation) throw new TRPCError({ code: "FORBIDDEN" })
+        if (!as) throw new TRPCError({ code: "FORBIDDEN" })
+        if (as.status !== "scheduled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión ya fue iniciada" })
+
+        const now = new Date()
+        await db.update(athleteSession).set({ status: "active", startedAt: now }).where(eq(athleteSession.id, as.id))
+
+        // Activar el trainingSession padre si aún estaba programado
+        if (session.status === "scheduled") {
+          await db.update(trainingSession).set({ status: "active" }).where(eq(trainingSession.id, input.id))
+        }
+
+        return { ...session, status: "active" as const }
       }
+
+      // Evaluación: el coach activa toda la sesión
+      if (member.role !== "coach") throw new TRPCError({ code: "FORBIDDEN" })
+      if (session.status !== "scheduled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está programada" })
 
       const [updated] = await db
         .update(trainingSession)
@@ -355,6 +375,7 @@ export const sessionsRouter = router({
         .limit(1)
       if (!as) throw new TRPCError({ code: "NOT_FOUND" })
       if (as.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "El atleta está cancelado en esta sesión" })
+      if (as.status === "scheduled") throw new TRPCError({ code: "BAD_REQUEST", message: "El atleta no ha iniciado la sesión" })
 
       const [set] = await db
         .insert(setRecord)
@@ -552,7 +573,7 @@ export const sessionsRouter = router({
         return db.transaction(async (tx) => {
           await tx
             .update(athleteSession)
-            .set({ status: "completed" })
+            .set({ status: "completed", completedAt: new Date() })
             .where(and(eq(athleteSession.sessionId, input.id), eq(athleteSession.status, "active")))
           const [updated] = await tx
             .update(trainingSession)
@@ -651,7 +672,7 @@ export const sessionsRouter = router({
       if (as.status === "completed") return as
       const [updated] = await db
         .update(athleteSession)
-        .set({ status: "completed" })
+        .set({ status: "completed", completedAt: new Date() })
         .where(eq(athleteSession.id, as.id))
         .returning()
 
