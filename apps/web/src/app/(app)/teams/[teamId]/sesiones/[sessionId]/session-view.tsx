@@ -110,7 +110,11 @@ export function SessionView({ sessionId }: Props) {
               <AlertTriangleIcon className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
                 <p className="font-semibold">{confirming === "complete" ? "¿Completar sesión?" : "¿Cancelar sesión?"}</p>
-                <p className="text-sm text-muted-foreground mt-1">Una vez cerrada, la sesión no podrá modificarse.</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {confirming === "complete" && session.routineCategory === "training"
+                    ? "Se guardará el progreso de todos los atletas hasta este punto. No se calcularán PRs."
+                    : "Una vez cerrada, la sesión no podrá modificarse."}
+                </p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -188,13 +192,13 @@ export function SessionView({ sessionId }: Props) {
                     a.status === "cancelled" && "line-through")}>
                   {a.athleteName}
                 </button>
-                {isActive && a.status === "active" && (
+                {isActive && a.status === "active" && session.routineCategory === "evaluation" && (
                   <button onClick={() => cancelAthlete.mutate({ sessionId, athleteId: a.athleteId })}
                     className="p-2 mr-1 text-muted-foreground hover:text-destructive rounded shrink-0 cursor-pointer">
                     <XIcon className="w-3.5 h-3.5" />
                   </button>
                 )}
-                {isActive && a.status === "cancelled" && (
+                {isActive && a.status === "cancelled" && session.routineCategory === "evaluation" && (
                   <button onClick={() => reactivateAthlete.mutate({ sessionId, athleteId: a.athleteId })}
                     className="p-2 mr-1 text-muted-foreground hover:text-primary rounded shrink-0 cursor-pointer">
                     <RotateCcwIcon className="w-3.5 h-3.5" />

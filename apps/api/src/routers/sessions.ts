@@ -21,6 +21,12 @@ import { assertCoach, assertMember } from "./teams"
 
 
 
+async function getRoutineCategory(routineId: string | null): Promise<"evaluation" | "training" | null> {
+  if (!routineId) return null
+  const [r] = await db.select({ category: routine.category }).from(routine).where(eq(routine.id, routineId)).limit(1)
+  return r?.category ?? null
+}
+
 export const sessionsRouter = router({
   myList: protectedProcedure
     .input(z.object({ teamId: z.string().uuid() }))
@@ -337,6 +343,10 @@ export const sessionsRouter = router({
       // Coach puede registrar para cualquier atleta; atleta solo para sí mismo
       const member = await assertMember(userId, session.teamId)
       if (member.role !== "coach" && input.athleteId !== userId) throw new TRPCError({ code: "FORBIDDEN" })
+      if (member.role === "coach") {
+        const category = await getRoutineCategory(session.routineId)
+        if (category === "training") throw new TRPCError({ code: "FORBIDDEN", message: "El entrenador no puede registrar series en sesiones de entrenamiento" })
+      }
 
       const [as] = await db
         .select()
@@ -371,6 +381,7 @@ export const sessionsRouter = router({
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
       if (session?.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
       await assertCoach(ctx.session.user.id, session!.teamId)
+      if (await getRoutineCategory(session!.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
       const [updated] = await db
         .update(setRecord)
         .set({ reps: input.reps, weightLbs: input.weightLbs })
@@ -387,6 +398,7 @@ export const sessionsRouter = router({
       const [as] = await db.select().from(athleteSession).where(eq(athleteSession.id, set.athleteSessionId)).limit(1)
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
       await assertCoach(ctx.session.user.id, session!.teamId)
+      if (await getRoutineCategory(session!.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
       const [updated] = await db.update(setRecord).set({ status: input.status }).where(eq(setRecord.id, input.setId)).returning()
       return updated
     }),
@@ -399,6 +411,7 @@ export const sessionsRouter = router({
       const [as] = await db.select().from(athleteSession).where(eq(athleteSession.id, set.athleteSessionId)).limit(1)
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
       await assertCoach(ctx.session.user.id, session!.teamId)
+      if (await getRoutineCategory(session!.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
       await db.delete(setRecord).where(eq(setRecord.id, input.setId))
     }),
 
@@ -408,6 +421,7 @@ export const sessionsRouter = router({
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, session.teamId)
+      if (await getRoutineCategory(session.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
       await db
         .update(athleteSession)
         .set({ status: "cancelled" })
@@ -420,6 +434,7 @@ export const sessionsRouter = router({
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, session.teamId)
+      if (await getRoutineCategory(session.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
       await db
         .update(athleteSession)
         .set({ status: "active" })
@@ -442,6 +457,7 @@ export const sessionsRouter = router({
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
       await assertCoach(ctx.session.user.id, session.teamId)
+      if (await getRoutineCategory(session.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
 
       return db.transaction(async (tx) => {
         const [se] = await tx
@@ -467,6 +483,7 @@ export const sessionsRouter = router({
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
       await assertCoach(ctx.session.user.id, session.teamId)
+      if (await getRoutineCategory(session.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
       const [as] = await db
         .select()
         .from(athleteSession)
@@ -485,6 +502,7 @@ export const sessionsRouter = router({
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, session.teamId)
+      if (await getRoutineCategory(session.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
       const [as] = await db
         .select()
         .from(athleteSession)
@@ -527,6 +545,25 @@ export const sessionsRouter = router({
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, session.teamId)
 
+      const category = await getRoutineCategory(session.routineId)
+
+      // Entrenamiento: cerrar y guardar progreso, sin calcular PR
+      if (category === "training") {
+        return db.transaction(async (tx) => {
+          await tx
+            .update(athleteSession)
+            .set({ status: "completed" })
+            .where(and(eq(athleteSession.sessionId, input.id), eq(athleteSession.status, "active")))
+          const [updated] = await tx
+            .update(trainingSession)
+            .set({ status: "completed" })
+            .where(eq(trainingSession.id, input.id))
+            .returning()
+          return updated
+        })
+      }
+
+      // Evaluación: calcular PRs (Epley: 1RM = weight × (1 + reps/30))
       const newRms: { athleteId: string; exerciseId: string; teamId: string; rmId: string }[] = []
 
       const result = await db.transaction(async (tx) => {
@@ -536,7 +573,6 @@ export const sessionsRouter = router({
           .where(eq(trainingSession.id, input.id))
           .returning()
 
-        // Calculate RMs from valid sets (Epley formula: 1RM = weight × (1 + reps/30))
         const validSets = await tx
           .select({
             athleteId: athleteSession.athleteId,
@@ -557,7 +593,6 @@ export const sessionsRouter = router({
             ),
           )
 
-        // Max estimated RM per (athleteId, exerciseId)
         const rmMap = new Map<string, { athleteId: string; exerciseId: string; rmLbs: number }>()
         for (const s of validSets) {
           const key = `${s.athleteId}:${s.exerciseId}`
@@ -568,7 +603,6 @@ export const sessionsRouter = router({
           }
         }
 
-        // Upsert only if new value exceeds current RM
         for (const { athleteId, exerciseId, rmLbs } of rmMap.values()) {
           const [current] = await tx
             .select({ rmLbs: athleteExerciseRm.rmLbs })
@@ -620,6 +654,19 @@ export const sessionsRouter = router({
         .set({ status: "completed" })
         .where(eq(athleteSession.id, as.id))
         .returning()
+
+      // Auto-completar sesión de entrenamiento si todos los atletas terminaron
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (session?.status === "active" && await getRoutineCategory(session.routineId) === "training") {
+        const stillActive = await db
+          .select({ id: athleteSession.id })
+          .from(athleteSession)
+          .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.status, "active")))
+        if (stillActive.length === 0) {
+          await db.update(trainingSession).set({ status: "completed" }).where(eq(trainingSession.id, input.sessionId))
+        }
+      }
+
       return updated
     }),
 
