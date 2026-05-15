@@ -1,5 +1,6 @@
 "use client"
 
+import { HlsVideoPlayer } from "@/components/hls-video-player"
 import { useSession } from "@/lib/auth"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -690,16 +691,11 @@ function VideoModal({ name, videoUrl, onClose }: {
 
       {/* Video 9:16 — ocupa el máximo alto disponible */}
       <div
-        className="relative h-[90dvh] w-auto"
+        className="relative h-[90dvh] w-auto overflow-hidden rounded-lg"
         style={{ aspectRatio: "9 / 16" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <iframe
-          src={`https://iframe.videodelivery.net/${videoUrl}`}
-          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-          allowFullScreen
-          className="w-full h-full"
-        />
+        <HlsVideoPlayer videoId={videoUrl} className="w-full h-full" />
       </div>
 
       {/* Nombre del ejercicio — sutil, debajo del video */}
