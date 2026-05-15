@@ -7,7 +7,7 @@ import { team } from "./teams"
 export const rmSourceEnum = pgEnum("rm_source", ["auto", "manual"])
 
 export const sessionStatusEnum = pgEnum("session_status", ["scheduled", "active", "completed", "cancelled"])
-export const athleteSessionStatusEnum = pgEnum("athlete_session_status", ["active", "cancelled"])
+export const athleteSessionStatusEnum = pgEnum("athlete_session_status", ["active", "cancelled", "completed"])
 export const setStatusEnum = pgEnum("set_status", ["valid", "invalid"])
 
 export const trainingSession = pgTable("training_session", {

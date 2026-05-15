@@ -104,9 +104,11 @@ export const sessionsRouter = router({
           .orderBy(asc(setRecord.setNumber)),
       ])
 
+      const effectiveStatus = as.status === "completed" ? "completed" as const : session.status
+
       return {
         id: session.id,
-        status: session.status,
+        status: effectiveStatus,
         startedAt: session.startedAt,
         routineName: r?.name ?? null,
         exercises: exercises.map((ex) => {
@@ -595,6 +597,25 @@ export const sessionsRouter = router({
       }
 
       return result
+    }),
+
+  completeMySession: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+      const [as] = await db
+        .select()
+        .from(athleteSession)
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, userId)))
+        .limit(1)
+      if (!as) throw new TRPCError({ code: "NOT_FOUND" })
+      if (as.status === "completed") return as
+      const [updated] = await db
+        .update(athleteSession)
+        .set({ status: "completed" })
+        .where(eq(athleteSession.id, as.id))
+        .returning()
+      return updated
     }),
 
   athleteRms: protectedProcedure

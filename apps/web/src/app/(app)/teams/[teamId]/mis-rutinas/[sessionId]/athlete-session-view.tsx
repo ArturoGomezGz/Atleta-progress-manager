@@ -7,7 +7,6 @@ import {
   ArrowLeftIcon,
   CalendarIcon,
   CheckCircleIcon,
-  ChevronRightIcon,
   DumbbellIcon,
   PlayIcon,
   TimerIcon,
@@ -335,20 +334,10 @@ function SetExecution({
   backHref: string
   onComplete: () => void
 }) {
-  const [isAdjusting, setIsAdjusting]   = useState(false)
-  const [showVideo, setShowVideo]        = useState(false)
-  const [adjReps, setAdjReps]            = useState(String(target.targetReps ?? ""))
-  const [adjWeight, setAdjWeight]        = useState(defaultWeight)
-
-  // Reset adjustment state when target changes
-  useEffect(() => {
-    setIsAdjusting(false)
-    setAdjReps(String(target.targetReps ?? ""))
-    setAdjWeight(defaultWeight)
-  }, [target.id, defaultWeight])
+  const [showVideo, setShowVideo] = useState(false)
 
   const recordSet = trpc.sessions.recordSet.useMutation({
-    onSuccess: () => { setIsAdjusting(false); onComplete() },
+    onSuccess: () => onComplete(),
   })
 
   const progressPct = totalSetsGlobal > 0 ? Math.round((doneSetsGlobal / totalSetsGlobal) * 100) : 0
@@ -360,20 +349,19 @@ function SetExecution({
       sessionExerciseId: exercise.id,
       sessionSetTargetId: target.id,
       setNumber: target.setNumber,
-      reps: isAdjusting ? (Number(adjReps) || 0) : (target.targetReps ?? 0),
-      weightLbs: isAdjusting ? (adjWeight || "0") : (defaultWeight || "0"),
+      reps: target.targetReps ?? 0,
+      weightLbs: defaultWeight || "0",
     })
   }
 
-  const setLabel    = `SERIE ${target.setNumber} DE ${exercise.targets.length}`
-  const hasVideo    = !!exercise.videoUrl
-  const hasPercent  = !!target.targetPercent
+  const setLabel   = `SERIE ${target.setNumber} DE ${exercise.targets.length}`
+  const hasVideo   = !!exercise.videoUrl
+  const hasPercent = !!target.targetPercent
 
   return (
     <div className="flex flex-col h-[calc(100vh-57px)]">
-      {/* ── Progress bar + header ── */}
+      {/* ── Progress bar + minimal header ── */}
       <div className="shrink-0 border-b border-border">
-        {/* Global progress bar */}
         <div className="h-1 bg-muted/30">
           <div
             className="h-full bg-primary transition-all duration-500"
@@ -384,32 +372,35 @@ function SetExecution({
           <Link href={backHref} className="p-2 -ml-2 text-muted-foreground hover:text-foreground transition-colors rounded-xl cursor-pointer">
             <ArrowLeftIcon className="w-5 h-5" />
           </Link>
-          <div className="flex-1 min-w-0">
-            <p
-              className="font-bold text-base uppercase tracking-wide truncate leading-tight"
-              style={{ fontFamily: "var(--font-barlow-condensed)" }}
-            >
-              {exercise.exerciseName}
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Ejercicio {exerciseIdx + 1} de {totalExercises}
-            </p>
-          </div>
-          {hasVideo && (
-            <button
-              onClick={() => setShowVideo(true)}
-              className="p-2 text-muted-foreground hover:text-primary transition-colors rounded-xl cursor-pointer"
-              aria-label="Ver video del ejercicio"
-            >
-              <VideoIcon className="w-5 h-5" />
-            </button>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Ejercicio {exerciseIdx + 1} de {totalExercises}
+          </p>
         </div>
       </div>
 
       {/* ── Main execution area ── */}
       <div className="flex-1 overflow-y-auto flex flex-col">
-        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-8">
+        <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 gap-6">
+
+          {/* Exercise name + video button */}
+          <div className="flex items-center gap-3 w-full max-w-sm">
+            <h2
+              className="flex-1 text-2xl font-bold tracking-wide uppercase leading-tight"
+              style={{ fontFamily: "var(--font-barlow-condensed)" }}
+            >
+              {exercise.exerciseName}
+            </h2>
+            {hasVideo && (
+              <button
+                onClick={() => setShowVideo(true)}
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-muted/40 hover:bg-muted/70 text-muted-foreground hover:text-primary transition-colors cursor-pointer shrink-0"
+                aria-label="Ver video del ejercicio"
+              >
+                <VideoIcon className="w-4 h-4" />
+                <span className="text-xs font-medium">Video</span>
+              </button>
+            )}
+          </div>
 
           {/* Set label */}
           <p
@@ -420,67 +411,33 @@ function SetExecution({
           </p>
 
           {/* Target values cards */}
-          {!isAdjusting ? (
-            <div className="flex gap-4 w-full max-w-sm">
-              <div className="flex-1 flex flex-col items-center justify-center gap-1 py-6 rounded-2xl bg-card border border-border">
-                <span
-                  className="text-5xl font-bold text-foreground leading-none"
-                  style={{ fontFamily: "var(--font-barlow-condensed)" }}
-                >
-                  {target.targetReps ?? "—"}
-                </span>
-                <span className="text-sm text-muted-foreground mt-1">reps</span>
-              </div>
+          <div className="flex gap-4 w-full max-w-sm">
+            <div className="flex-1 flex flex-col items-center justify-center gap-1 py-6 rounded-2xl bg-card border border-border">
+              <span
+                className="text-5xl font-bold text-foreground leading-none"
+                style={{ fontFamily: "var(--font-barlow-condensed)" }}
+              >
+                {target.targetReps ?? "—"}
+              </span>
+              <span className="text-sm text-muted-foreground mt-1">reps</span>
+            </div>
 
-              <div className="flex-1 flex flex-col items-center justify-center gap-1 py-6 rounded-2xl bg-card border border-border">
-                <span
-                  className="text-5xl font-bold text-foreground leading-none"
-                  style={{ fontFamily: "var(--font-barlow-condensed)" }}
-                >
-                  {defaultWeight || "—"}
-                </span>
-                <span className="text-sm text-muted-foreground mt-1">lbs</span>
-                {hasPercent && rmLbs && (
-                  <span className="text-xs text-primary/70">{target.targetPercent}% RM</span>
-                )}
-              </div>
+            <div className="flex-1 flex flex-col items-center justify-center gap-1 py-6 rounded-2xl bg-card border border-border">
+              <span
+                className="text-5xl font-bold text-foreground leading-none"
+                style={{ fontFamily: "var(--font-barlow-condensed)" }}
+              >
+                {defaultWeight || "—"}
+              </span>
+              <span className="text-sm text-muted-foreground mt-1">lbs</span>
+              {hasPercent && rmLbs && (
+                <span className="text-xs text-primary/70">{target.targetPercent}% RM</span>
+              )}
             </div>
-          ) : (
-            /* Adjust form */
-            <div className="flex gap-4 w-full max-w-sm">
-              <div className="flex-1 flex flex-col items-center gap-2">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  value={adjReps}
-                  onChange={(e) => setAdjReps(e.target.value)}
-                  placeholder="0"
-                  className="w-full h-20 text-4xl font-bold text-center bg-card border-2 border-primary rounded-2xl focus:outline-none"
-                  style={{ fontFamily: "var(--font-barlow-condensed)" }}
-                  autoFocus
-                />
-                <span className="text-sm text-muted-foreground">reps</span>
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-2">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={0}
-                  step={0.5}
-                  value={adjWeight}
-                  onChange={(e) => setAdjWeight(e.target.value)}
-                  placeholder="0"
-                  className="w-full h-20 text-4xl font-bold text-center bg-card border-2 border-border rounded-2xl focus:outline-none focus:border-primary"
-                  style={{ fontFamily: "var(--font-barlow-condensed)" }}
-                />
-                <span className="text-sm text-muted-foreground">lbs</span>
-              </div>
-            </div>
-          )}
+          </div>
 
           {/* Secondary info */}
-          {(exercise.tempo || exercise.restSeconds || exercise.notes) && (
+          {(exercise.tempo || exercise.restSeconds) && (
             <div className="flex flex-wrap items-center justify-center gap-3">
               {exercise.tempo && (
                 <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
@@ -502,30 +459,10 @@ function SetExecution({
         </div>
 
         {/* ── Bottom action area ── */}
-        <div className="shrink-0 px-4 pb-6 space-y-3">
-          {/* Adjust toggle */}
-          {!isAdjusting ? (
-            <button
-              onClick={() => setIsAdjusting(true)}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors cursor-pointer"
-            >
-              Ajustar reps o peso
-              <ChevronRightIcon className="w-4 h-4" />
-            </button>
-          ) : (
-            <button
-              onClick={() => setIsAdjusting(false)}
-              className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-border text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            >
-              <XIcon className="w-4 h-4" />
-              Cancelar ajuste
-            </button>
-          )}
-
-          {/* Main complete button */}
+        <div className="shrink-0 px-4 pb-6">
           <button
             onClick={handleComplete}
-            disabled={recordSet.isPending || (isAdjusting && adjReps === "")}
+            disabled={recordSet.isPending}
             className={cn(
               "w-full flex items-center justify-center gap-3 py-6 rounded-2xl font-bold text-xl tracking-wide cursor-pointer transition-all active:scale-[0.97] disabled:opacity-50",
               "bg-primary text-primary-foreground",
@@ -617,6 +554,13 @@ function AllDone({ progress, backHref, doneSets: done }: {
   backHref: string
   doneSets: number
 }) {
+  const completeSession = trpc.sessions.completeMySession.useMutation()
+
+  useEffect(() => {
+    completeSession.mutate({ sessionId: progress.id })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [progress.id])
+
   return (
     <div className="flex flex-col h-[calc(100vh-57px)] items-center justify-center gap-8 px-6 text-center">
       <div className="w-20 h-20 rounded-full bg-primary/10 border border-primary/30 flex items-center justify-center">
@@ -732,20 +676,20 @@ function VideoModal({ name, videoUrl, onClose }: {
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end justify-center bg-black/80 backdrop-blur-sm"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4"
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-background border-t border-border rounded-t-2xl overflow-hidden"
+        className="w-full max-w-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
-          <p className="font-semibold text-sm truncate pr-4">{name}</p>
-          <button onClick={onClose} className="p-2 text-muted-foreground hover:text-foreground rounded-xl cursor-pointer shrink-0">
+        <div className="flex items-center justify-between pb-3 px-1">
+          <p className="font-semibold text-sm text-white truncate pr-4">{name}</p>
+          <button onClick={onClose} className="p-2 text-white/70 hover:text-white rounded-xl cursor-pointer shrink-0">
             <XIcon className="w-5 h-5" />
           </button>
         </div>
-        <div className="aspect-video bg-black">
+        <div className="aspect-video bg-black rounded-2xl overflow-hidden">
           <iframe
             src={`https://iframe.videodelivery.net/${videoUrl}`}
             allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
