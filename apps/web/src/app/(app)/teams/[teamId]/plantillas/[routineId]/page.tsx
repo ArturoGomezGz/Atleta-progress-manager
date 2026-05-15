@@ -260,7 +260,7 @@ function ExerciseCard({
   const tempoRef                      = useRef<HTMLDivElement>(null)
   useEffect(() => {
     if (!tempoInfo) return
-    function handleClick(e: MouseEvent) {
+    function handleClick(e: Event) {
       if (tempoRef.current && !tempoRef.current.contains(e.target as Node))
         setTempoInfo(false)
     }
