@@ -88,30 +88,33 @@ function NavGroup({
         <ChevronDownIcon className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", open ? "rotate-180" : "")} />
       </button>
 
-      {open && (
-        <div className="ml-3 pl-4 border-l border-border space-y-0.5 mt-0.5">
-          {item.children.map((child) => {
-            const childHref   = effectiveTeamId ? `/teams/${effectiveTeamId}/${child.hrefSuffix}` : "#"
-            const childActive = child.sections.includes(currentSection ?? "")
-            return (
-              <Link
-                key={child.key}
-                href={childHref}
-                aria-disabled={disabled}
-                onClick={(e) => disabled && e.preventDefault()}
-                className={cn(
-                  "relative flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200",
-                  childActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                  disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
-                )}
-              >
-                {childActive && <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />}
-                {child.label}
-              </Link>
-            )
-          })}
+      {/* grid-rows animación: 0fr → 1fr sin medir altura con JS */}
+      <div className={cn("grid transition-[grid-template-rows] duration-200 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div className="overflow-hidden">
+          <div className="ml-3 pl-4 border-l border-border space-y-0.5 mt-0.5 pb-0.5">
+            {item.children.map((child) => {
+              const childHref   = effectiveTeamId ? `/teams/${effectiveTeamId}/${child.hrefSuffix}` : "#"
+              const childActive = child.sections.includes(currentSection ?? "")
+              return (
+                <Link
+                  key={child.key}
+                  href={childHref}
+                  aria-disabled={disabled}
+                  onClick={(e) => disabled && e.preventDefault()}
+                  className={cn(
+                    "relative flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-150",
+                    childActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                    disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
+                  )}
+                >
+                  {childActive && <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />}
+                  {child.label}
+                </Link>
+              )
+            })}
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
