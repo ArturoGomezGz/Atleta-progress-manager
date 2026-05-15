@@ -148,22 +148,37 @@ export default function EjerciciosPage() {
     e.preventDefault()
     if (!form) return
 
-    const base = {
-      name: form.name,
-      description: form.description || undefined,
-      difficulty: form.difficulty ?? undefined,
-      movementPatterns: form.movementPatterns as ("push" | "pull" | "squat" | "hinge" | "carry" | "rotation" | "isometric" | "mobility")[],
-      suitableFor: form.suitableFor,
-      videoUrl: form.videoUrl,
-      isPublic: form.isPublic,
-      muscles: form.muscles,
-      equipment: form.equipment,
-    }
+    const patterns = form.movementPatterns as ("push" | "pull" | "squat" | "hinge" | "carry" | "rotation" | "isometric" | "mobility")[]
 
     if (form.id) {
-      updateMutation.mutate({ id: form.id, ...base, contraindications: form.contraindications || null })
+      updateMutation.mutate({
+        id: form.id,
+        name: form.name,
+        description: form.description || undefined,
+        difficulty: form.difficulty ?? undefined,
+        movementPatterns: patterns,
+        suitableFor: form.suitableFor,
+        videoUrl: form.videoUrl,        // null = quitar video
+        isPublic: form.isPublic,
+        muscles: form.muscles,
+        equipment: form.equipment,
+        contraindications: form.contraindications || null,
+      })
     } else {
-      createMutation.mutate({ ...base, contraindications: form.contraindications || undefined, ownerType: form.ownerType, teamId: form.ownerType === "team" ? teamId : undefined })
+      createMutation.mutate({
+        name: form.name,
+        description: form.description || undefined,
+        difficulty: form.difficulty ?? undefined,
+        movementPatterns: patterns,
+        suitableFor: form.suitableFor,
+        videoUrl: form.videoUrl ?? undefined,  // create no acepta null
+        isPublic: form.isPublic,
+        muscles: form.muscles,
+        equipment: form.equipment,
+        contraindications: form.contraindications || undefined,
+        ownerType: form.ownerType,
+        teamId: form.ownerType === "team" ? teamId : undefined,
+      })
     }
   }
 
