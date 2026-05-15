@@ -2,7 +2,7 @@
 
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import { PlusIcon, SearchIcon } from "lucide-react"
+import { PlusIcon } from "lucide-react"
 import Link from "next/link"
 import { use, useState, Suspense } from "react"
 
@@ -52,7 +52,6 @@ function SessionCard({ teamId, session }: { teamId: string; session: SessionItem
 }
 
 function SesionesContent({ teamId }: { teamId: string }) {
-  const [histSearch, setHistSearch] = useState("")
   const [histFilter, setHistFilter] = useState<"all" | "evaluation" | "training">("all")
 
   const { data: teams } = trpc.teams.list.useQuery()
@@ -70,11 +69,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
   const active     = allSessions.filter((s) => s.status === "active")
   const history    = allSessions
     .filter((s) => s.status !== "active" && s.status !== "scheduled")
-    .filter((s) => {
-      if (histFilter !== "all" && s.routineCategory !== histFilter) return false
-      if (histSearch && !s.routineName.toLowerCase().includes(histSearch.toLowerCase())) return false
-      return true
-    })
+    .filter((s) => histFilter === "all" || s.routineCategory === histFilter)
     .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
 
   return (
@@ -141,30 +136,19 @@ function SesionesContent({ teamId }: { teamId: string }) {
       <section className="space-y-3">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Historial</p>
 
-        <div className="flex flex-col sm:flex-row gap-2">
-          <div className="relative flex-1">
-            <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
-            <input
-              value={histSearch}
-              onChange={(e) => setHistSearch(e.target.value)}
-              placeholder="Buscar sesión..."
-              className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
-            />
-          </div>
-          <div className="flex gap-1">
-            {(["all", "training", "evaluation"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setHistFilter(f)}
-                className={cn(
-                  "px-3 py-2 text-xs rounded-lg border transition-colors cursor-pointer font-medium whitespace-nowrap",
-                  histFilter === f ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {f === "all" ? "Todas" : f === "training" ? "Entrenamiento" : "Evaluación"}
-              </button>
-            ))}
-          </div>
+        <div className="flex gap-1">
+          {(["all", "training", "evaluation"] as const).map((f) => (
+            <button
+              key={f}
+              onClick={() => setHistFilter(f)}
+              className={cn(
+                "px-3 py-2 text-xs rounded-lg border transition-colors cursor-pointer font-medium whitespace-nowrap",
+                histFilter === f ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
+              )}
+            >
+              {f === "all" ? "Todas" : f === "training" ? "Entrenamiento" : "Evaluación"}
+            </button>
+          ))}
         </div>
 
         <div className="space-y-2">
@@ -173,7 +157,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
           ))}
           {history.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              {histSearch || histFilter !== "all" ? "Sin resultados." : "Sin sesiones en el historial."}
+              {histFilter !== "all" ? "Sin resultados." : "Sin sesiones en el historial."}
             </p>
           )}
         </div>

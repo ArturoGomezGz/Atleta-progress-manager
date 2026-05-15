@@ -381,10 +381,46 @@ function ExerciseCard({ sessionId, athleteId, exercise, sets, isActive, canRecor
   )
 }
 
+// ─── Edit set fields (shared by TargetSetRow + SetRow) ───────────────────────
+
+function EditSetFields({ setId, defaultReps, defaultWeight, onSave, onCancel }:
+  { setId: string; defaultReps: string; defaultWeight: string; onSave: () => void; onCancel: () => void }) {
+  const [reps, setReps]           = useState(defaultReps)
+  const [weightLbs, setWeightLbs] = useState(defaultWeight)
+  const updateSet = trpc.sessions.updateSet.useMutation({ onSuccess: onSave })
+
+  return (
+    <form onSubmit={(e) => { e.preventDefault(); updateSet.mutate({ setId, reps: Number(reps), weightLbs: weightLbs || "0" }) }}
+      className="flex items-center gap-2">
+      <div className="flex items-center gap-1.5 flex-1">
+        <input type="number" inputMode="numeric" min={0} value={reps}
+          onChange={(e) => setReps(e.target.value)} placeholder="Reps"
+          className="w-full min-w-0 h-11 border rounded-xl px-3 text-base bg-background focus:outline-none focus:ring-1 focus:ring-border text-center font-medium" />
+        <span className="text-xs text-muted-foreground shrink-0">reps</span>
+      </div>
+      <div className="flex items-center gap-1.5 flex-1">
+        <input type="number" inputMode="numeric" min={0} step={0.5} value={weightLbs}
+          onChange={(e) => setWeightLbs(e.target.value)} placeholder="0"
+          className="w-full min-w-0 h-11 border rounded-xl px-3 text-base bg-background focus:outline-none focus:ring-1 focus:ring-border text-center font-medium" />
+        <span className="text-xs text-muted-foreground shrink-0">lbs</span>
+      </div>
+      <button type="submit" disabled={updateSet.isPending || reps === ""}
+        className="h-11 px-4 bg-primary text-primary-foreground text-sm font-semibold rounded-xl disabled:opacity-50 active:scale-95 transition-transform cursor-pointer shrink-0">
+        {updateSet.isPending ? "..." : "OK"}
+      </button>
+      <button type="button" onClick={onCancel}
+        className="h-11 px-3 border border-border rounded-xl text-muted-foreground hover:text-foreground cursor-pointer shrink-0">
+        <XIcon className="w-4 h-4" />
+      </button>
+    </form>
+  )
+}
+
 // ─── Target set row ───────────────────────────────────────────────────────────
 
 function TargetSetRow({ sessionId, athleteId, sessionExerciseId, target, recorded, isActive, canRecord, isNext, isPending, rmLbs, onUpdate }:
   { sessionId: string; athleteId: string; sessionExerciseId: string; target: SessionSetTarget; recorded: SetRecord | null; isActive: boolean; canRecord: boolean; isNext: boolean; isPending: boolean; rmLbs: string | null; onUpdate: () => void }) {
+  const [editing, setEditing] = useState(false)
   const repsLabel = target.targetReps != null ? `${target.targetReps} reps` : "libre"
   const pctLabel  = target.targetPercent != null ? `${target.targetPercent}% RM` : null
   const defaultWeight = target.targetPercent != null && rmLbs != null
@@ -392,12 +428,28 @@ function TargetSetRow({ sessionId, athleteId, sessionExerciseId, target, recorde
     : ""
 
   if (recorded) {
+    if (editing) {
+      return (
+        <div className={cn("px-4 py-3 space-y-2.5", recorded.status === "invalid" && "opacity-40")}>
+          <div className="flex items-center gap-2">
+            <CheckIcon className="w-4 h-4 text-primary shrink-0" />
+            <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground"
+              style={{ fontFamily: "var(--font-barlow-condensed, 'Barlow Condensed', sans-serif)" }}>
+              Serie {target.setNumber}
+            </span>
+          </div>
+          <EditSetFields setId={recorded.id}
+            defaultReps={String(recorded.reps)} defaultWeight={recorded.weightLbs}
+            onSave={() => { onUpdate(); setEditing(false) }} onCancel={() => setEditing(false)} />
+        </div>
+      )
+    }
     return (
       <div className={cn("flex items-center gap-3 px-4 py-3 transition-opacity", recorded.status === "invalid" && "opacity-40")}>
         <CheckIcon className="w-4 h-4 text-primary shrink-0" />
         <span className="text-xs text-muted-foreground w-12 shrink-0">Serie {target.setNumber}</span>
         <span className="text-sm flex-1 font-medium">{recorded.reps} reps · {recorded.weightLbs} lbs</span>
-        {isActive && canRecord && <SetActions set={recorded} onUpdate={onUpdate} />}
+        {isActive && canRecord && <SetActions set={recorded} onEdit={() => setEditing(true)} onUpdate={onUpdate} />}
       </div>
     )
   }
@@ -432,52 +484,43 @@ function TargetSetRow({ sessionId, athleteId, sessionExerciseId, target, recorde
 // ─── Set row (extra) ──────────────────────────────────────────────────────────
 
 function SetRow({ set, isActive, canRecord, onUpdate }: { set: SetRecord; isActive: boolean; canRecord: boolean; onUpdate: () => void }) {
+  const [editing, setEditing] = useState(false)
+
+  if (editing) {
+    return (
+      <div className={cn("px-4 py-3 space-y-2.5", set.status === "invalid" && "opacity-40")}>
+        <div className="flex items-center gap-2">
+          <CheckIcon className="w-4 h-4 text-primary/60 shrink-0" />
+          <span className="text-[11px] font-bold uppercase tracking-widest text-muted-foreground"
+            style={{ fontFamily: "var(--font-barlow-condensed, 'Barlow Condensed', sans-serif)" }}>
+            Serie {set.setNumber}
+          </span>
+        </div>
+        <EditSetFields setId={set.id}
+          defaultReps={String(set.reps)} defaultWeight={set.weightLbs}
+          onSave={() => { onUpdate(); setEditing(false) }} onCancel={() => setEditing(false)} />
+      </div>
+    )
+  }
+
   return (
     <div className={cn("flex items-center gap-3 px-4 py-3", set.status === "invalid" && "opacity-40")}>
       <CheckIcon className="w-4 h-4 text-primary/60 shrink-0" />
       <span className="text-xs text-muted-foreground w-12 shrink-0">Serie {set.setNumber}</span>
       <span className="text-sm flex-1 font-medium">{set.reps} reps · {set.weightLbs} lbs</span>
-      {isActive && canRecord && <SetActions set={set} onUpdate={onUpdate} />}
+      {isActive && canRecord && <SetActions set={set} onEdit={() => setEditing(true)} onUpdate={onUpdate} />}
     </div>
   )
 }
 
 // ─── Set actions ──────────────────────────────────────────────────────────────
 
-function SetActions({ set, onUpdate }: { set: SetRecord; onUpdate: () => void }) {
-  const [editing, setEditing] = useState(false)
+function SetActions({ set, onEdit, onUpdate }: { set: SetRecord; onEdit: () => void; onUpdate: () => void }) {
   const updateStatus = trpc.sessions.updateSetStatus.useMutation({ onSuccess: onUpdate })
-  const updateSet    = trpc.sessions.updateSet.useMutation({ onSuccess: () => { onUpdate(); setEditing(false) } })
-  const [reps, setReps]           = useState(String(set.reps))
-  const [weightLbs, setWeightLbs] = useState(set.weightLbs)
-
-  if (editing) {
-    return (
-      <div className="flex items-center gap-2">
-        <input type="number" inputMode="numeric" min={0} value={reps}
-          onChange={(e) => setReps(e.target.value)}
-          className="w-14 h-9 border rounded-lg px-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring text-center" />
-        <span className="text-xs text-muted-foreground">reps</span>
-        <input type="number" inputMode="numeric" min={0} step={0.5} value={weightLbs}
-          onChange={(e) => setWeightLbs(e.target.value)}
-          className="w-16 h-9 border rounded-lg px-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-ring text-center" />
-        <span className="text-xs text-muted-foreground">lbs</span>
-        <button onClick={() => updateSet.mutate({ setId: set.id, reps: Number(reps), weightLbs: weightLbs || "0" })}
-          disabled={updateSet.isPending}
-          className="h-9 px-3 bg-primary text-primary-foreground text-xs rounded-lg disabled:opacity-50 cursor-pointer">
-          {updateSet.isPending ? "..." : "OK"}
-        </button>
-        <button onClick={() => setEditing(false)}
-          className="p-2 text-muted-foreground hover:text-foreground cursor-pointer">
-          <XIcon className="w-3.5 h-3.5" />
-        </button>
-      </div>
-    )
-  }
 
   return (
     <div className="flex items-center gap-1">
-      <button onClick={() => setEditing(true)}
+      <button onClick={onEdit}
         className="p-2 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
         aria-label="Corregir">
         <PencilIcon className="w-3.5 h-3.5" />
