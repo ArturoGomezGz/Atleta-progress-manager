@@ -81,7 +81,9 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   useEffect(() => { if (routineData) setName(routineData.name) }, [routineData])
 
   const content: RoutineContent = localContent ?? routineData?.content ?? { v: 1, items: [] }
-  const exerciseNames = routineData?.exerciseNames ?? {}
+  // Catálogo local como fuente primaria de nombres; fallback al mapa del servidor
+  const catalogNameMap: Record<string, string> = Object.fromEntries((catalog ?? []).map((e) => [e.id, e.name]))
+  const exerciseNames = { ...(routineData?.exerciseNames ?? {}), ...catalogNameMap }
 
   function mutate(fn: (c: RoutineContent) => RoutineContent) {
     setLocalContent((prev) => fn(prev ?? routineData?.content ?? { v: 1, items: [] }))
