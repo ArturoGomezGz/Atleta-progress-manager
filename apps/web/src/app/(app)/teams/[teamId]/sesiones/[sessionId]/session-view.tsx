@@ -35,7 +35,7 @@ export function SessionView({ sessionId }: Props) {
   const router = useRouter()
 
   const { data: session, refetch: refetchSession } = trpc.sessions.get.useQuery({ id: sessionId }, { refetchInterval: 4000 })
-  const completeSession  = trpc.sessions.complete.useMutation({ onSuccess: () => { setConfirming(null); if (session) router.push(`/teams/${session.teamId}/rutinas?tab=${session.routineCategory === "training" ? "entrenamientos" : "evaluaciones"}`) } })
+  const completeSession  = trpc.sessions.complete.useMutation({ onSuccess: () => { setConfirming(null); if (session) router.push(`/teams/${session.teamId}/rutinas`) } })
   const cancelSession    = trpc.sessions.cancel.useMutation({ onSuccess: () => { refetchSession(); setConfirming(null) } })
   const activateSession  = trpc.sessions.activate.useMutation({ onSuccess: () => refetchSession() })
   const cancelAthlete    = trpc.sessions.cancelAthlete.useMutation({ onSuccess: () => refetchSession() })
@@ -47,8 +47,7 @@ export function SessionView({ sessionId }: Props) {
   const isActive     = session.status === "active"
   const isScheduled  = session.status === "scheduled"
   const canRecord    = isActive && session.routineCategory === "evaluation"
-  const backTab      = session.routineCategory === "training" ? "entrenamientos" : "evaluaciones"
-  const backHref     = `/teams/${session.teamId}/rutinas?tab=${backTab}`
+  const backHref     = `/teams/${session.teamId}/rutinas`
 
   const activeAthleteId = selectedAthleteId ?? session.athletes.find((a) => a.status === "active")?.athleteId ?? null
 

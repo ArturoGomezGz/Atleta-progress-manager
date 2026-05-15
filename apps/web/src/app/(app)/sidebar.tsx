@@ -9,15 +9,22 @@ import { useEffect, useRef, useState } from "react"
 import { AccountMenu } from "./account-menu"
 import { cn } from "@/lib/utils"
 
-type NavItem = { key: string; label: string; icon: React.ElementType; href?: string }
+type SubNavItem = { key: string; label: string; sections: string[]; hrefSuffix: string }
+type NavItem = { key: string; label: string; icon: React.ElementType; hrefSuffix?: string; children?: SubNavItem[] }
 
 const COACH_NAV: NavItem[] = [
-  { key: "equipo",      label: "Equipo",         icon: UsersIcon },
-  { key: "apariencia",  label: "Apariencia",     icon: PaletteIcon },
-  { key: "rutinas",     label: "Rutinas",        icon: CalendarIcon },
-  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon },
-  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon },
-  { key: "explorar",    label: "Explorar",       icon: CompassIcon },
+  { key: "equipo",      label: "Equipo",         icon: UsersIcon,    hrefSuffix: "equipo" },
+  { key: "apariencia",  label: "Apariencia",     icon: PaletteIcon,  hrefSuffix: "apariencia" },
+  {
+    key: "rutinas", label: "Rutinas", icon: CalendarIcon,
+    children: [
+      { key: "plantillas", label: "Plantillas", sections: ["plantillas"], hrefSuffix: "plantillas" },
+      { key: "sesiones",   label: "Sesiones",   sections: ["rutinas", "sesiones"], hrefSuffix: "rutinas" },
+    ],
+  },
+  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
+  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",    label: "Explorar",       icon: CompassIcon,  hrefSuffix: "explorar" },
 ]
 
 const ATHLETE_NAV: NavItem[] = [
@@ -77,9 +84,7 @@ export function Sidebar() {
   })
 
   const currentTeamId = extractTeamId(pathname)
-  const rawSection = extractSection(pathname)
-  // sesiones/* y plantillas/* ahora viven dentro de rutinas
-  const currentSection = (rawSection === "sesiones" || rawSection === "plantillas") ? "rutinas" : rawSection
+  const currentSection = extractSection(pathname)
   const currentTeam = teams?.find((t) => t.team.id === currentTeamId)
   // When on a non-team page (/exercises, etc.) fall back to the first team so nav links stay usable
   const effectiveTeamId = currentTeamId ?? teams?.[0]?.team.id ?? null
@@ -89,7 +94,7 @@ export function Sidebar() {
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
-    if (isAthlete && currentTeamId && rawSection && rawSection !== "progreso" && rawSection !== "ejercicios" && rawSection !== "explorar" && rawSection !== "mis-rutinas") {
+    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar" && currentSection !== "mis-rutinas") {
       router.replace(`/teams/${currentTeamId}/progreso`)
     }
   }, [isAthlete, currentTeamId, currentSection, router])
@@ -187,13 +192,58 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 space-y-0.5">
-        {navItems.map(({ key, label, icon: Icon }) => {
-          const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${key}` : "#"
-          const isActive = currentSection === key
+        {navItems.map((item) => {
           const disabled = !effectiveTeamId
+          const Icon = item.icon
+
+          // Group with sub-items
+          if (item.children) {
+            const groupActive = item.children.some((c) => c.sections.includes(currentSection ?? ""))
+            return (
+              <div key={item.key}>
+                <div
+                  className={cn(
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm",
+                    groupActive ? "text-primary font-semibold" : "text-muted-foreground",
+                  )}
+                >
+                  <Icon className={cn("w-4 h-4 shrink-0", groupActive && "text-primary")} />
+                  {item.label}
+                </div>
+                <div className="ml-3 pl-4 border-l border-border space-y-0.5">
+                  {item.children.map((child) => {
+                    const childHref = effectiveTeamId ? `/teams/${effectiveTeamId}/${child.hrefSuffix}` : "#"
+                    const childActive = child.sections.includes(currentSection ?? "")
+                    return (
+                      <Link
+                        key={child.key}
+                        href={childHref}
+                        aria-disabled={disabled}
+                        onClick={(e) => disabled && e.preventDefault()}
+                        className={cn(
+                          "relative flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                          childActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                          disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
+                        )}
+                      >
+                        {childActive && (
+                          <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
+                        )}
+                        {child.label}
+                      </Link>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          }
+
+          // Simple item
+          const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${item.hrefSuffix}` : "#"
+          const isActive = currentSection === item.hrefSuffix
           return (
             <Link
-              key={key}
+              key={item.key}
               href={href}
               aria-disabled={disabled}
               onClick={(e) => disabled && e.preventDefault()}
@@ -207,7 +257,7 @@ export function Sidebar() {
                 <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
               )}
               <Icon className={cn("w-4 h-4 shrink-0", isActive && "text-primary")} />
-              {label}
+              {item.label}
             </Link>
           )
         })}
