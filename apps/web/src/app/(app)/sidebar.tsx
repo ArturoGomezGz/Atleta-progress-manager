@@ -62,6 +62,60 @@ function TeamLogo({ name, logoDataUrl }: { name: string; logoDataUrl?: string | 
   )
 }
 
+function NavGroup({
+  item, currentSection, effectiveTeamId, disabled,
+}: {
+  item: NavItem & { children: SubNavItem[] }
+  currentSection: string | null
+  effectiveTeamId: string | null
+  disabled: boolean
+}) {
+  const groupActive = item.children.some((c) => c.sections.includes(currentSection ?? ""))
+  const [open, setOpen] = useState(groupActive)
+  const Icon = item.icon
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer",
+          groupActive ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+        )}
+      >
+        <Icon className={cn("w-4 h-4 shrink-0", groupActive && "text-primary")} />
+        <span className="flex-1 text-left">{item.label}</span>
+        <ChevronDownIcon className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", open ? "rotate-180" : "")} />
+      </button>
+
+      {open && (
+        <div className="ml-3 pl-4 border-l border-border space-y-0.5 mt-0.5">
+          {item.children.map((child) => {
+            const childHref   = effectiveTeamId ? `/teams/${effectiveTeamId}/${child.hrefSuffix}` : "#"
+            const childActive = child.sections.includes(currentSection ?? "")
+            return (
+              <Link
+                key={child.key}
+                href={childHref}
+                aria-disabled={disabled}
+                onClick={(e) => disabled && e.preventDefault()}
+                className={cn(
+                  "relative flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200",
+                  childActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                  disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
+                )}
+              >
+                {childActive && <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />}
+                {child.label}
+              </Link>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -196,45 +250,16 @@ export function Sidebar() {
           const disabled = !effectiveTeamId
           const Icon = item.icon
 
-          // Group with sub-items
+          // Collapsible group with sub-items
           if (item.children) {
-            const groupActive = item.children.some((c) => c.sections.includes(currentSection ?? ""))
             return (
-              <div key={item.key}>
-                <div
-                  className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm",
-                    groupActive ? "text-primary font-semibold" : "text-muted-foreground",
-                  )}
-                >
-                  <Icon className={cn("w-4 h-4 shrink-0", groupActive && "text-primary")} />
-                  {item.label}
-                </div>
-                <div className="ml-3 pl-4 border-l border-border space-y-0.5">
-                  {item.children.map((child) => {
-                    const childHref = effectiveTeamId ? `/teams/${effectiveTeamId}/${child.hrefSuffix}` : "#"
-                    const childActive = child.sections.includes(currentSection ?? "")
-                    return (
-                      <Link
-                        key={child.key}
-                        href={childHref}
-                        aria-disabled={disabled}
-                        onClick={(e) => disabled && e.preventDefault()}
-                        className={cn(
-                          "relative flex items-center px-3 py-2 rounded-lg text-sm transition-all duration-200",
-                          childActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                          disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
-                        )}
-                      >
-                        {childActive && (
-                          <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
-                        )}
-                        {child.label}
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
+              <NavGroup
+                key={item.key}
+                item={item}
+                currentSection={currentSection}
+                effectiveTeamId={effectiveTeamId}
+                disabled={disabled}
+              />
             )
           }
 
