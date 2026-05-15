@@ -154,7 +154,7 @@ export default function EjerciciosPage() {
       difficulty: form.difficulty ?? undefined,
       movementPatterns: form.movementPatterns as ("push" | "pull" | "squat" | "hinge" | "carry" | "rotation" | "isometric" | "mobility")[],
       suitableFor: form.suitableFor,
-      videoUrl: form.videoUrl ?? undefined,
+      videoUrl: form.videoUrl,
       isPublic: form.isPublic,
       muscles: form.muscles,
       equipment: form.equipment,

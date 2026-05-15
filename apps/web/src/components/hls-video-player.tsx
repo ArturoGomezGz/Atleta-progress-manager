@@ -16,6 +16,7 @@ export function HlsVideoPlayer({
   const videoRef = useRef<HTMLVideoElement>(null)
 
   const [ready,       setReady]       = useState(false)
+  const [loadError,   setLoadError]   = useState(false)
   const [speed,       setSpeed]       = useState(1)
   const [progress,    setProgress]    = useState(0)
   const [currentTime, setCurrentTime] = useState(0)
@@ -31,7 +32,8 @@ export function HlsVideoPlayer({
 
     if (video.canPlayType("application/vnd.apple.mpegurl")) {
       video.src = src
-      setReady(true)
+      video.addEventListener("error", () => setLoadError(true), { once: true })
+      video.addEventListener("loadedmetadata", () => setReady(true), { once: true })
       return
     }
 
@@ -42,6 +44,7 @@ export function HlsVideoPlayer({
       hls.loadSource(src)
       hls.attachMedia(video)
       hls.on(Hls.Events.MANIFEST_PARSED, () => setReady(true))
+      hls.on(Hls.Events.ERROR, (_e, data) => { if (data.fatal) setLoadError(true) })
     })
 
     return () => { hls?.destroy() }
@@ -92,8 +95,17 @@ export function HlsVideoPlayer({
   return (
     <div className={cn("relative bg-black overflow-hidden select-none", className)}>
 
+      {/* Error: video aún procesándose o no encontrado */}
+      {loadError && (
+        <div className="absolute inset-0 flex items-center justify-center z-10 bg-black">
+          <p className="text-xs text-white/40 text-center px-6 leading-relaxed">
+            Video no disponible.<br />Puede que aún esté procesándose —<br />intenta de nuevo en unos segundos.
+          </p>
+        </div>
+      )}
+
       {/* Spinner */}
-      {!ready && (
+      {!ready && !loadError && (
         <div className="absolute inset-0 flex items-center justify-center z-10">
           <div className="w-8 h-8 rounded-full border-2 border-white/20 border-t-white animate-spin" />
         </div>
