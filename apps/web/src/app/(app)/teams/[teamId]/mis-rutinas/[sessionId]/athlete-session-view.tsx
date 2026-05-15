@@ -676,28 +676,40 @@ function VideoModal({ name, videoUrl, onClose }: {
 }) {
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm px-4"
+      className="fixed inset-0 z-50 bg-black flex flex-col items-center justify-center"
       onClick={onClose}
     >
+      {/* Botón cerrar */}
+      <button
+        onClick={onClose}
+        className="absolute top-4 right-4 z-10 w-11 h-11 flex items-center justify-center rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+        aria-label="Cerrar video"
+      >
+        <XIcon className="w-5 h-5" />
+      </button>
+
+      {/* Video 9:16 — ocupa el máximo alto disponible */}
       <div
-        className="w-full max-w-2xl"
+        className="relative h-[90dvh] w-auto"
+        style={{ aspectRatio: "9 / 16" }}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between pb-3 px-1">
-          <p className="font-semibold text-sm text-white truncate pr-4">{name}</p>
-          <button onClick={onClose} className="p-2 text-white/70 hover:text-white rounded-xl cursor-pointer shrink-0">
-            <XIcon className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="aspect-video bg-black rounded-2xl overflow-hidden">
-          <iframe
-            src={`https://iframe.videodelivery.net/${videoUrl}`}
-            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          />
-        </div>
+        <iframe
+          src={`https://iframe.videodelivery.net/${videoUrl}`}
+          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
+          allowFullScreen
+          className="w-full h-full"
+        />
       </div>
+
+      {/* Nombre del ejercicio — sutil, debajo del video */}
+      <p
+        className="mt-3 text-xs text-white/40 uppercase tracking-widest"
+        style={{ fontFamily: "var(--font-barlow-condensed)" }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {name}
+      </p>
     </div>
   )
 }
