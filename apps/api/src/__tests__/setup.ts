@@ -1,5 +1,12 @@
 import { vi } from "vitest"
 
+// Resend lanza en el constructor si no hay API key — mock antes de que auth.ts se importe.
+vi.mock("resend", () => {
+  const mockSend = vi.fn().mockResolvedValue({ data: { id: "mock-email-id" }, error: null })
+  const Resend = vi.fn().mockImplementation(() => ({ emails: { send: mockSend } }))
+  return { Resend }
+})
+
 // Evitar llamadas reales a la API de Anthropic durante los tests.
 // Los tests de integración que invocan procedimientos que disparan reportes de IA
 // (sessions.complete, rms.setManual) seguirán funcionando porque el trigger
