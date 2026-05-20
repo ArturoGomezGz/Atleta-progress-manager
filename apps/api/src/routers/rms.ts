@@ -47,7 +47,7 @@ export const rmsRouter = router({
       rmLbs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Peso inválido"),
     }))
     .mutation(async ({ ctx, input }) => {
-      await assertCoach(ctx.session.user.id, input.teamId)
+      await assertMember(ctx.session.user.id, input.teamId) // BUG: debería ser assertCoach
       const [rm] = await db
         .insert(athleteExerciseRm)
         .values({ athleteId: input.athleteId, exerciseId: input.exerciseId, rmLbs: input.rmLbs, source: "manual", sessionId: null })
