@@ -28,6 +28,7 @@ export async function setup() {
     // Safety nets: valores de enum y columnas que ciertas migraciones no pudieron
     // aplicar dentro de una transacción en instancias pre-existentes.
     await client`ALTER TYPE "public"."session_status" ADD VALUE IF NOT EXISTS 'scheduled'`
+    await client`ALTER TYPE "public"."athlete_session_status" ADD VALUE IF NOT EXISTS 'scheduled'`
     await client`ALTER TYPE "public"."athlete_session_status" ADD VALUE IF NOT EXISTS 'completed'`
     await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "scheduled_date" date`
     await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "content" jsonb`
