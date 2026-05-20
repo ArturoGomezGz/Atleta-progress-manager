@@ -2,29 +2,36 @@
 
 import React from "react"
 import { trpc } from "@/lib/trpc/client"
-import { ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, PaletteIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
+import { CalendarIcon, ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, PaletteIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { AccountMenu } from "./account-menu"
 import { cn } from "@/lib/utils"
 
-type NavItem = { key: string; label: string; icon: React.ElementType; href?: string }
+type SubNavItem = { key: string; label: string; sections: string[]; hrefSuffix: string }
+type NavItem = { key: string; label: string; icon: React.ElementType; hrefSuffix?: string; children?: SubNavItem[] }
 
 const COACH_NAV: NavItem[] = [
-  { key: "equipo",      label: "Equipo",      icon: UsersIcon },
-  { key: "apariencia",  label: "Apariencia",  icon: PaletteIcon },
-  { key: "plantillas",  label: "Plantillas",  icon: ClipboardListIcon },
-  { key: "sesiones",    label: "Sesiones",    icon: DumbbellIcon },
-  { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
-  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon },
-  { key: "explorar",    label: "Explorar",    icon: CompassIcon },
+  { key: "equipo",      label: "Equipo",         icon: UsersIcon,    hrefSuffix: "equipo" },
+  { key: "apariencia",  label: "Apariencia",     icon: PaletteIcon,  hrefSuffix: "apariencia" },
+  {
+    key: "rutinas", label: "Rutinas", icon: CalendarIcon,
+    children: [
+      { key: "plantillas", label: "Plantillas", sections: ["plantillas"], hrefSuffix: "plantillas" },
+      { key: "sesiones",   label: "Sesiones",   sections: ["rutinas", "sesiones"], hrefSuffix: "rutinas" },
+    ],
+  },
+  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
+  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",    label: "Explorar",       icon: CompassIcon,  hrefSuffix: "explorar" },
 ]
 
 const ATHLETE_NAV: NavItem[] = [
-  { key: "progreso",    label: "Progreso",    icon: ChartBarIcon },
-  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon },
-  { key: "explorar",    label: "Explorar",    icon: CompassIcon },
+  { key: "mis-rutinas", label: "Mis rutinas",   icon: CalendarIcon, hrefSuffix: "mis-rutinas" },
+  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
+  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",    label: "Explorar",        icon: CompassIcon,  hrefSuffix: "explorar" },
 ]
 
 function extractTeamId(pathname: string): string | null {
@@ -55,6 +62,63 @@ function TeamLogo({ name, logoDataUrl }: { name: string; logoDataUrl?: string | 
   )
 }
 
+function NavGroup({
+  item, currentSection, effectiveTeamId, disabled,
+}: {
+  item: NavItem & { children: SubNavItem[] }
+  currentSection: string | null
+  effectiveTeamId: string | null
+  disabled: boolean
+}) {
+  const groupActive = item.children.some((c) => c.sections.includes(currentSection ?? ""))
+  const [open, setOpen] = useState(groupActive)
+  const Icon = item.icon
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer",
+          groupActive ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+        )}
+      >
+        <Icon className={cn("w-4 h-4 shrink-0", groupActive && "text-primary")} />
+        <span className="flex-1 text-left">{item.label}</span>
+        <ChevronDownIcon className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", open ? "rotate-180" : "")} />
+      </button>
+
+      {/* grid-rows animación: 0fr → 1fr sin medir altura con JS */}
+      <div className={cn("grid transition-[grid-template-rows] duration-200 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div className="overflow-hidden">
+          <div className="ml-3 pl-4 border-l border-border space-y-0.5 mt-0.5 pb-0.5">
+            {item.children.map((child) => {
+              const childHref   = effectiveTeamId ? `/teams/${effectiveTeamId}/${child.hrefSuffix}` : "#"
+              const childActive = child.sections.includes(currentSection ?? "")
+              return (
+                <Link
+                  key={child.key}
+                  href={childHref}
+                  aria-disabled={disabled}
+                  onClick={(e) => disabled && e.preventDefault()}
+                  className={cn(
+                    "relative flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-150",
+                    childActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                    disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
+                  )}
+                >
+                  {childActive && <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />}
+                  {child.label}
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
@@ -72,7 +136,7 @@ export function Sidebar() {
       setNewTeamName("")
       setTeamPickerOpen(false)
       setMobileOpen(false)
-      router.push(`/teams/${team.id}/sesiones`)
+      router.push(`/teams/${team.id}/equipo`)
     },
   })
 
@@ -87,7 +151,7 @@ export function Sidebar() {
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
-    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar") {
+    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar" && currentSection !== "mis-rutinas") {
       router.replace(`/teams/${currentTeamId}/progreso`)
     }
   }, [isAthlete, currentTeamId, currentSection, router])
@@ -142,7 +206,7 @@ export function Sidebar() {
               {teams?.map(({ team }) => (
                 <button
                   key={team.id}
-                  onClick={() => { router.push(`/teams/${team.id}/sesiones`); setTeamPickerOpen(false) }}
+                  onClick={() => { router.push(`/teams/${team.id}/equipo`); setTeamPickerOpen(false) }}
                   className={`w-full flex items-center gap-2.5 text-left px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors cursor-pointer ${
                     team.id === currentTeamId ? "font-medium text-primary" : "text-foreground"
                   }`}
@@ -185,13 +249,29 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 space-y-0.5">
-        {navItems.map(({ key, label, icon: Icon }) => {
-          const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${key}` : "#"
-          const isActive = currentSection === key
+        {navItems.map((item) => {
           const disabled = !effectiveTeamId
+          const Icon = item.icon
+
+          // Collapsible group with sub-items
+          if (item.children) {
+            return (
+              <NavGroup
+                key={item.key}
+                item={item as NavItem & { children: SubNavItem[] }}
+                currentSection={currentSection}
+                effectiveTeamId={effectiveTeamId}
+                disabled={disabled}
+              />
+            )
+          }
+
+          // Simple item
+          const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${item.hrefSuffix}` : "#"
+          const isActive = currentSection === item.hrefSuffix
           return (
             <Link
-              key={key}
+              key={item.key}
               href={href}
               aria-disabled={disabled}
               onClick={(e) => disabled && e.preventDefault()}
@@ -205,7 +285,7 @@ export function Sidebar() {
                 <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
               )}
               <Icon className={cn("w-4 h-4 shrink-0", isActive && "text-primary")} />
-              {label}
+              {item.label}
             </Link>
           )
         })}

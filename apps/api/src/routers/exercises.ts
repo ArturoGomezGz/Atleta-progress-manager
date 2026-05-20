@@ -359,6 +359,11 @@ export const exercisesRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
+      // Si el video cambió, borrar el anterior de Cloudflare
+      if (input.videoUrl !== undefined && ex.videoUrl && ex.videoUrl !== input.videoUrl) {
+        await deleteVideo(ex.videoUrl).catch(() => {})
+      }
+
       const [updated] = await db
         .update(exercise)
         .set({

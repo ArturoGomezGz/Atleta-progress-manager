@@ -2,8 +2,6 @@ import "dotenv/config"
 import { db } from "./client"
 import { equipment, muscle, muscleGroup } from "./schema"
 
-// ── Muscle groups + muscles ──────────────────────────────────────────────────
-
 const MUSCLE_GROUPS: {
   name: string
   bodyZone: "upper" | "lower" | "core"
@@ -51,8 +49,6 @@ const MUSCLE_GROUPS: {
   },
 ]
 
-// ── Equipment ────────────────────────────────────────────────────────────────
-
 const EQUIPMENT: string[] = [
   "Mancuernas",
   "Barra olímpica",
@@ -76,12 +72,9 @@ const EQUIPMENT: string[] = [
   "Trap bar",
 ]
 
-// ── Seed ─────────────────────────────────────────────────────────────────────
-
 export async function seedCatalogs() {
   console.log("⏳ Seeding catalogs...")
 
-  // Muscle groups + muscles (upsert by name to make it idempotent)
   for (const group of MUSCLE_GROUPS) {
     const [inserted] = await db
       .insert(muscleGroup)
@@ -97,7 +90,6 @@ export async function seedCatalogs() {
     }
   }
 
-  // Equipment (upsert by name + is_global)
   for (const name of EQUIPMENT) {
     await db
       .insert(equipment)
@@ -106,14 +98,4 @@ export async function seedCatalogs() {
   }
 
   console.log("✓ Catalogs seeded")
-  console.log(`  • ${MUSCLE_GROUPS.length} muscle groups`)
-  console.log(`  • ${MUSCLE_GROUPS.reduce((acc, g) => acc + g.muscles.length, 0)} muscles`)
-  console.log(`  • ${EQUIPMENT.length} equipment items`)
-}
-
-// Standalone runner
-if (require.main === module) {
-  seedCatalogs()
-    .catch((e) => { console.error(e); process.exit(1) })
-    .finally(() => process.exit(0))
 }

@@ -10,7 +10,6 @@
   "scripts": {
     "generate": "drizzle-kit generate",
     "migrate": "tsx src/migrate.ts",
-    "seed": "tsx --env-file=.env src/seed.ts",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {

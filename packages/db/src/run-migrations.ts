@@ -2,6 +2,7 @@ import { drizzle } from "drizzle-orm/postgres-js"
 import { migrate } from "drizzle-orm/postgres-js/migrator"
 import postgres from "postgres"
 import path from "path"
+import { seedDevUsers } from "./seed-dev-users"
 
 export async function runMigrations() {
   const client = postgres(process.env.DATABASE_URL!, { max: 1 })
@@ -44,23 +45,45 @@ export async function runMigrations() {
     WHERE is_global = true AND created_by IS NULL
   `
 
-  // Safety net: ensure routine_exercise FK uses CASCADE (migration 0015 may have
-  // run without statement-breakpoints and silently failed)
-  await client`
-    ALTER TABLE "routine_exercise"
-      DROP CONSTRAINT IF EXISTS "routine_exercise_exercise_id_exercise_id_fk"
-  `
-  await client`
-    ALTER TABLE "routine_exercise"
-      ADD CONSTRAINT "routine_exercise_exercise_id_exercise_id_fk"
-      FOREIGN KEY ("exercise_id") REFERENCES "exercise"("id") ON DELETE CASCADE
-  `
   // Safety net: add deleted_at column if migration 0016 hasn't applied yet
   await client`
     ALTER TABLE "exercise" ADD COLUMN IF NOT EXISTS "deleted_at" timestamp
   `
 
+  // Safety net: migración 0003 — schema híbrido de routine.content
+  await client`
+    ALTER TABLE "routine" ADD COLUMN IF NOT EXISTS "content" jsonb DEFAULT '{"v":1,"items":[]}'::jsonb NOT NULL
+  `
+
+  // Safety net: migración 0005 — agregar estado scheduled y scheduled_date
+  // ALTER TYPE ADD VALUE no puede correr dentro de una transacción, por eso Drizzle migrate falla.
+  // Lo ejecutamos aquí fuera de cualquier transacción para garantizar que el valor exista.
+  await client`ALTER TYPE "public"."session_status" ADD VALUE IF NOT EXISTS 'scheduled'`
+  await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "scheduled_date" date`
+
+  // Safety net: migración 0007 — agregar estado "completed" a athlete_session_status
+  await client`ALTER TYPE "public"."athlete_session_status" ADD VALUE IF NOT EXISTS 'completed'`
+
+  // Safety net: migración 0006 — snapshot JSON de rutina en sesión y preferencias de usuario
+  await client`ALTER TABLE "training_session" ADD COLUMN IF NOT EXISTS "content" jsonb`
+  await client`
+    CREATE TABLE IF NOT EXISTS "user_preferences" (
+      "user_id"              text     PRIMARY KEY NOT NULL REFERENCES "user"("id") ON DELETE CASCADE,
+      "rest_timer_enabled"   boolean  NOT NULL DEFAULT false,
+      "rest_timer_seconds"   integer  NOT NULL DEFAULT 90
+    )
+  `
+
+  // Safety net: migración 0004 — eliminar sistema antiguo de sesiones asignadas
+  await client`DROP TABLE IF EXISTS "athlete_set_completion"`
+  await client`DROP TABLE IF EXISTS "athlete_session_execution"`
+  await client`DROP TABLE IF EXISTS "assigned_session"`
+  await client`DROP TYPE IF EXISTS "public"."assigned_session_status"`
+  await client`DROP TYPE IF EXISTS "public"."athlete_session_execution_status"`
+
   console.log("✅ Tablas verificadas")
 
   await client.end()
+
+  await seedDevUsers()
 }

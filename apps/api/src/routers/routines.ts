@@ -1,31 +1,89 @@
 import { db } from "@atleta/db/client"
-import { exercise, routine, routineExercise, routineSetTarget } from "@atleta/db/schema"
+import { exercise, routine, type RoutineContent, type RoutineExerciseContent, type RoutineItemBlock, type RoutineItemExercise, type RoutineSet } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { asc, eq } from "drizzle-orm"
+import { and, eq, inArray } from "drizzle-orm"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
 
-const setTargetInput = z.object({
+// ─── Zod schemas ──────────────────────────────────────────────────────────────
+
+const routineSetSchema = z.object({
   setNumber: z.number().int().min(1),
-  targetReps: z.number().int().min(1).nullable(),
-  targetPercent: z.string().nullable(),
-})
+  setType:   z.enum(["reps", "time", "distance", "amrap"]),
+  targetReps:            z.number().int().positive().optional(),
+  targetDurationSeconds: z.number().int().positive().optional(),
+  targetDistanceMeters:  z.number().int().positive().optional(),
+  loadType:  z.enum(["fixed_kg", "percent_rm", "rpe"]).optional(),
+  loadValue: z.number().positive().optional(),
+}) satisfies z.ZodType<RoutineSet>
+
+const exerciseContentSchema = z.object({
+  id:          z.string().uuid(),
+  exerciseId:  z.string().uuid(),
+  order:       z.number().int().min(0),
+  tempo:       z.string().optional(),
+  restSeconds: z.number().int().positive().optional(),
+  goal:        z.enum(["strength","hypertrophy","endurance","power","cardio","recovery"]).optional(),
+  notes:       z.string().optional(),
+  sets:        z.array(routineSetSchema).min(1),
+}) satisfies z.ZodType<RoutineExerciseContent>
+
+const routineItemSchema = z.discriminatedUnion("type", [
+  exerciseContentSchema.extend({ type: z.literal("exercise") }) satisfies z.ZodType<RoutineItemExercise>,
+  z.object({
+    type:      z.literal("block"),
+    id:        z.string().uuid(),
+    order:     z.number().int().min(0),
+    name:      z.string().optional(),
+    rounds:    z.number().int().min(2),
+    exercises: z.array(exerciseContentSchema).min(1),
+  }) satisfies z.ZodType<RoutineItemBlock>,
+])
+
+const routineContentSchema = z.object({
+  v:     z.literal(1),
+  items: z.array(routineItemSchema),
+}) satisfies z.ZodType<RoutineContent>
+
+// ─── Helper ───────────────────────────────────────────────────────────────────
+
+function extractExerciseIds(content: RoutineContent): string[] {
+  return content.items.flatMap((item) =>
+    item.type === "exercise"
+      ? [item.exerciseId]
+      : item.exercises.map((e) => e.exerciseId),
+  )
+}
+
+// ─── Router ───────────────────────────────────────────────────────────────────
 
 export const routinesRouter = router({
   create: protectedProcedure
-    .input(z.object({ teamId: z.string().uuid(), name: z.string().min(1) }))
+    .input(z.object({
+      teamId:   z.string().uuid(),
+      name:     z.string().min(1),
+      category: z.enum(["evaluation", "training"]).default("training"),
+    }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
-      const [r] = await db.insert(routine).values({ ...input, createdBy: ctx.session.user.id }).returning()
+      const [r] = await db
+        .insert(routine)
+        .values({ ...input, createdBy: ctx.session.user.id, content: { v: 1, items: [] } })
+        .returning()
       return r
     }),
 
   list: protectedProcedure
-    .input(z.object({ teamId: z.string().uuid() }))
+    .input(z.object({
+      teamId:   z.string().uuid(),
+      category: z.enum(["evaluation", "training"]).optional(),
+    }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
-      return db.select().from(routine).where(eq(routine.teamId, input.teamId))
+      const conditions = [eq(routine.teamId, input.teamId)]
+      if (input.category) conditions.push(eq(routine.category, input.category))
+      return db.select().from(routine).where(and(...conditions))
     }),
 
   get: protectedProcedure
@@ -35,98 +93,48 @@ export const routinesRouter = router({
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertMember(ctx.session.user.id, r.teamId)
 
-      const exercises = await db
-        .select({
-          id: routineExercise.id,
-          exerciseId: routineExercise.exerciseId,
-          exerciseName: exercise.name,
-          order: routineExercise.order,
-        })
-        .from(routineExercise)
-        .innerJoin(exercise, eq(routineExercise.exerciseId, exercise.id))
-        .where(eq(routineExercise.routineId, r.id))
-        .orderBy(asc(routineExercise.order))
+      const exerciseIds = extractExerciseIds(r.content)
+      const exercises = exerciseIds.length > 0
+        ? await db
+            .select({ id: exercise.id, name: exercise.name })
+            .from(exercise)
+            .where(inArray(exercise.id, exerciseIds))
+        : []
 
-      const exercisesWithSets = await Promise.all(
-        exercises.map(async (ex) => {
-          const sets = await db
-            .select()
-            .from(routineSetTarget)
-            .where(eq(routineSetTarget.routineExerciseId, ex.id))
-            .orderBy(asc(routineSetTarget.setNumber))
-          return { ...ex, sets }
-        }),
-      )
-
-      return { ...r, exercises: exercisesWithSets }
+      const nameById = Object.fromEntries(exercises.map((e) => [e.id, e.name ?? "Ejercicio eliminado"]))
+      return { ...r, exerciseNames: nameById }
     }),
 
-  addExercise: protectedProcedure
-    .input(
-      z.object({
-        routineId: z.string().uuid(),
-        exerciseId: z.string().uuid(),
-        order: z.number().int().min(0),
-        sets: z.array(setTargetInput).min(1),
-      }),
-    )
+  updateContent: protectedProcedure
+    .input(z.object({
+      id:      z.string().uuid(),
+      content: routineContentSchema,
+    }))
     .mutation(async ({ ctx, input }) => {
-      const [r] = await db.select().from(routine).where(eq(routine.id, input.routineId)).limit(1)
+      const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
 
-      return db.transaction(async (tx) => {
-        const [re] = await tx
-          .insert(routineExercise)
-          .values({ routineId: input.routineId, exerciseId: input.exerciseId, order: input.order })
-          .returning()
-        await tx.insert(routineSetTarget).values(
-          input.sets.map((s) => ({
-            routineExerciseId: re.id,
-            setNumber: s.setNumber,
-            targetReps: s.targetReps,
-            targetPercent: s.targetPercent,
-          })),
-        )
-        return re
-      })
+      const [updated] = await db
+        .update(routine)
+        .set({ content: input.content, updatedAt: new Date() })
+        .where(eq(routine.id, input.id))
+        .returning()
+      return updated
     }),
 
-  updateSets: protectedProcedure
-    .input(
-      z.object({
-        routineExerciseId: z.string().uuid(),
-        sets: z.array(setTargetInput).min(1),
-      }),
-    )
+  rename: protectedProcedure
+    .input(z.object({ id: z.string().uuid(), name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const [re] = await db.select().from(routineExercise).where(eq(routineExercise.id, input.routineExerciseId)).limit(1)
-      if (!re) throw new TRPCError({ code: "NOT_FOUND" })
-      const [r] = await db.select().from(routine).where(eq(routine.id, re.routineId)).limit(1)
-      await assertCoach(ctx.session.user.id, r!.teamId)
-
-      await db.transaction(async (tx) => {
-        await tx.delete(routineSetTarget).where(eq(routineSetTarget.routineExerciseId, input.routineExerciseId))
-        await tx.insert(routineSetTarget).values(
-          input.sets.map((s) => ({
-            routineExerciseId: input.routineExerciseId,
-            setNumber: s.setNumber,
-            targetReps: s.targetReps,
-            targetPercent: s.targetPercent,
-          })),
-        )
-      })
-    }),
-
-  removeExercise: protectedProcedure
-    .input(z.object({ routineExerciseId: z.string().uuid() }))
-    .mutation(async ({ ctx, input }) => {
-      const [re] = await db.select().from(routineExercise).where(eq(routineExercise.id, input.routineExerciseId)).limit(1)
-      if (!re) throw new TRPCError({ code: "NOT_FOUND" })
-      const [r] = await db.select().from(routine).where(eq(routine.id, re.routineId)).limit(1)
+      const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
-      await db.delete(routineExercise).where(eq(routineExercise.id, input.routineExerciseId))
+      const [updated] = await db
+        .update(routine)
+        .set({ name: input.name, updatedAt: new Date() })
+        .where(eq(routine.id, input.id))
+        .returning()
+      return updated
     }),
 
   delete: protectedProcedure
@@ -136,15 +144,5 @@ export const routinesRouter = router({
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
       await db.delete(routine).where(eq(routine.id, input.id))
-    }),
-
-  rename: protectedProcedure
-    .input(z.object({ id: z.string().uuid(), name: z.string().min(1) }))
-    .mutation(async ({ ctx, input }) => {
-      const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
-      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
-      await assertCoach(ctx.session.user.id, r.teamId)
-      const [updated] = await db.update(routine).set({ name: input.name }).where(eq(routine.id, input.id)).returning()
-      return updated
     }),
 })

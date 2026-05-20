@@ -1,13 +1,13 @@
-import { integer, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { date, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
-import { routine, routineSetTarget } from "./routines"
+import { routine, type RoutineContent } from "./routines"
 import { team } from "./teams"
 
 export const rmSourceEnum = pgEnum("rm_source", ["auto", "manual"])
 
-export const sessionStatusEnum = pgEnum("session_status", ["active", "completed", "cancelled"])
-export const athleteSessionStatusEnum = pgEnum("athlete_session_status", ["active", "cancelled"])
+export const sessionStatusEnum = pgEnum("session_status", ["scheduled", "active", "completed", "cancelled"])
+export const athleteSessionStatusEnum = pgEnum("athlete_session_status", ["scheduled", "active", "cancelled", "completed"])
 export const setStatusEnum = pgEnum("set_status", ["valid", "invalid"])
 
 export const trainingSession = pgTable("training_session", {
@@ -20,7 +20,9 @@ export const trainingSession = pgTable("training_session", {
     .notNull()
     .references(() => user.id),
   startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+  scheduledDate: date("scheduled_date"),
   status: sessionStatusEnum("status").notNull().default("active"),
+  content: jsonb("content").$type<RoutineContent>(),
 })
 
 export const sessionExercise = pgTable("session_exercise", {
@@ -53,6 +55,9 @@ export const athleteSession = pgTable("athlete_session", {
     .notNull()
     .references(() => user.id),
   status: athleteSessionStatusEnum("status").notNull().default("active"),
+  startedAt: timestamp("started_at", { withTimezone: true }),
+  completedAt: timestamp("completed_at", { withTimezone: true }),
+  rpe: integer("rpe"),
 })
 
 export const athleteExerciseRm = pgTable("athlete_exercise_rm", {

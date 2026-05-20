@@ -44,11 +44,12 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
     return () => document.removeEventListener("mousedown", onMouseDown)
   }, [])
 
-  // Focus search when opening
+  // Focus search when opening — skip on touch devices to avoid keyboard pop-up
   useEffect(() => {
     if (open) {
       setSearch("")
-      setTimeout(() => searchRef.current?.focus(), 0)
+      const isTouch = typeof window !== "undefined" && ("ontouchstart" in window || navigator.maxTouchPoints > 0)
+      if (!isTouch) setTimeout(() => searchRef.current?.focus(), 0)
     }
   }, [open])
 
