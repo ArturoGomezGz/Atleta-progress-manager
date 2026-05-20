@@ -15,6 +15,7 @@ import { TRPCError } from "@trpc/server"
 import { and, asc, desc, eq, gt, gte, inArray, lte, SQL } from "drizzle-orm"
 import type { RoutineExerciseContent } from "@atleta/db/schema"
 import { z } from "zod"
+import { epley } from "../lib/epley"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
@@ -617,7 +618,7 @@ export const sessionsRouter = router({
         const rmMap = new Map<string, { athleteId: string; exerciseId: string; rmLbs: number }>()
         for (const s of validSets) {
           const key = `${s.athleteId}:${s.exerciseId}`
-          const estimated = Number(s.weightLbs) * (1 + s.reps / 30)
+          const estimated = epley(Number(s.weightLbs), s.reps)
           const existing = rmMap.get(key)
           if (!existing || estimated > existing.rmLbs) {
             rmMap.set(key, { athleteId: s.athleteId, exerciseId: s.exerciseId, rmLbs: estimated })
