@@ -22,7 +22,7 @@ export async function generateExerciseProgressReport(input: {
     })
     .join("\n")
 
-  const prompt = `Eres un asistente de entrenamiento deportivo. En 2 oraciones cortas en español y sin formato markdown, resume el progreso del atleta en "${exerciseName}": menciona el PR actual, ${pctChange ? `el cambio de ${pctChange}% respecto al registro anterior` : "que es el primer registro"}, y termina con una frase de aliento o advertencia según la tendencia.
+  const prompt = `Eres un entrenador deportivo experto. En 3 oraciones en español y sin formato markdown, analiza el progreso del atleta en "${exerciseName}": menciona el PR actual, ${pctChange ? `el cambio de ${pctChange}% respecto al registro anterior` : "que es el primer registro"}, y en la última oración incluye siempre una recomendación técnica concreta sobre cómo seguir progresando en este ejercicio con buena técnica (postura, respiración, progresión, etc.).
 
 Historial:
 ${historyLines}
