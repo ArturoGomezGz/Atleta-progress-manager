@@ -14,12 +14,12 @@ import {
 import { TRPCError } from "@trpc/server"
 import { and, asc, eq, ilike, inArray, isNull, or } from "drizzle-orm"
 import { z } from "zod"
-import Anthropic from "@anthropic-ai/sdk"
+import OpenAI from "openai"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach } from "./teams"
 import { createDirectUploadUrl, deleteVideo } from "../services/cloudflare-stream"
 
-const anthropic = new Anthropic()
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
@@ -458,52 +458,55 @@ export const exercisesRouter = router({
       const equipmentCatalogText = equipmentCatalog
         .map((e) => `${e.name} (${e.id})`).join(", ")
 
-      const response = await anthropic.messages.create({
-        model: "claude-haiku-4-5",
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
         max_tokens: 1024,
         tools: [{
-          name: "fill_exercise",
-          description: "Fill in the exercise metadata based on its name and description",
-          input_schema: {
-            type: "object" as const,
-            properties: {
-              difficulty: {
-                type: "string",
-                enum: ["beginner", "intermediate", "advanced"],
-                description: "Exercise difficulty level",
-              },
-              movementPatterns: {
-                type: "array",
-                items: { type: "string", enum: ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility"] },
-                description: "Movement patterns this exercise belongs to",
-              },
-              suitableFor: {
-                type: ["string", "null"],
-                enum: ["warmup", "evaluation", null],
-                description: "Special context: warmup, evaluation, or null for general",
-              },
-              muscles: {
-                type: "array",
-                items: {
-                  type: "object",
-                  properties: {
-                    muscleId: { type: "string", description: "UUID from the catalog" },
-                    role: { type: "string", enum: ["primary", "secondary"] },
-                  },
-                  required: ["muscleId", "role"],
+          type: "function",
+          function: {
+            name: "fill_exercise",
+            description: "Fill in the exercise metadata based on its name and description",
+            parameters: {
+              type: "object",
+              properties: {
+                difficulty: {
+                  type: "string",
+                  enum: ["beginner", "intermediate", "advanced"],
+                  description: "Exercise difficulty level",
                 },
-                description: "Muscles worked, using IDs from the catalog",
+                movementPatterns: {
+                  type: "array",
+                  items: { type: "string", enum: ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility"] },
+                  description: "Movement patterns this exercise belongs to",
+                },
+                suitableFor: {
+                  type: ["string", "null"],
+                  enum: ["warmup", "evaluation", null],
+                  description: "Special context: warmup, evaluation, or null for general",
+                },
+                muscles: {
+                  type: "array",
+                  items: {
+                    type: "object",
+                    properties: {
+                      muscleId: { type: "string", description: "UUID from the catalog" },
+                      role: { type: "string", enum: ["primary", "secondary"] },
+                    },
+                    required: ["muscleId", "role"],
+                  },
+                  description: "Muscles worked, using IDs from the catalog",
+                },
+                equipment: {
+                  type: "array",
+                  items: { type: "string", description: "Equipment UUID from the catalog" },
+                  description: "Equipment needed, using IDs from the catalog. Empty array if bodyweight.",
+                },
               },
-              equipment: {
-                type: "array",
-                items: { type: "string", description: "Equipment UUID from the catalog" },
-                description: "Equipment needed, using IDs from the catalog. Empty array if bodyweight.",
-              },
+              required: ["difficulty", "movementPatterns", "suitableFor", "muscles", "equipment"],
             },
-            required: ["difficulty", "movementPatterns", "suitableFor", "muscles", "equipment"],
           },
         }],
-        tool_choice: { type: "tool", name: "fill_exercise" },
+        tool_choice: { type: "function", function: { name: "fill_exercise" } },
         messages: [{
           role: "user",
           content: `You are a certified strength & conditioning coach. Fill in the metadata for this exercise.
@@ -525,12 +528,12 @@ Rules:
         }],
       })
 
-      const toolUse = response.content.find((b) => b.type === "tool_use")
-      if (!toolUse || toolUse.type !== "tool_use") {
+      const toolCall = response.choices[0]?.message.tool_calls?.[0]
+      if (!toolCall || toolCall.type !== "function") {
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No response from AI" })
       }
 
-      return toolUse.input as {
+      return JSON.parse(toolCall.function.arguments) as {
         difficulty: "beginner" | "intermediate" | "advanced"
         movementPatterns: string[]
         suitableFor: "warmup" | "evaluation" | null

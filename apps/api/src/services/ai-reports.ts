@@ -1,6 +1,6 @@
-import Anthropic from "@anthropic-ai/sdk"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
-const client = new Anthropic()
+const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
 
 export type RmEntry = { rmLbs: string; recordedAt: Date | string; source: "auto" | "manual" }
 
@@ -29,13 +29,11 @@ ${historyLines}
 
 PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateString("es", { dateStyle: "long" })})`
 
-  const message = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 120,
-    messages: [{ role: "user", content: prompt }],
+  const model = genai.getGenerativeModel({ model: "gemini-2.0-flash" })
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    generationConfig: { maxOutputTokens: 120 },
   })
 
-  const block = message.content[0]
-  if (block.type !== "text") throw new Error("Unexpected response from Anthropic")
-  return block.text.trim()
+  return result.response.text().trim()
 }
