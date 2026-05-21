@@ -32,7 +32,7 @@ PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateStri
   const model = genai.getGenerativeModel({ model: "gemini-2.5-flash" })
   const result = await model.generateContent({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
-    generationConfig: { maxOutputTokens: 250 },
+    generationConfig: { maxOutputTokens: 250, thinkingConfig: { thinkingBudget: 0 } },
   })
 
   return result.response.text().trim()
