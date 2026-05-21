@@ -29,7 +29,7 @@ ${historyLines}
 
 PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateString("es", { dateStyle: "long" })})`
 
-  const model = genai.getGenerativeModel({ model: "gemini-2.0-flash" })
+  const model = genai.getGenerativeModel({ model: "gemini-2.5-flash" })
   const result = await model.generateContent({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     generationConfig: { maxOutputTokens: 120 },

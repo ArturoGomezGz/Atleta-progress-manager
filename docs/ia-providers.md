@@ -6,7 +6,7 @@ Se utilizan dos proveedores de IA distintos según la naturaleza de cada tarea, 
 
 | Función | Proveedor | Modelo | Razón |
 |---|---|---|---|
-| Reportes de progreso | Google AI | `gemini-2.0-flash` | Tarea de texto libre simple — el modelo más barato disponible con buena calidad en español |
+| Reportes de progreso | Google AI | `gemini-2.5-flash` | Tarea de texto libre simple — el modelo más barato disponible con buena calidad en español |
 | Autofill de ejercicios | OpenAI | `gpt-4o-mini` | Requiere tool use con UUIDs exactos del catálogo — GPT-4o-mini es más preciso en structured outputs |
 
 ## Por qué no se usa un solo proveedor
@@ -23,7 +23,7 @@ Precios vigentes al momento de la decisión (mayo 2025):
 |---|---|---|
 | Precio | $0.80 / MTok | $4.00 / MTok |
 
-### Gemini 2.0 Flash — reportes
+### Gemini 2.5 Flash — reportes
 
 | | Input | Output |
 |---|---|---|
