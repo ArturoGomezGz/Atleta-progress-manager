@@ -10,14 +10,18 @@ import {
   BookmarkIcon,
   CheckCircle2Icon,
   ChevronDownIcon,
+  ChevronLeftIcon,
   ChevronRightIcon,
   ClipboardPasteIcon,
+  CompassIcon,
   FlameIcon,
   GlobeIcon,
   LoaderIcon,
   LockIcon,
   PencilIcon,
   PlusIcon,
+  RotateCcwIcon,
+  SearchIcon,
   SparklesIcon,
   Trash2Icon,
   UserIcon,
@@ -50,6 +54,8 @@ const PATTERN_LABELS: Record<string, string> = {
 
 const ALL_PATTERNS = ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core"] as const
 type Orientation = "horizontal" | "vertical"
+type ZoneKey = keyof typeof ZONE_CONFIG
+type FinderMode = "buscar" | "explorar"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -107,6 +113,19 @@ function deriveBodyZone(muscles: { bodyZone: "upper" | "lower" | "core"; role: s
   return "full_body" as const
 }
 
+// Filtros del modo "Buscar" — texto libre + zona + dificultad, aplicados a cualquier lista de ejercicios
+function matchesQuery(ex: EnrichedExercise, query: string) {
+  if (!query.trim()) return true
+  const q = query.trim().toLowerCase()
+  return ex.name.toLowerCase().includes(q) || (ex.description?.toLowerCase().includes(q) ?? false)
+}
+function matchesZone(ex: EnrichedExercise, zone: ZoneKey | null) {
+  return !zone || deriveBodyZone(ex.muscles) === zone
+}
+function matchesDifficulty(ex: EnrichedExercise, difficulty: EnrichedExercise["difficulty"]) {
+  return !difficulty || ex.difficulty === difficulty
+}
+
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EjerciciosPage() {
@@ -122,6 +141,13 @@ export default function EjerciciosPage() {
   const [form, setForm] = useState<FormState | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [detailExercise, setDetailExercise] = useState<ExerciseDetail | null>(null)
+
+  // Cómo se encuentra un ejercicio dentro de "Mis ejercicios": texto libre (Buscar)
+  // o un árbol de decisión de lo general a lo particular (Explorar)
+  const [finderMode, setFinderMode] = useState<FinderMode>("buscar")
+  const [query, setQuery] = useState("")
+  const [zoneFilter, setZoneFilter] = useState<ZoneKey | null>(null)
+  const [difficultyFilter, setDifficultyFilter] = useState<EnrichedExercise["difficulty"]>(null)
 
   const currentTeam = teams?.find((t) => t.team.id === teamId)
   const isCoach = currentTeam?.role === "coach"
@@ -246,51 +272,96 @@ export default function EjerciciosPage() {
 
       {/* Tab content */}
       {tab === "propios" && (
-        <div className="space-y-6">
-          <Section
-            title="Personales"
-            exercises={personal}
-            onEdit={openEdit}
-            onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
-            onOpen={setDetailExercise}
-          />
-          {currentTeam && (
-            <Section
-              title={currentTeam.team.name}
-              exercises={teamExercises}
-              onEdit={openEdit}
-              onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
-              onOpen={setDetailExercise}
-            />
-          )}
-          {personal.length === 0 && teamExercises.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              Aún no tienes ejercicios. Crea uno o explora el catálogo.
-            </p>
-          )}
-        </div>
+        personal.length === 0 && teamExercises.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            Aún no tienes ejercicios. Crea uno o explora el catálogo.
+          </p>
+        ) : (
+          <div className="space-y-5">
+            <FinderModeToggle mode={finderMode} onChange={setFinderMode} />
+
+            {finderMode === "buscar" ? (
+              <div className="space-y-5">
+                <SearchFilters
+                  query={query} onQuery={setQuery}
+                  zone={zoneFilter} onZone={setZoneFilter}
+                  difficulty={difficultyFilter} onDifficulty={setDifficultyFilter}
+                />
+                <Section
+                  title="Personales"
+                  exercises={personal.filter((ex) => matchesQuery(ex, query) && matchesZone(ex, zoneFilter) && matchesDifficulty(ex, difficultyFilter))}
+                  onEdit={openEdit}
+                  onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
+                  onOpen={setDetailExercise}
+                />
+                {currentTeam && (
+                  <Section
+                    title={currentTeam.team.name}
+                    exercises={teamExercises.filter((ex) => matchesQuery(ex, query) && matchesZone(ex, zoneFilter) && matchesDifficulty(ex, difficultyFilter))}
+                    onEdit={openEdit}
+                    onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
+                    onOpen={setDetailExercise}
+                  />
+                )}
+              </div>
+            ) : (
+              <DecisionExplorer
+                key="propios"
+                pool={[...personal, ...teamExercises]}
+                onEdit={openEdit}
+                onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
+                onOpen={setDetailExercise}
+              />
+            )}
+          </div>
+        )
       )}
 
       {tab === "guardados" && (
-        <div className="space-y-2">
-          {savedList.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">
-              No tienes ejercicios guardados. Explora el catálogo para guardar.
-            </p>
-          ) : (
-            savedList.map((ex) => (
-              <ExerciseCard
-                key={ex.id}
-                exercise={ex}
+        savedList.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">
+            No tienes ejercicios guardados. Explora el catálogo para guardar.
+          </p>
+        ) : (
+          <div className="space-y-5">
+            <FinderModeToggle mode={finderMode} onChange={setFinderMode} />
+
+            {finderMode === "buscar" ? (
+              <div className="space-y-3">
+                <SearchFilters
+                  query={query} onQuery={setQuery}
+                  zone={zoneFilter} onZone={setZoneFilter}
+                  difficulty={difficultyFilter} onDifficulty={setDifficultyFilter}
+                />
+                <div className="space-y-1.5">
+                  {savedList
+                    .filter((ex) => matchesQuery(ex, query) && matchesZone(ex, zoneFilter) && matchesDifficulty(ex, difficultyFilter))
+                    .map((ex) => (
+                      <ExerciseCard
+                        key={ex.id}
+                        exercise={ex}
+                        onEdit={() => {}}
+                        onDelete={() => {}}
+                        onOpen={setDetailExercise}
+                        savedBadge
+                        onUnsave={() => unsaveMutation.mutate({ exerciseId: ex.id })}
+                      />
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <DecisionExplorer
+                key="guardados"
+                pool={savedList}
                 onEdit={() => {}}
                 onDelete={() => {}}
                 onOpen={setDetailExercise}
                 savedBadge
-                onUnsave={() => unsaveMutation.mutate({ exerciseId: ex.id })}
+                onUnsave={(ex) => unsaveMutation.mutate({ exerciseId: ex.id })}
               />
-            ))
-          )}
-        </div>
+            )}
+          </div>
+        )
       )}
 
       {/* Sheet overlay */}
@@ -1223,6 +1294,276 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUn
           )}
         </div>
       </div>
+    </div>
+  )
+}
+
+// ── Buscar / Explorar toggle ───────────────────────────────────────────────────
+
+function FinderModeToggle({ mode, onChange }: { mode: FinderMode; onChange: (m: FinderMode) => void }) {
+  const options = [
+    { key: "buscar" as const, label: "Buscar", icon: SearchIcon },
+    { key: "explorar" as const, label: "Explorar", icon: CompassIcon },
+  ]
+  return (
+    <div className="flex gap-1 p-1 bg-muted/30 rounded-lg border border-border w-fit">
+      {options.map(({ key, label, icon: Icon }) => (
+        <button
+          key={key}
+          type="button"
+          onClick={() => onChange(key)}
+          className={cn(
+            "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md transition-colors cursor-pointer font-medium",
+            mode === key
+              ? "bg-background text-foreground shadow-sm border border-border"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <Icon className="w-3.5 h-3.5" />
+          {label}
+        </button>
+      ))}
+    </div>
+  )
+}
+
+// ── Modo Buscar: texto libre + chips de zona y dificultad ─────────────────────
+
+function SearchFilters({ query, onQuery, zone, onZone, difficulty, onDifficulty }: {
+  query: string
+  onQuery: (v: string) => void
+  zone: ZoneKey | null
+  onZone: (v: ZoneKey | null) => void
+  difficulty: EnrichedExercise["difficulty"]
+  onDifficulty: (v: EnrichedExercise["difficulty"]) => void
+}) {
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
+        <input
+          value={query}
+          onChange={(e) => onQuery(e.target.value)}
+          placeholder="Buscar por nombre..."
+          className="w-full pl-9 pr-8 py-2 text-sm border border-border rounded-lg bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        {query && (
+          <button
+            onClick={() => onQuery("")}
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+          >
+            <XIcon className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {([null, "upper", "lower", "core"] as const).map((z) => (
+          <button
+            key={String(z)}
+            type="button"
+            onClick={() => onZone(z)}
+            className={cn(
+              "text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer",
+              zone === z ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {z === null ? "Todos" : ZONE_CONFIG[z].label}
+          </button>
+        ))}
+        {(["beginner", "intermediate", "advanced"] as const).map((d) => (
+          <button
+            key={d}
+            type="button"
+            onClick={() => onDifficulty(difficulty === d ? null : d)}
+            className={cn(
+              "text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer",
+              difficulty === d ? `${DIFFICULTY_CONFIG[d].pill} font-medium` : "border-border text-muted-foreground hover:text-foreground",
+            )}
+          >
+            {DIFFICULTY_CONFIG[d].label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// ── Modo Explorar: árbol de decisión de lo general a lo particular ────────────
+// Zona corporal → patrón de movimiento → músculo específico → resultados.
+// Cada paso solo muestra las opciones presentes en lo ya filtrado, con su conteo,
+// y siempre se puede "ver sin elegir esto" para saltar el paso.
+
+function buildMuscleGroupOptions(pool: EnrichedExercise[]) {
+  const map = new Map<string, { key: string; label: string; count: number }>()
+  for (const ex of pool) {
+    const seen = new Set<string>()
+    for (const m of ex.muscles) {
+      if (seen.has(m.muscleGroupId)) continue
+      seen.add(m.muscleGroupId)
+      const entry = map.get(m.muscleGroupId) ?? { key: m.muscleGroupId, label: m.muscleGroupName, count: 0 }
+      entry.count++
+      map.set(m.muscleGroupId, entry)
+    }
+  }
+  return [...map.values()].sort((a, b) => b.count - a.count)
+}
+
+function PickStep({ title, options, total, onPick, onPickAll }: {
+  title: string
+  options: { key: string; label: string; count: number; accent?: string }[]
+  total: number
+  onPick: (key: string, label: string) => void
+  onPickAll: () => void
+}) {
+  return (
+    <div className="space-y-3">
+      <p className="text-sm font-medium">{title}</p>
+      <div className="grid grid-cols-2 gap-2">
+        <button
+          type="button"
+          onClick={onPickAll}
+          className="col-span-2 flex items-center justify-center gap-2 min-h-[48px] px-4 py-3 rounded-xl border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors cursor-pointer"
+        >
+          Ver los {total} sin elegir esto
+        </button>
+        {options.map((o) => (
+          <button
+            key={o.key}
+            type="button"
+            onClick={() => onPick(o.key, o.label)}
+            className="flex items-center gap-2.5 min-h-[56px] px-4 py-3 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer text-left"
+          >
+            {o.accent && <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", o.accent)} />}
+            <span className="flex-1 text-sm font-medium">{o.label}</span>
+            <span className="text-xs text-muted-foreground tabular-nums shrink-0">{o.count}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function DecisionExplorer({ pool, onEdit, onDelete, onOpen, savedBadge, onUnsave }: {
+  pool: EnrichedExercise[]
+  onEdit: (ex: EnrichedExercise) => void
+  onDelete: (ex: EnrichedExercise) => void
+  onOpen: (ex: EnrichedExercise) => void
+  savedBadge?: boolean
+  onUnsave?: (ex: EnrichedExercise) => void
+}) {
+  // null = sin decidir todavía (muestra el paso), "all" = decidido saltar, si no: la clave elegida
+  const [zone, setZone] = useState<string | null>(null)
+  const [pattern, setPattern] = useState<string | null>(null)
+  const [muscleGroup, setMuscleGroup] = useState<{ id: string; label: string } | "all" | null>(null)
+
+  const afterZone = zone && zone !== "all" ? pool.filter((ex) => deriveBodyZone(ex.muscles) === zone) : pool
+  const afterPattern = pattern && pattern !== "all" ? afterZone.filter((ex) => ex.movementPatterns.includes(pattern)) : afterZone
+  const results = muscleGroup && muscleGroup !== "all"
+    ? afterPattern.filter((ex) => ex.muscles.some((m) => m.muscleGroupId === muscleGroup.id))
+    : afterPattern
+
+  const step: "zone" | "pattern" | "muscle" | "results" =
+    zone === null ? "zone" : pattern === null ? "pattern" : muscleGroup === null ? "muscle" : "results"
+
+  function reset() { setZone(null); setPattern(null); setMuscleGroup(null) }
+  function backToZone() { setZone(null); setPattern(null); setMuscleGroup(null) }
+  function backToPattern() { setPattern(null); setMuscleGroup(null) }
+  function backToMuscle() { setMuscleGroup(null) }
+
+  const crumbs: { label: string; onClick: () => void }[] = []
+  if (zone !== null) crumbs.push({ label: zone === "all" ? "Todos" : ZONE_CONFIG[zone as ZoneKey]?.label ?? zone, onClick: backToZone })
+  if (pattern !== null) crumbs.push({ label: pattern === "all" ? "Todos" : PATTERN_LABELS[pattern] ?? pattern, onClick: backToPattern })
+  if (muscleGroup !== null) crumbs.push({ label: muscleGroup === "all" ? "Todos" : muscleGroup.label, onClick: backToMuscle })
+
+  return (
+    <div className="space-y-4">
+      {crumbs.length > 0 && (
+        <div className="flex items-center gap-1.5 flex-wrap text-xs">
+          <button onClick={reset} className="flex items-center gap-1 text-muted-foreground hover:text-foreground cursor-pointer shrink-0">
+            <RotateCcwIcon className="w-3 h-3" /> Empezar de nuevo
+          </button>
+          {crumbs.map((c, i) => (
+            <span key={i} className="flex items-center gap-1.5">
+              <ChevronRightIcon className="w-3 h-3 text-muted-foreground/50 shrink-0" />
+              <button
+                onClick={c.onClick}
+                className="px-2 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-medium cursor-pointer hover:bg-primary/10"
+              >
+                {c.label}
+              </button>
+            </span>
+          ))}
+        </div>
+      )}
+
+      {step === "zone" && (
+        <PickStep
+          title="¿Qué parte del cuerpo quieres trabajar?"
+          total={pool.length}
+          options={(["upper", "lower", "core", "full_body"] as ZoneKey[])
+            .map((z) => ({
+              key: z,
+              label: ZONE_CONFIG[z].label,
+              count: pool.filter((ex) => deriveBodyZone(ex.muscles) === z).length,
+              accent: ZONE_CONFIG[z].bar,
+            }))
+            .filter((o) => o.count > 0)}
+          onPick={(key) => setZone(key)}
+          onPickAll={() => setZone("all")}
+        />
+      )}
+
+      {step === "pattern" && (
+        <PickStep
+          title="¿Qué tipo de movimiento?"
+          total={afterZone.length}
+          options={ALL_PATTERNS
+            .map((p) => ({ key: p, label: PATTERN_LABELS[p], count: afterZone.filter((ex) => ex.movementPatterns.includes(p)).length }))
+            .filter((o) => o.count > 0)}
+          onPick={(key) => setPattern(key)}
+          onPickAll={() => setPattern("all")}
+        />
+      )}
+
+      {step === "muscle" && (
+        <PickStep
+          title="¿Algún músculo en particular?"
+          total={afterPattern.length}
+          options={buildMuscleGroupOptions(afterPattern)}
+          onPick={(key, label) => setMuscleGroup({ id: key, label })}
+          onPickAll={() => setMuscleGroup("all")}
+        />
+      )}
+
+      {step === "results" && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              {results.length} {results.length === 1 ? "ejercicio" : "ejercicios"}
+            </p>
+            <button onClick={backToMuscle} className="text-xs text-primary hover:underline cursor-pointer flex items-center gap-1">
+              <ChevronLeftIcon className="w-3.5 h-3.5" /> Afinar más
+            </button>
+          </div>
+          {results.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">Sin ejercicios con esta combinación.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {results.map((ex) => (
+                <ExerciseCard
+                  key={ex.id}
+                  exercise={ex}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onOpen={onOpen}
+                  savedBadge={savedBadge}
+                  onUnsave={savedBadge ? () => onUnsave?.(ex) : undefined}
+                />
+              ))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }
