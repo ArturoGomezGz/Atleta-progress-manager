@@ -1,6 +1,7 @@
 "use client"
 
 import { ExerciseDetailSheet, type ExerciseDetail } from "@/components/exercise-detail-sheet"
+import { YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
@@ -37,7 +38,7 @@ const ZONE_CONFIG = {
 
 const PATTERN_LABELS: Record<string, string> = {
   push: "Empuje", pull: "Jalón", squat: "Sentadilla", hinge: "Bisagra",
-  carry: "Cargada", rotation: "Rotación", isometric: "Isométrico", mobility: "Movilidad",
+  carry: "Cargada", rotation: "Rotación", isometric: "Isométrico", mobility: "Movilidad", core: "Core",
 }
 
 function deriveBodyZone(muscles: { bodyZone: "upper" | "lower" | "core"; role: string }[]) {
@@ -57,7 +58,8 @@ type PublicExercise = {
   movementPatterns: string[]
   suitableFor: "warmup" | "evaluation" | null
   contraindications: string | null
-  videoUrl: string | null | undefined
+  youtubeVideoId: string | null
+  videoOrientation: "horizontal" | "vertical"
   isSaved: boolean
   authorName: string | null
   muscles: { muscleId: string; muscleName: string; role: string; muscleGroupId: string; muscleGroupName: string; bodyZone: "upper" | "lower" | "core" }[]
@@ -200,6 +202,15 @@ function ExploreCard({ exercise: ex, onOpen, onToggleSave, isMutating }: {
     >
       <div className="flex">
         <div className={cn("w-1 shrink-0", zoneConf?.bar ?? "bg-border")} />
+        {ex.youtubeVideoId && (
+          <YouTubeThumb
+            videoId={ex.youtubeVideoId}
+            alt={ex.name}
+            orientation={ex.videoOrientation}
+            showPlay
+            className="w-28 sm:w-36 aspect-video shrink-0 self-center ml-3 rounded-lg"
+          />
+        )}
         <div className="flex-1 min-w-0 px-4 py-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">

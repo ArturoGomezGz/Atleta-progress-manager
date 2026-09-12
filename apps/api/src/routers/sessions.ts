@@ -13,13 +13,32 @@ import {
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
 import { and, asc, desc, eq, gt, gte, inArray, lte, SQL } from "drizzle-orm"
-import type { RoutineExerciseContent } from "@atleta/db/schema"
+import type { RoutineContent, RoutineExerciseContent } from "@atleta/db/schema"
 import { z } from "zod"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
 
 
+
+type FlatExercise = RoutineExerciseContent & { blockName: string | null; rounds: number }
+
+/**
+ * Aplana el contenido de una rutina en el orden en que el atleta lo ejecuta.
+ * Los ejercicios de un circuito conservan el nombre del bloque y sus rondas.
+ * La posición en esta lista es el `order` de session_exercise.
+ */
+function flattenContent(content: RoutineContent | null | undefined): FlatExercise[] {
+  return [...(content?.items ?? [])]
+    .sort((a, b) => a.order - b.order)
+    .flatMap<FlatExercise>((item) =>
+      item.type === "exercise"
+        ? [{ ...item, blockName: null, rounds: 1 }]
+        : [...item.exercises]
+            .sort((a, b) => a.order - b.order)
+            .map((ex) => ({ ...ex, blockName: item.name ?? "Circuito", rounds: item.rounds })),
+    )
+}
 
 async function getRoutineCategory(routineId: string | null): Promise<"evaluation" | "training" | null> {
   if (!routineId) return null
@@ -81,7 +100,10 @@ export const sessionsRouter = router({
           id: sessionExercise.id,
           exerciseId: sessionExercise.exerciseId,
           exerciseName: exercise.name,
-          videoUrl: exercise.videoUrl,
+          description: exercise.description,
+          youtubeVideoId: exercise.youtubeVideoId,
+          youtubeTitle: exercise.youtubeTitle,
+          videoOrientation: exercise.videoOrientation,
           order: sessionExercise.order,
         })
         .from(sessionExercise)
@@ -93,17 +115,11 @@ export const sessionsRouter = router({
         return { id: session.id, status: session.status, startedAt: session.startedAt, routineName: r?.name ?? null, exercises: [] as never[] }
       }
 
-      // Construir mapa de metadata desde el snapshot JSON (tempo, restSeconds, etc.)
-      const contentItems = session.content?.items ?? []
-      const exerciseMeta = new Map<string, { tempo?: string; restSeconds?: number; notes?: string }>()
-      for (const item of contentItems) {
-        if (item.type === "exercise") {
-          exerciseMeta.set(item.exerciseId, { tempo: item.tempo, restSeconds: item.restSeconds, notes: item.notes })
-        } else {
-          for (const ex of item.exercises) {
-            exerciseMeta.set(ex.exerciseId, { tempo: ex.tempo, restSeconds: ex.restSeconds, notes: ex.notes })
-          }
-        }
+      // Metadata desde el snapshot JSON (tempo, descanso, notas, circuito) por posición
+      const flat = flattenContent(session.content)
+      const metaFor = (order: number, exerciseId: string) => {
+        const m = flat[order]
+        return m && m.exerciseId === exerciseId ? m : null
       }
 
       const exerciseIds = exercises.map((e) => e.id)
@@ -125,12 +141,14 @@ export const sessionsRouter = router({
         startedAt: session.startedAt,
         routineName: r?.name ?? null,
         exercises: exercises.map((ex) => {
-          const meta = exerciseMeta.get(ex.exerciseId) ?? {}
+          const meta = metaFor(ex.order, ex.exerciseId)
           return {
             ...ex,
-            tempo: meta.tempo ?? null,
-            restSeconds: meta.restSeconds ?? null,
-            notes: meta.notes ?? null,
+            tempo: meta?.tempo ?? null,
+            restSeconds: meta?.restSeconds ?? null,
+            notes: meta?.notes ?? null,
+            blockName: meta?.blockName ?? null,
+            rounds: meta?.rounds ?? 1,
             targets: targets.filter((t) => t.sessionExerciseId === ex.id),
             sets: mySets.filter((s) => s.sessionExerciseId === ex.id),
           }
@@ -175,10 +193,8 @@ export const sessionsRouter = router({
       const [r] = await db.select().from(routine).where(eq(routine.id, input.routineId)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
 
-      // Aplanar ejercicios del content (ejercicios individuales + ejercicios dentro de bloques)
-      const allExercises: RoutineExerciseContent[] = r.content.items.flatMap((item) =>
-        item.type === "exercise" ? [item] : item.exercises,
-      ).sort((a, b) => a.order - b.order)
+      // Aplanar ejercicios del content (ejercicios individuales + ejercicios dentro de circuitos)
+      const allExercises = flattenContent(r.content)
 
       const today = new Date().toISOString().split("T")[0]
       const isScheduled = input.scheduledDate != null && input.scheduledDate > today
@@ -197,16 +213,20 @@ export const sessionsRouter = router({
           .returning()
 
         // Snapshot exercises + set targets desde el content JSON
-        for (const ex of allExercises) {
+        for (const [position, ex] of allExercises.entries()) {
           const [se] = await tx
             .insert(sessionExercise)
-            .values({ sessionId: session.id, exerciseId: ex.exerciseId, order: ex.order })
+            .values({ sessionId: session.id, exerciseId: ex.exerciseId, order: position })
             .returning()
 
-          const targets = ex.sets.map((s) => ({
+          // En un circuito, cada ronda repite las series del ejercicio
+          const expanded = Array.from({ length: ex.rounds }, () => ex.sets).flat()
+          const targets = expanded.map((s, i) => ({
             sessionExerciseId: se.id,
-            setNumber: s.setNumber,
-            targetReps: s.targetReps ?? null,
+            setNumber: i + 1,
+            setType: s.setType,
+            targetReps: s.setType === "time" ? null : s.targetReps ?? null,
+            targetDurationSeconds: s.setType === "time" ? s.targetDurationSeconds ?? null : null,
             targetPercent: s.loadType === "percent_rm" && s.loadValue != null
               ? String(s.loadValue)
               : null,
@@ -244,6 +264,8 @@ export const sessionsRouter = router({
           id: sessionExercise.id,
           exerciseId: sessionExercise.exerciseId,
           exerciseName: exercise.name,
+          youtubeVideoId: exercise.youtubeVideoId,
+          videoOrientation: exercise.videoOrientation,
           order: sessionExercise.order,
         })
         .from(sessionExercise)

@@ -42,7 +42,9 @@ export const sessionSetTarget = pgTable("session_set_target", {
     .notNull()
     .references(() => sessionExercise.id, { onDelete: "cascade" }),
   setNumber: integer("set_number").notNull(),
+  setType: text("set_type").notNull().default("reps"),
   targetReps: integer("target_reps"),
+  targetDurationSeconds: integer("target_duration_seconds"),
   targetPercent: numeric("target_percent", { precision: 5, scale: 2 }),
 })
 

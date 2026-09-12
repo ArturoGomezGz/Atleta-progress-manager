@@ -1,0 +1,2347 @@
+[
+  {
+    "name": "Push Ups",
+    "name_es": "Flexiones",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "wfTgTs8YqUc",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión clásica en el suelo con cuerpo en línea recta; base del empuje horizontal.",
+    "source_url": "https://www.calixpert.com/exercises/push-up",
+    "youtube_title": "How To Do Push Ups"
+  },
+  {
+    "name": "Knee Push Up",
+    "name_es": "Flexiones de rodillas",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "uam7Z8aVO4w",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión apoyando rodillas para reducir la carga; regresión de la flexión clásica.",
+    "source_url": "https://www.calixpert.com/exercises/knee-push-ups",
+    "youtube_title": "How To Do Knee Push Ups"
+  },
+  {
+    "name": "Wall Push Ups",
+    "name_es": "Flexiones en pared",
+    "category": "pull",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "pre-beginner",
+    "equipment": [
+      "pared"
+    ],
+    "youtube_id": "pxLvvuAvjzo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión de pie contra la pared; nivel de inicio absoluto para empuje.",
+    "source_url": "https://www.calixpert.com/exercises/wall-push-ups",
+    "youtube_title": "How To Do Wall Push Ups"
+  },
+  {
+    "name": "Hip Height Incline Push ups",
+    "name_es": "Flexiones inclinadas (altura de cadera)",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "pared",
+      "suelo"
+    ],
+    "youtube_id": "OQfIpU_xC5s",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con manos elevadas a la altura de la cadera para reducir carga.",
+    "source_url": "https://www.calixpert.com/exercises/hip-height-incline-push-ups",
+    "youtube_title": "How To Do Hip Height Incline Push Ups"
+  },
+  {
+    "name": "Knee Height Incline Push Ups",
+    "name_es": "Flexiones inclinadas (altura de rodilla)",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "nptMG5hV90c",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con manos en superficie a la altura de la rodilla.",
+    "source_url": "https://www.calixpert.com/exercises/knee-height-incline-push-ups",
+    "youtube_title": "How To Do Knee Height Incline Push Ups"
+  },
+  {
+    "name": "Negative Push Up",
+    "name_es": "Flexión negativa",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "vyOLKo7PizM",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Descenso lento y controlado de la flexión para ganar fuerza excéntrica.",
+    "source_url": "https://www.calixpert.com/exercises/negative-push-up",
+    "youtube_title": "How To Do Negative Push Ups"
+  },
+  {
+    "name": "Diamond Push Ups",
+    "name_es": "Flexiones diamante",
+    "category": "push",
+    "muscle_groups": [
+      "triceps",
+      "chest",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "cINBeEWEV9s",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con manos juntas formando un diamante; enfatiza tríceps.",
+    "source_url": "https://www.calixpert.com/exercises/diamond-push-ups",
+    "youtube_title": "How To Do Diamond Push Ups"
+  },
+  {
+    "name": "Wide Push Ups",
+    "name_es": "Flexiones abiertas",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "front-deltoid",
+      "triceps",
+      "serratus",
+      "abs"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "6dZ71O7BzVQ",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con agarre amplio; mayor énfasis en pecho.",
+    "source_url": "https://www.calixpert.com/exercises/wide-push-ups",
+    "youtube_title": "How To Do Wide Push Ups"
+  },
+  {
+    "name": "Narrow Push Ups",
+    "name_es": "Flexiones cerradas",
+    "category": "push",
+    "muscle_groups": [
+      "triceps",
+      "chest",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "6e6uUJ8QzXw",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con manos a la anchura de hombros o menos; más tríceps.",
+    "source_url": "https://www.calixpert.com/exercises/narrow-push-ups",
+    "youtube_title": "How To Do Narrow Push Ups"
+  },
+  {
+    "name": "Decline Push Ups",
+    "name_es": "Flexiones declinadas",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "front-deltoid",
+      "triceps",
+      "abs",
+      "serratus"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "N5Hel1XfCy0",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con pies elevados; más carga en hombro y pecho superior.",
+    "source_url": "https://www.calixpert.com/exercises/decline-push-ups",
+    "youtube_title": "How To Do Decline Push Ups"
+  },
+  {
+    "name": "Archer Push Ups",
+    "name_es": "Flexiones arquero",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "serratus",
+      "abs",
+      "obliques"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "OVRBYrjszy4",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión desplazando el peso a un brazo mientras el otro se extiende.",
+    "source_url": "https://www.calixpert.com/exercises/archer-push-ups",
+    "youtube_title": "How To Do Archer Push Ups"
+  },
+  {
+    "name": "Pseudo Push Ups",
+    "name_es": "Pseudo flexiones de planche",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "front-deltoid",
+      "triceps",
+      "abs",
+      "serratus",
+      "forearms"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "xhpwupEd4e8",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con manos a la altura de la cadera y hombros adelantados; preparación para planche.",
+    "source_url": "https://www.calixpert.com/exercises/pseudo-push-ups",
+    "youtube_title": "How To Do Pseudo Push Ups"
+  },
+  {
+    "name": "Clap Push Ups",
+    "name_es": "Flexiones con palmada",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus",
+      "forearms"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "dEB7ZXdm410",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión explosiva despegando las manos para aplaudir.",
+    "source_url": "https://www.calixpert.com/exercises/clap-push-ups",
+    "youtube_title": "How To Do Clap Push Ups"
+  },
+  {
+    "name": "Pike Push Ups",
+    "name_es": "Flexiones pica",
+    "category": "push",
+    "muscle_groups": [
+      "front-deltoid",
+      "triceps",
+      "upper-back",
+      "traps",
+      "serratus",
+      "abs"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo",
+      "pared"
+    ],
+    "youtube_id": "226O2XfevJ0",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con cadera elevada en V invertida; empuje vertical para hombros.",
+    "source_url": "https://www.calixpert.com/exercises/pike-push-ups",
+    "youtube_title": "How To Do Pike Push Ups"
+  },
+  {
+    "name": "Incline Pike Push Ups",
+    "name_es": "Flexiones pica inclinadas",
+    "category": "push",
+    "muscle_groups": [
+      "front-deltoid",
+      "triceps",
+      "upper-back",
+      "serratus",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "pared"
+    ],
+    "youtube_id": "HLjASz4wexo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión pica con manos elevadas; regresión para hombros.",
+    "source_url": "https://www.calixpert.com/exercises/incline-pike-push-ups",
+    "youtube_title": "How To Do Incline Pike Push Ups"
+  },
+  {
+    "name": "90 Degree Handstand Push Ups",
+    "name_es": "Flexiones en parada de manos a 90 grados",
+    "category": "push",
+    "muscle_groups": [
+      "front-deltoid",
+      "triceps",
+      "chest",
+      "abs",
+      "traps",
+      "serratus",
+      "upper-back",
+      "lower-back",
+      "glutes"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "paralelas bajas",
+      "suelo"
+    ],
+    "youtube_id": "XiT4FBHY_v8",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión en parada de manos bajando hasta codos a 90 grados.",
+    "source_url": "https://www.calixpert.com/exercises/90-degree-handstand-push-ups",
+    "youtube_title": "How To Do 90 Degree Handstand Push Ups"
+  },
+  {
+    "name": "Shoulder Tap Push Ups",
+    "name_es": "Flexiones con toque de hombro",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "obliques",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "ZVlxdH2r7Vo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión alternando toques de hombro; añade antirrotación del core.",
+    "source_url": "https://www.calixpert.com/exercises/shoulder-tap-push-ups",
+    "youtube_title": "How To Do Shoulder Taps Push Ups"
+  },
+  {
+    "name": "Ring Push Ups",
+    "name_es": "Flexiones en anillas",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "anillas"
+    ],
+    "youtube_id": "J6TpAoHj92A",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con manos en anillas; exige estabilidad de hombro.",
+    "source_url": "https://www.calixpert.com/exercises/ring-push-ups",
+    "youtube_title": "How To Do Ring Push Ups"
+  },
+  {
+    "name": "Tiger Push Ups",
+    "name_es": "Flexiones tigre",
+    "category": "push",
+    "muscle_groups": [
+      "triceps",
+      "chest",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "-Y3hHxuD56c",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Transición de apoyo en antebrazos a brazos extendidos; tríceps intenso.",
+    "source_url": "https://www.calixpert.com/exercises/tiger-push-ups",
+    "youtube_title": "How To Do Tiger Push Ups"
+  },
+  {
+    "name": "Russian Push Ups",
+    "name_es": "Flexiones rusas",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "L1mh75FRtQM",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Flexión con transición a antebrazos y regreso; tríceps y hombro.",
+    "source_url": "https://www.calixpert.com/exercises/russian-push-ups",
+    "youtube_title": "How To Do Russian Push Ups"
+  },
+  {
+    "name": "Scapula Push up",
+    "name_es": "Flexiones escapulares",
+    "category": "push",
+    "muscle_groups": [
+      "serratus",
+      "traps",
+      "abs",
+      "front-deltoid",
+      "triceps"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "LolK1AbFpMQ",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Protracción y retracción escapular en posición de plancha, sin doblar codos.",
+    "source_url": "https://www.calixpert.com/exercises/scapula-push-up",
+    "youtube_title": "How To Do Scapula Push Ups"
+  },
+  {
+    "name": "Dips",
+    "name_es": "Fondos en paralelas",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "paralelas"
+    ],
+    "youtube_id": "nigZNnJAQrY",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Descenso y empuje en barras paralelas; pecho, tríceps y hombro.",
+    "source_url": "https://www.calixpert.com/exercises/dips",
+    "youtube_title": "How To Do Dips"
+  },
+  {
+    "name": "Assisted Dips",
+    "name_es": "Fondos asistidos",
+    "category": "push",
+    "muscle_groups": [
+      "triceps",
+      "chest",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "paralelas",
+      "banda de resistencia"
+    ],
+    "youtube_id": "ld4f2iJ2_us",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Fondos con banda de resistencia para reducir carga.",
+    "source_url": "https://www.calixpert.com/exercises/assisted-dips",
+    "youtube_title": "How To Do Assisted Dips"
+  },
+  {
+    "name": "Negative Dips",
+    "name_es": "Fondos negativos",
+    "category": "push",
+    "muscle_groups": [
+      "triceps",
+      "chest",
+      "front-deltoid",
+      "abs",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "paralelas"
+    ],
+    "youtube_id": "y9yrMvmS-yU",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Descenso lento en paralelas para construir fuerza de fondos.",
+    "source_url": "https://www.calixpert.com/exercises/negative-dips",
+    "youtube_title": "How To Do Negative Dips"
+  },
+  {
+    "name": "Dip Support Hold",
+    "name_es": "Soporte en paralelas",
+    "category": "push",
+    "muscle_groups": [
+      "triceps",
+      "front-deltoid",
+      "chest",
+      "abs",
+      "serratus",
+      "traps",
+      "forearms"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "paralelas"
+    ],
+    "youtube_id": "_vPttkLHZMw",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Mantener el cuerpo arriba con brazos extendidos en paralelas.",
+    "source_url": "https://www.calixpert.com/exercises/dip-support-hold",
+    "youtube_title": "How To Do Dip Support Hold"
+  },
+  {
+    "name": "Chair Dips With Bent Knees",
+    "name_es": "Fondos en silla (rodillas flexionadas)",
+    "category": "push",
+    "muscle_groups": [
+      "triceps",
+      "front-deltoid",
+      "chest",
+      "forearms",
+      "abs"
+    ],
+    "level": "pre-beginner",
+    "equipment": [
+      "paralelas"
+    ],
+    "youtube_id": "Y-zpMnf8-Ms",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Fondos de tríceps en silla con pies cerca; nivel inicial.",
+    "source_url": "https://www.calixpert.com/exercises/chair-dips-bent-knees",
+    "youtube_title": "How To Do Chair Dips With Bent Knees"
+  },
+  {
+    "name": "Ring Dips",
+    "name_es": "Fondos en anillas",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "lats",
+      "upper-back",
+      "abs",
+      "forearms"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "anillas",
+      "cajón"
+    ],
+    "youtube_id": "YtKfqs6AUYE",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Fondos en anillas; requiere gran estabilidad.",
+    "source_url": "https://www.calixpert.com/exercises/ring-dips",
+    "youtube_title": "How To Do Ring Dips"
+  },
+  {
+    "name": "Ring Support Hold",
+    "name_es": "Soporte en anillas",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "biceps",
+      "lats",
+      "traps",
+      "abs",
+      "forearms",
+      "glutes",
+      "quads"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "anillas",
+      "cajón"
+    ],
+    "youtube_id": "iiOypUW-TAA",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Mantener soporte con brazos extendidos en anillas.",
+    "source_url": "https://www.calixpert.com/exercises/ring-support-hold",
+    "youtube_title": "How To Do Ring Support Hold"
+  },
+  {
+    "name": "Weighted Dips",
+    "name_es": "Fondos lastrados",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "traps",
+      "serratus",
+      "abs"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "cinturón de lastre",
+      "paralelas"
+    ],
+    "youtube_id": "FaDwJniHyjM",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Fondos con cinturón de lastre para progresar fuerza.",
+    "source_url": "https://www.calixpert.com/exercises/weighted-dips",
+    "youtube_title": "How To Do Weighted Dips"
+  },
+  {
+    "name": "Explosive Dips",
+    "name_es": "Fondos explosivos",
+    "category": "push",
+    "muscle_groups": [
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "serratus",
+      "abs",
+      "traps"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "paralelas"
+    ],
+    "youtube_id": "x3XSb7HoOCo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Fondos con fase concéntrica explosiva.",
+    "source_url": "https://www.calixpert.com/exercises/explosive-dips",
+    "youtube_title": "How To Do Explosive Dips"
+  },
+  {
+    "name": "Planche Lean",
+    "name_es": "Inclinación de planche",
+    "category": "push",
+    "muscle_groups": [
+      "front-deltoid",
+      "chest",
+      "serratus",
+      "triceps",
+      "abs",
+      "forearms",
+      "glutes"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "paralelas bajas",
+      "suelo"
+    ],
+    "youtube_id": "9R4OxINluw0",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Plancha con hombros por delante de las manos; base para planche.",
+    "source_url": "https://www.calixpert.com/exercises/planche-lean",
+    "youtube_title": "How To Do Planche Lean"
+  },
+  {
+    "name": "Tuck Planche",
+    "name_es": "Planche agrupada",
+    "category": "push",
+    "muscle_groups": [
+      "front-deltoid",
+      "chest",
+      "triceps",
+      "serratus",
+      "abs",
+      "forearms"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "paralelas bajas",
+      "suelo"
+    ],
+    "youtube_id": "aTaYfWqOBzI",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Planche con rodillas al pecho sobre paralelas o suelo.",
+    "source_url": "https://www.calixpert.com/exercises/tuck-planche",
+    "youtube_title": "How To Do Tuck Planche"
+  },
+  {
+    "name": "Advanced Tuck Planche",
+    "name_es": "Planche agrupada avanzada",
+    "category": "push",
+    "muscle_groups": [
+      "front-deltoid",
+      "serratus",
+      "chest",
+      "biceps",
+      "forearms",
+      "abs",
+      "hip-flexors",
+      "spinal-erectors"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "paralelas bajas"
+    ],
+    "youtube_id": "A3dXIMhSHmk",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Planche con espalda plana y cadera extendida parcialmente.",
+    "source_url": "https://www.calixpert.com/exercises/advanced-tuck-planche",
+    "youtube_title": "How To Do Advanced Tuck Planche"
+  },
+  {
+    "name": "Straddle Planche",
+    "name_es": "Planche con piernas abiertas",
+    "category": "push",
+    "muscle_groups": [
+      "front-deltoid",
+      "serratus",
+      "chest",
+      "triceps",
+      "biceps",
+      "forearms",
+      "abs",
+      "glutes",
+      "spinal-erectors",
+      "abductors"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "paralelas bajas"
+    ],
+    "youtube_id": "ZGrEdcMpxHk",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Planche con piernas extendidas y abiertas.",
+    "source_url": "https://www.calixpert.com/exercises/straddle-planche",
+    "youtube_title": "How To Do Straddle Planche"
+  },
+  {
+    "name": "Full Planche",
+    "name_es": "Planche completa",
+    "category": "push",
+    "muscle_groups": [
+      "front-deltoid",
+      "serratus",
+      "chest",
+      "biceps",
+      "triceps",
+      "forearms",
+      "abs",
+      "glutes"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "paralelas bajas"
+    ],
+    "youtube_id": "KbroJBvHssM",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Cuerpo horizontal y recto sostenido solo con brazos extendidos.",
+    "source_url": "https://www.calixpert.com/exercises/full-planche",
+    "youtube_title": "How To Do Full Planche"
+  },
+  {
+    "name": "Frog stand",
+    "name_es": "Postura de rana",
+    "category": "core",
+    "muscle_groups": [
+      "triceps",
+      "front-deltoid",
+      "chest",
+      "abs",
+      "forearms",
+      "hip-flexors"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "paralelas bajas",
+      "suelo"
+    ],
+    "youtube_id": "kBj1gth949w",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Equilibrio sobre las manos con rodillas apoyadas en los codos.",
+    "source_url": "https://www.calixpert.com/exercises/frog-stand",
+    "youtube_title": "How To Do Frogstand"
+  },
+  {
+    "name": "Wall Handstand Hold",
+    "name_es": "Parada de manos en pared",
+    "category": "core",
+    "muscle_groups": [
+      "front-deltoid",
+      "triceps",
+      "traps",
+      "serratus",
+      "abs",
+      "forearms",
+      "upper-back"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "pared"
+    ],
+    "youtube_id": "2v1YDTzMcO8",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Sostener la parada de manos apoyando pies en la pared.",
+    "source_url": "https://www.calixpert.com/exercises/wall-handstand-hold",
+    "youtube_title": "How To Do Wall Handstand Hold"
+  },
+  {
+    "name": "Wall Walks",
+    "name_es": "Caminata en pared",
+    "category": "push",
+    "muscle_groups": [
+      "front-deltoid",
+      "triceps",
+      "abs",
+      "serratus",
+      "traps",
+      "upper-back",
+      "chest"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "pared"
+    ],
+    "youtube_id": "wk5gF0FWQBc",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Subir caminando con pies por la pared hasta parada de manos.",
+    "source_url": "https://www.calixpert.com/exercises/wall-walks",
+    "youtube_title": "How To Do Wall Walks"
+  },
+  {
+    "name": "Pull ups",
+    "name_es": "Dominadas",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "traps",
+      "biceps",
+      "rear-deltoid",
+      "forearms",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "h8iSy8hl_i0",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Tirón vertical con agarre prono hasta pasar la barbilla sobre la barra.",
+    "source_url": "https://www.calixpert.com/exercises/pull-up",
+    "youtube_title": "How To Do Pull Ups"
+  },
+  {
+    "name": "Chin Ups",
+    "name_es": "Dominadas supinas",
+    "category": "pull",
+    "muscle_groups": [
+      "biceps",
+      "lats",
+      "upper-back",
+      "rear-deltoid",
+      "forearms",
+      "abs",
+      "traps"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "S7Gg9noaZ54",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Dominada con agarre supino; más bíceps.",
+    "source_url": "https://www.calixpert.com/exercises/chin-ups",
+    "youtube_title": "How To Do Chin Ups"
+  },
+  {
+    "name": "Assisted Pull Ups",
+    "name_es": "Dominadas asistidas",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "rear-deltoid",
+      "traps",
+      "upper-back",
+      "forearms",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "banda de resistencia",
+      "barra de dominadas"
+    ],
+    "youtube_id": "S4ssMONPZ6k",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Dominadas con banda para reducir peso corporal.",
+    "source_url": "https://www.calixpert.com/exercises/assisted-pull-ups",
+    "youtube_title": "How To Do Assisted Pull Ups"
+  },
+  {
+    "name": "Negative Pull Up",
+    "name_es": "Dominada negativa",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "rear-deltoid",
+      "traps",
+      "upper-back",
+      "forearms",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "3w8Pnbl70SQ",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Descenso lento desde arriba de la barra.",
+    "source_url": "https://www.calixpert.com/exercises/negative-pull-up",
+    "youtube_title": "How To Do Negative Pull Ups"
+  },
+  {
+    "name": "Scapula Pull-Ups",
+    "name_es": "Dominadas escapulares",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "traps",
+      "serratus",
+      "rear-deltoid",
+      "forearms",
+      "abs",
+      "rotator-cuff"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "W7bcEoXlmOg",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Depresión y retracción escapular colgado, sin doblar codos.",
+    "source_url": "https://www.calixpert.com/exercises/scapula-pull-ups",
+    "youtube_title": "How To Do Scapula Pull Ups"
+  },
+  {
+    "name": "Dead Hang",
+    "name_es": "Colgado pasivo",
+    "category": "pull",
+    "muscle_groups": [
+      "forearms",
+      "lats",
+      "traps",
+      "rotator-cuff",
+      "abs"
+    ],
+    "level": "pre-beginner",
+    "equipment": [
+      "barra"
+    ],
+    "youtube_id": "vG159HkLrhY",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Colgarse de la barra con brazos extendidos; agarre y hombros.",
+    "source_url": "https://www.calixpert.com/exercises/dead-hang",
+    "youtube_title": "How To Do Dead Hang"
+  },
+  {
+    "name": "Active Hang",
+    "name_es": "Colgado activo",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "traps",
+      "abs",
+      "forearms",
+      "rear-deltoid",
+      "rotator-cuff",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "0_YZc2yuKkE",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Colgado con escápulas activadas y deprimidas.",
+    "source_url": "https://www.calixpert.com/exercises/active-hang",
+    "youtube_title": "How To Do Active Hang"
+  },
+  {
+    "name": "Wide Pull Ups",
+    "name_es": "Dominadas abiertas",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "upper-back",
+      "rear-deltoid",
+      "biceps",
+      "forearms",
+      "traps",
+      "abs"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "BP5qGD4KQfI",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Dominada con agarre amplio; mayor énfasis en dorsales.",
+    "source_url": "https://www.calixpert.com/exercises/wide-pull-ups",
+    "youtube_title": "How To Do Wide Pull Ups"
+  },
+  {
+    "name": "Close Grip Pull ups",
+    "name_es": "Dominadas agarre cerrado",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "forearms",
+      "upper-back",
+      "rear-deltoid",
+      "traps",
+      "abs"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "kNJZt0atC5Q",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Dominada con manos juntas.",
+    "source_url": "https://www.calixpert.com/exercises/close-grip-pull-ups",
+    "youtube_title": "How To Do Close Grip Pull Ups"
+  },
+  {
+    "name": "Commando Pull Ups",
+    "name_es": "Dominadas comando",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "abs",
+      "obliques",
+      "forearms",
+      "rear-deltoid",
+      "traps",
+      "upper-back"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "417O4VGusNU",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Dominada con agarre alterno llevando la cabeza a cada lado de la barra.",
+    "source_url": "https://www.calixpert.com/exercises/commando-pull-ups",
+    "youtube_title": "How To Do Commando Pull Ups"
+  },
+  {
+    "name": "Explosive Pull Ups",
+    "name_es": "Dominadas explosivas",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "upper-back",
+      "traps",
+      "rear-deltoid",
+      "forearms",
+      "abs"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "barra de dominadas",
+      "cajón"
+    ],
+    "youtube_id": "7VHPDTRUkaU",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Dominada con subida rápida y potente.",
+    "source_url": "https://www.calixpert.com/exercises/explosive-pull-ups",
+    "youtube_title": "How To Do Explosive Pull Ups"
+  },
+  {
+    "name": "High Pull Ups",
+    "name_es": "Dominadas altas",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "traps",
+      "upper-back",
+      "rear-deltoid",
+      "forearms",
+      "abs"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "barra de dominadas",
+      "cajón"
+    ],
+    "youtube_id": "sa38UPXqgPo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Dominada explosiva llevando la barra al pecho bajo; hacia muscle up.",
+    "source_url": "https://www.calixpert.com/exercises/high-pull-ups",
+    "youtube_title": "How To Do High Pull Ups"
+  },
+  {
+    "name": "Weighted Pull Ups",
+    "name_es": "Dominadas lastradas",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "traps",
+      "rear-deltoid",
+      "forearms",
+      "abs"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "cinturón de lastre"
+    ],
+    "youtube_id": "k9bGWaitSc0",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Dominadas con lastre añadido.",
+    "source_url": "https://www.calixpert.com/exercises/weighted-pull-ups",
+    "youtube_title": "How To Do Weighted Pull Ups"
+  },
+  {
+    "name": "Weighted Chin Ups",
+    "name_es": "Dominadas supinas lastradas",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "upper-back",
+      "traps",
+      "forearms",
+      "abs"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "cinturón de lastre",
+      "barra de dominadas",
+      "cajón"
+    ],
+    "youtube_id": "6kXRno8A_HE",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Dominadas supinas con lastre.",
+    "source_url": "https://www.calixpert.com/exercises/weighted-chin-ups",
+    "youtube_title": "How To Do Weighted Chin Ups"
+  },
+  {
+    "name": "Pull Up Top Hold",
+    "name_es": "Isométrico arriba en dominada",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "upper-back",
+      "biceps",
+      "forearms",
+      "rear-deltoid",
+      "traps",
+      "abs"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "CIJx_HfIh6E",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Mantener la barbilla sobre la barra.",
+    "source_url": "https://www.calixpert.com/exercises/pull-up-top-hold",
+    "youtube_title": "How To Do Pull Up Top Hold"
+  },
+  {
+    "name": "90 Degree Pull Up Hold",
+    "name_es": "Isométrico de dominada a 90 grados",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "upper-back",
+      "rear-deltoid",
+      "forearms",
+      "abs",
+      "glutes"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "TccYl5G-gUQ",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Mantener la dominada con codos a 90 grados.",
+    "source_url": "https://www.calixpert.com/exercises/90-degree-pull-up-hold",
+    "youtube_title": "How To Do 90 Degree Pull Up Hold"
+  },
+  {
+    "name": "Bodyweight Rows / Australian Rows",
+    "name_es": "Remo invertido",
+    "category": "pull",
+    "muscle_groups": [
+      "upper-back",
+      "lats",
+      "biceps",
+      "rear-deltoid",
+      "forearms",
+      "abs",
+      "glutes"
+    ],
+    "level": "pre-beginner",
+    "equipment": [
+      "paralelas",
+      "barra baja"
+    ],
+    "youtube_id": "6Ej6xG7fOO0",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Remo con cuerpo inclinado bajo una barra o anillas.",
+    "source_url": "https://www.calixpert.com/exercises/rows",
+    "youtube_title": "How To Do Bodyweight Rows / Australian Rows"
+  },
+  {
+    "name": "Bodyweight Incline Rows",
+    "name_es": "Remo inclinado",
+    "category": "pull",
+    "muscle_groups": [
+      "upper-back",
+      "lats",
+      "rear-deltoid",
+      "biceps",
+      "forearms",
+      "abs",
+      "traps"
+    ],
+    "level": "pre-beginner",
+    "equipment": [
+      "barra de dominadas",
+      "anillas"
+    ],
+    "youtube_id": "4Ww59oqo4ZY",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Remo con cuerpo más vertical para reducir carga.",
+    "source_url": "https://www.calixpert.com/exercises/incline-rows",
+    "youtube_title": "How To Do Incline Bodyweight Rows / Australian Pull Ups"
+  },
+  {
+    "name": "Scapula Rows",
+    "name_es": "Remo escapular",
+    "category": "pull",
+    "muscle_groups": [
+      "upper-back",
+      "traps",
+      "rear-deltoid",
+      "lats",
+      "forearms",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "U_GKYVeHEgo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Retracción escapular en posición de remo sin doblar codos.",
+    "source_url": "https://www.calixpert.com/exercises/scapula-rows",
+    "youtube_title": "How To Do Scapula Rows"
+  },
+  {
+    "name": "Weighted Ring Rows",
+    "name_es": "Remo en anillas lastrado",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "upper-back",
+      "biceps",
+      "rear-deltoid",
+      "traps",
+      "forearms",
+      "spinal-erectors",
+      "abs",
+      "glutes",
+      "hamstrings"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "anillas",
+      "cinturón de lastre",
+      "banco"
+    ],
+    "youtube_id": "k31j_yP3yiY",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Remo en anillas con lastre.",
+    "source_url": "https://www.calixpert.com/exercises/weighted-ring-rows",
+    "youtube_title": "How To Do Weighted Ring Rows"
+  },
+  {
+    "name": "Face Pull In Rings",
+    "name_es": "Face pull en anillas",
+    "category": "pull",
+    "muscle_groups": [
+      "rear-deltoid",
+      "upper-back",
+      "rotator-cuff",
+      "traps",
+      "biceps",
+      "forearms",
+      "abs"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "anillas"
+    ],
+    "youtube_id": "XlzHTUEsz20",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Tirón hacia la cara en anillas; deltoide posterior y manguito rotador.",
+    "source_url": "https://www.calixpert.com/exercises/face-pull-in-rings",
+    "youtube_title": "How To Do Face Pulls"
+  },
+  {
+    "name": "Ring Biceps Curl",
+    "name_es": "Curl de bíceps en anillas",
+    "category": "pull",
+    "muscle_groups": [
+      "biceps",
+      "forearms",
+      "front-deltoid",
+      "abs",
+      "glutes",
+      "spinal-erectors",
+      "upper-back"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "anillas"
+    ],
+    "youtube_id": "s9gkrO9f_Gg",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Curl con peso corporal en anillas.",
+    "source_url": "https://www.calixpert.com/exercises/ring-biceps-curl",
+    "youtube_title": "How To Do Ring Biceps Curl"
+  },
+  {
+    "name": "Ring Triceps Extension",
+    "name_es": "Extensión de tríceps en anillas",
+    "category": "push",
+    "muscle_groups": [
+      "triceps",
+      "abs",
+      "obliques",
+      "glutes",
+      "front-deltoid",
+      "forearms"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "anillas"
+    ],
+    "youtube_id": "MK6h_OCJuWI",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Extensión de codos en anillas con peso corporal.",
+    "source_url": "https://www.calixpert.com/exercises/ring-triceps-extension",
+    "youtube_title": "How To Do Ring Triceps Extension"
+  },
+  {
+    "name": "False Grip Hang",
+    "name_es": "Colgado con falso agarre",
+    "category": "pull",
+    "muscle_groups": [
+      "forearms",
+      "lats",
+      "upper-back",
+      "biceps",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "barra"
+    ],
+    "youtube_id": "tsgIPpuzQg4",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Colgado con muñeca sobre la barra; preparación para muscle up.",
+    "source_url": "https://www.calixpert.com/exercises/false-grip-hang",
+    "youtube_title": "How To Do False Grip Hang"
+  },
+  {
+    "name": "Ring Muscle Up Transition",
+    "name_es": "Transición de muscle up en anillas",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "chest",
+      "front-deltoid",
+      "triceps",
+      "biceps",
+      "forearms",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "anillas"
+    ],
+    "youtube_id": "Uwa5eGV7X30",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Practicar el paso de tirón a empuje en anillas bajas.",
+    "source_url": "https://www.calixpert.com/exercises/ring-muscle-up-transition",
+    "youtube_title": "How To Do Ring Muscle Up Transition"
+  },
+  {
+    "name": "Negative Ring Muscle Up",
+    "name_es": "Muscle up negativo en anillas",
+    "category": "core",
+    "muscle_groups": [
+      "lats",
+      "chest",
+      "triceps",
+      "front-deltoid",
+      "biceps",
+      "forearms",
+      "abs"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "anillas"
+    ],
+    "youtube_id": "DqYHpRaS0NA",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Descenso controlado del muscle up en anillas.",
+    "source_url": "https://www.calixpert.com/exercises/negative-ring-muscle-up",
+    "youtube_title": "How To Do Negative Ring Muscle Up"
+  },
+  {
+    "name": "Band Assisted Ring Muscle Up",
+    "name_es": "Muscle up en anillas asistido con banda",
+    "category": "core",
+    "muscle_groups": [
+      "lats",
+      "chest",
+      "biceps",
+      "triceps",
+      "front-deltoid",
+      "rear-deltoid",
+      "abs",
+      "forearms"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "anillas",
+      "banda de resistencia"
+    ],
+    "youtube_id": "JXEcPt4RuQo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Muscle up en anillas con ayuda de banda.",
+    "source_url": "https://www.calixpert.com/exercises/band-assisted-ring-muscle-up",
+    "youtube_title": "How To Do Band Assisted Ring Muscle Up"
+  },
+  {
+    "name": "Pull Over",
+    "name_es": "Pull over",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "abs",
+      "hip-flexors",
+      "biceps",
+      "triceps",
+      "forearms",
+      "upper-back"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "SnnpKtrz14c",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Tirón que lleva la cadera por encima de la barra hasta soporte.",
+    "source_url": "https://www.calixpert.com/exercises/pull-over",
+    "youtube_title": "How To Do Pull Over"
+  },
+  {
+    "name": "Advanced Tuck Front Lever",
+    "name_es": "Front lever agrupado avanzado",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "abs",
+      "upper-back",
+      "rear-deltoid",
+      "triceps",
+      "hip-flexors",
+      "forearms"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "foJ5wVhF7hc",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Front lever con espalda plana y rodillas flexionadas.",
+    "source_url": "https://www.calixpert.com/exercises/advanced-tuck-front-lever",
+    "youtube_title": "How To Do Advanced Tuck Front Lever"
+  },
+  {
+    "name": "Halflay Front Lever",
+    "name_es": "Front lever medio extendido",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "upper-back",
+      "abs",
+      "glutes",
+      "hamstrings",
+      "rear-deltoid",
+      "triceps",
+      "forearms"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "ty8y7VMSnRI",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Front lever con piernas a media extensión.",
+    "source_url": "https://www.calixpert.com/exercises/halflay-front-lever",
+    "youtube_title": "How To Do Halflay Front Lever"
+  },
+  {
+    "name": "Assisted Front Lever",
+    "name_es": "Front lever asistido",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "upper-back",
+      "abs",
+      "rear-deltoid",
+      "triceps",
+      "glutes",
+      "forearms"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "barra de dominadas",
+      "banda de resistencia"
+    ],
+    "youtube_id": "ErmDE9DNI3c",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Front lever con banda de resistencia.",
+    "source_url": "https://www.calixpert.com/exercises/assisted-front-lever",
+    "youtube_title": "How To Do Assisted Front Lever"
+  },
+  {
+    "name": "German Hang",
+    "name_es": "Colgado alemán",
+    "category": "pull",
+    "muscle_groups": [
+      "front-deltoid",
+      "chest",
+      "biceps",
+      "forearms",
+      "upper-back",
+      "rear-deltoid",
+      "abs",
+      "lats"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "barra alta"
+    ],
+    "youtube_id": "v65qjfCG6es",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Colgado con hombros en extensión profunda tras pasar las piernas.",
+    "source_url": "https://www.calixpert.com/exercises/german-hang",
+    "youtube_title": "How To Do German Hang"
+  },
+  {
+    "name": "Skin The Cat",
+    "name_es": "Skin the cat",
+    "category": "core",
+    "muscle_groups": [
+      "lats",
+      "front-deltoid",
+      "abs",
+      "biceps",
+      "forearms",
+      "rear-deltoid",
+      "chest",
+      "rotator-cuff",
+      "serratus",
+      "hip-flexors"
+    ],
+    "level": "advanced",
+    "equipment": [
+      "barra alta"
+    ],
+    "youtube_id": "kMSNap6xBqo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Rotación completa pasando las piernas entre los brazos colgado.",
+    "source_url": "https://www.calixpert.com/exercises/skin-the-cat",
+    "youtube_title": "How To Do Skin The Cat"
+  },
+  {
+    "name": "Resistance Band Lat Pull Down",
+    "name_es": "Jalón con banda",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "biceps",
+      "rear-deltoid",
+      "traps",
+      "forearms",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "banda de resistencia"
+    ],
+    "youtube_id": "2K6U6ScTdUI",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Jalón al pecho con banda de resistencia.",
+    "source_url": "https://www.calixpert.com/exercises/resistance-band-lat-pull-down",
+    "youtube_title": "How To Do Resistance Band Lat Pull Down"
+  },
+  {
+    "name": "Straight Arm Pull down",
+    "name_es": "Jalón con brazos rectos",
+    "category": "pull",
+    "muscle_groups": [
+      "lats",
+      "rear-deltoid",
+      "abs",
+      "triceps",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "banda de resistencia"
+    ],
+    "youtube_id": "Fn_c94pLpVE",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Jalón con brazos extendidos para dorsales.",
+    "source_url": "https://www.calixpert.com/exercises/straight-arm-pull-down",
+    "youtube_title": "How To Do Resistance Band Straight Arm Pull Down"
+  },
+  {
+    "name": "Plank",
+    "name_es": "Plancha",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "obliques",
+      "serratus",
+      "front-deltoid",
+      "glutes",
+      "quads"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "coint6OCeDY",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Plancha frontal con cuerpo alineado.",
+    "source_url": "https://www.calixpert.com/exercises/plank",
+    "youtube_title": "How To Do Plank"
+  },
+  {
+    "name": "Long Plank",
+    "name_es": "Plancha larga",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "front-deltoid",
+      "serratus",
+      "glutes",
+      "lower-back",
+      "triceps"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "_9yeH6brSns",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Plancha con manos adelantadas para aumentar la palanca.",
+    "source_url": "https://www.calixpert.com/exercises/long-plank",
+    "youtube_title": "How To Do Long Plank"
+  },
+  {
+    "name": "Reversed Plank",
+    "name_es": "Plancha invertida",
+    "category": "core",
+    "muscle_groups": [
+      "glutes",
+      "lower-back",
+      "hamstrings",
+      "rear-deltoid",
+      "triceps",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "qxodHz5z0OY",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Plancha boca arriba con cadera elevada.",
+    "source_url": "https://www.calixpert.com/exercises/reversed-plank",
+    "youtube_title": "How To Do Reversed Plank"
+  },
+  {
+    "name": "Hollow Body Hold",
+    "name_es": "Hollow body",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "obliques",
+      "serratus",
+      "quads"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "TuLnKCIf5xI",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Isométrico boca arriba con zona lumbar pegada al suelo.",
+    "source_url": "https://www.calixpert.com/exercises/hollow-body-hold",
+    "youtube_title": "How To Do Hollow Body Hold"
+  },
+  {
+    "name": "Tuck Hollow Body Hold",
+    "name_es": "Hollow body agrupado",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "obliques",
+      "quads"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "UVyCKFb0aIg",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Hollow body con rodillas flexionadas; regresión.",
+    "source_url": "https://www.calixpert.com/exercises/tuck-hollow-body-hold",
+    "youtube_title": "How To Do Tuck Hollow Body Hold"
+  },
+  {
+    "name": "Hollow Body Rocks",
+    "name_es": "Balanceos en hollow body",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "obliques",
+      "quads",
+      "serratus"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "XWNXnEfIdZU",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Balanceo manteniendo la forma de hollow body.",
+    "source_url": "https://www.calixpert.com/exercises/hollow-body-rocks",
+    "youtube_title": "How To Do Hollow Body Rocks"
+  },
+  {
+    "name": "Superman Hold",
+    "name_es": "Superman",
+    "category": "core",
+    "muscle_groups": [
+      "spinal-erectors",
+      "glutes",
+      "hamstrings",
+      "rear-deltoid",
+      "traps",
+      "upper-back"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "hmc934fftKM",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Isométrico boca abajo elevando brazos y piernas.",
+    "source_url": "https://www.calixpert.com/exercises/superman-hold",
+    "youtube_title": "How To Do Superman Hold"
+  },
+  {
+    "name": "Dead Bug",
+    "name_es": "Dead bug",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "obliques",
+      "hip-flexors",
+      "front-deltoid"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "UKOwvzv1zuw",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Extensión alterna de brazo y pierna boca arriba con core estable.",
+    "source_url": "https://www.calixpert.com/exercises/dead-bug",
+    "youtube_title": "How To Do Dead Bug"
+  },
+  {
+    "name": "Bird Dog",
+    "name_es": "Bird dog",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "lower-back",
+      "glutes",
+      "front-deltoid",
+      "obliques"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "pBOXOVDDiUM",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "En cuadrupedia, extender brazo y pierna opuestos.",
+    "source_url": "https://www.calixpert.com/exercises/bird-dog",
+    "youtube_title": "How To Do Bird Dog"
+  },
+  {
+    "name": "L-sit Hold",
+    "name_es": "L-sit",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "triceps",
+      "front-deltoid",
+      "quads",
+      "forearms",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "paralelas"
+    ],
+    "youtube_id": "jxUIHjgdz_U",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Sostener las piernas extendidas al frente con brazos rectos.",
+    "source_url": "https://www.calixpert.com/exercises/l-sit-hold",
+    "youtube_title": "How To Do L-sit Hold"
+  },
+  {
+    "name": "Tuck L-sit Hold",
+    "name_es": "L-sit agrupado",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "triceps",
+      "front-deltoid",
+      "forearms",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "paralelas bajas",
+      "suelo"
+    ],
+    "youtube_id": "fEQg1Tr6LN4",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "L-sit con rodillas al pecho.",
+    "source_url": "https://www.calixpert.com/exercises/tuck-l-sit-hold",
+    "youtube_title": "How To Do Tuck L sit Hold"
+  },
+  {
+    "name": "Hanging Knee raises",
+    "name_es": "Elevaciones de rodillas colgado",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "forearms",
+      "obliques",
+      "lats"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "VCu3UeReMww",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Elevar rodillas al pecho colgado de la barra.",
+    "source_url": "https://www.calixpert.com/exercises/hanging-knee-raises",
+    "youtube_title": "How To Do Hanging Knee Raises"
+  },
+  {
+    "name": "Hanging Leg raises",
+    "name_es": "Elevaciones de piernas colgado",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "obliques",
+      "forearms",
+      "lats"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "barra de dominadas"
+    ],
+    "youtube_id": "VD2UJLRjrXo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Elevar piernas extendidas colgado.",
+    "source_url": "https://www.calixpert.com/exercises/hanging-leg-raises",
+    "youtube_title": "How To Do Hanging Leg Raises"
+  },
+  {
+    "name": "Toes To bar",
+    "name_es": "Pies a la barra",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "forearms",
+      "lats",
+      "obliques"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "barra"
+    ],
+    "youtube_id": "kdXaQUvbIYs",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Elevar las piernas colgado hasta tocar la barra.",
+    "source_url": "https://www.calixpert.com/exercises/toes-to-bar",
+    "youtube_title": "How To Do Toes To Bar"
+  },
+  {
+    "name": "Laying Leg Raises",
+    "name_es": "Elevaciones de piernas tumbado",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "obliques",
+      "quads"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "2qWUjVvmdfs",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Elevar piernas extendidas boca arriba.",
+    "source_url": "https://www.calixpert.com/exercises/laying-leg-raises",
+    "youtube_title": "How To Do Laying Leg Raises"
+  },
+  {
+    "name": "Russian Twist",
+    "name_es": "Giro ruso",
+    "category": "core",
+    "muscle_groups": [
+      "obliques",
+      "abs",
+      "hip-flexors",
+      "lower-back"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "ZxHYp0A4kcY",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Rotación de tronco sentado con pies elevados.",
+    "source_url": "https://www.calixpert.com/exercises/russian-twist",
+    "youtube_title": "How To Do Russian Twist"
+  },
+  {
+    "name": "Mountain Climbers",
+    "name_es": "Escaladores",
+    "category": "core",
+    "muscle_groups": [
+      "abs",
+      "hip-flexors",
+      "front-deltoid",
+      "triceps",
+      "quads",
+      "glutes",
+      "serratus"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "eJllA-pZlb8",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Llevar rodillas al pecho alternando en posición de plancha.",
+    "source_url": "https://www.calixpert.com/exercises/mountain-climbers",
+    "youtube_title": "How To Do Mountain Climbers"
+  },
+  {
+    "name": "Bodyweight Squats",
+    "name_es": "Sentadillas",
+    "category": "leg",
+    "muscle_groups": [
+      "quads",
+      "glutes",
+      "hamstrings",
+      "abs",
+      "calves-rear",
+      "adductors",
+      "hip-flexors",
+      "lower-back"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "eAFSpUExcwc",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Sentadilla con peso corporal.",
+    "source_url": "https://www.calixpert.com/exercises/bodyweight-squats",
+    "youtube_title": "How To Do Bodyweight Squats"
+  },
+  {
+    "name": "Jumping Squats",
+    "name_es": "Sentadillas con salto",
+    "category": "leg",
+    "muscle_groups": [
+      "quads",
+      "glutes",
+      "calves-rear",
+      "hamstrings",
+      "abs",
+      "hip-flexors"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "vF2aEkQq2w8",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Sentadilla explosiva con salto.",
+    "source_url": "https://www.calixpert.com/exercises/jumping-squats",
+    "youtube_title": "How To Do Jumping Squats"
+  },
+  {
+    "name": "Bulgarian Squats",
+    "name_es": "Sentadilla búlgara",
+    "category": "leg",
+    "muscle_groups": [
+      "quads",
+      "glutes",
+      "hamstrings",
+      "adductors",
+      "calves-rear",
+      "abs",
+      "hip-flexors"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "silla",
+      "suelo"
+    ],
+    "youtube_id": "pfRlldgfGRQ",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Sentadilla a una pierna con pie trasero elevado.",
+    "source_url": "https://www.calixpert.com/exercises/bulgarian-squats",
+    "youtube_title": "How To Do Bulgarian Squats"
+  },
+  {
+    "name": "Negative Pistol Squat",
+    "name_es": "Pistol squat negativa",
+    "category": "leg",
+    "muscle_groups": [
+      "quads",
+      "glutes",
+      "hip-flexors",
+      "abs",
+      "adductors",
+      "calves-rear"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "YMvPC1byyGo",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Descenso controlado a una pierna.",
+    "source_url": "https://www.calixpert.com/exercises/negative-pistol-squat",
+    "youtube_title": "How To Do Negative Pistol Squat"
+  },
+  {
+    "name": "Sissy Squat",
+    "name_es": "Sissy squat",
+    "category": "leg",
+    "muscle_groups": [
+      "quads",
+      "glutes",
+      "abs",
+      "spinal-erectors",
+      "calves-rear"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "7QNShsR89U8",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Sentadilla con rodillas adelantadas y cadera extendida; cuádriceps.",
+    "source_url": "https://www.calixpert.com/exercises/sissy-squat",
+    "youtube_title": "How To Do Sissy Squat"
+  },
+  {
+    "name": "Step back Lunges",
+    "name_es": "Zancadas hacia atrás",
+    "category": "leg",
+    "muscle_groups": [
+      "quads",
+      "glutes",
+      "hamstrings",
+      "calves-rear",
+      "abs",
+      "hip-flexors",
+      "adductors"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "hwdGTe09_18",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Zancada dando el paso hacia atrás.",
+    "source_url": "https://www.calixpert.com/exercises/step-back-lunges",
+    "youtube_title": "How To Do  Step Back Lunges"
+  },
+  {
+    "name": "Glute Bridge",
+    "name_es": "Puente de glúteos",
+    "category": "leg",
+    "muscle_groups": [
+      "glutes",
+      "hamstrings",
+      "lower-back",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "e24JjTDrtKs",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Elevación de cadera boca arriba.",
+    "source_url": "https://www.calixpert.com/exercises/glute-bridge",
+    "youtube_title": "How To Do Glute Bridge"
+  },
+  {
+    "name": "Calf Raises",
+    "name_es": "Elevaciones de gemelos",
+    "category": "leg",
+    "muscle_groups": [
+      "calves-rear",
+      "calves-front",
+      "quads",
+      "abs"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "Qv55w6-sxRM",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Elevarse sobre las puntas de los pies.",
+    "source_url": "https://www.calixpert.com/exercises/calf-raises",
+    "youtube_title": "How To Do Calf Raises"
+  },
+  {
+    "name": "Wall Sit",
+    "name_es": "Sentadilla isométrica en pared",
+    "category": "leg",
+    "muscle_groups": [
+      "quads",
+      "glutes",
+      "hamstrings",
+      "calves-rear",
+      "abs",
+      "adductors"
+    ],
+    "level": "beginner",
+    "equipment": [
+      "pared"
+    ],
+    "youtube_id": "3h0aEHYDHzY",
+    "youtube_verified": true,
+    "orientation": "horizontal",
+    "description_es": "Mantener posición sentada con espalda en la pared.",
+    "source_url": "https://www.calixpert.com/exercises/wall-sit",
+    "youtube_title": "How To Do Wall Sit"
+  },
+  {
+    "name": "45 Degree Handstand Hold",
+    "name_es": "Parada de manos a 45 grados",
+    "category": "core",
+    "muscle_groups": [
+      "front-deltoid",
+      "triceps",
+      "abs",
+      "serratus",
+      "traps",
+      "upper-back",
+      "glutes"
+    ],
+    "level": "intermediate",
+    "equipment": [
+      "suelo"
+    ],
+    "youtube_id": "pIY21KwH3zo",
+    "youtube_verified": true,
+    "orientation": "vertical",
+    "description_es": "Isométrico en parada de manos inclinada a 45 grados (el único Short vertical del catálogo).",
+    "source_url": "https://www.calixpert.com/exercises/45-degree-handstand-hold",
+    "youtube_title": "Learn How To Do A 45 Degree Handstand Hold 🔥 #calisthenics #handstandhold #shorts #ytshorts"
+  }
+]

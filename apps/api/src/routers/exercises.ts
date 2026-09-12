@@ -17,17 +17,27 @@ import { z } from "zod"
 import OpenAI from "openai"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach } from "./teams"
-import { createDirectUploadUrl, deleteVideo } from "../services/cloudflare-stream"
+import { resolveYoutube } from "../services/youtube"
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+// Se crea bajo demanda: sin OPENAI_API_KEY la API arranca igual y solo falla el autocompletado
+let openaiClient: OpenAI | null = null
+function getOpenAI() {
+  if (!process.env.OPENAI_API_KEY) {
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: "El autocompletado con IA no está configurado" })
+  }
+  openaiClient ??= new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+  return openaiClient
+}
 
 // ── Zod schemas ───────────────────────────────────────────────────────────────
 
 const difficultySchema = z.enum(["beginner", "intermediate", "advanced"])
 const suitableForSchema = z.enum(["warmup", "evaluation"])
+const youtubeIdSchema = z.string().regex(/^[A-Za-z0-9_-]{11}$/, "ID de YouTube inválido")
+const orientationSchema = z.enum(["horizontal", "vertical"])
 
 const movementPatternSchema = z.enum([
-  "push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility",
+  "push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core",
 ])
 
 const muscleInputSchema = z.object({
@@ -291,7 +301,9 @@ export const exercisesRouter = router({
         movementPatterns: z.array(movementPatternSchema).default([]),
         suitableFor: suitableForSchema.nullable().optional(),
         contraindications: z.string().optional(),
-        videoUrl: z.string().optional(),
+        youtubeVideoId: youtubeIdSchema.optional(),
+        youtubeTitle: z.string().optional(),
+        videoOrientation: orientationSchema.default("horizontal"),
         isPublic: z.boolean().default(false),
         ownerType: z.enum(["user", "team"]),
         teamId: z.string().uuid().optional(),
@@ -316,7 +328,9 @@ export const exercisesRouter = router({
           movementPatterns: input.movementPatterns,
           suitableFor: input.suitableFor ?? null,
           contraindications: input.contraindications,
-          videoUrl: input.videoUrl,
+          youtubeVideoId: input.youtubeVideoId,
+          youtubeTitle: input.youtubeTitle,
+          videoOrientation: input.videoOrientation,
           isPublic: input.isPublic,
           ownerUserId: input.ownerType === "user" ? userId : null,
           ownerTeamId: input.ownerType === "team" ? input.teamId : null,
@@ -340,7 +354,9 @@ export const exercisesRouter = router({
         movementPatterns: z.array(movementPatternSchema).optional(),
         suitableFor: suitableForSchema.nullable().optional(),
         contraindications: z.string().nullable().optional(),
-        videoUrl: z.string().nullable().optional(),
+        youtubeVideoId: youtubeIdSchema.nullable().optional(),
+        youtubeTitle: z.string().nullable().optional(),
+        videoOrientation: orientationSchema.optional(),
         isPublic: z.boolean().optional(),
         muscles: z.array(muscleInputSchema).optional(),
         equipment: z.array(z.string().uuid()).optional(),
@@ -359,11 +375,6 @@ export const exercisesRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      // Si el video cambió, borrar el anterior de Cloudflare
-      if (input.videoUrl !== undefined && ex.videoUrl && ex.videoUrl !== input.videoUrl) {
-        await deleteVideo(ex.videoUrl).catch(() => {})
-      }
-
       const [updated] = await db
         .update(exercise)
         .set({
@@ -373,7 +384,9 @@ export const exercisesRouter = router({
           ...(input.movementPatterns !== undefined && { movementPatterns: input.movementPatterns }),
           ...(input.suitableFor !== undefined && { suitableFor: input.suitableFor }),
           ...(input.contraindications !== undefined && { contraindications: input.contraindications }),
-          ...(input.videoUrl !== undefined && { videoUrl: input.videoUrl }),
+          ...(input.youtubeVideoId !== undefined && { youtubeVideoId: input.youtubeVideoId }),
+          ...(input.youtubeTitle !== undefined && { youtubeTitle: input.youtubeTitle }),
+          ...(input.videoOrientation !== undefined && { videoOrientation: input.videoOrientation }),
           ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
           updatedAt: new Date(),
         })
@@ -407,33 +420,22 @@ export const exercisesRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      // Delete video from Cloudflare — it's the creator's resource and no longer needed
-      if (ex.videoUrl) {
-        await deleteVideo(ex.videoUrl).catch(() => {})
-      }
-
       // Remove all saves — exercise won't be visible to anyone anyway
       await db.delete(exerciseSave).where(eq(exerciseSave.exerciseId, input.id))
 
-      // Soft delete: keep the row for history (PRs, session logs, routines)
+      // Soft delete: keep the row for history (PRs, session logs, routines).
+      // El video vive en YouTube, así que no hay nada que limpiar.
       await db
         .update(exercise)
-        .set({ deletedAt: new Date(), videoUrl: null })
+        .set({ deletedAt: new Date() })
         .where(eq(exercise.id, input.id))
     }),
 
-  // Returns a one-time Cloudflare direct upload URL + the video UID to store
-  getVideoUploadUrl: protectedProcedure.mutation(async () => {
-    const { uploadUrl, uid } = await createDirectUploadUrl()
-    return { uploadUrl, uid }
-  }),
-
-  // Deletes a video from Cloudflare Stream (e.g. when replacing a video)
-  deleteVideo: protectedProcedure
-    .input(z.object({ videoId: z.string() }))
-    .mutation(async () => {
-      // Note: caller must own the exercise — lightweight endpoint, auth via session is enough
-    }),
+  // Valida una URL de YouTube pegada por el coach: extrae el ID, confirma que se puede
+  // embeber (oEmbed, sin API key) y detecta si es vertical (Short)
+  resolveYoutube: protectedProcedure
+    .input(z.object({ url: z.string().min(1).max(500) }))
+    .mutation(({ input }) => resolveYoutube(input.url)),
 
   autofill: protectedProcedure
     .input(z.object({
@@ -458,7 +460,7 @@ export const exercisesRouter = router({
       const equipmentCatalogText = equipmentCatalog
         .map((e) => `${e.name} (${e.id})`).join(", ")
 
-      const response = await openai.chat.completions.create({
+      const response = await getOpenAI().chat.completions.create({
         model: "gpt-4o-mini",
         max_tokens: 1024,
         tools: [{
@@ -476,7 +478,7 @@ export const exercisesRouter = router({
                 },
                 movementPatterns: {
                   type: "array",
-                  items: { type: "string", enum: ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility"] },
+                  items: { type: "string", enum: ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core"] },
                   description: "Movement patterns this exercise belongs to",
                 },
                 suitableFor: {

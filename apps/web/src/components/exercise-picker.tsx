@@ -1,5 +1,6 @@
 "use client"
 
+import { YouTubeThumb } from "@/components/youtube-player"
 import { ChevronDownIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
@@ -7,6 +8,7 @@ export type PickerExercise = {
   id: string
   name: string
   category: "team" | "system" | "mine" | "public"
+  youtubeVideoId?: string | null
 }
 
 const CATEGORY_LABELS: Record<PickerExercise["category"], string> = {
@@ -122,7 +124,7 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
           </div>
 
           {/* List */}
-          <div className="max-h-52 overflow-y-auto">
+          <div className="max-h-80 overflow-y-auto">
             {Object.entries(grouped).map(([cat, items]) => (
               <div key={cat}>
                 <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-muted/20 sticky top-0"
@@ -137,17 +139,19 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
                       key={ex.id}
                       type="button"
                       onClick={() => handleSelect(ex.id)}
-                      className={`w-full text-left px-4 py-2.5 text-sm transition-colors duration-150 cursor-pointer flex items-center gap-2
+                      className={`w-full text-left px-3 py-2 text-sm transition-colors duration-150 cursor-pointer flex items-center gap-3
                         ${isSelected
-                          ? "text-primary font-semibold"
+                          ? "text-primary font-semibold bg-primary/5"
                           : "text-foreground hover:bg-muted/40"
                         }
                       `}
                     >
-                      {isSelected && (
-                        <span className="w-1 h-4 rounded-full shrink-0" style={{ background: "hsl(var(--primary))" }} />
+                      {ex.youtubeVideoId ? (
+                        <YouTubeThumb videoId={ex.youtubeVideoId} alt="" className="w-16 aspect-video rounded shrink-0" />
+                      ) : (
+                        <span className="w-16 aspect-video rounded bg-muted/40 shrink-0" />
                       )}
-                      <span className={isSelected ? "" : "pl-3"}>{ex.name}</span>
+                      <span className="truncate">{ex.name}</span>
                     </button>
                   )
                 })}

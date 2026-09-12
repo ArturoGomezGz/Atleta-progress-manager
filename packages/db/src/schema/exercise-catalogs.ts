@@ -1,4 +1,5 @@
-import { pgEnum, pgTable, primaryKey, text, boolean, uuid, unique } from "drizzle-orm/pg-core"
+import { sql } from "drizzle-orm"
+import { pgEnum, pgTable, primaryKey, text, boolean, uuid, unique, uniqueIndex } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
 
@@ -30,7 +31,11 @@ export const equipment = pgTable("equipment", {
   isGlobal: boolean("is_global").notNull().default(false),
   // null = platform-owned equipment; set = private to that user
   createdBy: text("created_by").references(() => user.id, { onDelete: "set null" }),
-})
+}, (t) => [
+  uniqueIndex("equipment_global_name_unique")
+    .on(t.name)
+    .where(sql`"is_global" = true AND "created_by" IS NULL`),
+])
 
 // ── Junction tables ──
 

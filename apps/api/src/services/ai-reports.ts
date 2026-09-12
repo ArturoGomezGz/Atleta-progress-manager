@@ -1,6 +1,12 @@
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
-const genai = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!)
+// Se crea bajo demanda para que la API arranque aunque GEMINI_API_KEY no esté configurada
+let genai: GoogleGenerativeAI | null = null
+function getGenai() {
+  if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY no configurada")
+  genai ??= new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  return genai
+}
 
 export type RmEntry = { rmLbs: string; recordedAt: Date | string; source: "auto" | "manual" }
 
@@ -29,7 +35,7 @@ ${historyLines}
 
 PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateString("es", { dateStyle: "long" })})`
 
-  const model = genai.getGenerativeModel({ model: "gemini-2.5-flash" })
+  const model = getGenai().getGenerativeModel({ model: "gemini-2.5-flash" })
   const result = await model.generateContent({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

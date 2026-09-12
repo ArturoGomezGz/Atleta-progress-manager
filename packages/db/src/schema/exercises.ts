@@ -1,15 +1,17 @@
 import { sql } from "drizzle-orm"
 import { boolean, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
-
-export const exerciseSuitableForEnum = pgEnum("exercise_suitable_for", ["warmup", "evaluation"])
 import { user } from "./auth"
 import { team } from "./teams"
+
+export const exerciseSuitableForEnum = pgEnum("exercise_suitable_for", ["warmup", "evaluation"])
 
 export const exerciseDifficultyEnum = pgEnum("exercise_difficulty", ["beginner", "intermediate", "advanced"])
 
 export const exerciseMovementPatternEnum = pgEnum("exercise_movement_pattern", [
-  "push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility",
+  "push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core",
 ])
+
+export const videoOrientationEnum = pgEnum("video_orientation", ["horizontal", "vertical"])
 
 export const exercise = pgTable(
   "exercise",
@@ -21,7 +23,10 @@ export const exercise = pgTable(
     movementPatterns: exerciseMovementPatternEnum("movement_patterns").array().notNull().default(sql`'{}'::exercise_movement_pattern[]`),
     suitableFor: exerciseSuitableForEnum("suitable_for"),
     contraindications: text("contraindications"),
-    videoUrl: text("video_url"),
+    // Video de YouTube: solo se guarda el ID; miniatura y embed se derivan de él
+    youtubeVideoId: text("youtube_video_id"),
+    youtubeTitle: text("youtube_title"),
+    videoOrientation: videoOrientationEnum("video_orientation").notNull().default("horizontal"),
     isPublic: boolean("is_public").notNull().default(false),
     ownerUserId: text("owner_user_id").references(() => user.id, { onDelete: "set null" }),
     ownerTeamId: uuid("owner_team_id").references(() => team.id, { onDelete: "cascade" }),

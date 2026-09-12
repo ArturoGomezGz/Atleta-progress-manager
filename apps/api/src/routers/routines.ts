@@ -96,13 +96,20 @@ export const routinesRouter = router({
       const exerciseIds = extractExerciseIds(r.content)
       const exercises = exerciseIds.length > 0
         ? await db
-            .select({ id: exercise.id, name: exercise.name })
+            .select({
+              id: exercise.id,
+              name: exercise.name,
+              description: exercise.description,
+              youtubeVideoId: exercise.youtubeVideoId,
+              videoOrientation: exercise.videoOrientation,
+            })
             .from(exercise)
             .where(inArray(exercise.id, exerciseIds))
         : []
 
       const nameById = Object.fromEntries(exercises.map((e) => [e.id, e.name ?? "Ejercicio eliminado"]))
-      return { ...r, exerciseNames: nameById }
+      const exerciseInfo = Object.fromEntries(exercises.map((e) => [e.id, e]))
+      return { ...r, exerciseNames: nameById, exerciseInfo }
     }),
 
   updateContent: protectedProcedure

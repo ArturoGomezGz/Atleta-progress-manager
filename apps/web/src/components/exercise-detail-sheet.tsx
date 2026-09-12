@@ -1,5 +1,6 @@
 "use client"
 
+import { YouTubePlayer } from "@/components/youtube-player"
 import { cn } from "@/lib/utils"
 import { BookmarkIcon, DumbbellIcon, FlameIcon, UserIcon, XIcon, ZapIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
@@ -14,7 +15,8 @@ export type ExerciseDetail = {
   movementPatterns: string[]
   suitableFor: "warmup" | "evaluation" | null
   contraindications: string | null
-  videoUrl?: string | null
+  youtubeVideoId?: string | null
+  videoOrientation?: "horizontal" | "vertical"
   authorName?: string | null
   muscles: {
     muscleId: string
@@ -44,7 +46,7 @@ const ZONE_CONFIG = {
 
 const PATTERN_LABELS: Record<string, string> = {
   push: "Empuje", pull: "Jalón", squat: "Sentadilla", hinge: "Bisagra",
-  carry: "Cargada", rotation: "Rotación", isometric: "Isométrico", mobility: "Movilidad",
+  carry: "Cargada", rotation: "Rotación", isometric: "Isométrico", mobility: "Movilidad", core: "Core",
 }
 
 function deriveBodyZone(muscles: ExerciseDetail["muscles"]) {
@@ -155,13 +157,12 @@ export function ExerciseDetailSheet({
         >
 
           {/* Video hero or zone bar */}
-          {ex.videoUrl ? (
-            <div className="aspect-video bg-black shrink-0">
-              <iframe
-                src={`https://iframe.videodelivery.net/${ex.videoUrl}`}
-                allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
-                className="w-full h-full"
+          {ex.youtubeVideoId ? (
+            <div className="px-5 pt-5">
+              <YouTubePlayer
+                videoId={ex.youtubeVideoId}
+                title={ex.name}
+                orientation={ex.videoOrientation ?? "horizontal"}
               />
             </div>
           ) : zoneConf ? (

@@ -16,7 +16,9 @@ async function main() {
     throw err
   }
 
-  const app = Fastify({ logger: true })
+  // maxParamLength: tRPC agrupa varios procedimientos en la ruta (/trpc/a,b,c…); con el
+  // límite por defecto de Fastify (100) las páginas con muchas consultas reciben 404
+  const app = Fastify({ logger: true, maxParamLength: 5000 })
 
   await app.register(cors, {
     origin: process.env.WEB_URL ?? "http://localhost:3000",

@@ -1,21 +1,25 @@
 "use client"
 
 import { ExerciseDetailSheet, type ExerciseDetail } from "@/components/exercise-detail-sheet"
+import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
+import { isShortsUrl, parseYoutubeId, youtubeWatchUrl } from "@atleta/db/youtube"
 import {
+  AlertTriangleIcon,
   BookmarkIcon,
+  CheckCircle2Icon,
   ChevronDownIcon,
   ChevronRightIcon,
+  ClipboardPasteIcon,
   FlameIcon,
   GlobeIcon,
+  LoaderIcon,
   LockIcon,
   PencilIcon,
-  PlayIcon,
   PlusIcon,
   SparklesIcon,
   Trash2Icon,
-  UploadIcon,
   UserIcon,
   VideoIcon,
   XIcon,
@@ -41,10 +45,11 @@ const DIFFICULTY_CONFIG = {
 
 const PATTERN_LABELS: Record<string, string> = {
   push: "Empuje", pull: "Jalón", squat: "Sentadilla", hinge: "Bisagra",
-  carry: "Cargada", rotation: "Rotación", isometric: "Isométrico", mobility: "Movilidad",
+  carry: "Cargada", rotation: "Rotación", isometric: "Isométrico", mobility: "Movilidad", core: "Core",
 }
 
-const ALL_PATTERNS = ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility"] as const
+const ALL_PATTERNS = ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core"] as const
+type Orientation = "horizontal" | "vertical"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -58,7 +63,9 @@ type Exercise = {
   movementPatterns: string[]
   suitableFor: "warmup" | "evaluation" | null
   contraindications: string | null
-  videoUrl?: string | null
+  youtubeVideoId?: string | null
+  youtubeTitle?: string | null
+  videoOrientation?: Orientation
   isPublic: boolean
   ownerUserId: string | null
   ownerTeamId: string | null
@@ -75,7 +82,9 @@ type FormState = {
   movementPatterns: string[]
   suitableFor: "warmup" | "evaluation" | null
   contraindications: string
-  videoUrl: string | null
+  youtubeVideoId: string | null
+  youtubeTitle: string | null
+  videoOrientation: Orientation
   isPublic: boolean
   ownerType: "user" | "team"
   muscles: MuscleEntry[]
@@ -84,7 +93,8 @@ type FormState = {
 
 const EMPTY_FORM: FormState = {
   name: "", description: "", difficulty: null, movementPatterns: [],
-  suitableFor: null, contraindications: "", videoUrl: null,
+  suitableFor: null, contraindications: "",
+  youtubeVideoId: null, youtubeTitle: null, videoOrientation: "horizontal",
   isPublic: true, ownerType: "user", muscles: [], equipment: [],
 }
 
@@ -110,7 +120,7 @@ export default function EjerciciosPage() {
   const { data: equipmentList } = trpc.exercises.listEquipment.useQuery()
 
   const [form, setForm] = useState<FormState | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; hasVideo: boolean } | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [detailExercise, setDetailExercise] = useState<ExerciseDetail | null>(null)
 
   const currentTeam = teams?.find((t) => t.team.id === teamId)
@@ -136,7 +146,9 @@ export default function EjerciciosPage() {
       movementPatterns: ex.movementPatterns ?? [],
       suitableFor: ex.suitableFor ?? null,
       contraindications: ex.contraindications ?? "",
-      videoUrl: ex.videoUrl ?? null,
+      youtubeVideoId: ex.youtubeVideoId ?? null,
+      youtubeTitle: ex.youtubeTitle ?? null,
+      videoOrientation: ex.videoOrientation ?? "horizontal",
       isPublic: ex.isPublic,
       ownerType: ex.ownerTeamId ? "team" : "user",
       muscles: ex.muscles.map((m) => ({ muscleId: m.muscleId, role: m.role as "primary" | "secondary" })),
@@ -158,7 +170,9 @@ export default function EjerciciosPage() {
         difficulty: form.difficulty ?? undefined,
         movementPatterns: patterns,
         suitableFor: form.suitableFor,
-        videoUrl: form.videoUrl,        // null = quitar video
+        youtubeVideoId: form.youtubeVideoId,   // null = quitar video
+        youtubeTitle: form.youtubeTitle,
+        videoOrientation: form.videoOrientation,
         isPublic: form.isPublic,
         muscles: form.muscles,
         equipment: form.equipment,
@@ -171,7 +185,9 @@ export default function EjerciciosPage() {
         difficulty: form.difficulty ?? undefined,
         movementPatterns: patterns,
         suitableFor: form.suitableFor,
-        videoUrl: form.videoUrl ?? undefined,  // create no acepta null
+        youtubeVideoId: form.youtubeVideoId ?? undefined,
+        youtubeTitle: form.youtubeTitle ?? undefined,
+        videoOrientation: form.videoOrientation,
         isPublic: form.isPublic,
         muscles: form.muscles,
         equipment: form.equipment,
@@ -235,7 +251,7 @@ export default function EjerciciosPage() {
             title="Personales"
             exercises={personal}
             onEdit={openEdit}
-            onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name, hasVideo: !!ex.videoUrl })}
+            onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
             onOpen={setDetailExercise}
           />
           {currentTeam && (
@@ -243,7 +259,7 @@ export default function EjerciciosPage() {
               title={currentTeam.team.name}
               exercises={teamExercises}
               onEdit={openEdit}
-              onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name, hasVideo: !!ex.videoUrl })}
+              onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
               onOpen={setDetailExercise}
             />
           )}
@@ -308,9 +324,8 @@ export default function EjerciciosPage() {
               <div className="space-y-1.5">
                 <p className="text-base font-semibold">Eliminar ejercicio</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
-                  <span className="text-foreground font-medium">{deleteTarget.name}</span> se eliminará permanentemente
-                  {deleteTarget.hasVideo && ", incluyendo su video"}.
-                  Esta acción no se puede deshacer.
+                  <span className="text-foreground font-medium">{deleteTarget.name}</span> dejará de estar disponible
+                  para nuevas rutinas. El historial de entrenamientos se conserva.
                 </p>
               </div>
               <div className="flex gap-3">
@@ -452,10 +467,15 @@ function ExerciseSheet({
           {/* Scrollable body */}
           <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-5 space-y-2">
 
+            {/* ── Video de YouTube (lo primero: al pegarlo se sugiere el nombre) ── */}
+            <div className="pb-4 border-b border-border">
+              <YoutubeField form={form} set={set} />
+            </div>
+
             {/* ── Nombre + descripción (siempre visible) ── */}
             <div className="space-y-3 pb-4 border-b border-border">
               <input
-                autoFocus required
+                required
                 value={form.name}
                 onChange={(e) => set({ name: e.target.value })}
                 placeholder="Nombre del ejercicio"
@@ -656,14 +676,6 @@ function ExerciseSheet({
                   className="w-full border border-border rounded-xl px-4 py-3 text-sm bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring resize-none"
                 />
               </div>
-            </CollapsibleSection>
-
-            {/* ── Video ── */}
-            <CollapsibleSection
-              label="Video de demostración"
-              summary={form.videoUrl ? "Video adjunto" : null}
-            >
-              <VideoUploader videoId={form.videoUrl} onChange={(id) => set({ videoUrl: id })} />
             </CollapsibleSection>
 
           </div>
@@ -895,103 +907,170 @@ function EquipmentSelector({ value, onChange, equipmentList }: {
   )
 }
 
-// ── Video Uploader ────────────────────────────────────────────────────────────
+// ── YouTube Field ─────────────────────────────────────────────────────────────
 
-function VideoUploader({ videoId, onChange }: { videoId: string | null; onChange: (id: string | null) => void }) {
-  const getUploadUrl = trpc.exercises.getVideoUploadUrl.useMutation()
-  const fileInputRef = useRef<HTMLInputElement>(null)
-  const [uploading, setUploading] = useState(false)
-  const [progress, setProgress] = useState(0)
-  const [error, setError] = useState<string | null>(null)
-  const [justUploaded, setJustUploaded] = useState(false)
+type YoutubeStatus =
+  | { kind: "idle" }
+  | { kind: "checking" }
+  | { kind: "ok"; title: string | null; verified: boolean }
+  | { kind: "error"; message: string }
 
-  async function handleFile(file: File) {
-    if (!file.type.startsWith("video/")) return
-    setUploading(true)
-    setProgress(0)
-    setError(null)
-    try {
-      const { uploadUrl, uid } = await getUploadUrl.mutateAsync()
-      await new Promise<void>((resolve, reject) => {
-        const xhr = new XMLHttpRequest()
-        xhr.upload.onprogress = (e) => { if (e.lengthComputable) setProgress(Math.round((e.loaded / e.total) * 100)) }
-        xhr.onload = () => xhr.status < 400 ? resolve() : reject(new Error(`Error al subir (${xhr.status})`))
-        xhr.onerror = () => reject(new Error("Error de red"))
-        xhr.open("POST", uploadUrl)
-        const fd = new FormData()
-        fd.append("file", file)
-        xhr.send(fd)
-      })
-      setJustUploaded(true)
-      onChange(uid)
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error desconocido")
-    } finally {
-      setUploading(false)
-      setProgress(0)
+const RESOLVE_ERRORS = {
+  invalid_url: "Ese enlace no parece de YouTube. Copia la dirección del video y pégala aquí.",
+  not_found: "No encontramos ese video. Puede ser privado o haber sido eliminado.",
+  not_embeddable: "El autor de este video no permite verlo fuera de YouTube. Elige otro.",
+} as const
+
+function YoutubeField({ form, set }: { form: FormState; set: (patch: Partial<FormState>) => void }) {
+  const resolve = trpc.exercises.resolveYoutube.useMutation()
+  const [url, setUrl] = useState(form.youtubeVideoId ? youtubeWatchUrl(form.youtubeVideoId) : "")
+  const [status, setStatus] = useState<YoutubeStatus>(
+    form.youtubeVideoId ? { kind: "ok", title: form.youtubeTitle, verified: true } : { kind: "idle" },
+  )
+  // Al editar un ejercicio existente no se vuelve a resolver (respeta la orientación elegida)
+  const skipInitial = useRef(!!form.youtubeVideoId)
+  const latest = useRef("")
+  const nameRef = useRef(form.name)
+  nameRef.current = form.name
+
+  useEffect(() => {
+    if (skipInitial.current) { skipInitial.current = false; return }
+    const value = url.trim()
+    latest.current = value
+    if (!value) return
+
+    const id = parseYoutubeId(value)
+    if (!id) {
+      setStatus({ kind: "error", message: RESOLVE_ERRORS.invalid_url })
+      return
+    }
+
+    // Vista previa inmediata; la verificación llega después
+    set({ youtubeVideoId: id, ...(isShortsUrl(value) ? { videoOrientation: "vertical" as const } : {}) })
+    setStatus({ kind: "checking" })
+
+    const timer = setTimeout(async () => {
+      try {
+        const r = await resolve.mutateAsync({ url: value })
+        if (latest.current !== value) return
+        if (!r.ok) {
+          set({ youtubeVideoId: null, youtubeTitle: null })
+          setStatus({ kind: "error", message: RESOLVE_ERRORS[r.reason] })
+          return
+        }
+        set({
+          youtubeVideoId: r.videoId,
+          youtubeTitle: r.title,
+          videoOrientation: r.orientation,
+          ...(!nameRef.current.trim() && r.title ? { name: r.title } : {}),
+        })
+        setStatus({ kind: "ok", title: r.title, verified: r.verified })
+      } catch {
+        if (latest.current === value) setStatus({ kind: "ok", title: null, verified: false })
+      }
+    }, 300)
+    return () => clearTimeout(timer)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [url])
+
+  function handleChange(value: string) {
+    setUrl(value)
+    if (!value.trim()) {
+      latest.current = ""
+      set({ youtubeVideoId: null, youtubeTitle: null })
+      setStatus({ kind: "idle" })
     }
   }
 
-  if (videoId) {
-    return (
-      <div className="space-y-2">
-        {justUploaded ? (
-          <div className="border border-border rounded-xl px-4 py-4 flex items-start gap-3 bg-muted/20">
-            <VideoIcon className="w-4 h-4 shrink-0 text-primary mt-0.5" />
-            <div>
-              <p className="text-sm font-medium">Video subido</p>
-              <p className="text-xs text-muted-foreground mt-0.5">Cloudflare está procesando el video. Estará listo en unos segundos después de guardar.</p>
-            </div>
-          </div>
-        ) : (
-          <div className="rounded-xl overflow-hidden bg-black aspect-video">
-            <iframe
-              src={`https://iframe.videodelivery.net/${videoId}`}
-              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
-              className="w-full h-full"
-            />
-          </div>
-        )}
-        <button
-          type="button"
-          onClick={() => { onChange(null); setJustUploaded(false) }}
-          className="text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 cursor-pointer transition-colors"
-        >
-          <XIcon className="w-3.5 h-3.5" /> Quitar video
-        </button>
-      </div>
-    )
+  async function paste() {
+    try {
+      const text = await navigator.clipboard.readText()
+      if (text) handleChange(text)
+    } catch { /* permiso denegado: el coach puede pegar a mano */ }
   }
 
   return (
-    <div className="space-y-2">
-      <input ref={fileInputRef} type="file" accept="video/*" className="hidden"
-        onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f) }}
-      />
-      {uploading ? (
-        <div className="border border-border rounded-xl px-4 py-5 space-y-2">
-          <p className="text-xs text-muted-foreground">Subiendo... {progress}%</p>
-          <div className="w-full bg-muted rounded-full h-1.5">
-            <div className="bg-primary h-1.5 rounded-full transition-all" style={{ width: `${progress}%` }} />
+    <div className="space-y-3">
+      <label htmlFor="youtube-url" className="text-sm font-medium flex items-center gap-1.5">
+        <VideoIcon className="w-4 h-4 text-primary" /> Video de YouTube
+      </label>
+      <div className="flex gap-2">
+        <input
+          id="youtube-url"
+          value={url}
+          onChange={(e) => handleChange(e.target.value)}
+          inputMode="url"
+          autoComplete="off"
+          placeholder="Pega aquí el enlace del video"
+          className="flex-1 min-w-0 border border-border rounded-xl px-4 py-3 text-sm bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring"
+        />
+        <button
+          type="button"
+          onClick={paste}
+          className="shrink-0 flex items-center gap-1.5 px-3 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground cursor-pointer"
+        >
+          <ClipboardPasteIcon className="w-4 h-4" /> Pegar
+        </button>
+      </div>
+
+      {status.kind === "checking" && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <LoaderIcon className="w-3.5 h-3.5 animate-spin" /> Comprobando el video…
+        </p>
+      )}
+      {status.kind === "error" && (
+        <p className="text-xs text-destructive flex items-start gap-1.5">
+          <AlertTriangleIcon className="w-3.5 h-3.5 mt-0.5 shrink-0" /> {status.message}
+        </p>
+      )}
+
+      {form.youtubeVideoId && status.kind !== "error" ? (
+        <div className="space-y-2.5">
+          <YouTubePlayer
+            videoId={form.youtubeVideoId}
+            title={form.youtubeTitle ?? form.name}
+            orientation={form.videoOrientation}
+            toolbar={false}
+            compact
+          />
+          {status.kind === "ok" && (
+            <p className="text-xs flex items-start gap-1.5">
+              {status.verified
+                ? <CheckCircle2Icon className="w-3.5 h-3.5 mt-0.5 shrink-0 text-emerald-500" />
+                : <AlertTriangleIcon className="w-3.5 h-3.5 mt-0.5 shrink-0 text-amber-500" />}
+              <span className={status.verified ? "" : "text-muted-foreground"}>
+                {status.verified ? (status.title ?? "Video verificado") : "No pudimos comprobar el video ahora; se guardará igual."}
+              </span>
+            </p>
+          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-xs text-muted-foreground">Formato:</span>
+            {(["horizontal", "vertical"] as const).map((o) => (
+              <button
+                key={o}
+                type="button"
+                onClick={() => set({ videoOrientation: o })}
+                className={cn(
+                  "text-xs px-3 py-1.5 rounded-full border transition-colors cursor-pointer",
+                  form.videoOrientation === o ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {o === "horizontal" ? "Horizontal" : "Vertical (Short)"}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => handleChange("")}
+              className="ml-auto text-xs text-muted-foreground hover:text-destructive flex items-center gap-1 cursor-pointer"
+            >
+              <XIcon className="w-3.5 h-3.5" /> Quitar
+            </button>
           </div>
         </div>
-      ) : (
-        <>
-          {error && <p className="text-xs text-destructive flex items-center gap-1"><XIcon className="w-3 h-3" /> {error}</p>}
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="w-full border border-dashed border-border rounded-xl px-4 py-5 flex flex-col items-center gap-2 text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors cursor-pointer"
-          >
-            <div className="flex items-center gap-3">
-              <UploadIcon className="w-4 h-4" />
-              <VideoIcon className="w-4 h-4" />
-            </div>
-            <p className="text-xs">Subir video o grabar desde cámara</p>
-            <p className="text-[10px] text-muted-foreground/60">MP4, MOV, WebM — máx. 5 min</p>
-          </button>
-        </>
+      ) : status.kind === "idle" && (
+        <p className="text-[11px] text-muted-foreground">
+          Acepta enlaces normales, Shorts y youtu.be. El video no se sube: se reproduce desde YouTube.
+        </p>
       )}
     </div>
   )
@@ -1007,7 +1086,9 @@ type EnrichedExercise = {
   movementPatterns: string[]
   suitableFor: "warmup" | "evaluation" | null
   contraindications: string | null
-  videoUrl: string | null
+  youtubeVideoId: string | null
+  youtubeTitle: string | null
+  videoOrientation: Orientation
   isPublic: boolean
   ownerUserId: string | null
   ownerTeamId: string | null
@@ -1048,7 +1129,6 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUn
   const zone = deriveBodyZone(ex.muscles)
   const zoneConf = zone ? ZONE_CONFIG[zone] : null
   const primaryMuscles = ex.muscles.filter((m) => m.role === "primary")
-  const [videoOpen, setVideoOpen] = useState(false)
 
   return (
     <div
@@ -1057,6 +1137,19 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUn
     >
       <div className="flex hover:bg-muted/10 transition-colors">
         <div className={cn("w-1 shrink-0", zoneConf?.bar ?? "bg-border")} />
+        {ex.youtubeVideoId ? (
+          <YouTubeThumb
+            videoId={ex.youtubeVideoId}
+            alt={ex.name}
+            orientation={ex.videoOrientation}
+            showPlay
+            className="w-24 sm:w-28 aspect-video shrink-0 self-center ml-3 rounded-lg"
+          />
+        ) : (
+          <div className="w-24 sm:w-28 aspect-video shrink-0 self-center ml-3 rounded-lg bg-muted/40 flex items-center justify-center">
+            <VideoIcon className="w-4 h-4 text-muted-foreground/50" />
+          </div>
+        )}
         <div className="flex-1 min-w-0 px-4 py-3">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -1097,7 +1190,7 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUn
             </div>
           </div>
           {ex.description && <p className="text-xs text-muted-foreground truncate mt-0.5">{ex.description}</p>}
-          {(primaryMuscles.length > 0 || ex.movementPatterns.length > 0 || ex.difficulty || ex.suitableFor || ex.videoUrl) && (
+          {(primaryMuscles.length > 0 || ex.movementPatterns.length > 0 || ex.difficulty || ex.suitableFor) && (
             <div className="flex flex-wrap gap-1 mt-2">
               {zoneConf && (
                 <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border font-medium", zoneConf.pill)}>{zoneConf.label}</span>
@@ -1126,28 +1219,10 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUn
                   <ZapIcon className="w-2.5 h-2.5" /> Evaluación
                 </span>
               )}
-              {ex.videoUrl && (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setVideoOpen((v) => !v) }}
-                  className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground flex items-center gap-0.5 cursor-pointer hover:text-foreground transition-colors"
-                >
-                  <PlayIcon className="w-2.5 h-2.5" /> Video
-                </button>
-              )}
             </div>
           )}
         </div>
       </div>
-      {ex.videoUrl && videoOpen && (
-        <div className="border-t border-border bg-black aspect-video">
-          <iframe
-            src={`https://iframe.videodelivery.net/${ex.videoUrl}`}
-            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture"
-            allowFullScreen
-            className="w-full h-full"
-          />
-        </div>
-      )}
     </div>
   )
 }

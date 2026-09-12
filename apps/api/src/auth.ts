@@ -4,8 +4,17 @@ import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { Resend } from "resend"
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const FROM = process.env.FROM_EMAIL ?? "onboarding@resend.dev"
+
+// Sin RESEND_API_KEY (desarrollo local) el correo no se envía: el enlace se imprime en consola
+async function sendEmail(to: string, subject: string, html: string, link: string) {
+  if (!resend) {
+    console.warn(`[email deshabilitado] ${subject} → ${to}: ${link}`)
+    return
+  }
+  await resend.emails.send({ from: FROM, to, subject, html })
+}
 
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
@@ -22,12 +31,12 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true,
     sendResetPassword: async ({ user, url }) => {
-      await resend.emails.send({
-        from: FROM,
-        to: user.email,
-        subject: "Restablece tu contraseña",
-        html: `<p>Haz clic <a href="${url}">aquí</a> para restablecer tu contraseña.</p><p>El enlace expira en 1 hora.</p>`,
-      })
+      await sendEmail(
+        user.email,
+        "Restablece tu contraseña",
+        `<p>Haz clic <a href="${url}">aquí</a> para restablecer tu contraseña.</p><p>El enlace expira en 1 hora.</p>`,
+        url,
+      )
     },
   },
   emailVerification: {
@@ -42,20 +51,22 @@ export const auth = betterAuth({
         : `${process.env.WEB_URL ?? "http://localhost:3000"}${callback}`
       verifyUrl.searchParams.set("callbackURL", absoluteCallback)
 
-      await resend.emails.send({
-        from: FROM,
-        to: user.email,
-        subject: "Verifica tu cuenta",
-        html: `<p>Haz clic <a href="${verifyUrl.toString()}">aquí</a> para verificar tu cuenta de Atleta CMW.</p>`,
-      })
+      await sendEmail(
+        user.email,
+        "Verifica tu cuenta",
+        `<p>Haz clic <a href="${verifyUrl.toString()}">aquí</a> para verificar tu cuenta de Atleta CMW.</p>`,
+        verifyUrl.toString(),
+      )
     },
   },
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    },
-  },
+  socialProviders: process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+    ? {
+        google: {
+          clientId: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+        },
+      }
+    : {},
   trustedOrigins: [process.env.WEB_URL ?? "http://localhost:3000"],
   secret: process.env.BETTER_AUTH_SECRET!,
 })
