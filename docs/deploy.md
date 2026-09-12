@@ -64,15 +64,56 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 | `PORT` | `3001` |
 | `RESEND_API_KEY` | API key de Resend |
 | `FROM_EMAIL` | Dirección de envío verificada (ej. `noreply@tudominio.com`) |
-| `GOOGLE_CLIENT_ID` | Client ID del OAuth 2.0 de Google Cloud Console |
-| `GOOGLE_CLIENT_SECRET` | Client Secret del OAuth 2.0 de Google Cloud Console |
-| `ANTHROPIC_API_KEY` | API key de Anthropic |
+| `GOOGLE_CLIENT_ID` | *(Opcional)* Client ID del OAuth 2.0 de Google Cloud Console. Sin él, el login con Google se desactiva |
+| `GOOGLE_CLIENT_SECRET` | *(Opcional)* Client Secret del OAuth 2.0 de Google Cloud Console |
+| `SEED_DEMO_DATA` | `true` para sembrar cuentas de prueba + 100 ejercicios al arrancar (idempotente). `false` en producción real |
+| `GEMINI_API_KEY` | *(Opcional)* Reportes de progreso con IA |
+| `OPENAI_API_KEY` | *(Opcional)* Botón "Completar con IA" al crear ejercicios |
+
+> **Videos:** ya no se usa Cloudflare Stream (se eliminaron `CF_ACCOUNT_ID` y `CF_STREAM_API_TOKEN`). Los ejercicios guardan el ID de un video de YouTube; no hay almacenamiento ni costo por video.
 
 > **`BETTER_AUTH_URL` debe ser la URL del web, no de la API.** El web proxea `/api/auth/*` hacia la API. El estado OAuth se almacena en una cookie del dominio web — si el callback apunta directamente a la API (diferente dominio), la cookie no existe y Google devuelve `state_mismatch`. Apuntando al web, el callback pasa por el proxy y la cookie está disponible.
 
+### Base de datos: primer despliegue con los scripts SQL
+
+En `packages/db/sql/` hay 4 scripts **idempotentes** (se pueden ejecutar más de una vez sin duplicar nada), listos para pegar en Railway → servicio PostgreSQL → pestaña **Data → Query**, o para correr con `psql`:
+
+| Orden | Archivo | Contenido |
+|---|---|---|
+| 1 | `01_schema.sql` | Esquema completo. Registra la migración en `drizzle.__drizzle_migrations`, así la API no intenta recrear las tablas al arrancar |
+| 2 | `02_catalogs.sql` | Grupos musculares, músculos y equipamiento (incluye calistenia) |
+| 3 | `03_accounts.sql` | Equipo **Neo** y cuentas de prueba verificadas (ver tabla abajo) |
+| 4 | `04_exercises.sql` | 100 ejercicios de calistenia con video de YouTube (públicos, del admin) + una rutina de ejemplo |
+
+```bash
+# Con psql y la DATABASE_URL pública de Railway (pestaña Connect del servicio PostgreSQL)
+for f in packages/db/sql/0*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "$f"; done
+```
+
+**Cuentas de prueba** (cámbialas o bórralas antes de abrir la app al público):
+
+| Correo | Contraseña | Rol en equipo Neo |
+|---|---|---|
+| `arturogomezgz04@gmail.com` | `admin` | Coach (dueño de los 100 ejercicios) |
+| `tester@gmail.com` | `12345678` | Atleta |
+| `abuela@gmail.com` | `12345678` | Atleta (perfil de pruebas de accesibilidad) |
+
+> Si una base anterior tenía la cuenta `chinita@gmail.com`, `03_accounts.sql` la renombra a `tester@gmail.com`.
+
+Alternativa sin consola SQL: con `SEED_DEMO_DATA=true` la API ejecuta el migrador de Drizzle + los scripts 02–04 al arrancar.
+
+**Regenerar los scripts** después de cambiar el schema o el dataset (`packages/db/data/calisthenics-exercises.json`):
+
+```bash
+pnpm --filter @atleta/db generate    # nueva migración en src/migrations
+pnpm --filter @atleta/db build-sql   # reescribe packages/db/sql/*.sql
+```
+
+> ⚠️ La migración base `0000_youtube_baseline.sql` reemplaza al historial anterior (0000–0008). Está pensada para una **base de datos nueva**. No la apliques sobre la base del entorno `testing` anterior sin recrearla.
+
 ### Migraciones en producción
 
-Las migraciones **no corren automáticamente**. Hay dos opciones:
+La API aplica las migraciones pendientes al arrancar. Para correrlas manualmente hay dos opciones:
 
 **Opción A — Railway CLI (recomendado):**
 ```bash

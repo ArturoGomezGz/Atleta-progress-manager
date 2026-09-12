@@ -1,5 +1,6 @@
 "use client"
 
+import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
@@ -268,7 +269,15 @@ export function SessionView({ sessionId }: Props) {
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SessionSetTarget = { id: string; setNumber: number; targetReps: number | null; targetPercent: string | null }
-type Exercise = { id: string; exerciseId: string; exerciseName: string; order: number; targets: SessionSetTarget[] }
+type Exercise = {
+  id: string
+  exerciseId: string
+  exerciseName: string
+  youtubeVideoId: string | null
+  videoOrientation: "horizontal" | "vertical"
+  order: number
+  targets: SessionSetTarget[]
+}
 type SetRecord = { id: string; setNumber: number; sessionSetTargetId: string | null; reps: number; weightLbs: string; status: "valid" | "invalid" }
 
 // ─── Athlete exercises ────────────────────────────────────────────────────────
@@ -302,7 +311,8 @@ function AthleteExercises({ sessionId, athleteId, exercises, isActive, canRecord
 function ExerciseCard({ sessionId, athleteId, exercise, sets, isActive, canRecord, isCancelled, rmLbs, onUpdate, onToggleCancel }:
   { sessionId: string; athleteId: string; exercise: Exercise; sets: SetRecord[]; isActive: boolean; canRecord: boolean; isCancelled: boolean; rmLbs: string | null; onUpdate: () => void; onToggleCancel: () => void }) {
   const [addingExtra, setAddingExtra] = useState(false)
-  const cancelExercise    = trpc.sessions.cancelAthleteExercise.useMutation({ onSuccess: onToggleCancel })
+  const [showVideo, setShowVideo]     = useState(false)
+  const cancelExercise    =trpc.sessions.cancelAthleteExercise.useMutation({ onSuccess: onToggleCancel })
   const reactivateExercise = trpc.sessions.reactivateAthleteExercise.useMutation({ onSuccess: onToggleCancel })
 
   const nextSetNumber = (sets.at(-1)?.setNumber ?? 0) + 1
@@ -334,9 +344,19 @@ function ExerciseCard({ sessionId, athleteId, exercise, sets, isActive, canRecor
 
   return (
     <div className="border border-border rounded-xl overflow-hidden">
-      <div className="px-4 py-3 bg-muted/20 flex items-center justify-between">
-        <div>
-          <p className="font-semibold text-sm">{exercise.exerciseName}</p>
+      <div className="px-4 py-3 bg-muted/20 flex items-center gap-3">
+        {exercise.youtubeVideoId && (
+          <button
+            type="button"
+            onClick={() => setShowVideo((v) => !v)}
+            className="shrink-0 rounded-md overflow-hidden cursor-pointer"
+            aria-label={showVideo ? "Ocultar video" : `Ver video de ${exercise.exerciseName}`}
+          >
+            <YouTubeThumb videoId={exercise.youtubeVideoId} alt={exercise.exerciseName} showPlay className="w-20 aspect-video" />
+          </button>
+        )}
+        <div className="flex-1 min-w-0">
+          <p className="font-semibold text-sm truncate">{exercise.exerciseName}</p>
           <p className="text-xs text-muted-foreground">{doneCount}/{totalTargets} series</p>
         </div>
         {isActive && canRecord && (
@@ -347,6 +367,18 @@ function ExerciseCard({ sessionId, athleteId, exercise, sets, isActive, canRecor
           </button>
         )}
       </div>
+
+      {showVideo && exercise.youtubeVideoId && (
+        <div className="p-3 border-b border-border bg-black/40">
+          <YouTubePlayer
+            videoId={exercise.youtubeVideoId}
+            title={exercise.exerciseName}
+            orientation={exercise.videoOrientation}
+            autoStart
+            compact
+          />
+        </div>
+      )}
 
       <div className="divide-y divide-border">
         {exercise.targets.map((target) => {

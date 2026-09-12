@@ -152,7 +152,9 @@ export default function ExplorarPage() {
         <div className="space-y-1.5">
           {!exercises?.length ? (
             <p className="text-sm text-muted-foreground text-center py-12">
-              {hasFilters ? "Sin resultados para ese filtro." : "No hay ejercicios públicos todavía."}
+              {hasFilters
+                ? "Sin resultados para ese filtro."
+                : "No hay ejercicios públicos de otros entrenadores. Los tuyos están en “Mis ejercicios”."}
             </p>
           ) : (
             exercises.map((ex) => (
