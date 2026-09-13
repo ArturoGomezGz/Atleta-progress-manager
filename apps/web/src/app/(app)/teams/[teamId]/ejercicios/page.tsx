@@ -1,6 +1,7 @@
 "use client"
 
 import { ExerciseDetailSheet, type ExerciseDetail } from "@/components/exercise-detail-sheet"
+import { ExerciseFinderBar, FinderEmptyResults, useExerciseFinder } from "@/components/exercise-finder"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -9,7 +10,6 @@ import {
   AlertTriangleIcon,
   BookmarkIcon,
   CheckCircle2Icon,
-  CheckIcon,
   ChevronDownIcon,
   ChevronRightIcon,
   ClipboardPasteIcon,
@@ -19,7 +19,6 @@ import {
   LockIcon,
   PencilIcon,
   PlusIcon,
-  SearchIcon,
   SparklesIcon,
   Trash2Icon,
   UserIcon,
@@ -53,48 +52,8 @@ const PATTERN_LABELS: Record<string, string> = {
 const ALL_PATTERNS = ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core"] as const
 type Orientation = "horizontal" | "vertical"
 
-// ── Buscador: tipos ───────────────────────────────────────────────────────────
-
-type FacetKey = "patterns" | "difficulties" | "equipment"
+// Pestañas de la colección; la búsqueda y los filtros viven en @/components/exercise-finder
 type CollectionView = "todos" | "propios" | "guardados"
-
-type ExerciseFilters = {
-  query: string
-  patterns: string[]
-  difficulties: string[]
-  equipment: string[]   // equipmentId | NO_EQUIPMENT_KEY
-}
-
-const EMPTY_FILTERS: ExerciseFilters = { query: "", patterns: [], difficulties: [], equipment: [] }
-
-type FacetOption = { key: string; label: string; count: number; selected: boolean; disabled: boolean }
-type Facets = Record<FacetKey, FacetOption[]>
-
-const FACET_LABELS: Record<FacetKey, string> = { patterns: "Movimiento", difficulties: "Nivel", equipment: "Equipo" }
-
-// De lo general a lo particular; el orden no cambia al filtrar para que los chips no salten
-const PATTERN_ORDER = ["push", "pull", "squat", "hinge", "core", "rotation", "isometric", "carry", "mobility"]
-const DIFFICULTY_ORDER = ["beginner", "intermediate", "advanced"] as const
-
-const NO_EQUIPMENT_KEY = "none"
-const NO_EQUIPMENT_NAMES = new Set(["sin equipo", "suelo", "peso corporal", "ninguno"])
-
-// Los nombres del catálogo están en inglés: "flexion" debe encontrar "Push Ups"
-const SEARCH_SYNONYMS: Record<string, string[]> = {
-  flexion: ["push up", "pushup"],
-  lagartija: ["push up", "pushup"],
-  dominada: ["pull up", "pullup", "chin up"],
-  fondo: ["dip"],
-  sentadilla: ["squat", "pistol"],
-  zancada: ["lunge"],
-  plancha: ["plank", "planche"],
-  puente: ["bridge"],
-  remo: ["row"],
-  pino: ["handstand"],
-  vertical: ["handstand"],
-  elevacion: ["raise"],
-  colgado: ["hang"],
-}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -152,108 +111,6 @@ function deriveBodyZone(muscles: { bodyZone: "upper" | "lower" | "core"; role: s
   return "full_body" as const
 }
 
-// ── Buscador: filtrado ────────────────────────────────────────────────────────
-// Texto AND movimiento AND nivel AND equipo; dentro de cada faceta basta con una opción (OR).
-
-function normalizeText(s: string) {
-  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[-_]/g, " ")
-}
-
-function isNoEquipment(ex: EnrichedExercise) {
-  return ex.equipment.length === 0 || ex.equipment.every((e) => NO_EQUIPMENT_NAMES.has(normalizeText(e.equipmentName)))
-}
-
-function buildSearchText(ex: EnrichedExercise) {
-  const zone = deriveBodyZone(ex.muscles)
-  return normalizeText([
-    ex.name,
-    ex.description ?? "",
-    ...ex.movementPatterns.map((p) => PATTERN_LABELS[p] ?? p),
-    ex.difficulty ? DIFFICULTY_CONFIG[ex.difficulty].label : "",
-    ...ex.equipment.map((e) => e.equipmentName),
-    ...ex.muscles.flatMap((m) => [m.muscleName, m.muscleGroupName]),
-    zone ? ZONE_CONFIG[zone].label : "",
-    isNoEquipment(ex) ? "sin equipo peso corporal" : "",
-  ].join(" "))
-}
-
-function matchesQuery(searchText: string, query: string) {
-  const tokens = normalizeText(query).split(/\s+/).filter(Boolean)
-  return tokens.every((token) => {
-    // Si lo escrito es el inicio de una palabra con sinónimos ("flex" → flexión), se exige el
-    // sinónimo ("push up") o la palabra completa; así "flex" no coincide con "Flexores del antebrazo"
-    const synonymEntries = Object.entries(SEARCH_SYNONYMS).filter(([word]) => word.startsWith(token))
-    if (synonymEntries.length > 0) {
-      const wholeWord = new RegExp(`(^|\\s)${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`).test(searchText)
-      return wholeWord || synonymEntries.some(([word, synonyms]) =>
-        searchText.includes(word) || synonyms.some((s) => searchText.includes(s)),
-      )
-    }
-    return searchText.includes(token)
-  })
-}
-
-function matchesFacet(ex: EnrichedExercise, facet: FacetKey, keys: string[]) {
-  if (keys.length === 0) return true
-  switch (facet) {
-    case "patterns":     return keys.some((k) => ex.movementPatterns.includes(k))
-    case "difficulties": return keys.some((k) => ex.difficulty === k)
-    case "equipment":    return keys.some((k) => k === NO_EQUIPMENT_KEY ? isNoEquipment(ex) : ex.equipment.some((e) => e.equipmentId === k))
-  }
-}
-
-function applyFilters(pool: EnrichedExercise[], filters: ExerciseFilters, index: Map<string, string>, except?: FacetKey) {
-  return pool.filter((ex) =>
-    matchesQuery(index.get(ex.id) ?? "", filters.query) &&
-    (["patterns", "difficulties", "equipment"] as const).every((f) => f === except || matchesFacet(ex, f, filters[f])),
-  )
-}
-
-/**
- * Opciones de cada faceta con conteos facetados: el número de un chip es cuántos resultados
- * habría si se eligiera, respetando los demás filtros. Solo aparecen opciones presentes en la
- * colección; las que quedan en 0 por los filtros se muestran atenuadas (salvo si están elegidas).
- */
-function buildFacets(pool: EnrichedExercise[], filters: ExerciseFilters, index: Map<string, string>): Facets {
-  function options(facet: FacetKey, candidates: { key: string; label: string }[]): FacetOption[] {
-    const base = applyFilters(pool, filters, index, facet)
-    return candidates
-      .map(({ key, label }) => {
-        const inPool = pool.some((ex) => matchesFacet(ex, facet, [key]))
-        const count = base.filter((ex) => matchesFacet(ex, facet, [key])).length
-        const selected = filters[facet].includes(key)
-        return { key, label, count, selected, disabled: count === 0 && !selected, inPool }
-      })
-      .filter((o) => o.inPool || o.selected)
-      .map(({ inPool: _inPool, ...o }) => o)
-  }
-
-  const equipmentUsage = new Map<string, { label: string; uses: number }>()
-  for (const ex of pool) {
-    for (const e of ex.equipment) {
-      if (NO_EQUIPMENT_NAMES.has(normalizeText(e.equipmentName))) continue
-      const entry = equipmentUsage.get(e.equipmentId) ?? { label: e.equipmentName, uses: 0 }
-      entry.uses++
-      equipmentUsage.set(e.equipmentId, entry)
-    }
-  }
-  const equipmentCandidates = [
-    { key: NO_EQUIPMENT_KEY, label: "Sin equipo" },
-    ...[...equipmentUsage.entries()]
-      .sort(([, a], [, b]) => b.uses - a.uses || a.label.localeCompare(b.label, "es"))
-      .map(([key, { label }]) => ({ key, label })),
-  ]
-
-  return {
-    patterns: options("patterns", PATTERN_ORDER.map((p) => ({ key: p, label: PATTERN_LABELS[p] ?? p }))),
-    difficulties: options("difficulties", DIFFICULTY_ORDER.map((d) => ({ key: d, label: DIFFICULTY_CONFIG[d].label }))),
-    equipment: options("equipment", equipmentCandidates),
-  }
-}
-
-function toggleKey(list: string[], key: string) {
-  return list.includes(key) ? list.filter((k) => k !== key) : [...list, key]
-}
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EjerciciosPage() {
@@ -270,9 +127,6 @@ export default function EjerciciosPage() {
   const [form, setForm] = useState<FormState | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [detailExercise, setDetailExercise] = useState<ExerciseDetail | null>(null)
-
-  // Un solo juego de filtros para las tres vistas: no se pierde al cambiar de pestaña
-  const [filters, setFilters] = useState<ExerciseFilters>(EMPTY_FILTERS)
 
   const currentTeam = teams?.find((t) => t.team.id === teamId)
   const isCoach = currentTeam?.role === "coach"
@@ -294,33 +148,13 @@ export default function EjerciciosPage() {
     view === "guardados" ? savedList :
                            [...personal, ...teamExercises, ...savedOnly]
 
-  const searchIndex = new Map(pool.map((ex) => [ex.id, buildSearchText(ex)]))
-  const results = applyFilters(pool, filters, searchIndex)
-  const facets = buildFacets(pool, filters, searchIndex)
+  // Un solo buscador para las tres pestañas: los filtros no se pierden al cambiar de vista
+  const finder = useExerciseFinder(pool)
+  const results = finder.results
 
   const personalResults = results.filter((ex) => ex.ownerUserId !== null)
   const teamResults = results.filter((ex) => ex.ownerTeamId === teamId)
   const savedResults = view === "guardados" ? results : results.filter((ex) => !ownedIds.has(ex.id))
-
-  // Sugerencias del estado vacío: qué pasaría quitando cada filtro activo
-  const emptySuggestions = results.length > 0 ? [] : [
-    ...(filters.query.trim() ? [{
-      label: "Borrar búsqueda",
-      count: applyFilters(pool, { ...filters, query: "" }, searchIndex).length,
-      onApply: () => setFilters((f) => ({ ...f, query: "" })),
-    }] : []),
-    ...(["patterns", "difficulties", "equipment"] as const).flatMap((facet) =>
-      filters[facet].map((key) => {
-        const next = { ...filters, [facet]: filters[facet].filter((k) => k !== key) }
-        const label = facets[facet].find((o) => o.key === key)?.label ?? key
-        return {
-          label: `Quitar «${label}»`,
-          count: applyFilters(pool, next, searchIndex).length,
-          onApply: () => setFilters(next),
-        }
-      }),
-    ),
-  ].filter((s) => s.count > 0)
 
   const deleteHandler = (ex: EnrichedExercise) => setDeleteTarget({ id: ex.id, name: ex.name })
 
@@ -390,7 +224,7 @@ export default function EjerciciosPage() {
   const isPending = createMutation.isPending || updateMutation.isPending
 
   return (
-    <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Mis ejercicios</h1>
@@ -427,27 +261,13 @@ export default function EjerciciosPage() {
           )}
         </div>
       ) : (
-        <div className="lg:grid lg:grid-cols-[15rem_1fr] lg:gap-8 lg:items-start">
-          {/* Escritorio: filtros en columna fija a la izquierda */}
-          <aside className="hidden lg:block lg:sticky lg:top-6 space-y-5">
-            <FacetPanel facets={facets} onToggle={(facet, key) => setFilters((f) => ({ ...f, [facet]: toggleKey(f[facet], key) }))} wrap />
-          </aside>
-
+        <div className="space-y-4">
           <div className="space-y-4 min-w-0">
-            {/* Buscador fijo al hacer scroll. top-0 basta: el contenedor con scroll (<main>) ya
-                reserva la barra superior con pt-14 y el sticky se mide desde ese padding.
-                Altura constante: nada debajo cambia de tamaño al elegir filtros */}
-            <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-3 bg-background/95 backdrop-blur border-b border-border">
-              <SearchBox value={filters.query} onChange={(query) => setFilters((f) => ({ ...f, query }))} />
-            </div>
-
-            {/* Móvil: filtros debajo del buscador */}
-            <div className="lg:hidden space-y-3">
-              <FacetPanel facets={facets} onToggle={(facet, key) => setFilters((f) => ({ ...f, [facet]: toggleKey(f[facet], key) }))} />
-            </div>
+            {/* Buscador + botón Filtros; los filtros se eligen en un panel aparte */}
+            <ExerciseFinderBar finder={finder} />
 
             {results.length === 0 ? (
-              <EmptyResults suggestions={emptySuggestions} onClearAll={() => setFilters(EMPTY_FILTERS)} />
+              <FinderEmptyResults finder={finder} />
             ) : (
               <div className="space-y-6">
                 {view !== "guardados" && (
@@ -1466,144 +1286,3 @@ function CollectionTabs({ view, onChange, counts }: {
   )
 }
 
-function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  return (
-    <div className="relative">
-      <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
-      <input
-        type="search"
-        enterKeyHint="search"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") e.currentTarget.blur()
-          if (e.key === "Escape") onChange("")
-        }}
-        placeholder="Busca por nombre, músculo o equipo…"
-        aria-label="Buscar ejercicios"
-        // text-base (16px) evita el zoom automático de iOS al enfocar
-        className="w-full h-12 pl-10 pr-12 text-base border border-border rounded-xl bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring [&::-webkit-search-cancel-button]:hidden"
-      />
-      {value && (
-        <button
-          type="button"
-          onClick={() => onChange("")}
-          aria-label="Borrar búsqueda"
-          className="absolute right-0.5 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
-        >
-          <XIcon className="w-4 h-4" />
-        </button>
-      )}
-    </div>
-  )
-}
-
-function FacetPanel({ facets, onToggle, wrap = false }: {
-  facets: Facets
-  onToggle: (facet: FacetKey, key: string) => void
-  wrap?: boolean
-}) {
-  return (
-    <>
-      {(["patterns", "difficulties", "equipment"] as const).map((facet) => {
-        const options = facets[facet]
-        // Con menos de dos opciones la faceta no ayuda a decidir (p. ej. un coach con 3 ejercicios)
-        if (options.length < 2 && !options.some((o) => o.selected)) return null
-        return (
-          <FacetRow
-            key={facet}
-            label={FACET_LABELS[facet]}
-            options={options}
-            onToggle={(key) => onToggle(facet, key)}
-            wrap={wrap}
-          />
-        )
-      })}
-    </>
-  )
-}
-
-function FacetRow({ label, options, onToggle, wrap }: {
-  label: string
-  options: FacetOption[]
-  onToggle: (key: string) => void
-  wrap: boolean
-}) {
-  return (
-    <div className="space-y-1.5">
-      <p className="text-xs font-medium text-muted-foreground">{label}</p>
-      <div className="relative">
-        <div
-          role="group"
-          aria-label={label}
-          className={cn(
-            "flex gap-2",
-            wrap ? "flex-wrap" : "overflow-x-auto snap-x pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-          )}
-        >
-          {options.map((o) => (
-            <button
-              key={o.key}
-              type="button"
-              aria-pressed={o.selected}
-              aria-disabled={o.disabled}
-              onClick={() => !o.disabled && onToggle(o.key)}
-              className={cn(
-                "shrink-0 snap-start flex items-center gap-1.5 h-11 px-4 rounded-full border text-sm transition-colors",
-                o.selected
-                  ? "bg-primary/10 border-primary text-primary font-medium cursor-pointer"
-                  : o.disabled
-                    ? "border-border text-muted-foreground opacity-40 cursor-not-allowed"
-                    : "border-border text-foreground hover:border-primary/50 cursor-pointer",
-              )}
-            >
-              {/* Hueco fijo para el check y ancho fijo del conteo: el chip no cambia de tamaño al elegirlo */}
-              <span className="w-3.5 h-3.5 shrink-0 flex items-center justify-center" aria-hidden="true">
-                {o.selected && <CheckIcon className="w-3.5 h-3.5" />}
-              </span>
-              {o.label}
-              <span className={cn("text-xs tabular-nums min-w-[3ch] text-right", o.selected ? "text-primary/80" : "text-muted-foreground")}>
-                {o.count}
-              </span>
-            </button>
-          ))}
-        </div>
-        {/* Degradado que insinúa que hay más chips a la derecha */}
-        {!wrap && <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />}
-      </div>
-    </div>
-  )
-}
-
-function EmptyResults({ suggestions, onClearAll }: {
-  suggestions: { label: string; count: number; onApply: () => void }[]
-  onClearAll: () => void
-}) {
-  return (
-    <div className="text-center py-10 px-4 space-y-4 border border-dashed border-border rounded-2xl">
-      <div className="space-y-1">
-        <p className="text-base font-medium">No encontramos ejercicios así</p>
-        {suggestions.length > 0 && <p className="text-sm text-muted-foreground">Prueba quitando algún filtro:</p>}
-      </div>
-      <div className="flex flex-wrap justify-center gap-2">
-        {suggestions.map((s) => (
-          <button
-            key={s.label}
-            type="button"
-            onClick={s.onApply}
-            className="h-11 px-4 rounded-full border border-border text-sm hover:border-primary/50 cursor-pointer"
-          >
-            {s.label} <span className="text-muted-foreground">(ver {s.count})</span>
-          </button>
-        ))}
-        <button
-          type="button"
-          onClick={onClearAll}
-          className="h-11 px-4 rounded-full bg-primary text-primary-foreground text-sm font-medium cursor-pointer"
-        >
-          Limpiar todo
-        </button>
-      </div>
-    </div>
-  )
-}
