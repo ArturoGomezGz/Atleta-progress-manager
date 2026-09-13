@@ -12,6 +12,16 @@ INSERT INTO "team" ("id", "name", "max_athletes", "max_coaches")
   VALUES ('09ec5433-f03f-5a98-aad6-6d57e97e4d18', 'Neo', 50, 10)
   ON CONFLICT ("id") DO UPDATE SET "max_athletes" = EXCLUDED."max_athletes", "max_coaches" = EXCLUDED."max_coaches";
 
+-- Calixpert <calixpert@gmail.com> · contraseña: 12345678 · rol: sin equipo
+INSERT INTO "user" ("id", "name", "email", "email_verified", "created_at", "updated_at")
+  VALUES ('968a6145-b446-53f7-a222-fe6b492607e5', 'Calixpert', 'calixpert@gmail.com', true, now(), now())
+  ON CONFLICT ("email") DO UPDATE SET "name" = EXCLUDED."name", "email_verified" = true, "updated_at" = now();
+DELETE FROM "account" WHERE "provider_id" = 'credential'
+  AND "user_id" = (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com');
+INSERT INTO "account" ("id", "account_id", "provider_id", "user_id", "password", "created_at", "updated_at")
+  SELECT '5268a5d3-6b51-516e-ae2c-dad1962be1ca', u."id", 'credential', u."id", 'c98880eb92184ddb56134a6ff0bcc5be:2fe70e49f413a9728c0df6e4289e1f2742b49e66f01bec7ea8c4c85b26aaa2805a3c12b60ff6c176862e0cd03dd4983a5999edcd307c44a334aa71d3447ab035', now(), now()
+  FROM "user" u WHERE u."email" = 'calixpert@gmail.com';
+
 -- Arturo Gómez <arturogomezgz04@gmail.com> · contraseña: admin · rol: coach
 INSERT INTO "user" ("id", "name", "email", "email_verified", "created_at", "updated_at")
   VALUES ('9ecf7ae2-78a4-5133-a1b4-64aed076c9a3', 'Arturo Gómez', 'arturogomezgz04@gmail.com', true, now(), now())

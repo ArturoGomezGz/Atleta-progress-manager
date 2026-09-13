@@ -137,13 +137,19 @@ function buildCatalogs(): string {
 
 export const TEAM = { id: stableUuid("team:neo"), name: "Neo", maxAthletes: 50, maxCoaches: 10 }
 
-export const ACCOUNTS = [
-  { email: "arturogomezgz04@gmail.com", name: "Arturo Gómez", password: "admin",    role: "coach"   as const },
-  { email: "tester@gmail.com",          name: "Tester",       password: "12345678", role: "athlete" as const },
-  { email: "abuela@gmail.com",          name: "Rosa Martínez", password: "12345678", role: "athlete" as const },
+type SeedAccount = { email: string; name: string; password: string; role: "coach" | "athlete" | null }
+
+export const ACCOUNTS: SeedAccount[] = [
+  // Publica el catálogo: dueña de los 100 ejercicios públicos. No pertenece a ningún equipo,
+  // así los coaches de prueba usan esos ejercicios como "públicos" al armar rutinas.
+  { email: "calixpert@gmail.com",       name: "Calixpert",     password: "12345678", role: null },
+  { email: "arturogomezgz04@gmail.com", name: "Arturo Gómez",  password: "admin",    role: "coach" },
+  { email: "tester@gmail.com",          name: "Tester",        password: "12345678", role: "athlete" },
+  { email: "abuela@gmail.com",          name: "Rosa Martínez", password: "12345678", role: "athlete" },
 ]
 
-export const ADMIN_EMAIL = ACCOUNTS[0].email
+export const EXERCISE_OWNER_EMAIL = "calixpert@gmail.com"
+export const COACH_EMAIL = "arturogomezgz04@gmail.com"
 
 function buildAccounts(): string {
   const lines: string[] = [
@@ -160,7 +166,7 @@ UPDATE "user" SET "email" = 'tester@gmail.com', "name" = 'Tester', "updated_at" 
     const userId = stableUuid(`user:${a.email}`)
     const hash = hashPassword(a.password, a.email)
     lines.push(`
--- ${a.name} <${a.email}> · contraseña: ${a.password} · rol: ${a.role}
+-- ${a.name} <${a.email}> · contraseña: ${a.password} · rol: ${a.role ?? "sin equipo"}
 INSERT INTO "user" ("id", "name", "email", "email_verified", "created_at", "updated_at")
   VALUES ('${userId}', ${q(a.name)}, ${q(a.email)}, true, now(), now())
   ON CONFLICT ("email") DO UPDATE SET "name" = EXCLUDED."name", "email_verified" = true, "updated_at" = now();
@@ -168,11 +174,11 @@ DELETE FROM "account" WHERE "provider_id" = 'credential'
   AND "user_id" = (SELECT "id" FROM "user" WHERE "email" = ${q(a.email)});
 INSERT INTO "account" ("id", "account_id", "provider_id", "user_id", "password", "created_at", "updated_at")
   SELECT '${stableUuid(`account:${a.email}`)}', u."id", 'credential', u."id", '${hash}', now(), now()
-  FROM "user" u WHERE u."email" = ${q(a.email)};
+  FROM "user" u WHERE u."email" = ${q(a.email)};${a.role ? `
 INSERT INTO "team_member" ("team_id", "user_id", "role")
   SELECT '${TEAM.id}', u."id", '${a.role}' FROM "user" u
   WHERE u."email" = ${q(a.email)}
-    AND NOT EXISTS (SELECT 1 FROM "team_member" tm WHERE tm."team_id" = '${TEAM.id}' AND tm."user_id" = u."id");`)
+    AND NOT EXISTS (SELECT 1 FROM "team_member" tm WHERE tm."team_id" = '${TEAM.id}' AND tm."user_id" = u."id");` : ""}`)
   }
 
   return header("03 · Cuentas de prueba y equipo Neo", `BEGIN;\n${lines.join("\n")}\nCOMMIT;`)
@@ -243,8 +249,16 @@ const PATTERN_MAP: Record<DatasetExercise["category"], string> = {
 export const exerciseUuid = (name: string) => stableUuid(`exercise:${name}`)
 
 function buildExercises(dataset: DatasetExercise[]): string {
-  const adminId = `(SELECT "id" FROM "user" WHERE "email" = ${q(ADMIN_EMAIL)})`
-  const lines: string[] = []
+  const adminId = `(SELECT "id" FROM "user" WHERE "email" = ${q(EXERCISE_OWNER_EMAIL)})`
+  const seedIds = dataset.map((ex) => `'${exerciseUuid(ex.name)}'`).join(", ")
+  const lines: string[] = [
+    // Bases sembradas con versiones anteriores: los ejercicios eran de la cuenta del coach.
+    // Se transfieren a Calixpert conservando los mismos IDs (rutinas y sesiones siguen apuntando bien).
+    `-- Transferir el catálogo sembrado a ${EXERCISE_OWNER_EMAIL}
+UPDATE "exercise" SET "owner_user_id" = ${adminId}, "owner_team_id" = NULL, "created_by" = ${adminId}, "is_public" = true, "updated_at" = now()
+  WHERE "id" IN (${seedIds})
+    AND "owner_user_id" IS DISTINCT FROM ${adminId};`,
+  ]
 
   for (const ex of dataset) {
     if (!ex.youtube_verified || !ex.youtube_id) throw new Error(`Ejercicio sin video verificado: ${ex.name}`)
@@ -317,7 +331,7 @@ function buildDemoRoutine(dataset: DatasetExercise[]): string {
   return `-- Rutina de ejemplo del equipo Neo
 INSERT INTO "routine" ("id", "name", "team_id", "created_by", "category", "content")
   SELECT '${stableUuid("routine:demo")}', 'rutina de ejemplo', '${TEAM.id}', u."id", 'training', ${q(JSON.stringify(content))}::jsonb
-  FROM "user" u WHERE u."email" = ${q(ADMIN_EMAIL)}
+  FROM "user" u WHERE u."email" = ${q(COACH_EMAIL)}
   ON CONFLICT ("id") DO NOTHING;`
 }
 

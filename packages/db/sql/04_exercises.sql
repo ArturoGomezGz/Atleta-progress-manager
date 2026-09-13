@@ -4,10 +4,14 @@
 -- Idempotente: seguro de re-ejecutar.
 -- ═══════════════════════════════════════════════════════════════════════════
 BEGIN;
+-- Transferir el catálogo sembrado a calixpert@gmail.com
+UPDATE "exercise" SET "owner_user_id" = (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), "owner_team_id" = NULL, "created_by" = (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), "is_public" = true, "updated_at" = now()
+  WHERE "id" IN ('f6617eb1-491f-54dd-ab3f-cdedfb84fa77', '361bade8-4e53-5ed1-aadb-cab652d79648', '708f2891-b0c0-5277-a17f-fe809c50a078', '99315fbd-f149-535f-ab2c-034683d17e73', '2167e7ba-be4f-5094-a0ed-939427b1375c', '16ba7b16-46d9-5661-ae7d-1e3dbf972c73', '47c63e46-1d89-5b40-a160-f51925c9e27f', '68cbf386-4ffe-5bd8-a852-b61eb0d2dd11', 'b4e4436e-6879-5f4f-a64f-276c37df37e6', '8133a783-457b-53b9-a69e-2880a86015d1', 'a637a507-1fa7-5282-a45a-8650dabf6d1d', 'd84b00de-6ceb-5742-affc-7af41235464e', 'cf67ada2-c733-5ebe-add5-9356c1fbb995', 'ef33fa00-5bce-5425-a630-bb933697dd07', 'f52956e9-d572-58a6-a4d9-faa2be0f0d0f', 'b27d44e6-61eb-5bf9-aad0-0707b64d1fa6', '7b9c73c8-865f-5d94-a907-2104cd326b60', '596937ec-8e1f-5899-a68c-6edf8f01fa26', '097c82be-eb16-5fca-ad41-7f6c5aee18b7', '2c606ac5-31ef-53a7-ad88-6d97435918de', 'f81184e1-0a11-5023-a4fc-6782d096a7f5', '40afa1bc-49db-5aad-a1fd-a147213c68b0', 'b99eb1ec-6d50-59a6-a1f1-f2ca9459dac2', '75071fde-e9b9-572a-a7d2-7ce74e3572be', '00111f4f-37e9-57bb-a386-cefb20cad43e', '4cb99816-a65c-599d-aeb6-59ce4409069f', 'f3b77da6-b4fe-5caf-a6f2-61e772b7d060', 'b3ee489f-fa93-5054-a338-53af4bcaf67b', '89db6af5-a1d4-5ab5-aada-d43d62a95efd', 'bcfc277c-0aeb-55b6-a01b-9a37fdcf0e27', 'b5d67f58-2240-52a7-aecf-c7c263761a1b', '2974c3cc-c45f-5965-ae93-096495a1b292', '3b4c6fde-9a97-524b-a604-d3c573afe092', '137ad165-b8c8-57ef-af4c-a571bb13eda7', 'cd74fcd7-a3d3-51ee-ae28-5c3a4d075884', '9117cbe6-6d4c-5228-a326-fcab4fdfd390', 'aac09ca5-88c6-5342-a5b8-ca3f6a9fbbe2', '88a1ac5d-470f-5ed4-ad3a-3c7ccdf616aa', '136f1447-c8f3-5577-ad07-18d212ca9ef6', '1302dc2b-769a-518f-afc0-071fc180e623', '8ecc7d11-8bbc-57ce-a152-11aa8b0a10e7', '56922e78-beba-54d2-ac80-e658ecf69953', '017bbed9-6a5b-5f6d-ae67-b4813c0e9665', '95cec25c-93d0-5a1f-acf7-fb54d9bcfd60', '4469e5ab-f710-50f6-a996-9dd6fdc9f476', 'c56d4c4f-f833-5181-a3b9-191a181637a9', '426c4161-a63f-5956-acae-b94f20422846', '4c77e1d4-d7a6-5d88-aebb-18f45359d270', 'f5628fac-cb7b-58be-a38e-5119fcbda1ca', 'a5e33e59-1e5d-50cf-a925-7e2688eb72b5', '56e21a4e-291c-5758-a516-7dd423d9a518', '8e554aa8-3a43-57fe-ab85-db92922bfae4', 'a74e698b-1d47-5086-ae9f-68ec0c0fa4f7', 'd8987f0f-7189-5440-a9eb-c323a5ad2f09', 'fd189f7f-eb76-5ddb-a31a-a57c04c99258', '081e043d-6d65-5cde-ab6e-693763797917', 'a623ba2b-a2be-52bc-af7a-4aead6f5e120', 'a305bd9c-e57e-5984-ae7c-3cdc596c5079', '04f266e1-7283-5eae-af1d-bf650fc55c0f', 'e5ab78f3-924e-5b69-a004-6c7013139fd4', 'b37d8b2a-9274-56ca-ac41-e64f1e207d22', '6b65aaf8-6249-5eb1-ae64-3184c7d43393', 'ae9e8fad-8590-5923-a4f3-12f60029f290', '77561d4d-3057-5c35-a2b5-51c064553a1f', 'a913aa3c-b637-5234-a9f4-b936f71cdb20', '667f7528-07bc-5fe0-ae24-17176f49f4e2', '4715df61-ebc2-50a1-a008-f6e703703ca1', '21803403-6caf-5739-aff4-297208202e76', 'b0479acf-f941-5dfa-a6c9-4221fcb869ad', '1bcfc4c2-929c-502f-a2b6-4056914d4881', 'ee784afd-dd84-5d64-a13a-f191cfd10902', 'e2150598-0d7c-5172-a6e0-100be2c2db25', 'f508b5c5-fbc0-58f2-ac03-d6f4c2f12f55', '2509e39c-6fd5-58d4-a714-9eb6134b9fd5', 'b2db7ab5-f76b-585c-aef5-1bc6869eacfd', 'adeef891-7bfb-57e0-add8-9246a7391154', '7fff17cf-1ebe-5fcc-aeb9-faa7214ac6e4', '1cdd21c8-e0b0-59b1-a621-888eb458ab2b', '68aaa8cd-9a52-5cad-afb2-86d7b0bbd10a', 'a8295f8d-ce3a-512f-a3b1-f69b2d0aa515', '93cf1c2c-bfc1-5152-aeb8-730c4b436b72', 'e6082de5-ca7e-5236-a545-3f87eadfab6c', 'c9ac3869-e26e-543c-acd2-787969052058', 'f660abd8-7a75-5959-a7eb-2da40960e810', '20a3bc19-6d34-50de-a4f1-c9e21603cd92', 'f874e599-9349-5597-aa52-3902c869c5b5', '414eafd7-a136-53aa-ac20-e8ad7f0604de', 'e18c3868-b790-5aac-a445-06208210700e', '057d4c07-bc30-5d0a-a7f9-9ef8afbb0af1', '80b7bff0-e5fa-5141-adf0-5a654d08f6fe', 'c3a0039d-5bcb-5819-ae4a-b36104bad568', 'da04dc79-3de9-519a-a26d-c230260cf034', 'dfbc62c8-dc92-5147-a7c6-2a480b185cb4', 'f30cfc7d-74e9-5efa-ad30-19c2849eb0f2', '00e88d18-5a64-59c3-a9fe-38eea0f97e8c', '1dabf288-21ac-5bdb-a5b4-da8ebdaa8062', 'b894c4d0-8cef-5fb5-a6f9-9bd4fe2b8803', 'b66526a2-72ea-533e-a806-5110f9addbfa', 'f5665e13-b620-5d64-ae57-cd15a7025bcd', '620f89c7-99a1-55c9-abcf-41b2c2ff2d5c')
+    AND "owner_user_id" IS DISTINCT FROM (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com');
 
 -- Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f6617eb1-491f-54dd-ab3f-cdedfb84fa77', 'Push Ups', 'Flexión clásica en el suelo con cuerpo en línea recta; base del empuje horizontal.', 'beginner', '{push}', 'wfTgTs8YqUc', 'How To Do Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f6617eb1-491f-54dd-ab3f-cdedfb84fa77', 'Push Ups', 'Flexión clásica en el suelo con cuerpo en línea recta; base del empuje horizontal.', 'beginner', '{push}', 'wfTgTs8YqUc', 'How To Do Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f6617eb1-491f-54dd-ab3f-cdedfb84fa77', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -32,7 +36,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Knee Push Up
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('361bade8-4e53-5ed1-aadb-cab652d79648', 'Knee Push Up', 'Flexión apoyando rodillas para reducir la carga; regresión de la flexión clásica.', 'beginner', '{push}', 'uam7Z8aVO4w', 'How To Do Knee Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('361bade8-4e53-5ed1-aadb-cab652d79648', 'Knee Push Up', 'Flexión apoyando rodillas para reducir la carga; regresión de la flexión clásica.', 'beginner', '{push}', 'uam7Z8aVO4w', 'How To Do Knee Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '361bade8-4e53-5ed1-aadb-cab652d79648', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -57,7 +61,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Wall Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('708f2891-b0c0-5277-a17f-fe809c50a078', 'Wall Push Ups', 'Flexión de pie contra la pared; nivel de inicio absoluto para empuje.', 'beginner', '{pull}', 'pxLvvuAvjzo', 'How To Do Wall Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('708f2891-b0c0-5277-a17f-fe809c50a078', 'Wall Push Ups', 'Flexión de pie contra la pared; nivel de inicio absoluto para empuje.', 'beginner', '{pull}', 'pxLvvuAvjzo', 'How To Do Wall Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '708f2891-b0c0-5277-a17f-fe809c50a078', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -86,7 +90,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Hip Height Incline Push ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('99315fbd-f149-535f-ab2c-034683d17e73', 'Hip Height Incline Push ups', 'Flexión con manos elevadas a la altura de la cadera para reducir carga.', 'beginner', '{push}', 'OQfIpU_xC5s', 'How To Do Hip Height Incline Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('99315fbd-f149-535f-ab2c-034683d17e73', 'Hip Height Incline Push ups', 'Flexión con manos elevadas a la altura de la cadera para reducir carga.', 'beginner', '{push}', 'OQfIpU_xC5s', 'How To Do Hip Height Incline Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '99315fbd-f149-535f-ab2c-034683d17e73', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -115,7 +119,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Knee Height Incline Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('2167e7ba-be4f-5094-a0ed-939427b1375c', 'Knee Height Incline Push Ups', 'Flexión con manos en superficie a la altura de la rodilla.', 'beginner', '{push}', 'nptMG5hV90c', 'How To Do Knee Height Incline Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('2167e7ba-be4f-5094-a0ed-939427b1375c', 'Knee Height Incline Push Ups', 'Flexión con manos en superficie a la altura de la rodilla.', 'beginner', '{push}', 'nptMG5hV90c', 'How To Do Knee Height Incline Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '2167e7ba-be4f-5094-a0ed-939427b1375c', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -140,7 +144,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Negative Push Up
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('16ba7b16-46d9-5661-ae7d-1e3dbf972c73', 'Negative Push Up', 'Descenso lento y controlado de la flexión para ganar fuerza excéntrica.', 'beginner', '{push}', 'vyOLKo7PizM', 'How To Do Negative Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('16ba7b16-46d9-5661-ae7d-1e3dbf972c73', 'Negative Push Up', 'Descenso lento y controlado de la flexión para ganar fuerza excéntrica.', 'beginner', '{push}', 'vyOLKo7PizM', 'How To Do Negative Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '16ba7b16-46d9-5661-ae7d-1e3dbf972c73', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -165,7 +169,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Diamond Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('47c63e46-1d89-5b40-a160-f51925c9e27f', 'Diamond Push Ups', 'Flexión con manos juntas formando un diamante; enfatiza tríceps.', 'intermediate', '{push}', 'cINBeEWEV9s', 'How To Do Diamond Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('47c63e46-1d89-5b40-a160-f51925c9e27f', 'Diamond Push Ups', 'Flexión con manos juntas formando un diamante; enfatiza tríceps.', 'intermediate', '{push}', 'cINBeEWEV9s', 'How To Do Diamond Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '47c63e46-1d89-5b40-a160-f51925c9e27f', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -190,7 +194,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Wide Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('68cbf386-4ffe-5bd8-a852-b61eb0d2dd11', 'Wide Push Ups', 'Flexión con agarre amplio; mayor énfasis en pecho.', 'intermediate', '{push}', '6dZ71O7BzVQ', 'How To Do Wide Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('68cbf386-4ffe-5bd8-a852-b61eb0d2dd11', 'Wide Push Ups', 'Flexión con agarre amplio; mayor énfasis en pecho.', 'intermediate', '{push}', '6dZ71O7BzVQ', 'How To Do Wide Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '68cbf386-4ffe-5bd8-a852-b61eb0d2dd11', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -215,7 +219,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Narrow Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b4e4436e-6879-5f4f-a64f-276c37df37e6', 'Narrow Push Ups', 'Flexión con manos a la anchura de hombros o menos; más tríceps.', 'beginner', '{push}', '6e6uUJ8QzXw', 'How To Do Narrow Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b4e4436e-6879-5f4f-a64f-276c37df37e6', 'Narrow Push Ups', 'Flexión con manos a la anchura de hombros o menos; más tríceps.', 'beginner', '{push}', '6e6uUJ8QzXw', 'How To Do Narrow Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b4e4436e-6879-5f4f-a64f-276c37df37e6', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -240,7 +244,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Decline Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('8133a783-457b-53b9-a69e-2880a86015d1', 'Decline Push Ups', 'Flexión con pies elevados; más carga en hombro y pecho superior.', 'intermediate', '{push}', 'N5Hel1XfCy0', 'How To Do Decline Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('8133a783-457b-53b9-a69e-2880a86015d1', 'Decline Push Ups', 'Flexión con pies elevados; más carga en hombro y pecho superior.', 'intermediate', '{push}', 'N5Hel1XfCy0', 'How To Do Decline Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '8133a783-457b-53b9-a69e-2880a86015d1', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -265,7 +269,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Archer Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('a637a507-1fa7-5282-a45a-8650dabf6d1d', 'Archer Push Ups', 'Flexión desplazando el peso a un brazo mientras el otro se extiende.', 'advanced', '{push}', 'OVRBYrjszy4', 'How To Do Archer Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('a637a507-1fa7-5282-a45a-8650dabf6d1d', 'Archer Push Ups', 'Flexión desplazando el peso a un brazo mientras el otro se extiende.', 'advanced', '{push}', 'OVRBYrjszy4', 'How To Do Archer Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'a637a507-1fa7-5282-a45a-8650dabf6d1d', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -294,7 +298,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Pseudo Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('d84b00de-6ceb-5742-affc-7af41235464e', 'Pseudo Push Ups', 'Flexión con manos a la altura de la cadera y hombros adelantados; preparación para planche.', 'intermediate', '{push}', 'xhpwupEd4e8', 'How To Do Pseudo Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('d84b00de-6ceb-5742-affc-7af41235464e', 'Pseudo Push Ups', 'Flexión con manos a la altura de la cadera y hombros adelantados; preparación para planche.', 'intermediate', '{push}', 'xhpwupEd4e8', 'How To Do Pseudo Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'd84b00de-6ceb-5742-affc-7af41235464e', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -323,7 +327,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Clap Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('cf67ada2-c733-5ebe-add5-9356c1fbb995', 'Clap Push Ups', 'Flexión explosiva despegando las manos para aplaudir.', 'advanced', '{push}', 'dEB7ZXdm410', 'How To Do Clap Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('cf67ada2-c733-5ebe-add5-9356c1fbb995', 'Clap Push Ups', 'Flexión explosiva despegando las manos para aplaudir.', 'advanced', '{push}', 'dEB7ZXdm410', 'How To Do Clap Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'cf67ada2-c733-5ebe-add5-9356c1fbb995', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -352,7 +356,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Pike Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('ef33fa00-5bce-5425-a630-bb933697dd07', 'Pike Push Ups', 'Flexión con cadera elevada en V invertida; empuje vertical para hombros.', 'intermediate', '{push}', '226O2XfevJ0', 'How To Do Pike Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('ef33fa00-5bce-5425-a630-bb933697dd07', 'Pike Push Ups', 'Flexión con cadera elevada en V invertida; empuje vertical para hombros.', 'intermediate', '{push}', '226O2XfevJ0', 'How To Do Pike Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'ef33fa00-5bce-5425-a630-bb933697dd07', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -385,7 +389,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Incline Pike Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f52956e9-d572-58a6-a4d9-faa2be0f0d0f', 'Incline Pike Push Ups', 'Flexión pica con manos elevadas; regresión para hombros.', 'beginner', '{push}', 'HLjASz4wexo', 'How To Do Incline Pike Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f52956e9-d572-58a6-a4d9-faa2be0f0d0f', 'Incline Pike Push Ups', 'Flexión pica con manos elevadas; regresión para hombros.', 'beginner', '{push}', 'HLjASz4wexo', 'How To Do Incline Pike Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f52956e9-d572-58a6-a4d9-faa2be0f0d0f', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -414,7 +418,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- 90 Degree Handstand Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b27d44e6-61eb-5bf9-aad0-0707b64d1fa6', '90 Degree Handstand Push Ups', 'Flexión en parada de manos bajando hasta codos a 90 grados.', 'advanced', '{push}', 'XiT4FBHY_v8', 'How To Do 90 Degree Handstand Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b27d44e6-61eb-5bf9-aad0-0707b64d1fa6', '90 Degree Handstand Push Ups', 'Flexión en parada de manos bajando hasta codos a 90 grados.', 'advanced', '{push}', 'XiT4FBHY_v8', 'How To Do 90 Degree Handstand Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b27d44e6-61eb-5bf9-aad0-0707b64d1fa6', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -459,7 +463,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Shoulder Tap Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('7b9c73c8-865f-5d94-a907-2104cd326b60', 'Shoulder Tap Push Ups', 'Flexión alternando toques de hombro; añade antirrotación del core.', 'beginner', '{push}', 'ZVlxdH2r7Vo', 'How To Do Shoulder Taps Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('7b9c73c8-865f-5d94-a907-2104cd326b60', 'Shoulder Tap Push Ups', 'Flexión alternando toques de hombro; añade antirrotación del core.', 'beginner', '{push}', 'ZVlxdH2r7Vo', 'How To Do Shoulder Taps Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '7b9c73c8-865f-5d94-a907-2104cd326b60', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -488,7 +492,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Ring Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('596937ec-8e1f-5899-a68c-6edf8f01fa26', 'Ring Push Ups', 'Flexión con manos en anillas; exige estabilidad de hombro.', 'intermediate', '{push}', 'J6TpAoHj92A', 'How To Do Ring Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('596937ec-8e1f-5899-a68c-6edf8f01fa26', 'Ring Push Ups', 'Flexión con manos en anillas; exige estabilidad de hombro.', 'intermediate', '{push}', 'J6TpAoHj92A', 'How To Do Ring Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '596937ec-8e1f-5899-a68c-6edf8f01fa26', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -517,7 +521,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Tiger Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('097c82be-eb16-5fca-ad41-7f6c5aee18b7', 'Tiger Push Ups', 'Transición de apoyo en antebrazos a brazos extendidos; tríceps intenso.', 'advanced', '{push}', '-Y3hHxuD56c', 'How To Do Tiger Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('097c82be-eb16-5fca-ad41-7f6c5aee18b7', 'Tiger Push Ups', 'Transición de apoyo en antebrazos a brazos extendidos; tríceps intenso.', 'advanced', '{push}', '-Y3hHxuD56c', 'How To Do Tiger Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '097c82be-eb16-5fca-ad41-7f6c5aee18b7', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -542,7 +546,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Russian Push Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('2c606ac5-31ef-53a7-ad88-6d97435918de', 'Russian Push Ups', 'Flexión con transición a antebrazos y regreso; tríceps y hombro.', 'intermediate', '{push}', 'L1mh75FRtQM', 'How To Do Russian Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('2c606ac5-31ef-53a7-ad88-6d97435918de', 'Russian Push Ups', 'Flexión con transición a antebrazos y regreso; tríceps y hombro.', 'intermediate', '{push}', 'L1mh75FRtQM', 'How To Do Russian Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '2c606ac5-31ef-53a7-ad88-6d97435918de', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -567,7 +571,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Scapula Push up
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f81184e1-0a11-5023-a4fc-6782d096a7f5', 'Scapula Push up', 'Protracción y retracción escapular en posición de plancha, sin doblar codos.', 'beginner', '{push}', 'LolK1AbFpMQ', 'How To Do Scapula Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f81184e1-0a11-5023-a4fc-6782d096a7f5', 'Scapula Push up', 'Protracción y retracción escapular en posición de plancha, sin doblar codos.', 'beginner', '{push}', 'LolK1AbFpMQ', 'How To Do Scapula Push Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f81184e1-0a11-5023-a4fc-6782d096a7f5', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -592,7 +596,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Dips
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('40afa1bc-49db-5aad-a1fd-a147213c68b0', 'Dips', 'Descenso y empuje en barras paralelas; pecho, tríceps y hombro.', 'intermediate', '{push}', 'nigZNnJAQrY', 'How To Do Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('40afa1bc-49db-5aad-a1fd-a147213c68b0', 'Dips', 'Descenso y empuje en barras paralelas; pecho, tríceps y hombro.', 'intermediate', '{push}', 'nigZNnJAQrY', 'How To Do Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '40afa1bc-49db-5aad-a1fd-a147213c68b0', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -621,7 +625,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Assisted Dips
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b99eb1ec-6d50-59a6-a1f1-f2ca9459dac2', 'Assisted Dips', 'Fondos con banda de resistencia para reducir carga.', 'beginner', '{push}', 'ld4f2iJ2_us', 'How To Do Assisted Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b99eb1ec-6d50-59a6-a1f1-f2ca9459dac2', 'Assisted Dips', 'Fondos con banda de resistencia para reducir carga.', 'beginner', '{push}', 'ld4f2iJ2_us', 'How To Do Assisted Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b99eb1ec-6d50-59a6-a1f1-f2ca9459dac2', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -654,7 +658,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Negative Dips
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('75071fde-e9b9-572a-a7d2-7ce74e3572be', 'Negative Dips', 'Descenso lento en paralelas para construir fuerza de fondos.', 'beginner', '{push}', 'y9yrMvmS-yU', 'How To Do Negative Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('75071fde-e9b9-572a-a7d2-7ce74e3572be', 'Negative Dips', 'Descenso lento en paralelas para construir fuerza de fondos.', 'beginner', '{push}', 'y9yrMvmS-yU', 'How To Do Negative Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '75071fde-e9b9-572a-a7d2-7ce74e3572be', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -683,7 +687,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Dip Support Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('00111f4f-37e9-57bb-a386-cefb20cad43e', 'Dip Support Hold', 'Mantener el cuerpo arriba con brazos extendidos en paralelas.', 'beginner', '{push}', '_vPttkLHZMw', 'How To Do Dip Support Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('00111f4f-37e9-57bb-a386-cefb20cad43e', 'Dip Support Hold', 'Mantener el cuerpo arriba con brazos extendidos en paralelas.', 'beginner', '{push}', '_vPttkLHZMw', 'How To Do Dip Support Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '00111f4f-37e9-57bb-a386-cefb20cad43e', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -720,7 +724,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Chair Dips With Bent Knees
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('4cb99816-a65c-599d-aeb6-59ce4409069f', 'Chair Dips With Bent Knees', 'Fondos de tríceps en silla con pies cerca; nivel inicial.', 'beginner', '{push}', 'Y-zpMnf8-Ms', 'How To Do Chair Dips With Bent Knees', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('4cb99816-a65c-599d-aeb6-59ce4409069f', 'Chair Dips With Bent Knees', 'Fondos de tríceps en silla con pies cerca; nivel inicial.', 'beginner', '{push}', 'Y-zpMnf8-Ms', 'How To Do Chair Dips With Bent Knees', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '4cb99816-a65c-599d-aeb6-59ce4409069f', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -749,7 +753,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Ring Dips
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f3b77da6-b4fe-5caf-a6f2-61e772b7d060', 'Ring Dips', 'Fondos en anillas; requiere gran estabilidad.', 'advanced', '{push}', 'YtKfqs6AUYE', 'How To Do Ring Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f3b77da6-b4fe-5caf-a6f2-61e772b7d060', 'Ring Dips', 'Fondos en anillas; requiere gran estabilidad.', 'advanced', '{push}', 'YtKfqs6AUYE', 'How To Do Ring Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f3b77da6-b4fe-5caf-a6f2-61e772b7d060', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -790,7 +794,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Ring Support Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b3ee489f-fa93-5054-a338-53af4bcaf67b', 'Ring Support Hold', 'Mantener soporte con brazos extendidos en anillas.', 'intermediate', '{push}', 'iiOypUW-TAA', 'How To Do Ring Support Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b3ee489f-fa93-5054-a338-53af4bcaf67b', 'Ring Support Hold', 'Mantener soporte con brazos extendidos en anillas.', 'intermediate', '{push}', 'iiOypUW-TAA', 'How To Do Ring Support Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b3ee489f-fa93-5054-a338-53af4bcaf67b', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -843,7 +847,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Weighted Dips
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('89db6af5-a1d4-5ab5-aada-d43d62a95efd', 'Weighted Dips', 'Fondos con cinturón de lastre para progresar fuerza.', 'advanced', '{push}', 'FaDwJniHyjM', 'How To Do Weighted Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('89db6af5-a1d4-5ab5-aada-d43d62a95efd', 'Weighted Dips', 'Fondos con cinturón de lastre para progresar fuerza.', 'advanced', '{push}', 'FaDwJniHyjM', 'How To Do Weighted Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '89db6af5-a1d4-5ab5-aada-d43d62a95efd', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -880,7 +884,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Explosive Dips
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('bcfc277c-0aeb-55b6-a01b-9a37fdcf0e27', 'Explosive Dips', 'Fondos con fase concéntrica explosiva.', 'advanced', '{push}', 'x3XSb7HoOCo', 'How To Do Explosive Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('bcfc277c-0aeb-55b6-a01b-9a37fdcf0e27', 'Explosive Dips', 'Fondos con fase concéntrica explosiva.', 'advanced', '{push}', 'x3XSb7HoOCo', 'How To Do Explosive Dips', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'bcfc277c-0aeb-55b6-a01b-9a37fdcf0e27', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -913,7 +917,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Planche Lean
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b5d67f58-2240-52a7-aecf-c7c263761a1b', 'Planche Lean', 'Plancha con hombros por delante de las manos; base para planche.', 'beginner', '{push}', '9R4OxINluw0', 'How To Do Planche Lean', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b5d67f58-2240-52a7-aecf-c7c263761a1b', 'Planche Lean', 'Plancha con hombros por delante de las manos; base para planche.', 'beginner', '{push}', '9R4OxINluw0', 'How To Do Planche Lean', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b5d67f58-2240-52a7-aecf-c7c263761a1b', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -950,7 +954,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Tuck Planche
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('2974c3cc-c45f-5965-ae93-096495a1b292', 'Tuck Planche', 'Planche con rodillas al pecho sobre paralelas o suelo.', 'beginner', '{push}', 'aTaYfWqOBzI', 'How To Do Tuck Planche', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('2974c3cc-c45f-5965-ae93-096495a1b292', 'Tuck Planche', 'Planche con rodillas al pecho sobre paralelas o suelo.', 'beginner', '{push}', 'aTaYfWqOBzI', 'How To Do Tuck Planche', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '2974c3cc-c45f-5965-ae93-096495a1b292', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -983,7 +987,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Advanced Tuck Planche
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('3b4c6fde-9a97-524b-a604-d3c573afe092', 'Advanced Tuck Planche', 'Planche con espalda plana y cadera extendida parcialmente.', 'intermediate', '{push}', 'A3dXIMhSHmk', 'How To Do Advanced Tuck Planche', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('3b4c6fde-9a97-524b-a604-d3c573afe092', 'Advanced Tuck Planche', 'Planche con espalda plana y cadera extendida parcialmente.', 'intermediate', '{push}', 'A3dXIMhSHmk', 'How To Do Advanced Tuck Planche', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '3b4c6fde-9a97-524b-a604-d3c573afe092', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1024,7 +1028,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Straddle Planche
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('137ad165-b8c8-57ef-af4c-a571bb13eda7', 'Straddle Planche', 'Planche con piernas extendidas y abiertas.', 'advanced', '{push}', 'ZGrEdcMpxHk', 'How To Do Straddle Planche', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('137ad165-b8c8-57ef-af4c-a571bb13eda7', 'Straddle Planche', 'Planche con piernas extendidas y abiertas.', 'advanced', '{push}', 'ZGrEdcMpxHk', 'How To Do Straddle Planche', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '137ad165-b8c8-57ef-af4c-a571bb13eda7', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1073,7 +1077,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Full Planche
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('cd74fcd7-a3d3-51ee-ae28-5c3a4d075884', 'Full Planche', 'Cuerpo horizontal y recto sostenido solo con brazos extendidos.', 'advanced', '{push}', 'KbroJBvHssM', 'How To Do Full Planche', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('cd74fcd7-a3d3-51ee-ae28-5c3a4d075884', 'Full Planche', 'Cuerpo horizontal y recto sostenido solo con brazos extendidos.', 'advanced', '{push}', 'KbroJBvHssM', 'How To Do Full Planche', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'cd74fcd7-a3d3-51ee-ae28-5c3a4d075884', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1114,7 +1118,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Frog stand
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('9117cbe6-6d4c-5228-a326-fcab4fdfd390', 'Frog stand', 'Equilibrio sobre las manos con rodillas apoyadas en los codos.', 'beginner', '{core}', 'kBj1gth949w', 'How To Do Frogstand', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('9117cbe6-6d4c-5228-a326-fcab4fdfd390', 'Frog stand', 'Equilibrio sobre las manos con rodillas apoyadas en los codos.', 'beginner', '{core}', 'kBj1gth949w', 'How To Do Frogstand', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '9117cbe6-6d4c-5228-a326-fcab4fdfd390', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1147,7 +1151,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Wall Handstand Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('aac09ca5-88c6-5342-a5b8-ca3f6a9fbbe2', 'Wall Handstand Hold', 'Sostener la parada de manos apoyando pies en la pared.', 'intermediate', '{core}', '2v1YDTzMcO8', 'How To Do Wall Handstand Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('aac09ca5-88c6-5342-a5b8-ca3f6a9fbbe2', 'Wall Handstand Hold', 'Sostener la parada de manos apoyando pies en la pared.', 'intermediate', '{core}', '2v1YDTzMcO8', 'How To Do Wall Handstand Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'aac09ca5-88c6-5342-a5b8-ca3f6a9fbbe2', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1184,7 +1188,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Wall Walks
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('88a1ac5d-470f-5ed4-ad3a-3c7ccdf616aa', 'Wall Walks', 'Subir caminando con pies por la pared hasta parada de manos.', 'beginner', '{push}', 'wk5gF0FWQBc', 'How To Do Wall Walks', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('88a1ac5d-470f-5ed4-ad3a-3c7ccdf616aa', 'Wall Walks', 'Subir caminando con pies por la pared hasta parada de manos.', 'beginner', '{push}', 'wk5gF0FWQBc', 'How To Do Wall Walks', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '88a1ac5d-470f-5ed4-ad3a-3c7ccdf616aa', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1221,7 +1225,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Pull ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('136f1447-c8f3-5577-ad07-18d212ca9ef6', 'Pull ups', 'Tirón vertical con agarre prono hasta pasar la barbilla sobre la barra.', 'beginner', '{pull}', 'h8iSy8hl_i0', 'How To Do Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('136f1447-c8f3-5577-ad07-18d212ca9ef6', 'Pull ups', 'Tirón vertical con agarre prono hasta pasar la barbilla sobre la barra.', 'beginner', '{pull}', 'h8iSy8hl_i0', 'How To Do Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '136f1447-c8f3-5577-ad07-18d212ca9ef6', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1254,7 +1258,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Chin Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('1302dc2b-769a-518f-afc0-071fc180e623', 'Chin Ups', 'Dominada con agarre supino; más bíceps.', 'intermediate', '{pull}', 'S7Gg9noaZ54', 'How To Do Chin Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('1302dc2b-769a-518f-afc0-071fc180e623', 'Chin Ups', 'Dominada con agarre supino; más bíceps.', 'intermediate', '{pull}', 'S7Gg9noaZ54', 'How To Do Chin Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '1302dc2b-769a-518f-afc0-071fc180e623', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1291,7 +1295,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Assisted Pull Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('8ecc7d11-8bbc-57ce-a152-11aa8b0a10e7', 'Assisted Pull Ups', 'Dominadas con banda para reducir peso corporal.', 'beginner', '{pull}', 'S4ssMONPZ6k', 'How To Do Assisted Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('8ecc7d11-8bbc-57ce-a152-11aa8b0a10e7', 'Assisted Pull Ups', 'Dominadas con banda para reducir peso corporal.', 'beginner', '{pull}', 'S4ssMONPZ6k', 'How To Do Assisted Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '8ecc7d11-8bbc-57ce-a152-11aa8b0a10e7', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1332,7 +1336,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Negative Pull Up
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('56922e78-beba-54d2-ac80-e658ecf69953', 'Negative Pull Up', 'Descenso lento desde arriba de la barra.', 'beginner', '{pull}', '3w8Pnbl70SQ', 'How To Do Negative Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('56922e78-beba-54d2-ac80-e658ecf69953', 'Negative Pull Up', 'Descenso lento desde arriba de la barra.', 'beginner', '{pull}', '3w8Pnbl70SQ', 'How To Do Negative Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '56922e78-beba-54d2-ac80-e658ecf69953', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1369,7 +1373,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Scapula Pull-Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('017bbed9-6a5b-5f6d-ae67-b4813c0e9665', 'Scapula Pull-Ups', 'Depresión y retracción escapular colgado, sin doblar codos.', 'beginner', '{pull}', 'W7bcEoXlmOg', 'How To Do Scapula Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('017bbed9-6a5b-5f6d-ae67-b4813c0e9665', 'Scapula Pull-Ups', 'Depresión y retracción escapular colgado, sin doblar codos.', 'beginner', '{pull}', 'W7bcEoXlmOg', 'How To Do Scapula Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '017bbed9-6a5b-5f6d-ae67-b4813c0e9665', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1406,7 +1410,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Dead Hang
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('95cec25c-93d0-5a1f-acf7-fb54d9bcfd60', 'Dead Hang', 'Colgarse de la barra con brazos extendidos; agarre y hombros.', 'beginner', '{pull}', 'vG159HkLrhY', 'How To Do Dead Hang', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('95cec25c-93d0-5a1f-acf7-fb54d9bcfd60', 'Dead Hang', 'Colgarse de la barra con brazos extendidos; agarre y hombros.', 'beginner', '{pull}', 'vG159HkLrhY', 'How To Do Dead Hang', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '95cec25c-93d0-5a1f-acf7-fb54d9bcfd60', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1435,7 +1439,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Active Hang
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('4469e5ab-f710-50f6-a996-9dd6fdc9f476', 'Active Hang', 'Colgado con escápulas activadas y deprimidas.', 'beginner', '{pull}', '0_YZc2yuKkE', 'How To Do Active Hang', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('4469e5ab-f710-50f6-a996-9dd6fdc9f476', 'Active Hang', 'Colgado con escápulas activadas y deprimidas.', 'beginner', '{pull}', '0_YZc2yuKkE', 'How To Do Active Hang', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '4469e5ab-f710-50f6-a996-9dd6fdc9f476', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1472,7 +1476,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Wide Pull Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('c56d4c4f-f833-5181-a3b9-191a181637a9', 'Wide Pull Ups', 'Dominada con agarre amplio; mayor énfasis en dorsales.', 'intermediate', '{pull}', 'BP5qGD4KQfI', 'How To Do Wide Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('c56d4c4f-f833-5181-a3b9-191a181637a9', 'Wide Pull Ups', 'Dominada con agarre amplio; mayor énfasis en dorsales.', 'intermediate', '{pull}', 'BP5qGD4KQfI', 'How To Do Wide Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'c56d4c4f-f833-5181-a3b9-191a181637a9', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1509,7 +1513,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Close Grip Pull ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('426c4161-a63f-5956-acae-b94f20422846', 'Close Grip Pull ups', 'Dominada con manos juntas.', 'intermediate', '{pull}', 'kNJZt0atC5Q', 'How To Do Close Grip Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('426c4161-a63f-5956-acae-b94f20422846', 'Close Grip Pull ups', 'Dominada con manos juntas.', 'intermediate', '{pull}', 'kNJZt0atC5Q', 'How To Do Close Grip Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '426c4161-a63f-5956-acae-b94f20422846', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1546,7 +1550,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Commando Pull Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('4c77e1d4-d7a6-5d88-aebb-18f45359d270', 'Commando Pull Ups', 'Dominada con agarre alterno llevando la cabeza a cada lado de la barra.', 'advanced', '{pull}', '417O4VGusNU', 'How To Do Commando Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('4c77e1d4-d7a6-5d88-aebb-18f45359d270', 'Commando Pull Ups', 'Dominada con agarre alterno llevando la cabeza a cada lado de la barra.', 'advanced', '{pull}', '417O4VGusNU', 'How To Do Commando Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '4c77e1d4-d7a6-5d88-aebb-18f45359d270', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1587,7 +1591,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Explosive Pull Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f5628fac-cb7b-58be-a38e-5119fcbda1ca', 'Explosive Pull Ups', 'Dominada con subida rápida y potente.', 'intermediate', '{pull}', '7VHPDTRUkaU', 'How To Do Explosive Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f5628fac-cb7b-58be-a38e-5119fcbda1ca', 'Explosive Pull Ups', 'Dominada con subida rápida y potente.', 'intermediate', '{pull}', '7VHPDTRUkaU', 'How To Do Explosive Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f5628fac-cb7b-58be-a38e-5119fcbda1ca', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1628,7 +1632,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- High Pull Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('a5e33e59-1e5d-50cf-a925-7e2688eb72b5', 'High Pull Ups', 'Dominada explosiva llevando la barra al pecho bajo; hacia muscle up.', 'advanced', '{pull}', 'sa38UPXqgPo', 'How To Do High Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('a5e33e59-1e5d-50cf-a925-7e2688eb72b5', 'High Pull Ups', 'Dominada explosiva llevando la barra al pecho bajo; hacia muscle up.', 'advanced', '{pull}', 'sa38UPXqgPo', 'How To Do High Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'a5e33e59-1e5d-50cf-a925-7e2688eb72b5', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1669,7 +1673,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Weighted Pull Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('56e21a4e-291c-5758-a516-7dd423d9a518', 'Weighted Pull Ups', 'Dominadas con lastre añadido.', 'advanced', '{pull}', 'k9bGWaitSc0', 'How To Do Weighted Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('56e21a4e-291c-5758-a516-7dd423d9a518', 'Weighted Pull Ups', 'Dominadas con lastre añadido.', 'advanced', '{pull}', 'k9bGWaitSc0', 'How To Do Weighted Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '56e21a4e-291c-5758-a516-7dd423d9a518', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1702,7 +1706,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Weighted Chin Ups
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('8e554aa8-3a43-57fe-ab85-db92922bfae4', 'Weighted Chin Ups', 'Dominadas supinas con lastre.', 'advanced', '{pull}', '6kXRno8A_HE', 'How To Do Weighted Chin Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('8e554aa8-3a43-57fe-ab85-db92922bfae4', 'Weighted Chin Ups', 'Dominadas supinas con lastre.', 'advanced', '{pull}', '6kXRno8A_HE', 'How To Do Weighted Chin Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '8e554aa8-3a43-57fe-ab85-db92922bfae4', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1743,7 +1747,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Pull Up Top Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('a74e698b-1d47-5086-ae9f-68ec0c0fa4f7', 'Pull Up Top Hold', 'Mantener la barbilla sobre la barra.', 'intermediate', '{pull}', 'CIJx_HfIh6E', 'How To Do Pull Up Top Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('a74e698b-1d47-5086-ae9f-68ec0c0fa4f7', 'Pull Up Top Hold', 'Mantener la barbilla sobre la barra.', 'intermediate', '{pull}', 'CIJx_HfIh6E', 'How To Do Pull Up Top Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'a74e698b-1d47-5086-ae9f-68ec0c0fa4f7', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1780,7 +1784,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- 90 Degree Pull Up Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('d8987f0f-7189-5440-a9eb-c323a5ad2f09', '90 Degree Pull Up Hold', 'Mantener la dominada con codos a 90 grados.', 'advanced', '{pull}', 'TccYl5G-gUQ', 'How To Do 90 Degree Pull Up Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('d8987f0f-7189-5440-a9eb-c323a5ad2f09', '90 Degree Pull Up Hold', 'Mantener la dominada con codos a 90 grados.', 'advanced', '{pull}', 'TccYl5G-gUQ', 'How To Do 90 Degree Pull Up Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'd8987f0f-7189-5440-a9eb-c323a5ad2f09', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1817,7 +1821,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Bodyweight Rows / Australian Rows
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('fd189f7f-eb76-5ddb-a31a-a57c04c99258', 'Bodyweight Rows / Australian Rows', 'Remo con cuerpo inclinado bajo una barra o anillas.', 'beginner', '{pull}', '6Ej6xG7fOO0', 'How To Do Bodyweight Rows / Australian Rows', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('fd189f7f-eb76-5ddb-a31a-a57c04c99258', 'Bodyweight Rows / Australian Rows', 'Remo con cuerpo inclinado bajo una barra o anillas.', 'beginner', '{pull}', '6Ej6xG7fOO0', 'How To Do Bodyweight Rows / Australian Rows', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'fd189f7f-eb76-5ddb-a31a-a57c04c99258', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1858,7 +1862,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Bodyweight Incline Rows
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('081e043d-6d65-5cde-ab6e-693763797917', 'Bodyweight Incline Rows', 'Remo con cuerpo más vertical para reducir carga.', 'beginner', '{pull}', '4Ww59oqo4ZY', 'How To Do Incline Bodyweight Rows / Australian Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('081e043d-6d65-5cde-ab6e-693763797917', 'Bodyweight Incline Rows', 'Remo con cuerpo más vertical para reducir carga.', 'beginner', '{pull}', '4Ww59oqo4ZY', 'How To Do Incline Bodyweight Rows / Australian Pull Ups', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '081e043d-6d65-5cde-ab6e-693763797917', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1899,7 +1903,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Scapula Rows
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('a623ba2b-a2be-52bc-af7a-4aead6f5e120', 'Scapula Rows', 'Retracción escapular en posición de remo sin doblar codos.', 'beginner', '{pull}', 'U_GKYVeHEgo', 'How To Do Scapula Rows', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('a623ba2b-a2be-52bc-af7a-4aead6f5e120', 'Scapula Rows', 'Retracción escapular en posición de remo sin doblar codos.', 'beginner', '{pull}', 'U_GKYVeHEgo', 'How To Do Scapula Rows', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'a623ba2b-a2be-52bc-af7a-4aead6f5e120', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1932,7 +1936,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Weighted Ring Rows
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('a305bd9c-e57e-5984-ae7c-3cdc596c5079', 'Weighted Ring Rows', 'Remo en anillas con lastre.', 'intermediate', '{pull}', 'k31j_yP3yiY', 'How To Do Weighted Ring Rows', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('a305bd9c-e57e-5984-ae7c-3cdc596c5079', 'Weighted Ring Rows', 'Remo en anillas con lastre.', 'intermediate', '{pull}', 'k31j_yP3yiY', 'How To Do Weighted Ring Rows', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'a305bd9c-e57e-5984-ae7c-3cdc596c5079', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -1989,7 +1993,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Face Pull In Rings
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('04f266e1-7283-5eae-af1d-bf650fc55c0f', 'Face Pull In Rings', 'Tirón hacia la cara en anillas; deltoide posterior y manguito rotador.', 'intermediate', '{pull}', 'XlzHTUEsz20', 'How To Do Face Pulls', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('04f266e1-7283-5eae-af1d-bf650fc55c0f', 'Face Pull In Rings', 'Tirón hacia la cara en anillas; deltoide posterior y manguito rotador.', 'intermediate', '{pull}', 'XlzHTUEsz20', 'How To Do Face Pulls', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '04f266e1-7283-5eae-af1d-bf650fc55c0f', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2026,7 +2030,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Ring Biceps Curl
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('e5ab78f3-924e-5b69-a004-6c7013139fd4', 'Ring Biceps Curl', 'Curl con peso corporal en anillas.', 'beginner', '{pull}', 's9gkrO9f_Gg', 'How To Do Ring Biceps Curl', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('e5ab78f3-924e-5b69-a004-6c7013139fd4', 'Ring Biceps Curl', 'Curl con peso corporal en anillas.', 'beginner', '{pull}', 's9gkrO9f_Gg', 'How To Do Ring Biceps Curl', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'e5ab78f3-924e-5b69-a004-6c7013139fd4', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2063,7 +2067,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Ring Triceps Extension
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b37d8b2a-9274-56ca-ac41-e64f1e207d22', 'Ring Triceps Extension', 'Extensión de codos en anillas con peso corporal.', 'intermediate', '{push}', 'MK6h_OCJuWI', 'How To Do Ring Triceps Extension', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b37d8b2a-9274-56ca-ac41-e64f1e207d22', 'Ring Triceps Extension', 'Extensión de codos en anillas con peso corporal.', 'intermediate', '{push}', 'MK6h_OCJuWI', 'How To Do Ring Triceps Extension', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b37d8b2a-9274-56ca-ac41-e64f1e207d22', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2096,7 +2100,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- False Grip Hang
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('6b65aaf8-6249-5eb1-ae64-3184c7d43393', 'False Grip Hang', 'Colgado con muñeca sobre la barra; preparación para muscle up.', 'beginner', '{pull}', 'tsgIPpuzQg4', 'How To Do False Grip Hang', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('6b65aaf8-6249-5eb1-ae64-3184c7d43393', 'False Grip Hang', 'Colgado con muñeca sobre la barra; preparación para muscle up.', 'beginner', '{pull}', 'tsgIPpuzQg4', 'How To Do False Grip Hang', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '6b65aaf8-6249-5eb1-ae64-3184c7d43393', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2125,7 +2129,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Ring Muscle Up Transition
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('ae9e8fad-8590-5923-a4f3-12f60029f290', 'Ring Muscle Up Transition', 'Practicar el paso de tirón a empuje en anillas bajas.', 'beginner', '{pull}', 'Uwa5eGV7X30', 'How To Do Ring Muscle Up Transition', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('ae9e8fad-8590-5923-a4f3-12f60029f290', 'Ring Muscle Up Transition', 'Practicar el paso de tirón a empuje en anillas bajas.', 'beginner', '{pull}', 'Uwa5eGV7X30', 'How To Do Ring Muscle Up Transition', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'ae9e8fad-8590-5923-a4f3-12f60029f290', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2162,7 +2166,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Negative Ring Muscle Up
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('77561d4d-3057-5c35-a2b5-51c064553a1f', 'Negative Ring Muscle Up', 'Descenso controlado del muscle up en anillas.', 'intermediate', '{core}', 'DqYHpRaS0NA', 'How To Do Negative Ring Muscle Up', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('77561d4d-3057-5c35-a2b5-51c064553a1f', 'Negative Ring Muscle Up', 'Descenso controlado del muscle up en anillas.', 'intermediate', '{core}', 'DqYHpRaS0NA', 'How To Do Negative Ring Muscle Up', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '77561d4d-3057-5c35-a2b5-51c064553a1f', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2199,7 +2203,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Band Assisted Ring Muscle Up
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('a913aa3c-b637-5234-a9f4-b936f71cdb20', 'Band Assisted Ring Muscle Up', 'Muscle up en anillas con ayuda de banda.', 'intermediate', '{core}', 'JXEcPt4RuQo', 'How To Do Band Assisted Ring Muscle Up', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('a913aa3c-b637-5234-a9f4-b936f71cdb20', 'Band Assisted Ring Muscle Up', 'Muscle up en anillas con ayuda de banda.', 'intermediate', '{core}', 'JXEcPt4RuQo', 'How To Do Band Assisted Ring Muscle Up', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'a913aa3c-b637-5234-a9f4-b936f71cdb20', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2244,7 +2248,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Pull Over
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('667f7528-07bc-5fe0-ae24-17176f49f4e2', 'Pull Over', 'Tirón que lleva la cadera por encima de la barra hasta soporte.', 'advanced', '{pull}', 'SnnpKtrz14c', 'How To Do Pull Over', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('667f7528-07bc-5fe0-ae24-17176f49f4e2', 'Pull Over', 'Tirón que lleva la cadera por encima de la barra hasta soporte.', 'advanced', '{pull}', 'SnnpKtrz14c', 'How To Do Pull Over', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '667f7528-07bc-5fe0-ae24-17176f49f4e2', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2281,7 +2285,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Advanced Tuck Front Lever
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('4715df61-ebc2-50a1-a008-f6e703703ca1', 'Advanced Tuck Front Lever', 'Front lever con espalda plana y rodillas flexionadas.', 'intermediate', '{pull}', 'foJ5wVhF7hc', 'How To Do Advanced Tuck Front Lever', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('4715df61-ebc2-50a1-a008-f6e703703ca1', 'Advanced Tuck Front Lever', 'Front lever con espalda plana y rodillas flexionadas.', 'intermediate', '{pull}', 'foJ5wVhF7hc', 'How To Do Advanced Tuck Front Lever', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '4715df61-ebc2-50a1-a008-f6e703703ca1', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2318,7 +2322,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Halflay Front Lever
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('21803403-6caf-5739-aff4-297208202e76', 'Halflay Front Lever', 'Front lever con piernas a media extensión.', 'advanced', '{pull}', 'ty8y7VMSnRI', 'How To Do Halflay Front Lever', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('21803403-6caf-5739-aff4-297208202e76', 'Halflay Front Lever', 'Front lever con piernas a media extensión.', 'advanced', '{pull}', 'ty8y7VMSnRI', 'How To Do Halflay Front Lever', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '21803403-6caf-5739-aff4-297208202e76', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2359,7 +2363,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Assisted Front Lever
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b0479acf-f941-5dfa-a6c9-4221fcb869ad', 'Assisted Front Lever', 'Front lever con banda de resistencia.', 'advanced', '{pull}', 'ErmDE9DNI3c', 'How To Do Assisted Front Lever', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b0479acf-f941-5dfa-a6c9-4221fcb869ad', 'Assisted Front Lever', 'Front lever con banda de resistencia.', 'advanced', '{pull}', 'ErmDE9DNI3c', 'How To Do Assisted Front Lever', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b0479acf-f941-5dfa-a6c9-4221fcb869ad', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2400,7 +2404,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- German Hang
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('1bcfc4c2-929c-502f-a2b6-4056914d4881', 'German Hang', 'Colgado con hombros en extensión profunda tras pasar las piernas.', 'advanced', '{pull}', 'v65qjfCG6es', 'How To Do German Hang', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('1bcfc4c2-929c-502f-a2b6-4056914d4881', 'German Hang', 'Colgado con hombros en extensión profunda tras pasar las piernas.', 'advanced', '{pull}', 'v65qjfCG6es', 'How To Do German Hang', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '1bcfc4c2-929c-502f-a2b6-4056914d4881', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2441,7 +2445,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Skin The Cat
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('ee784afd-dd84-5d64-a13a-f191cfd10902', 'Skin The Cat', 'Rotación completa pasando las piernas entre los brazos colgado.', 'advanced', '{core}', 'kMSNap6xBqo', 'How To Do Skin The Cat', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('ee784afd-dd84-5d64-a13a-f191cfd10902', 'Skin The Cat', 'Rotación completa pasando las piernas entre los brazos colgado.', 'advanced', '{core}', 'kMSNap6xBqo', 'How To Do Skin The Cat', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'ee784afd-dd84-5d64-a13a-f191cfd10902', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2490,7 +2494,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Resistance Band Lat Pull Down
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('e2150598-0d7c-5172-a6e0-100be2c2db25', 'Resistance Band Lat Pull Down', 'Jalón al pecho con banda de resistencia.', 'beginner', '{pull}', '2K6U6ScTdUI', 'How To Do Resistance Band Lat Pull Down', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('e2150598-0d7c-5172-a6e0-100be2c2db25', 'Resistance Band Lat Pull Down', 'Jalón al pecho con banda de resistencia.', 'beginner', '{pull}', '2K6U6ScTdUI', 'How To Do Resistance Band Lat Pull Down', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'e2150598-0d7c-5172-a6e0-100be2c2db25', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2523,7 +2527,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Straight Arm Pull down
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f508b5c5-fbc0-58f2-ac03-d6f4c2f12f55', 'Straight Arm Pull down', 'Jalón con brazos extendidos para dorsales.', 'beginner', '{pull}', 'Fn_c94pLpVE', 'How To Do Resistance Band Straight Arm Pull Down', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f508b5c5-fbc0-58f2-ac03-d6f4c2f12f55', 'Straight Arm Pull down', 'Jalón con brazos extendidos para dorsales.', 'beginner', '{pull}', 'Fn_c94pLpVE', 'How To Do Resistance Band Straight Arm Pull Down', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f508b5c5-fbc0-58f2-ac03-d6f4c2f12f55', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2552,7 +2556,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Plank
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('2509e39c-6fd5-58d4-a714-9eb6134b9fd5', 'Plank', 'Plancha frontal con cuerpo alineado.', 'beginner', '{core}', 'coint6OCeDY', 'How To Do Plank', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('2509e39c-6fd5-58d4-a714-9eb6134b9fd5', 'Plank', 'Plancha frontal con cuerpo alineado.', 'beginner', '{core}', 'coint6OCeDY', 'How To Do Plank', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '2509e39c-6fd5-58d4-a714-9eb6134b9fd5', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2581,7 +2585,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Long Plank
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b2db7ab5-f76b-585c-aef5-1bc6869eacfd', 'Long Plank', 'Plancha con manos adelantadas para aumentar la palanca.', 'beginner', '{core}', '_9yeH6brSns', 'How To Do Long Plank', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b2db7ab5-f76b-585c-aef5-1bc6869eacfd', 'Long Plank', 'Plancha con manos adelantadas para aumentar la palanca.', 'beginner', '{core}', '_9yeH6brSns', 'How To Do Long Plank', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b2db7ab5-f76b-585c-aef5-1bc6869eacfd', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2610,7 +2614,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Reversed Plank
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('adeef891-7bfb-57e0-add8-9246a7391154', 'Reversed Plank', 'Plancha boca arriba con cadera elevada.', 'beginner', '{core}', 'qxodHz5z0OY', 'How To Do Reversed Plank', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('adeef891-7bfb-57e0-add8-9246a7391154', 'Reversed Plank', 'Plancha boca arriba con cadera elevada.', 'beginner', '{core}', 'qxodHz5z0OY', 'How To Do Reversed Plank', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'adeef891-7bfb-57e0-add8-9246a7391154', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2639,7 +2643,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Hollow Body Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('7fff17cf-1ebe-5fcc-aeb9-faa7214ac6e4', 'Hollow Body Hold', 'Isométrico boca arriba con zona lumbar pegada al suelo.', 'beginner', '{core}', 'TuLnKCIf5xI', 'How To Do Hollow Body Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('7fff17cf-1ebe-5fcc-aeb9-faa7214ac6e4', 'Hollow Body Hold', 'Isométrico boca arriba con zona lumbar pegada al suelo.', 'beginner', '{core}', 'TuLnKCIf5xI', 'How To Do Hollow Body Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '7fff17cf-1ebe-5fcc-aeb9-faa7214ac6e4', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2664,7 +2668,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Tuck Hollow Body Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('1cdd21c8-e0b0-59b1-a621-888eb458ab2b', 'Tuck Hollow Body Hold', 'Hollow body con rodillas flexionadas; regresión.', 'beginner', '{core}', 'UVyCKFb0aIg', 'How To Do Tuck Hollow Body Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('1cdd21c8-e0b0-59b1-a621-888eb458ab2b', 'Tuck Hollow Body Hold', 'Hollow body con rodillas flexionadas; regresión.', 'beginner', '{core}', 'UVyCKFb0aIg', 'How To Do Tuck Hollow Body Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '1cdd21c8-e0b0-59b1-a621-888eb458ab2b', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2685,7 +2689,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Hollow Body Rocks
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('68aaa8cd-9a52-5cad-afb2-86d7b0bbd10a', 'Hollow Body Rocks', 'Balanceo manteniendo la forma de hollow body.', 'intermediate', '{core}', 'XWNXnEfIdZU', 'How To Do Hollow Body Rocks', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('68aaa8cd-9a52-5cad-afb2-86d7b0bbd10a', 'Hollow Body Rocks', 'Balanceo manteniendo la forma de hollow body.', 'intermediate', '{core}', 'XWNXnEfIdZU', 'How To Do Hollow Body Rocks', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '68aaa8cd-9a52-5cad-afb2-86d7b0bbd10a', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2710,7 +2714,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Superman Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('a8295f8d-ce3a-512f-a3b1-f69b2d0aa515', 'Superman Hold', 'Isométrico boca abajo elevando brazos y piernas.', 'intermediate', '{core}', 'hmc934fftKM', 'How To Do Superman Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('a8295f8d-ce3a-512f-a3b1-f69b2d0aa515', 'Superman Hold', 'Isométrico boca abajo elevando brazos y piernas.', 'intermediate', '{core}', 'hmc934fftKM', 'How To Do Superman Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'a8295f8d-ce3a-512f-a3b1-f69b2d0aa515', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2739,7 +2743,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Dead Bug
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('93cf1c2c-bfc1-5152-aeb8-730c4b436b72', 'Dead Bug', 'Extensión alterna de brazo y pierna boca arriba con core estable.', 'beginner', '{core}', 'UKOwvzv1zuw', 'How To Do Dead Bug', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('93cf1c2c-bfc1-5152-aeb8-730c4b436b72', 'Dead Bug', 'Extensión alterna de brazo y pierna boca arriba con core estable.', 'beginner', '{core}', 'UKOwvzv1zuw', 'How To Do Dead Bug', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '93cf1c2c-bfc1-5152-aeb8-730c4b436b72', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2760,7 +2764,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Bird Dog
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('e6082de5-ca7e-5236-a545-3f87eadfab6c', 'Bird Dog', 'En cuadrupedia, extender brazo y pierna opuestos.', 'beginner', '{core}', 'pBOXOVDDiUM', 'How To Do Bird Dog', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('e6082de5-ca7e-5236-a545-3f87eadfab6c', 'Bird Dog', 'En cuadrupedia, extender brazo y pierna opuestos.', 'beginner', '{core}', 'pBOXOVDDiUM', 'How To Do Bird Dog', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'e6082de5-ca7e-5236-a545-3f87eadfab6c', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2785,7 +2789,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- L-sit Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('c9ac3869-e26e-543c-acd2-787969052058', 'L-sit Hold', 'Sostener las piernas extendidas al frente con brazos rectos.', 'beginner', '{core}', 'jxUIHjgdz_U', 'How To Do L-sit Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('c9ac3869-e26e-543c-acd2-787969052058', 'L-sit Hold', 'Sostener las piernas extendidas al frente con brazos rectos.', 'beginner', '{core}', 'jxUIHjgdz_U', 'How To Do L-sit Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'c9ac3869-e26e-543c-acd2-787969052058', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2822,7 +2826,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Tuck L-sit Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f660abd8-7a75-5959-a7eb-2da40960e810', 'Tuck L-sit Hold', 'L-sit con rodillas al pecho.', 'beginner', '{core}', 'fEQg1Tr6LN4', 'How To Do Tuck L sit Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f660abd8-7a75-5959-a7eb-2da40960e810', 'Tuck L-sit Hold', 'L-sit con rodillas al pecho.', 'beginner', '{core}', 'fEQg1Tr6LN4', 'How To Do Tuck L sit Hold', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f660abd8-7a75-5959-a7eb-2da40960e810', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2855,7 +2859,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Hanging Knee raises
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('20a3bc19-6d34-50de-a4f1-c9e21603cd92', 'Hanging Knee raises', 'Elevar rodillas al pecho colgado de la barra.', 'beginner', '{core}', 'VCu3UeReMww', 'How To Do Hanging Knee Raises', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('20a3bc19-6d34-50de-a4f1-c9e21603cd92', 'Hanging Knee raises', 'Elevar rodillas al pecho colgado de la barra.', 'beginner', '{core}', 'VCu3UeReMww', 'How To Do Hanging Knee Raises', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '20a3bc19-6d34-50de-a4f1-c9e21603cd92', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2884,7 +2888,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Hanging Leg raises
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f874e599-9349-5597-aa52-3902c869c5b5', 'Hanging Leg raises', 'Elevar piernas extendidas colgado.', 'intermediate', '{core}', 'VD2UJLRjrXo', 'How To Do Hanging Leg Raises', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f874e599-9349-5597-aa52-3902c869c5b5', 'Hanging Leg raises', 'Elevar piernas extendidas colgado.', 'intermediate', '{core}', 'VD2UJLRjrXo', 'How To Do Hanging Leg Raises', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f874e599-9349-5597-aa52-3902c869c5b5', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2913,7 +2917,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Toes To bar
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('414eafd7-a136-53aa-ac20-e8ad7f0604de', 'Toes To bar', 'Elevar las piernas colgado hasta tocar la barra.', 'intermediate', '{core}', 'kdXaQUvbIYs', 'How To Do Toes To Bar', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('414eafd7-a136-53aa-ac20-e8ad7f0604de', 'Toes To bar', 'Elevar las piernas colgado hasta tocar la barra.', 'intermediate', '{core}', 'kdXaQUvbIYs', 'How To Do Toes To Bar', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '414eafd7-a136-53aa-ac20-e8ad7f0604de', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2942,7 +2946,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Laying Leg Raises
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('e18c3868-b790-5aac-a445-06208210700e', 'Laying Leg Raises', 'Elevar piernas extendidas boca arriba.', 'beginner', '{core}', '2qWUjVvmdfs', 'How To Do Laying Leg Raises', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('e18c3868-b790-5aac-a445-06208210700e', 'Laying Leg Raises', 'Elevar piernas extendidas boca arriba.', 'beginner', '{core}', '2qWUjVvmdfs', 'How To Do Laying Leg Raises', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'e18c3868-b790-5aac-a445-06208210700e', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2963,7 +2967,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Russian Twist
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('057d4c07-bc30-5d0a-a7f9-9ef8afbb0af1', 'Russian Twist', 'Rotación de tronco sentado con pies elevados.', 'beginner', '{core}', 'ZxHYp0A4kcY', 'How To Do Russian Twist', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('057d4c07-bc30-5d0a-a7f9-9ef8afbb0af1', 'Russian Twist', 'Rotación de tronco sentado con pies elevados.', 'beginner', '{core}', 'ZxHYp0A4kcY', 'How To Do Russian Twist', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '057d4c07-bc30-5d0a-a7f9-9ef8afbb0af1', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -2984,7 +2988,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Mountain Climbers
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('80b7bff0-e5fa-5141-adf0-5a654d08f6fe', 'Mountain Climbers', 'Llevar rodillas al pecho alternando en posición de plancha.', 'beginner', '{core}', 'eJllA-pZlb8', 'How To Do Mountain Climbers', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('80b7bff0-e5fa-5141-adf0-5a654d08f6fe', 'Mountain Climbers', 'Llevar rodillas al pecho alternando en posición de plancha.', 'beginner', '{core}', 'eJllA-pZlb8', 'How To Do Mountain Climbers', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '80b7bff0-e5fa-5141-adf0-5a654d08f6fe', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3017,7 +3021,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Bodyweight Squats
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('c3a0039d-5bcb-5819-ae4a-b36104bad568', 'Bodyweight Squats', 'Sentadilla con peso corporal.', 'beginner', '{squat}', 'eAFSpUExcwc', 'How To Do Bodyweight Squats', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('c3a0039d-5bcb-5819-ae4a-b36104bad568', 'Bodyweight Squats', 'Sentadilla con peso corporal.', 'beginner', '{squat}', 'eAFSpUExcwc', 'How To Do Bodyweight Squats', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'c3a0039d-5bcb-5819-ae4a-b36104bad568', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3054,7 +3058,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Jumping Squats
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('da04dc79-3de9-519a-a26d-c230260cf034', 'Jumping Squats', 'Sentadilla explosiva con salto.', 'beginner', '{squat}', 'vF2aEkQq2w8', 'How To Do Jumping Squats', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('da04dc79-3de9-519a-a26d-c230260cf034', 'Jumping Squats', 'Sentadilla explosiva con salto.', 'beginner', '{squat}', 'vF2aEkQq2w8', 'How To Do Jumping Squats', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'da04dc79-3de9-519a-a26d-c230260cf034', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3083,7 +3087,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Bulgarian Squats
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('dfbc62c8-dc92-5147-a7c6-2a480b185cb4', 'Bulgarian Squats', 'Sentadilla a una pierna con pie trasero elevado.', 'intermediate', '{squat}', 'pfRlldgfGRQ', 'How To Do Bulgarian Squats', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('dfbc62c8-dc92-5147-a7c6-2a480b185cb4', 'Bulgarian Squats', 'Sentadilla a una pierna con pie trasero elevado.', 'intermediate', '{squat}', 'pfRlldgfGRQ', 'How To Do Bulgarian Squats', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'dfbc62c8-dc92-5147-a7c6-2a480b185cb4', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3120,7 +3124,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- Negative Pistol Squat
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f30cfc7d-74e9-5efa-ad30-19c2849eb0f2', 'Negative Pistol Squat', 'Descenso controlado a una pierna.', 'intermediate', '{squat}', 'YMvPC1byyGo', 'How To Do Negative Pistol Squat', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f30cfc7d-74e9-5efa-ad30-19c2849eb0f2', 'Negative Pistol Squat', 'Descenso controlado a una pierna.', 'intermediate', '{squat}', 'YMvPC1byyGo', 'How To Do Negative Pistol Squat', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f30cfc7d-74e9-5efa-ad30-19c2849eb0f2', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3149,7 +3153,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Sissy Squat
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('00e88d18-5a64-59c3-a9fe-38eea0f97e8c', 'Sissy Squat', 'Sentadilla con rodillas adelantadas y cadera extendida; cuádriceps.', 'intermediate', '{squat}', '7QNShsR89U8', 'How To Do Sissy Squat', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('00e88d18-5a64-59c3-a9fe-38eea0f97e8c', 'Sissy Squat', 'Sentadilla con rodillas adelantadas y cadera extendida; cuádriceps.', 'intermediate', '{squat}', '7QNShsR89U8', 'How To Do Sissy Squat', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '00e88d18-5a64-59c3-a9fe-38eea0f97e8c', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3174,7 +3178,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Step back Lunges
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('1dabf288-21ac-5bdb-a5b4-da8ebdaa8062', 'Step back Lunges', 'Zancada dando el paso hacia atrás.', 'beginner', '{squat}', 'hwdGTe09_18', 'How To Do  Step Back Lunges', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('1dabf288-21ac-5bdb-a5b4-da8ebdaa8062', 'Step back Lunges', 'Zancada dando el paso hacia atrás.', 'beginner', '{squat}', 'hwdGTe09_18', 'How To Do  Step Back Lunges', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '1dabf288-21ac-5bdb-a5b4-da8ebdaa8062', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3207,7 +3211,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Glute Bridge
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b894c4d0-8cef-5fb5-a6f9-9bd4fe2b8803', 'Glute Bridge', 'Elevación de cadera boca arriba.', 'beginner', '{squat}', 'e24JjTDrtKs', 'How To Do Glute Bridge', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b894c4d0-8cef-5fb5-a6f9-9bd4fe2b8803', 'Glute Bridge', 'Elevación de cadera boca arriba.', 'beginner', '{squat}', 'e24JjTDrtKs', 'How To Do Glute Bridge', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b894c4d0-8cef-5fb5-a6f9-9bd4fe2b8803', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3228,7 +3232,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Calf Raises
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('b66526a2-72ea-533e-a806-5110f9addbfa', 'Calf Raises', 'Elevarse sobre las puntas de los pies.', 'beginner', '{squat}', 'Qv55w6-sxRM', 'How To Do Calf Raises', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('b66526a2-72ea-533e-a806-5110f9addbfa', 'Calf Raises', 'Elevarse sobre las puntas de los pies.', 'beginner', '{squat}', 'Qv55w6-sxRM', 'How To Do Calf Raises', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'b66526a2-72ea-533e-a806-5110f9addbfa', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3249,7 +3253,7 @@ INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
 
 -- Wall Sit
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('f5665e13-b620-5d64-ae57-cd15a7025bcd', 'Wall Sit', 'Mantener posición sentada con espalda en la pared.', 'beginner', '{squat}', '3h0aEHYDHzY', 'How To Do Wall Sit', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('f5665e13-b620-5d64-ae57-cd15a7025bcd', 'Wall Sit', 'Mantener posición sentada con espalda en la pared.', 'beginner', '{squat}', '3h0aEHYDHzY', 'How To Do Wall Sit', 'horizontal', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT 'f5665e13-b620-5d64-ae57-cd15a7025bcd', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
@@ -3282,7 +3286,7 @@ INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
 
 -- 45 Degree Handstand Hold
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('620f89c7-99a1-55c9-abcf-41b2c2ff2d5c', '45 Degree Handstand Hold', 'Isométrico en parada de manos inclinada a 45 grados (el único Short vertical del catálogo).', 'intermediate', '{core}', 'pIY21KwH3zo', 'Learn How To Do A 45 Degree Handstand Hold 🔥 #calisthenics #handstandhold #shorts #ytshorts', 'vertical', true, (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'arturogomezgz04@gmail.com'))
+  VALUES ('620f89c7-99a1-55c9-abcf-41b2c2ff2d5c', '45 Degree Handstand Hold', 'Isométrico en parada de manos inclinada a 45 grados (el único Short vertical del catálogo).', 'intermediate', '{core}', 'pIY21KwH3zo', 'Learn How To Do A 45 Degree Handstand Hold 🔥 #calisthenics #handstandhold #shorts #ytshorts', 'vertical', true, (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'), (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com'))
   ON CONFLICT DO NOTHING;
 INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '620f89c7-99a1-55c9-abcf-41b2c2ff2d5c', m."id", 'primary' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"

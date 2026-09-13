@@ -94,9 +94,12 @@ for f in packages/db/sql/0*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "
 
 | Correo | Contraseña | Rol en equipo Neo |
 |---|---|---|
-| `arturogomezgz04@gmail.com` | `admin` | Coach (dueño de los 100 ejercicios) |
+| `calixpert@gmail.com` | `12345678` | Sin equipo — dueña de los 100 ejercicios públicos del catálogo |
+| `arturogomezgz04@gmail.com` | `admin` | Coach (arma rutinas con los ejercicios públicos) |
 | `tester@gmail.com` | `12345678` | Atleta |
 | `abuela@gmail.com` | `12345678` | Atleta (perfil de pruebas de accesibilidad) |
+
+> Si la base se sembró antes con el coach como dueño de los ejercicios, `04_exercises.sql` los transfiere a `calixpert@gmail.com` conservando sus IDs.
 
 > Si una base anterior tenía la cuenta `chinita@gmail.com`, `03_accounts.sql` la renombra a `tester@gmail.com`.
 
