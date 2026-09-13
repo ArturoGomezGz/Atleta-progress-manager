@@ -73,20 +73,31 @@ export function ExerciseDetailSheet({
   isMutating?: boolean
 }) {
   const [visible, setVisible] = useState(false)
-  useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
+  const closing = useRef(false)
+  const onCloseRef = useRef(onClose)
+  onCloseRef.current = onClose
 
-  const scrollRef = useRef<HTMLDivElement>(null)
-  const touchStartY = useRef(0)
+  // La ficha se comporta como una vista propia: al abrirse agrega una entrada al historial,
+  // así el botón "atrás" del teléfono la cierra en lugar de salir de la pantalla anterior.
+  // Solo se cierra con "atrás" o con la X (no con gestos ni tocando fuera).
+  useEffect(() => {
+    requestAnimationFrame(() => setVisible(true))
+    window.history.pushState({ ...window.history.state, exerciseDetail: true }, "")
 
-  function close() { setVisible(false); setTimeout(onClose, 300) }
+    function onPopState() {
+      if (closing.current) return
+      closing.current = true
+      setVisible(false)
+      setTimeout(() => onCloseRef.current(), 300)
+    }
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [])
 
-  function handleTouchStart(e: React.TouchEvent) {
-    touchStartY.current = e.touches[0].clientY
-  }
-
-  function handleTouchMove(e: React.TouchEvent) {
-    const delta = e.touches[0].clientY - touchStartY.current
-    if (scrollRef.current?.scrollTop === 0 && delta > 60) close()
+  // La X retrocede en el historial: el mismo camino que el botón "atrás", sin entradas huérfanas
+  function close() {
+    if (closing.current) return
+    window.history.back()
   }
 
   const zone = deriveBodyZone(ex.muscles)
@@ -96,9 +107,8 @@ export function ExerciseDetailSheet({
 
   return (
     <>
-      {/* Backdrop */}
+      {/* Backdrop (no cierra al tocar: solo "atrás" o la X) */}
       <div
-        onClick={close}
         className={cn(
           "fixed inset-0 bg-black/50 z-40 transition-opacity duration-300",
           visible ? "opacity-100" : "opacity-0",
@@ -141,18 +151,16 @@ export function ExerciseDetailSheet({
             )}
             <button
               onClick={close}
-              className="p-2 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors"
+              aria-label="Cerrar"
+              className="min-w-[44px] min-h-[44px] flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg cursor-pointer transition-colors"
             >
-              <XIcon className="w-4 h-4" />
+              <XIcon className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         {/* Body */}
         <div
-          ref={scrollRef}
-          onTouchStart={handleTouchStart}
-          onTouchMove={handleTouchMove}
           className="flex-1 overflow-y-auto overscroll-contain"
         >
 
