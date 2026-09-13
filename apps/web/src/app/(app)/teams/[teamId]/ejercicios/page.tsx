@@ -9,18 +9,16 @@ import {
   AlertTriangleIcon,
   BookmarkIcon,
   CheckCircle2Icon,
+  CheckIcon,
   ChevronDownIcon,
-  ChevronLeftIcon,
   ChevronRightIcon,
   ClipboardPasteIcon,
-  CompassIcon,
   FlameIcon,
   GlobeIcon,
   LoaderIcon,
   LockIcon,
   PencilIcon,
   PlusIcon,
-  RotateCcwIcon,
   SearchIcon,
   SparklesIcon,
   Trash2Icon,
@@ -54,8 +52,49 @@ const PATTERN_LABELS: Record<string, string> = {
 
 const ALL_PATTERNS = ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core"] as const
 type Orientation = "horizontal" | "vertical"
-type ZoneKey = keyof typeof ZONE_CONFIG
-type FinderMode = "buscar" | "explorar"
+
+// ── Buscador: tipos ───────────────────────────────────────────────────────────
+
+type FacetKey = "patterns" | "difficulties" | "equipment"
+type CollectionView = "todos" | "propios" | "guardados"
+
+type ExerciseFilters = {
+  query: string
+  patterns: string[]
+  difficulties: string[]
+  equipment: string[]   // equipmentId | NO_EQUIPMENT_KEY
+}
+
+const EMPTY_FILTERS: ExerciseFilters = { query: "", patterns: [], difficulties: [], equipment: [] }
+
+type FacetOption = { key: string; label: string; count: number; selected: boolean; disabled: boolean }
+type Facets = Record<FacetKey, FacetOption[]>
+
+const FACET_LABELS: Record<FacetKey, string> = { patterns: "Movimiento", difficulties: "Nivel", equipment: "Equipo" }
+
+// De lo general a lo particular; el orden no cambia al filtrar para que los chips no salten
+const PATTERN_ORDER = ["push", "pull", "squat", "hinge", "core", "rotation", "isometric", "carry", "mobility"]
+const DIFFICULTY_ORDER = ["beginner", "intermediate", "advanced"] as const
+
+const NO_EQUIPMENT_KEY = "none"
+const NO_EQUIPMENT_NAMES = new Set(["sin equipo", "suelo", "peso corporal", "ninguno"])
+
+// Los nombres del catálogo están en inglés: "flexion" debe encontrar "Push Ups"
+const SEARCH_SYNONYMS: Record<string, string[]> = {
+  flexion: ["push up", "pushup"],
+  lagartija: ["push up", "pushup"],
+  dominada: ["pull up", "pullup", "chin up"],
+  fondo: ["dip"],
+  sentadilla: ["squat", "pistol"],
+  zancada: ["lunge"],
+  plancha: ["plank", "planche"],
+  puente: ["bridge"],
+  remo: ["row"],
+  pino: ["handstand"],
+  vertical: ["handstand"],
+  elevacion: ["raise"],
+  colgado: ["hang"],
+}
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -113,24 +152,119 @@ function deriveBodyZone(muscles: { bodyZone: "upper" | "lower" | "core"; role: s
   return "full_body" as const
 }
 
-// Filtros del modo "Buscar" — texto libre + zona + dificultad, aplicados a cualquier lista de ejercicios
-function matchesQuery(ex: EnrichedExercise, query: string) {
-  if (!query.trim()) return true
-  const q = query.trim().toLowerCase()
-  return ex.name.toLowerCase().includes(q) || (ex.description?.toLowerCase().includes(q) ?? false)
+// ── Buscador: filtrado ────────────────────────────────────────────────────────
+// Texto AND movimiento AND nivel AND equipo; dentro de cada faceta basta con una opción (OR).
+
+function normalizeText(s: string) {
+  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[-_]/g, " ")
 }
-function matchesZone(ex: EnrichedExercise, zone: ZoneKey | null) {
-  return !zone || deriveBodyZone(ex.muscles) === zone
+
+function isNoEquipment(ex: EnrichedExercise) {
+  return ex.equipment.length === 0 || ex.equipment.every((e) => NO_EQUIPMENT_NAMES.has(normalizeText(e.equipmentName)))
 }
-function matchesDifficulty(ex: EnrichedExercise, difficulty: EnrichedExercise["difficulty"]) {
-  return !difficulty || ex.difficulty === difficulty
+
+function buildSearchText(ex: EnrichedExercise) {
+  const zone = deriveBodyZone(ex.muscles)
+  return normalizeText([
+    ex.name,
+    ex.description ?? "",
+    ...ex.movementPatterns.map((p) => PATTERN_LABELS[p] ?? p),
+    ex.difficulty ? DIFFICULTY_CONFIG[ex.difficulty].label : "",
+    ...ex.equipment.map((e) => e.equipmentName),
+    ...ex.muscles.flatMap((m) => [m.muscleName, m.muscleGroupName]),
+    zone ? ZONE_CONFIG[zone].label : "",
+    isNoEquipment(ex) ? "sin equipo peso corporal" : "",
+  ].join(" "))
+}
+
+function matchesQuery(searchText: string, query: string) {
+  const tokens = normalizeText(query).split(/\s+/).filter(Boolean)
+  return tokens.every((token) => {
+    // Si lo escrito es el inicio de una palabra con sinónimos ("flex" → flexión), se exige el
+    // sinónimo ("push up") o la palabra completa; así "flex" no coincide con "Flexores del antebrazo"
+    const synonymEntries = Object.entries(SEARCH_SYNONYMS).filter(([word]) => word.startsWith(token))
+    if (synonymEntries.length > 0) {
+      const wholeWord = new RegExp(`(^|\\s)${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`).test(searchText)
+      return wholeWord || synonymEntries.some(([word, synonyms]) =>
+        searchText.includes(word) || synonyms.some((s) => searchText.includes(s)),
+      )
+    }
+    return searchText.includes(token)
+  })
+}
+
+function matchesFacet(ex: EnrichedExercise, facet: FacetKey, keys: string[]) {
+  if (keys.length === 0) return true
+  switch (facet) {
+    case "patterns":     return keys.some((k) => ex.movementPatterns.includes(k))
+    case "difficulties": return keys.some((k) => ex.difficulty === k)
+    case "equipment":    return keys.some((k) => k === NO_EQUIPMENT_KEY ? isNoEquipment(ex) : ex.equipment.some((e) => e.equipmentId === k))
+  }
+}
+
+function applyFilters(pool: EnrichedExercise[], filters: ExerciseFilters, index: Map<string, string>, except?: FacetKey) {
+  return pool.filter((ex) =>
+    matchesQuery(index.get(ex.id) ?? "", filters.query) &&
+    (["patterns", "difficulties", "equipment"] as const).every((f) => f === except || matchesFacet(ex, f, filters[f])),
+  )
+}
+
+/**
+ * Opciones de cada faceta con conteos facetados: el número de un chip es cuántos resultados
+ * habría si se eligiera, respetando los demás filtros. Solo aparecen opciones presentes en la
+ * colección; las que quedan en 0 por los filtros se muestran atenuadas (salvo si están elegidas).
+ */
+function buildFacets(pool: EnrichedExercise[], filters: ExerciseFilters, index: Map<string, string>): Facets {
+  function options(facet: FacetKey, candidates: { key: string; label: string }[]): FacetOption[] {
+    const base = applyFilters(pool, filters, index, facet)
+    return candidates
+      .map(({ key, label }) => {
+        const inPool = pool.some((ex) => matchesFacet(ex, facet, [key]))
+        const count = base.filter((ex) => matchesFacet(ex, facet, [key])).length
+        const selected = filters[facet].includes(key)
+        return { key, label, count, selected, disabled: count === 0 && !selected, inPool }
+      })
+      .filter((o) => o.inPool || o.selected)
+      .map(({ inPool: _inPool, ...o }) => o)
+  }
+
+  const equipmentUsage = new Map<string, { label: string; uses: number }>()
+  for (const ex of pool) {
+    for (const e of ex.equipment) {
+      if (NO_EQUIPMENT_NAMES.has(normalizeText(e.equipmentName))) continue
+      const entry = equipmentUsage.get(e.equipmentId) ?? { label: e.equipmentName, uses: 0 }
+      entry.uses++
+      equipmentUsage.set(e.equipmentId, entry)
+    }
+  }
+  const equipmentCandidates = [
+    { key: NO_EQUIPMENT_KEY, label: "Sin equipo" },
+    ...[...equipmentUsage.entries()]
+      .sort(([, a], [, b]) => b.uses - a.uses || a.label.localeCompare(b.label, "es"))
+      .map(([key, { label }]) => ({ key, label })),
+  ]
+
+  return {
+    patterns: options("patterns", PATTERN_ORDER.map((p) => ({ key: p, label: PATTERN_LABELS[p] ?? p }))),
+    difficulties: options("difficulties", DIFFICULTY_ORDER.map((d) => ({ key: d, label: DIFFICULTY_CONFIG[d].label }))),
+    equipment: options("equipment", equipmentCandidates),
+  }
+}
+
+function toggleKey(list: string[], key: string) {
+  return list.includes(key) ? list.filter((k) => k !== key) : [...list, key]
+}
+
+function hasActiveFilters(f: ExerciseFilters) {
+  return !!f.query.trim() || f.patterns.length > 0 || f.difficulties.length > 0 || f.equipment.length > 0
 }
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EjerciciosPage() {
   const { teamId } = useParams<{ teamId: string }>()
-  const [tab, setTab] = useState<"propios" | "guardados">("propios")
+  // "Todos" por defecto: los guardados también cuentan para llegar a un ejercicio en ≤3 toques
+  const [view, setView] = useState<CollectionView>("todos")
 
   const { data: exercises, refetch } = trpc.exercises.listAllOwned.useQuery()
   const { data: saved, refetch: refetchSaved } = trpc.exercises.listSaved.useQuery()
@@ -142,12 +276,8 @@ export default function EjerciciosPage() {
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [detailExercise, setDetailExercise] = useState<ExerciseDetail | null>(null)
 
-  // Cómo se encuentra un ejercicio dentro de "Mis ejercicios": texto libre (Buscar)
-  // o un árbol de decisión de lo general a lo particular (Explorar)
-  const [finderMode, setFinderMode] = useState<FinderMode>("buscar")
-  const [query, setQuery] = useState("")
-  const [zoneFilter, setZoneFilter] = useState<ZoneKey | null>(null)
-  const [difficultyFilter, setDifficultyFilter] = useState<EnrichedExercise["difficulty"]>(null)
+  // Un solo juego de filtros para las tres vistas: no se pierde al cambiar de pestaña
+  const [filters, setFilters] = useState<ExerciseFilters>(EMPTY_FILTERS)
 
   const currentTeam = teams?.find((t) => t.team.id === teamId)
   const isCoach = currentTeam?.role === "coach"
@@ -160,6 +290,44 @@ export default function EjerciciosPage() {
   const personal = exercises?.filter((ex) => ex.ownerUserId !== null) ?? []
   const teamExercises = exercises?.filter((ex) => ex.ownerTeamId === teamId) ?? []
   const savedList = saved ?? []
+
+  const ownedIds = new Set([...personal, ...teamExercises].map((ex) => ex.id))
+  const savedOnly = savedList.filter((ex) => !ownedIds.has(ex.id))
+
+  const pool: EnrichedExercise[] =
+    view === "propios"   ? [...personal, ...teamExercises] :
+    view === "guardados" ? savedList :
+                           [...personal, ...teamExercises, ...savedOnly]
+
+  const searchIndex = new Map(pool.map((ex) => [ex.id, buildSearchText(ex)]))
+  const results = applyFilters(pool, filters, searchIndex)
+  const facets = buildFacets(pool, filters, searchIndex)
+
+  const personalResults = results.filter((ex) => ex.ownerUserId !== null)
+  const teamResults = results.filter((ex) => ex.ownerTeamId === teamId)
+  const savedResults = view === "guardados" ? results : results.filter((ex) => !ownedIds.has(ex.id))
+
+  // Sugerencias del estado vacío: qué pasaría quitando cada filtro activo
+  const emptySuggestions = results.length > 0 ? [] : [
+    ...(filters.query.trim() ? [{
+      label: "Borrar búsqueda",
+      count: applyFilters(pool, { ...filters, query: "" }, searchIndex).length,
+      onApply: () => setFilters((f) => ({ ...f, query: "" })),
+    }] : []),
+    ...(["patterns", "difficulties", "equipment"] as const).flatMap((facet) =>
+      filters[facet].map((key) => {
+        const next = { ...filters, [facet]: filters[facet].filter((k) => k !== key) }
+        const label = facets[facet].find((o) => o.key === key)?.label ?? key
+        return {
+          label: `Quitar «${label}»`,
+          count: applyFilters(pool, next, searchIndex).length,
+          onApply: () => setFilters(next),
+        }
+      }),
+    ),
+  ].filter((s) => s.count > 0)
+
+  const deleteHandler = (ex: EnrichedExercise) => setDeleteTarget({ id: ex.id, name: ex.name })
 
   function openCreate() { setForm({ ...EMPTY_FORM, ownerType: "user" }) }
 
@@ -227,141 +395,102 @@ export default function EjerciciosPage() {
   const isPending = createMutation.isPending || updateMutation.isPending
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
+    <div className="max-w-2xl lg:max-w-5xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <h1 className="text-xl font-semibold">Mis ejercicios</h1>
         <button
           onClick={openCreate}
-          className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md cursor-pointer"
+          className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-4 h-11 rounded-xl cursor-pointer font-medium"
         >
           <PlusIcon className="w-4 h-4" />
           Nuevo
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 p-1 bg-muted/40 rounded-xl border border-border">
-        {([
-          { key: "propios",   label: "Propios",   count: (personal.length + teamExercises.length) },
-          { key: "guardados", label: "Guardados", count: savedList.length },
-        ] as const).map(({ key, label, count }) => (
-          <button
-            key={key}
-            type="button"
-            onClick={() => setTab(key)}
-            className={cn(
-              "flex-1 flex items-center justify-center gap-1.5 text-sm py-2 rounded-lg transition-colors cursor-pointer font-medium",
-              tab === key
-                ? "bg-background text-foreground shadow-sm border border-border"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {label}
-            {count > 0 && (
-              <span className={cn(
-                "text-xs px-1.5 py-0.5 rounded-full tabular-nums",
-                tab === key ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
-              )}>
-                {count}
-              </span>
-            )}
-          </button>
-        ))}
-      </div>
+      <CollectionTabs
+        view={view}
+        onChange={setView}
+        counts={{
+          todos: personal.length + teamExercises.length + savedOnly.length,
+          propios: personal.length + teamExercises.length,
+          guardados: savedList.length,
+        }}
+      />
 
-      {/* Tab content */}
-      {tab === "propios" && (
-        personal.length === 0 && teamExercises.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            Aún no tienes ejercicios. Crea uno o explora el catálogo.
+      {pool.length === 0 ? (
+        <div className="text-center py-12 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            {view === "todos" && "Aún no tienes ejercicios. Crea uno o guarda ejercicios desde Explorar."}
+            {view === "propios" && "Aún no has creado ejercicios."}
+            {view === "guardados" && "No tienes ejercicios guardados. Explora el catálogo para guardar."}
           </p>
-        ) : (
-          <div className="space-y-5">
-            <FinderModeToggle mode={finderMode} onChange={setFinderMode} />
+          {view !== "guardados" && (
+            <button onClick={openCreate} className="text-sm text-primary font-medium hover:underline cursor-pointer">
+              Crear ejercicio
+            </button>
+          )}
+        </div>
+      ) : (
+        <div className="lg:grid lg:grid-cols-[15rem_1fr] lg:gap-8 lg:items-start">
+          {/* Escritorio: filtros en columna fija a la izquierda */}
+          <aside className="hidden lg:block lg:sticky lg:top-6 space-y-5">
+            <FacetPanel facets={facets} onToggle={(facet, key) => setFilters((f) => ({ ...f, [facet]: toggleKey(f[facet], key) }))} wrap />
+          </aside>
 
-            {finderMode === "buscar" ? (
-              <div className="space-y-5">
-                <SearchFilters
-                  query={query} onQuery={setQuery}
-                  zone={zoneFilter} onZone={setZoneFilter}
-                  difficulty={difficultyFilter} onDifficulty={setDifficultyFilter}
-                />
-                <Section
-                  title="Personales"
-                  exercises={personal.filter((ex) => matchesQuery(ex, query) && matchesZone(ex, zoneFilter) && matchesDifficulty(ex, difficultyFilter))}
-                  onEdit={openEdit}
-                  onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
-                  onOpen={setDetailExercise}
-                />
-                {currentTeam && (
-                  <Section
-                    title={currentTeam.team.name}
-                    exercises={teamExercises.filter((ex) => matchesQuery(ex, query) && matchesZone(ex, zoneFilter) && matchesDifficulty(ex, difficultyFilter))}
-                    onEdit={openEdit}
-                    onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
-                    onOpen={setDetailExercise}
-                  />
+          <div className="space-y-4 min-w-0">
+            {/* Buscador + estado: fijo al hacer scroll (debajo de la barra superior en móvil) */}
+            <div className="sticky top-14 lg:top-0 z-20 -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-3 bg-background/95 backdrop-blur border-b border-border space-y-2">
+              <SearchBox value={filters.query} onChange={(query) => setFilters((f) => ({ ...f, query }))} />
+              <ActiveFiltersBar
+                filters={filters}
+                facets={facets}
+                shownCount={results.length}
+                totalCount={pool.length}
+                onRemove={(facet, key) => setFilters((f) => ({ ...f, [facet]: f[facet].filter((k) => k !== key) }))}
+                onClearAll={() => setFilters(EMPTY_FILTERS)}
+              />
+            </div>
+
+            {/* Móvil: filtros debajo del buscador */}
+            <div className="lg:hidden space-y-3">
+              <FacetPanel facets={facets} onToggle={(facet, key) => setFilters((f) => ({ ...f, [facet]: toggleKey(f[facet], key) }))} />
+            </div>
+
+            {results.length === 0 ? (
+              <EmptyResults suggestions={emptySuggestions} onClearAll={() => setFilters(EMPTY_FILTERS)} />
+            ) : (
+              <div className="space-y-6">
+                {view !== "guardados" && (
+                  <>
+                    <Section title="Personales" exercises={personalResults} onEdit={openEdit} onDelete={deleteHandler} onOpen={setDetailExercise} />
+                    <Section title={currentTeam?.team.name ?? "Equipo"} exercises={teamResults} onEdit={openEdit} onDelete={deleteHandler} onOpen={setDetailExercise} />
+                  </>
+                )}
+                {view !== "propios" && savedResults.length > 0 && (
+                  <div className="space-y-2">
+                    <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Guardados <span className="tabular-nums">· {savedResults.length}</span>
+                    </h2>
+                    <div className="space-y-1.5">
+                      {savedResults.map((ex) => (
+                        <ExerciseCard
+                          key={ex.id}
+                          exercise={ex}
+                          onEdit={() => {}}
+                          onDelete={() => {}}
+                          onOpen={setDetailExercise}
+                          savedBadge
+                          onUnsave={() => unsaveMutation.mutate({ exerciseId: ex.id })}
+                        />
+                      ))}
+                    </div>
+                  </div>
                 )}
               </div>
-            ) : (
-              <DecisionExplorer
-                key="propios"
-                pool={[...personal, ...teamExercises]}
-                onEdit={openEdit}
-                onDelete={(ex) => setDeleteTarget({ id: ex.id, name: ex.name })}
-                onOpen={setDetailExercise}
-              />
             )}
           </div>
-        )
-      )}
-
-      {tab === "guardados" && (
-        savedList.length === 0 ? (
-          <p className="text-sm text-muted-foreground text-center py-8">
-            No tienes ejercicios guardados. Explora el catálogo para guardar.
-          </p>
-        ) : (
-          <div className="space-y-5">
-            <FinderModeToggle mode={finderMode} onChange={setFinderMode} />
-
-            {finderMode === "buscar" ? (
-              <div className="space-y-3">
-                <SearchFilters
-                  query={query} onQuery={setQuery}
-                  zone={zoneFilter} onZone={setZoneFilter}
-                  difficulty={difficultyFilter} onDifficulty={setDifficultyFilter}
-                />
-                <div className="space-y-1.5">
-                  {savedList
-                    .filter((ex) => matchesQuery(ex, query) && matchesZone(ex, zoneFilter) && matchesDifficulty(ex, difficultyFilter))
-                    .map((ex) => (
-                      <ExerciseCard
-                        key={ex.id}
-                        exercise={ex}
-                        onEdit={() => {}}
-                        onDelete={() => {}}
-                        onOpen={setDetailExercise}
-                        savedBadge
-                        onUnsave={() => unsaveMutation.mutate({ exerciseId: ex.id })}
-                      />
-                    ))}
-                </div>
-              </div>
-            ) : (
-              <DecisionExplorer
-                key="guardados"
-                pool={savedList}
-                onEdit={() => {}}
-                onDelete={() => {}}
-                onOpen={setDetailExercise}
-                savedBadge
-                onUnsave={(ex) => unsaveMutation.mutate({ exerciseId: ex.id })}
-              />
-            )}
-          </div>
-        )
+        </div>
       )}
 
       {/* Sheet overlay */}
@@ -1231,28 +1360,37 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUn
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-1.5 shrink-0 mt-0.5" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center shrink-0 -mt-2 -mr-2" onClick={(e) => e.stopPropagation()}>
               {savedBadge ? (
                 <button
                   onClick={onUnsave}
-                  className="p-1 text-primary hover:text-muted-foreground rounded cursor-pointer transition-colors"
+                  className="w-11 h-11 flex items-center justify-center text-primary hover:text-muted-foreground rounded-lg cursor-pointer transition-colors"
                   title="Quitar de guardados"
+                  aria-label={`Quitar ${ex.name} de guardados`}
                 >
-                  <BookmarkIcon className="w-3.5 h-3.5 fill-current" />
+                  <BookmarkIcon className="w-4 h-4 fill-current" />
                 </button>
               ) : (
                 <>
                   {ex.isPublic
-                    ? <GlobeIcon className="w-3.5 h-3.5 text-muted-foreground" />
-                    : <LockIcon className="w-3.5 h-3.5 text-muted-foreground" />
+                    ? <GlobeIcon className="w-3.5 h-3.5 text-muted-foreground mx-1" aria-label="Público" />
+                    : <LockIcon className="w-3.5 h-3.5 text-muted-foreground mx-1" aria-label="Privado" />
                   }
                   {ex.editable && (
                     <>
-                      <button onClick={() => onEdit(ex)} className="p-1 text-muted-foreground hover:text-foreground rounded cursor-pointer">
-                        <PencilIcon className="w-3.5 h-3.5" />
+                      <button
+                        onClick={() => onEdit(ex)}
+                        className="w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-foreground rounded-lg cursor-pointer"
+                        aria-label={`Editar ${ex.name}`}
+                      >
+                        <PencilIcon className="w-4 h-4" />
                       </button>
-                      <button onClick={() => onDelete(ex)} className="p-1 text-muted-foreground hover:text-destructive rounded cursor-pointer">
-                        <Trash2Icon className="w-3.5 h-3.5" />
+                      <button
+                        onClick={() => onDelete(ex)}
+                        className="w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-destructive rounded-lg cursor-pointer"
+                        aria-label={`Eliminar ${ex.name}`}
+                      >
+                        <Trash2Icon className="w-4 h-4" />
                       </button>
                     </>
                   )}
@@ -1298,272 +1436,226 @@ function ExerciseCard({ exercise: ex, onEdit, onDelete, onOpen, savedBadge, onUn
   )
 }
 
-// ── Buscar / Explorar toggle ───────────────────────────────────────────────────
+// ── Buscador: componentes ─────────────────────────────────────────────────────
 
-function FinderModeToggle({ mode, onChange }: { mode: FinderMode; onChange: (m: FinderMode) => void }) {
-  const options = [
-    { key: "buscar" as const, label: "Buscar", icon: SearchIcon },
-    { key: "explorar" as const, label: "Explorar", icon: CompassIcon },
+function CollectionTabs({ view, onChange, counts }: {
+  view: CollectionView
+  onChange: (v: CollectionView) => void
+  counts: Record<CollectionView, number>
+}) {
+  const tabs: { key: CollectionView; label: string }[] = [
+    { key: "todos", label: "Todos" },
+    { key: "propios", label: "Propios" },
+    { key: "guardados", label: "Guardados" },
   ]
   return (
-    <div className="flex gap-1 p-1 bg-muted/30 rounded-lg border border-border w-fit">
-      {options.map(({ key, label, icon: Icon }) => (
+    <div className="flex gap-1 p-1 bg-muted/40 rounded-xl border border-border" role="tablist">
+      {tabs.map(({ key, label }) => (
         <button
           key={key}
           type="button"
+          role="tab"
+          aria-selected={view === key}
           onClick={() => onChange(key)}
           className={cn(
-            "flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md transition-colors cursor-pointer font-medium",
-            mode === key
+            "flex-1 flex items-center justify-center gap-1.5 text-sm h-11 rounded-lg transition-colors cursor-pointer font-medium",
+            view === key
               ? "bg-background text-foreground shadow-sm border border-border"
               : "text-muted-foreground hover:text-foreground",
           )}
         >
-          <Icon className="w-3.5 h-3.5" />
           {label}
+          <span className={cn(
+            "text-xs px-1.5 py-0.5 rounded-full tabular-nums",
+            view === key ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground",
+          )}>
+            {counts[key]}
+          </span>
         </button>
       ))}
     </div>
   )
 }
 
-// ── Modo Buscar: texto libre + chips de zona y dificultad ─────────────────────
-
-function SearchFilters({ query, onQuery, zone, onZone, difficulty, onDifficulty }: {
-  query: string
-  onQuery: (v: string) => void
-  zone: ZoneKey | null
-  onZone: (v: ZoneKey | null) => void
-  difficulty: EnrichedExercise["difficulty"]
-  onDifficulty: (v: EnrichedExercise["difficulty"]) => void
-}) {
+function SearchBox({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   return (
-    <div className="space-y-2">
-      <div className="relative">
-        <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-        <input
-          value={query}
-          onChange={(e) => onQuery(e.target.value)}
-          placeholder="Buscar por nombre..."
-          className="w-full pl-9 pr-8 py-2 text-sm border border-border rounded-lg bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring"
-        />
-        {query && (
-          <button
-            onClick={() => onQuery("")}
-            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
-          >
-            <XIcon className="w-3.5 h-3.5" />
-          </button>
-        )}
-      </div>
-      <div className="flex flex-wrap gap-1.5">
-        {([null, "upper", "lower", "core"] as const).map((z) => (
-          <button
-            key={String(z)}
-            type="button"
-            onClick={() => onZone(z)}
-            className={cn(
-              "text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer",
-              zone === z ? "bg-primary/10 border-primary text-primary font-medium" : "border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {z === null ? "Todos" : ZONE_CONFIG[z].label}
-          </button>
-        ))}
-        {(["beginner", "intermediate", "advanced"] as const).map((d) => (
-          <button
-            key={d}
-            type="button"
-            onClick={() => onDifficulty(difficulty === d ? null : d)}
-            className={cn(
-              "text-xs px-2.5 py-1 rounded-full border transition-colors cursor-pointer",
-              difficulty === d ? `${DIFFICULTY_CONFIG[d].pill} font-medium` : "border-border text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {DIFFICULTY_CONFIG[d].label}
-          </button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-// ── Modo Explorar: árbol de decisión de lo general a lo particular ────────────
-// Zona corporal → patrón de movimiento → músculo específico → resultados.
-// Cada paso solo muestra las opciones presentes en lo ya filtrado, con su conteo,
-// y siempre se puede "ver sin elegir esto" para saltar el paso.
-
-function buildMuscleGroupOptions(pool: EnrichedExercise[]) {
-  const map = new Map<string, { key: string; label: string; count: number }>()
-  for (const ex of pool) {
-    const seen = new Set<string>()
-    for (const m of ex.muscles) {
-      if (seen.has(m.muscleGroupId)) continue
-      seen.add(m.muscleGroupId)
-      const entry = map.get(m.muscleGroupId) ?? { key: m.muscleGroupId, label: m.muscleGroupName, count: 0 }
-      entry.count++
-      map.set(m.muscleGroupId, entry)
-    }
-  }
-  return [...map.values()].sort((a, b) => b.count - a.count)
-}
-
-function PickStep({ title, options, total, onPick, onPickAll }: {
-  title: string
-  options: { key: string; label: string; count: number; accent?: string }[]
-  total: number
-  onPick: (key: string, label: string) => void
-  onPickAll: () => void
-}) {
-  return (
-    <div className="space-y-3">
-      <p className="text-sm font-medium">{title}</p>
-      <div className="grid grid-cols-2 gap-2">
+    <div className="relative">
+      <SearchIcon className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground pointer-events-none" />
+      <input
+        type="search"
+        enterKeyHint="search"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") e.currentTarget.blur()
+          if (e.key === "Escape") onChange("")
+        }}
+        placeholder="Busca por nombre, músculo o equipo…"
+        aria-label="Buscar ejercicios"
+        // text-base (16px) evita el zoom automático de iOS al enfocar
+        className="w-full h-12 pl-10 pr-12 text-base border border-border rounded-xl bg-muted/30 focus:outline-none focus:ring-1 focus:ring-ring [&::-webkit-search-cancel-button]:hidden"
+      />
+      {value && (
         <button
           type="button"
-          onClick={onPickAll}
-          className="col-span-2 flex items-center justify-center gap-2 min-h-[48px] px-4 py-3 rounded-xl border border-dashed border-border text-sm text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors cursor-pointer"
+          onClick={() => onChange("")}
+          aria-label="Borrar búsqueda"
+          className="absolute right-0.5 top-1/2 -translate-y-1/2 w-11 h-11 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
         >
-          Ver los {total} sin elegir esto
+          <XIcon className="w-4 h-4" />
         </button>
-        {options.map((o) => (
-          <button
-            key={o.key}
-            type="button"
-            onClick={() => onPick(o.key, o.label)}
-            className="flex items-center gap-2.5 min-h-[56px] px-4 py-3 rounded-xl border border-border bg-card hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer text-left"
-          >
-            {o.accent && <span className={cn("w-1.5 h-1.5 rounded-full shrink-0", o.accent)} />}
-            <span className="flex-1 text-sm font-medium">{o.label}</span>
-            <span className="text-xs text-muted-foreground tabular-nums shrink-0">{o.count}</span>
-          </button>
-        ))}
+      )}
+    </div>
+  )
+}
+
+function ActiveFiltersBar({ filters, facets, shownCount, totalCount, onRemove, onClearAll }: {
+  filters: ExerciseFilters
+  facets: Facets
+  shownCount: number
+  totalCount: number
+  onRemove: (facet: FacetKey, key: string) => void
+  onClearAll: () => void
+}) {
+  const active = (["patterns", "difficulties", "equipment"] as const).flatMap((facet) =>
+    filters[facet].map((key) => ({ facet, key, label: facets[facet].find((o) => o.key === key)?.label ?? key })),
+  )
+  const filtering = hasActiveFilters(filters)
+  const noun = (n: number) => (n === 1 ? "ejercicio" : "ejercicios")
+
+  return (
+    <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <p className="text-xs text-muted-foreground shrink-0 tabular-nums" aria-live="polite">
+        {filtering ? `${shownCount} de ${totalCount} ${noun(totalCount)}` : `${totalCount} ${noun(totalCount)}`}
+      </p>
+      {active.map(({ facet, key, label }) => (
+        <button
+          key={`${facet}:${key}`}
+          type="button"
+          onClick={() => onRemove(facet, key)}
+          aria-label={`Quitar filtro ${label}`}
+          className="shrink-0 flex items-center gap-1 h-8 pl-3 pr-2 rounded-full border border-primary/40 bg-primary/10 text-primary text-xs font-medium cursor-pointer"
+        >
+          {label}
+          <XIcon className="w-3.5 h-3.5" />
+        </button>
+      ))}
+      {filtering && (
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="shrink-0 h-8 px-2 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 cursor-pointer"
+        >
+          Limpiar todo
+        </button>
+      )}
+    </div>
+  )
+}
+
+function FacetPanel({ facets, onToggle, wrap = false }: {
+  facets: Facets
+  onToggle: (facet: FacetKey, key: string) => void
+  wrap?: boolean
+}) {
+  return (
+    <>
+      {(["patterns", "difficulties", "equipment"] as const).map((facet) => {
+        const options = facets[facet]
+        // Con menos de dos opciones la faceta no ayuda a decidir (p. ej. un coach con 3 ejercicios)
+        if (options.length < 2 && !options.some((o) => o.selected)) return null
+        return (
+          <FacetRow
+            key={facet}
+            label={FACET_LABELS[facet]}
+            options={options}
+            onToggle={(key) => onToggle(facet, key)}
+            wrap={wrap}
+          />
+        )
+      })}
+    </>
+  )
+}
+
+function FacetRow({ label, options, onToggle, wrap }: {
+  label: string
+  options: FacetOption[]
+  onToggle: (key: string) => void
+  wrap: boolean
+}) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      <div className="relative">
+        <div
+          role="group"
+          aria-label={label}
+          className={cn(
+            "flex gap-2",
+            wrap ? "flex-wrap" : "overflow-x-auto snap-x pr-8 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
+          )}
+        >
+          {options.map((o) => (
+            <button
+              key={o.key}
+              type="button"
+              aria-pressed={o.selected}
+              aria-disabled={o.disabled}
+              onClick={() => !o.disabled && onToggle(o.key)}
+              className={cn(
+                "shrink-0 snap-start flex items-center gap-1.5 h-11 px-4 rounded-full border text-sm transition-colors",
+                o.selected
+                  ? "bg-primary/10 border-primary text-primary font-medium cursor-pointer"
+                  : o.disabled
+                    ? "border-border text-muted-foreground opacity-40 cursor-not-allowed"
+                    : "border-border text-foreground hover:border-primary/50 cursor-pointer",
+              )}
+            >
+              {o.selected && <CheckIcon className="w-3.5 h-3.5" />}
+              {o.label}
+              <span className={cn("text-xs tabular-nums", o.selected ? "text-primary/80" : "text-muted-foreground")}>
+                · {o.count}
+              </span>
+            </button>
+          ))}
+        </div>
+        {/* Degradado que insinúa que hay más chips a la derecha */}
+        {!wrap && <div className="pointer-events-none absolute inset-y-0 right-0 w-8 bg-gradient-to-l from-background to-transparent" />}
       </div>
     </div>
   )
 }
 
-function DecisionExplorer({ pool, onEdit, onDelete, onOpen, savedBadge, onUnsave }: {
-  pool: EnrichedExercise[]
-  onEdit: (ex: EnrichedExercise) => void
-  onDelete: (ex: EnrichedExercise) => void
-  onOpen: (ex: EnrichedExercise) => void
-  savedBadge?: boolean
-  onUnsave?: (ex: EnrichedExercise) => void
+function EmptyResults({ suggestions, onClearAll }: {
+  suggestions: { label: string; count: number; onApply: () => void }[]
+  onClearAll: () => void
 }) {
-  // null = sin decidir todavía (muestra el paso), "all" = decidido saltar, si no: la clave elegida
-  const [zone, setZone] = useState<string | null>(null)
-  const [pattern, setPattern] = useState<string | null>(null)
-  const [muscleGroup, setMuscleGroup] = useState<{ id: string; label: string } | "all" | null>(null)
-
-  const afterZone = zone && zone !== "all" ? pool.filter((ex) => deriveBodyZone(ex.muscles) === zone) : pool
-  const afterPattern = pattern && pattern !== "all" ? afterZone.filter((ex) => ex.movementPatterns.includes(pattern)) : afterZone
-  const results = muscleGroup && muscleGroup !== "all"
-    ? afterPattern.filter((ex) => ex.muscles.some((m) => m.muscleGroupId === muscleGroup.id))
-    : afterPattern
-
-  const step: "zone" | "pattern" | "muscle" | "results" =
-    zone === null ? "zone" : pattern === null ? "pattern" : muscleGroup === null ? "muscle" : "results"
-
-  function reset() { setZone(null); setPattern(null); setMuscleGroup(null) }
-  function backToZone() { setZone(null); setPattern(null); setMuscleGroup(null) }
-  function backToPattern() { setPattern(null); setMuscleGroup(null) }
-  function backToMuscle() { setMuscleGroup(null) }
-
-  const crumbs: { label: string; onClick: () => void }[] = []
-  if (zone !== null) crumbs.push({ label: zone === "all" ? "Todos" : ZONE_CONFIG[zone as ZoneKey]?.label ?? zone, onClick: backToZone })
-  if (pattern !== null) crumbs.push({ label: pattern === "all" ? "Todos" : PATTERN_LABELS[pattern] ?? pattern, onClick: backToPattern })
-  if (muscleGroup !== null) crumbs.push({ label: muscleGroup === "all" ? "Todos" : muscleGroup.label, onClick: backToMuscle })
-
   return (
-    <div className="space-y-4">
-      {crumbs.length > 0 && (
-        <div className="flex items-center gap-1.5 flex-wrap text-xs">
-          <button onClick={reset} className="flex items-center gap-1 text-muted-foreground hover:text-foreground cursor-pointer shrink-0">
-            <RotateCcwIcon className="w-3 h-3" /> Empezar de nuevo
+    <div className="text-center py-10 px-4 space-y-4 border border-dashed border-border rounded-2xl">
+      <div className="space-y-1">
+        <p className="text-base font-medium">No encontramos ejercicios así</p>
+        {suggestions.length > 0 && <p className="text-sm text-muted-foreground">Prueba quitando algún filtro:</p>}
+      </div>
+      <div className="flex flex-wrap justify-center gap-2">
+        {suggestions.map((s) => (
+          <button
+            key={s.label}
+            type="button"
+            onClick={s.onApply}
+            className="h-11 px-4 rounded-full border border-border text-sm hover:border-primary/50 cursor-pointer"
+          >
+            {s.label} <span className="text-muted-foreground">(ver {s.count})</span>
           </button>
-          {crumbs.map((c, i) => (
-            <span key={i} className="flex items-center gap-1.5">
-              <ChevronRightIcon className="w-3 h-3 text-muted-foreground/50 shrink-0" />
-              <button
-                onClick={c.onClick}
-                className="px-2 py-1 rounded-full border border-primary/30 bg-primary/5 text-primary font-medium cursor-pointer hover:bg-primary/10"
-              >
-                {c.label}
-              </button>
-            </span>
-          ))}
-        </div>
-      )}
-
-      {step === "zone" && (
-        <PickStep
-          title="¿Qué parte del cuerpo quieres trabajar?"
-          total={pool.length}
-          options={(["upper", "lower", "core", "full_body"] as ZoneKey[])
-            .map((z) => ({
-              key: z,
-              label: ZONE_CONFIG[z].label,
-              count: pool.filter((ex) => deriveBodyZone(ex.muscles) === z).length,
-              accent: ZONE_CONFIG[z].bar,
-            }))
-            .filter((o) => o.count > 0)}
-          onPick={(key) => setZone(key)}
-          onPickAll={() => setZone("all")}
-        />
-      )}
-
-      {step === "pattern" && (
-        <PickStep
-          title="¿Qué tipo de movimiento?"
-          total={afterZone.length}
-          options={ALL_PATTERNS
-            .map((p) => ({ key: p, label: PATTERN_LABELS[p], count: afterZone.filter((ex) => ex.movementPatterns.includes(p)).length }))
-            .filter((o) => o.count > 0)}
-          onPick={(key) => setPattern(key)}
-          onPickAll={() => setPattern("all")}
-        />
-      )}
-
-      {step === "muscle" && (
-        <PickStep
-          title="¿Algún músculo en particular?"
-          total={afterPattern.length}
-          options={buildMuscleGroupOptions(afterPattern)}
-          onPick={(key, label) => setMuscleGroup({ id: key, label })}
-          onPickAll={() => setMuscleGroup("all")}
-        />
-      )}
-
-      {step === "results" && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {results.length} {results.length === 1 ? "ejercicio" : "ejercicios"}
-            </p>
-            <button onClick={backToMuscle} className="text-xs text-primary hover:underline cursor-pointer flex items-center gap-1">
-              <ChevronLeftIcon className="w-3.5 h-3.5" /> Afinar más
-            </button>
-          </div>
-          {results.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">Sin ejercicios con esta combinación.</p>
-          ) : (
-            <div className="space-y-1.5">
-              {results.map((ex) => (
-                <ExerciseCard
-                  key={ex.id}
-                  exercise={ex}
-                  onEdit={onEdit}
-                  onDelete={onDelete}
-                  onOpen={onOpen}
-                  savedBadge={savedBadge}
-                  onUnsave={savedBadge ? () => onUnsave?.(ex) : undefined}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        ))}
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="h-11 px-4 rounded-full bg-primary text-primary-foreground text-sm font-medium cursor-pointer"
+        >
+          Limpiar todo
+        </button>
+      </div>
     </div>
   )
 }
