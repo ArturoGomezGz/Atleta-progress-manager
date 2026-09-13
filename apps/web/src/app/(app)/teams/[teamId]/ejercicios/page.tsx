@@ -254,11 +254,6 @@ function buildFacets(pool: EnrichedExercise[], filters: ExerciseFilters, index: 
 function toggleKey(list: string[], key: string) {
   return list.includes(key) ? list.filter((k) => k !== key) : [...list, key]
 }
-
-function hasActiveFilters(f: ExerciseFilters) {
-  return !!f.query.trim() || f.patterns.length > 0 || f.difficulties.length > 0 || f.equipment.length > 0
-}
-
 // ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EjerciciosPage() {
@@ -439,17 +434,10 @@ export default function EjerciciosPage() {
           </aside>
 
           <div className="space-y-4 min-w-0">
-            {/* Buscador + estado: fijo al hacer scroll (debajo de la barra superior en móvil) */}
-            <div className="sticky top-14 lg:top-0 z-20 -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-3 bg-background/95 backdrop-blur border-b border-border space-y-2">
+            {/* Buscador fijo al hacer scroll (debajo de la barra superior en móvil).
+                Altura constante: nada debajo cambia de tamaño al elegir filtros */}
+            <div className="sticky top-14 lg:top-0 z-20 -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-3 bg-background/95 backdrop-blur border-b border-border">
               <SearchBox value={filters.query} onChange={(query) => setFilters((f) => ({ ...f, query }))} />
-              <ActiveFiltersBar
-                filters={filters}
-                facets={facets}
-                shownCount={results.length}
-                totalCount={pool.length}
-                onRemove={(facet, key) => setFilters((f) => ({ ...f, [facet]: f[facet].filter((k) => k !== key) }))}
-                onClearAll={() => setFilters(EMPTY_FILTERS)}
-              />
             </div>
 
             {/* Móvil: filtros debajo del buscador */}
@@ -1509,50 +1497,6 @@ function SearchBox({ value, onChange }: { value: string; onChange: (v: string) =
   )
 }
 
-function ActiveFiltersBar({ filters, facets, shownCount, totalCount, onRemove, onClearAll }: {
-  filters: ExerciseFilters
-  facets: Facets
-  shownCount: number
-  totalCount: number
-  onRemove: (facet: FacetKey, key: string) => void
-  onClearAll: () => void
-}) {
-  const active = (["patterns", "difficulties", "equipment"] as const).flatMap((facet) =>
-    filters[facet].map((key) => ({ facet, key, label: facets[facet].find((o) => o.key === key)?.label ?? key })),
-  )
-  const filtering = hasActiveFilters(filters)
-  const noun = (n: number) => (n === 1 ? "ejercicio" : "ejercicios")
-
-  return (
-    <div className="flex items-center gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-      <p className="text-xs text-muted-foreground shrink-0 tabular-nums" aria-live="polite">
-        {filtering ? `${shownCount} de ${totalCount} ${noun(totalCount)}` : `${totalCount} ${noun(totalCount)}`}
-      </p>
-      {active.map(({ facet, key, label }) => (
-        <button
-          key={`${facet}:${key}`}
-          type="button"
-          onClick={() => onRemove(facet, key)}
-          aria-label={`Quitar filtro ${label}`}
-          className="shrink-0 flex items-center gap-1 h-8 pl-3 pr-2 rounded-full border border-primary/40 bg-primary/10 text-primary text-xs font-medium cursor-pointer"
-        >
-          {label}
-          <XIcon className="w-3.5 h-3.5" />
-        </button>
-      ))}
-      {filtering && (
-        <button
-          type="button"
-          onClick={onClearAll}
-          className="shrink-0 h-8 px-2 text-xs text-muted-foreground hover:text-foreground underline underline-offset-2 cursor-pointer"
-        >
-          Limpiar todo
-        </button>
-      )}
-    </div>
-  )
-}
-
 function FacetPanel({ facets, onToggle, wrap = false }: {
   facets: Facets
   onToggle: (facet: FacetKey, key: string) => void
@@ -1612,10 +1556,13 @@ function FacetRow({ label, options, onToggle, wrap }: {
                     : "border-border text-foreground hover:border-primary/50 cursor-pointer",
               )}
             >
-              {o.selected && <CheckIcon className="w-3.5 h-3.5" />}
+              {/* Hueco fijo para el check y ancho fijo del conteo: el chip no cambia de tamaño al elegirlo */}
+              <span className="w-3.5 h-3.5 shrink-0 flex items-center justify-center" aria-hidden="true">
+                {o.selected && <CheckIcon className="w-3.5 h-3.5" />}
+              </span>
               {o.label}
-              <span className={cn("text-xs tabular-nums", o.selected ? "text-primary/80" : "text-muted-foreground")}>
-                · {o.count}
+              <span className={cn("text-xs tabular-nums min-w-[3ch] text-right", o.selected ? "text-primary/80" : "text-muted-foreground")}>
+                {o.count}
               </span>
             </button>
           ))}
