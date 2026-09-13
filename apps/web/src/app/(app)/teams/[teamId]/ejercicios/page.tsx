@@ -434,9 +434,10 @@ export default function EjerciciosPage() {
           </aside>
 
           <div className="space-y-4 min-w-0">
-            {/* Buscador fijo al hacer scroll (debajo de la barra superior en móvil).
+            {/* Buscador fijo al hacer scroll. top-0 basta: el contenedor con scroll (<main>) ya
+                reserva la barra superior con pt-14 y el sticky se mide desde ese padding.
                 Altura constante: nada debajo cambia de tamaño al elegir filtros */}
-            <div className="sticky top-14 lg:top-0 z-20 -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-3 bg-background/95 backdrop-blur border-b border-border">
+            <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 lg:mx-0 px-4 sm:px-6 lg:px-0 py-3 bg-background/95 backdrop-blur border-b border-border">
               <SearchBox value={filters.query} onChange={(query) => setFilters((f) => ({ ...f, query }))} />
             </div>
 
