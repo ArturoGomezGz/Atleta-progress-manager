@@ -13,13 +13,14 @@ export const preferencesRouter = router({
       .where(eq(userPreferences.userId, userId))
       .limit(1)
 
-    return prefs ?? { userId, restTimerEnabled: false, restTimerSeconds: 90 }
+    return prefs ?? { userId, restTimerEnabled: false, restTimerSeconds: 90, restAutoContinue: true }
   }),
 
   update: protectedProcedure
     .input(z.object({
       restTimerEnabled: z.boolean().optional(),
       restTimerSeconds: z.number().int().min(10).max(600).optional(),
+      restAutoContinue: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id

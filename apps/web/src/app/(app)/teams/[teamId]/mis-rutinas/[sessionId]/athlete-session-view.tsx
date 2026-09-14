@@ -10,6 +10,7 @@ import {
   CalendarIcon,
   CheckCircleIcon,
   CheckIcon,
+  InfoIcon,
   ListIcon,
   MessageSquareIcon,
   MinusIcon,
@@ -152,6 +153,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
         onActivated={() => refetch()}
         restTimerEnabled={prefs?.restTimerEnabled ?? true}
         restTimerSeconds={prefs?.restTimerSeconds ?? 90}
+        restAutoContinue={prefs?.restAutoContinue ?? true}
         onSavePrefs={(patch) => updatePrefs.mutate(patch)}
       />
     )
@@ -166,6 +168,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
         rms={rms ?? {}}
         restTimerEnabled={prefs?.restTimerEnabled ?? true}
         restTimerSeconds={prefs?.restTimerSeconds ?? 90}
+        restAutoContinue={prefs?.restAutoContinue ?? true}
         backHref={backHref}
         onUpdate={() => refetch()}
         onSavePrefs={(patch) => updatePrefs.mutate(patch)}
@@ -222,6 +225,39 @@ function VideoModal({ exercise, onClose }: { exercise: Exercise; onClose: () => 
           />
           {exercise.description && <p className="text-base text-white/80 leading-relaxed">{exercise.description}</p>}
         </div>
+      </div>
+    </div>
+  )
+}
+
+function NotesModal({ notes, onClose }: { notes: string; onClose: () => void }) {
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
+    document.addEventListener("keydown", onKey)
+    return () => document.removeEventListener("keydown", onKey)
+  }, [onClose])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/60 flex items-center justify-center p-4"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Indicaciones de tu entrenador"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm rounded-2xl bg-card border border-amber-500/30 p-5 space-y-3"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between gap-3">
+          <p className="font-semibold flex items-center gap-2 text-lg">
+            <MessageSquareIcon className="w-5 h-5 text-amber-600" /> Indicaciones de tu entrenador
+          </p>
+          <button onClick={onClose} className="shrink-0 p-1.5 rounded-lg hover:bg-muted/60 cursor-pointer" aria-label="Cerrar">
+            <XIcon className="w-5 h-5" />
+          </button>
+        </div>
+        <p className="text-base leading-relaxed">{notes}</p>
       </div>
     </div>
   )
@@ -298,7 +334,7 @@ function ExerciseOverviewCard({
 // ─── Scheduled preview ─────────────────────────────────────────────────────────
 
 function ScheduledPreview({
-  sessionId, progress, backHref, onActivated, restTimerEnabled, restTimerSeconds, onSavePrefs,
+  sessionId, progress, backHref, onActivated, restTimerEnabled, restTimerSeconds, restAutoContinue, onSavePrefs,
 }: {
   sessionId: string
   progress: Progress
@@ -306,7 +342,8 @@ function ScheduledPreview({
   onActivated: () => void
   restTimerEnabled: boolean
   restTimerSeconds: number
-  onSavePrefs: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number }) => void
+  restAutoContinue: boolean
+  onSavePrefs: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number; restAutoContinue?: boolean }) => void
 }) {
   const activate = trpc.sessions.activate.useMutation({ onSuccess: onActivated })
   const [video, setVideo] = useState<Exercise | null>(null)
@@ -329,7 +366,7 @@ function ScheduledPreview({
         Cuando estés listo, pulsa <strong>Empezar rutina</strong>.
       </div>
 
-      <RestTimerSettings enabled={restTimerEnabled} seconds={restTimerSeconds} onSave={onSavePrefs} />
+      <RestTimerSettings enabled={restTimerEnabled} seconds={restTimerSeconds} autoContinue={restAutoContinue} onSave={onSavePrefs} />
 
       <div className="space-y-3">
         {progress.exercises.map((ex, i) => (
@@ -361,7 +398,7 @@ function ScheduledPreview({
 // ─── Active execution ──────────────────────────────────────────────────────────
 
 function ActiveExecution({
-  sessionId, userId, progress, rms, restTimerEnabled, restTimerSeconds, backHref, onUpdate, onSavePrefs,
+  sessionId, userId, progress, rms, restTimerEnabled, restTimerSeconds, restAutoContinue, backHref, onUpdate, onSavePrefs,
 }: {
   sessionId: string
   userId: string
@@ -369,24 +406,32 @@ function ActiveExecution({
   rms: Record<string, string>
   restTimerEnabled: boolean
   restTimerSeconds: number
+  restAutoContinue: boolean
   backHref: string
   onUpdate: () => void
-  onSavePrefs: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number }) => void
+  onSavePrefs: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number; restAutoContinue?: boolean }) => void
 }) {
-  const [rest, setRest] = useState<{ left: number; total: number } | null>(null)
+  const [rest, setRest] = useState<{ left: number; total: number; overtime: number | null } | null>(null)
   const [showOverview, setShowOverview] = useState(false)
   const [video, setVideo] = useState<Exercise | null>(null)
   const restRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const autoContinueRef = useRef(restAutoContinue)
+  autoContinueRef.current = restAutoContinue
 
   function startRest(seconds: number) {
     if (restRef.current) clearInterval(restRef.current)
-    setRest({ left: seconds, total: seconds })
+    setRest({ left: seconds, total: seconds, overtime: null })
     restRef.current = setInterval(() => {
       setRest((prev) => {
-        if (!prev || prev.left <= 1) {
-          clearInterval(restRef.current!)
+        if (!prev) return prev
+        if (prev.overtime !== null) return { ...prev, overtime: prev.overtime + 1 }
+        if (prev.left <= 1) {
           vibrate([200, 100, 200])
-          return null
+          if (autoContinueRef.current) {
+            clearInterval(restRef.current!)
+            return null
+          }
+          return { ...prev, left: 0, overtime: 0 }
         }
         return { ...prev, left: prev.left - 1 }
       })
@@ -411,12 +456,15 @@ function ActiveExecution({
       <RestTimer
         seconds={rest.left}
         totalSeconds={rest.total}
+        overtime={rest.overtime}
         upcoming={
           position.exercise.roundNumber
             ? `${position.exercise.exerciseName} · ronda ${position.exercise.roundNumber} de ${position.exercise.rounds}`
             : `${position.exercise.exerciseName} · serie ${position.target.setNumber} de ${position.exercise.targets.length}`
         }
         onSkip={skipRest}
+        autoContinue={restAutoContinue}
+        onToggleAutoContinue={(v) => onSavePrefs({ restAutoContinue: v })}
       />
     )
   }
@@ -469,6 +517,7 @@ function ActiveExecution({
       onShowOverview={() => setShowOverview(true)}
       restTimerEnabled={restTimerEnabled}
       restTimerSeconds={restTimerSeconds}
+      restAutoContinue={restAutoContinue}
       onSavePrefs={onSavePrefs}
       onComplete={(isLastSet) => {
         onUpdate()
@@ -484,7 +533,7 @@ function ActiveExecution({
 function SetExecution({
   sessionId, userId, exercise, target, exerciseIdx, totalExercises,
   totalSetsGlobal, doneSetsGlobal, defaultWeight, backHref, onComplete, onShowOverview,
-  restTimerEnabled, restTimerSeconds, onSavePrefs,
+  restTimerEnabled, restTimerSeconds, restAutoContinue, onSavePrefs,
 }: {
   sessionId: string
   userId: string
@@ -500,12 +549,14 @@ function SetExecution({
   onShowOverview: () => void
   restTimerEnabled: boolean
   restTimerSeconds: number
-  onSavePrefs: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number }) => void
+  restAutoContinue: boolean
+  onSavePrefs: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number; restAutoContinue?: boolean }) => void
 }) {
   const isTime = isTimeTarget(target)
   const freeReps = !isTime && target.targetReps == null
   const [reps, setReps] = useState(8)
   const [showSettings, setShowSettings] = useState(false)
+  const [showNotes, setShowNotes] = useState(false)
 
   const recordSet = trpc.sessions.recordSet.useMutation({
     onSuccess: () => onComplete(doneSetsGlobal + 1 >= totalSetsGlobal),
@@ -553,7 +604,12 @@ function SetExecution({
         </div>
         {showSettings && (
           <div className="max-w-xl mx-auto px-4 pb-3">
-            <RestTimerSettings enabled={restTimerEnabled} seconds={restTimerSeconds} onSave={onSavePrefs} />
+            <RestTimerSettings
+              enabled={restTimerEnabled}
+              seconds={restTimerSeconds}
+              autoContinue={restAutoContinue}
+              onSave={onSavePrefs}
+            />
           </div>
         )}
       </div>
@@ -569,7 +625,20 @@ function SetExecution({
                 : exercise.rounds > 1 && ` · ${exercise.rounds} vueltas`}
             </p>
           )}
-          <h1 className="text-3xl font-bold leading-tight">{exercise.exerciseName}</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-3xl font-bold leading-tight">{exercise.exerciseName}</h1>
+            {exercise.notes && (
+              <button
+                type="button"
+                onClick={() => setShowNotes(true)}
+                className="relative shrink-0 w-8 h-8 rounded-full border border-amber-500/40 bg-amber-500/10 text-amber-600 flex items-center justify-center cursor-pointer"
+                aria-label="Ver indicaciones de tu entrenador"
+              >
+                <InfoIcon className="w-4 h-4" />
+                <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-amber-500" />
+              </button>
+            )}
+          </div>
         </div>
 
         {exercise.youtubeVideoId ? (
@@ -615,16 +684,8 @@ function SetExecution({
         </div>
 
         {/* Indicaciones */}
-        {(exercise.notes || tempoText || exercise.restSeconds) && (
+        {(tempoText || exercise.restSeconds) && (
           <div className="space-y-2 text-base">
-            {exercise.notes && (
-              <div className="rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4">
-                <p className="font-semibold flex items-center gap-2 mb-1">
-                  <MessageSquareIcon className="w-5 h-5" /> Indicaciones de tu entrenador
-                </p>
-                <p className="leading-relaxed">{exercise.notes}</p>
-              </div>
-            )}
             {tempoText && (
               <p className="flex items-start gap-2 text-muted-foreground">
                 <TimerIcon className="w-5 h-5 mt-0.5 shrink-0" /> <span><strong className="text-foreground">Ritmo:</strong> {tempoText}</span>
@@ -641,14 +702,9 @@ function SetExecution({
             )}
           </div>
         )}
-
-        {exercise.description && (
-          <details className="rounded-2xl border border-border p-4 text-base">
-            <summary className="cursor-pointer font-semibold">Cómo se hace</summary>
-            <p className="mt-2 leading-relaxed text-muted-foreground">{exercise.description}</p>
-          </details>
-        )}
       </div>
+
+      {showNotes && exercise.notes && <NotesModal notes={exercise.notes} onClose={() => setShowNotes(false)} />}
 
       {/* ── Acciones fijas ── */}
       <div className="sticky bottom-0 shrink-0 border-t border-border bg-background/95 backdrop-blur-sm">
@@ -754,10 +810,11 @@ function TimeCountdown({ seconds }: { seconds: number }) {
 
 // ─── Ajustes del temporizador de descanso ───────────────────────────────────────
 
-function RestTimerSettings({ enabled, seconds, onSave }: {
+function RestTimerSettings({ enabled, seconds, autoContinue, onSave }: {
   enabled: boolean
   seconds: number
-  onSave: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number }) => void
+  autoContinue: boolean
+  onSave: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number; restAutoContinue?: boolean }) => void
 }) {
   const [draft, setDraft] = useState(String(seconds))
   useEffect(() => { setDraft(String(seconds)) }, [seconds])
@@ -799,26 +856,46 @@ function RestTimerSettings({ enabled, seconds, onSave }: {
           <span>seg (cuando el ejercicio no tiene un descanso propio)</span>
         </div>
       )}
+      <label className="flex items-center justify-between gap-3 cursor-pointer pl-7">
+        <span className="text-sm text-muted-foreground">Continuar automáticamente al terminar el descanso</span>
+        <input
+          type="checkbox"
+          checked={autoContinue}
+          onChange={(e) => onSave({ restAutoContinue: e.target.checked })}
+          className="w-5 h-5 accent-primary cursor-pointer shrink-0"
+          aria-label="Continuar automáticamente al terminar el descanso"
+        />
+      </label>
     </div>
   )
 }
 
 // ─── Rest timer ────────────────────────────────────────────────────────────────
 
-function RestTimer({ seconds, totalSeconds, upcoming, onSkip }: {
+function formatClock(totalSeconds: number): string {
+  return totalSeconds >= 60 ? `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}` : String(totalSeconds)
+}
+
+function RestTimer({ seconds, totalSeconds, overtime, upcoming, onSkip, autoContinue, onToggleAutoContinue }: {
   seconds: number
   totalSeconds: number
+  overtime: number | null
   upcoming: string
   onSkip: () => void
+  autoContinue: boolean
+  onToggleAutoContinue: (v: boolean) => void
 }) {
+  const isOvertime = overtime !== null
   const pct = totalSeconds > 0 ? (seconds / totalSeconds) * 100 : 0
   const circumference = 2 * Math.PI * 54
 
   return (
     <div className="flex flex-col min-h-[calc(100dvh-3.5rem)] lg:min-h-screen items-center justify-center gap-8 px-6 py-8 text-center">
       <div className="space-y-2">
-        <p className="text-3xl font-bold">¡Bien hecho! Descansa</p>
-        <p className="text-lg text-muted-foreground">Respira tranquilo antes de la siguiente serie.</p>
+        <p className="text-3xl font-bold">{isOvertime ? "¡Descanso terminado!" : "¡Bien hecho! Descansa"}</p>
+        <p className="text-lg text-muted-foreground">
+          {isOvertime ? "Continúa cuando estés listo." : "Respira tranquilo antes de la siguiente serie."}
+        </p>
       </div>
 
       <div className="relative w-56 h-56" role="timer" aria-live="polite">
@@ -828,15 +905,17 @@ function RestTimer({ seconds, totalSeconds, upcoming, onSkip }: {
             cx="60" cy="60" r="54" fill="none"
             stroke="currentColor" strokeWidth="8" strokeLinecap="round"
             strokeDasharray={circumference}
-            strokeDashoffset={circumference * (1 - pct / 100)}
-            className="text-primary transition-all duration-1000"
+            strokeDashoffset={isOvertime ? 0 : circumference * (1 - pct / 100)}
+            className={cn("transition-all duration-1000", isOvertime ? "text-destructive" : "text-primary")}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-6xl font-bold tabular-nums">
-            {seconds >= 60 ? `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}` : seconds}
+          <span className={cn("text-6xl font-bold tabular-nums", isOvertime && "text-destructive")}>
+            {formatClock(isOvertime ? overtime! : seconds)}
           </span>
-          <span className="text-lg text-muted-foreground">{seconds >= 60 ? "minutos" : "segundos"}</span>
+          <span className={cn("text-lg", isOvertime ? "text-destructive" : "text-muted-foreground")}>
+            {isOvertime ? "descanso extra" : seconds >= 60 ? "minutos" : "segundos"}
+          </span>
         </div>
       </div>
 
@@ -845,11 +924,25 @@ function RestTimer({ seconds, totalSeconds, upcoming, onSkip }: {
         <strong>{upcoming}</strong>
       </div>
 
+      <label className="flex items-center gap-2 text-base text-muted-foreground cursor-pointer">
+        <input
+          type="checkbox"
+          checked={autoContinue}
+          onChange={(e) => onToggleAutoContinue(e.target.checked)}
+          className="w-5 h-5 accent-primary cursor-pointer"
+          aria-label="Continuar automáticamente al terminar el descanso"
+        />
+        Continuar automáticamente
+      </label>
+
       <button
         onClick={onSkip}
-        className="w-full max-w-sm min-h-16 rounded-2xl bg-primary text-primary-foreground text-xl font-bold cursor-pointer active:scale-[0.98]"
+        className={cn(
+          "w-full max-w-sm min-h-16 rounded-2xl text-xl font-bold cursor-pointer active:scale-[0.98]",
+          isOvertime ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground",
+        )}
       >
-        Ya descansé, continuar
+        {isOvertime ? "Siguiente" : "Ya descansé, continuar"}
       </button>
     </div>
   )
