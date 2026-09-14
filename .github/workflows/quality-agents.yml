@@ -37,6 +37,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
@@ -47,14 +48,13 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run quality agents
+        id: run
         shell: bash
         run: |
           CMD=(node scripts/quality-agents/run-all.mjs --out-dir .quality-reports)
           STRICT_MODE="${{ github.event_name == 'workflow_dispatch' && inputs.strict || vars.QUALITY_AGENTS_STRICT || 'false' }}"
-          if [[ "$STRICT_MODE" == "true" ]]; then
-            CMD+=(--strict)
-          fi
           "${CMD[@]}"
+        continue-on-error: true
 
       - name: Read summary
         id: summary
@@ -64,10 +64,21 @@ jobs:
           echo "Total findings: $FINDINGS_TOTAL"
 
       - name: Upload reports
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: quality-agents-reports
           path: .quality-reports/
+
+      - name: Enforce strict mode
+        if: always()
+        shell: bash
+        run: |
+          STRICT_MODE="${{ github.event_name == 'workflow_dispatch' && inputs.strict || vars.QUALITY_AGENTS_STRICT || 'false' }}"
+          if [[ "$STRICT_MODE" == "true" && "${{ steps.summary.outputs.findings_total }}" != "0" ]]; then
+            echo "Strict mode enabled and findings detected."
+            exit 1
+          fi
 
   open-issue:
     needs: run-quality-agents

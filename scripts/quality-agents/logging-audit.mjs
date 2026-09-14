@@ -1,6 +1,6 @@
 import fs from "node:fs"
 import path from "node:path"
-import { lineNumberAt, listFiles, repoRelative } from "./fs-utils.mjs"
+import { lineNumberAt, listFiles, maskNonCode, repoRelative } from "./fs-utils.mjs"
 
 const cwd = process.cwd()
 const outDir = readArg("--out-dir") ?? ".quality-reports"
@@ -51,79 +51,4 @@ function pushMatches(content, file, regex, severity, message) {
 function readArg(name) {
   const i = process.argv.indexOf(name)
   return i >= 0 ? process.argv[i + 1] : undefined
-}
-
-function maskNonCode(input) {
-  let out = ""
-  let state = "normal"
-  for (let i = 0; i < input.length; i++) {
-    const ch = input[i]
-    const next = input[i + 1]
-    if (state === "normal") {
-      if (ch === "/" && next === "/") {
-        state = "line-comment"
-        out += "  "
-        i++
-      } else if (ch === "/" && next === "*") {
-        state = "block-comment"
-        out += "  "
-        i++
-      } else if (ch === "'") {
-        state = "single-quote"
-        out += " "
-      } else if (ch === "\"") {
-        state = "double-quote"
-        out += " "
-      } else if (ch === "`") {
-        state = "template"
-        out += " "
-      } else {
-        out += ch
-      }
-      continue
-    }
-
-    if (state === "line-comment") {
-      if (ch === "\n") {
-        state = "normal"
-        out += "\n"
-      } else {
-        out += " "
-      }
-      continue
-    }
-
-    if (state === "block-comment") {
-      if (ch === "*" && next === "/") {
-        state = "normal"
-        out += "  "
-        i++
-      } else {
-        out += ch === "\n" ? "\n" : " "
-      }
-      continue
-    }
-
-    if ((state === "single-quote" || state === "double-quote" || state === "template") && ch === "\\") {
-      out += " "
-      if (i + 1 < input.length) {
-        out += input[i + 1] === "\n" ? "\n" : " "
-        i++
-      }
-      continue
-    }
-
-    if (
-      (state === "single-quote" && ch === "'")
-      || (state === "double-quote" && ch === "\"")
-      || (state === "template" && ch === "`")
-    ) {
-      state = "normal"
-      out += " "
-      continue
-    }
-
-    out += ch === "\n" ? "\n" : " "
-  }
-  return out
 }

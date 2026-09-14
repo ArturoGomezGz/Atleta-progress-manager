@@ -8,7 +8,6 @@ const configPath = readArg("--config") ?? "scripts/quality-agents/config/critica
 const criticalTargets = JSON.parse(fs.readFileSync(path.join(cwd, configPath), "utf8"))
 
 const testRoots = [
-  path.join(cwd, "apps/api/src"),
   path.join(cwd, "apps/api/test"),
   path.join(cwd, "apps/api/tests"),
 ]
@@ -19,7 +18,19 @@ const testFiles = testRoots.flatMap((root) => listFiles(root, [".ts", ".tsx", ".
 const findings = []
 const normalizedTestModules = testFiles.map((f) => normalizeTestModulePath(repoRelative(cwd, f)))
 
+if (testFiles.length === 0) {
+  findings.push({
+    category: "testing",
+    severity: "high",
+    file: "apps/api",
+    line: null,
+    message: "No se detectaron archivos .test/.spec en API.",
+    snippet: null,
+  })
+}
+
 for (const target of criticalTargets) {
+  if (testFiles.length === 0) break
   const related = hasRelatedTest(target, normalizedTestModules)
   if (!related) {
     const fileName = path.basename(target, path.extname(target))
@@ -32,17 +43,6 @@ for (const target of criticalTargets) {
       snippet: null,
     })
   }
-}
-
-if (testFiles.length === 0) {
-  findings.push({
-    category: "testing",
-    severity: "high",
-    file: "apps/api",
-    line: null,
-    message: "No se detectaron archivos .test/.spec en API.",
-    snippet: null,
-  })
 }
 
 const report = {
