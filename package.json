@@ -7,7 +7,11 @@
     "db:generate": "pnpm --filter db generate",
     "db:migrate": "pnpm --filter db migrate",
     "db:seed": "pnpm --filter db seed",
-    "db:studio": "pnpm --filter db studio"
+    "db:studio": "pnpm --filter db studio",
+    "qa:agents": "node scripts/quality-agents/run-all.mjs",
+    "qa:agent:logging": "node scripts/quality-agents/logging-audit.mjs",
+    "qa:agent:errors": "node scripts/quality-agents/error-flow-audit.mjs",
+    "qa:agent:tests": "node scripts/quality-agents/unit-test-gap-finder.mjs"
   },
   "packageManager": "pnpm@10.33.3+sha512.a19744364a7e248b92657a4ca5973f9354d21caf982579674b1c539f32c7420c47138ad8b1254df07aba9bc782d9b3029e3db34d5dbff974326eb74dac8ff489"
 }
