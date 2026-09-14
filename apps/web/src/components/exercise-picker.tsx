@@ -196,7 +196,10 @@ function ExercisePickerSheet({ exercises, value, onSelect, onClose }: {
         </div>
 
         {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto overscroll-contain px-5 py-3 space-y-5">
+        {/* Sin padding-top: el buscador es sticky y trae su propio padding; darle
+           uno extra aquí deja una franja sin cubrir por donde asoma el contenido
+           que se desplaza detrás (justo antes de que el buscador quede fijo). */}
+        <div className="flex-1 overflow-y-auto overscroll-contain px-4 sm:px-6 pb-3 space-y-5">
           <ExerciseFinderBar finder={finder} placeholder="Busca por nombre, músculo o equipo…" />
 
           {results.length === 0 ? (
