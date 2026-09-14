@@ -143,4 +143,12 @@ INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Bosu', true
 INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Sled', true, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Cuerda de batalla', true, NULL) ON CONFLICT DO NOTHING;
 INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Trap bar', true, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Máquina Smith', true, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Disco', true, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Landmine', true, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Saco de arena', true, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Deslizadores', true, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Pica / Palo', true, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Comba', true, NULL) ON CONFLICT DO NOTHING;
+INSERT INTO "equipment" ("name", "is_global", "created_by") VALUES ('Chaleco lastrado', true, NULL) ON CONFLICT DO NOTHING;
 COMMIT;

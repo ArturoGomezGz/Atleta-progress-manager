@@ -1,0 +1,298 @@
+[
+  {
+    "name": "TRX Chest Fly",
+    "description": "Inclinado hacia delante con las correas, abre y cierra los brazos en arco como unas aperturas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Transverso abdominal"
+    ],
+    "equipment": [
+      "TRX / Suspensión"
+    ],
+    "youtube_id": "m-eEBhPOHvM",
+    "youtube_title": "TRX Pec Fly #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "TRX Y Raise",
+    "description": "Inclinado hacia atrás con las correas, eleva los brazos rectos formando una Y.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Trapecio",
+      "Deltoides posterior"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "TRX / Suspensión"
+    ],
+    "youtube_id": "FJaVBH7K3f8",
+    "youtube_title": "TRX Y Raise #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "TRX Rear Delt Fly",
+    "description": "Aperturas posteriores con TRX llevando los brazos extendidos en cruz.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "TRX / Suspensión"
+    ],
+    "youtube_id": "L25Cx58WSdg",
+    "youtube_title": "TRX Rear Delt Fly #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "TRX Squat",
+    "description": "Sentadilla sujetando las correas del TRX para mantener el torso erguido.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [],
+    "equipment": [
+      "TRX / Suspensión"
+    ],
+    "youtube_id": "lFFwHKY92BE",
+    "youtube_title": "TRX Squat #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Cable Crunch",
+    "description": "De rodillas frente a la polea alta, flexiona el tronco llevando la cuerda hacia las rodillas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Oblicuo externo"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "ASLUTrxV0E0",
+    "youtube_title": "Cable Crunch #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Cable Wood Chopper",
+    "description": "Lleva el agarre de la polea alta en diagonal hacia la cadera contraria rotando el tronco.",
+    "difficulty": "beginner",
+    "patterns": [
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "GhmJSUnJP98",
+    "youtube_title": "Cable Wood Chopper #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Band Overhead Tricep Extension",
+    "description": "Extensión de tríceps por encima de la cabeza con banda elástica.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "D7Ll1B0EXH0",
+    "youtube_title": "Band Overhead Tricep Extension #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Band Stiff Leg Deadlift",
+    "description": "Peso muerto con piernas casi rectas pisando una banda elástica.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "znkNggIxW7U",
+    "youtube_title": "Band Stiff Leg Deadlift #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Band Leg Press",
+    "description": "Tumbado, empuja la banda con los pies extendiendo las piernas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "LWhg6IXtcjo",
+    "youtube_title": "Band Leg Press #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Dumbbell Snatch",
+    "description": "Arrancada a una mano con mancuerna desde el suelo hasta encima de la cabeza.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "TAOLs97u_dc",
+    "youtube_title": "Dumbbell Snatch #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Dumbbell Lateral Step Up",
+    "description": "Subida lateral a un cajón con mancuernas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo medio"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Caja / Step"
+    ],
+    "youtube_id": "7UrtdFHNqGU",
+    "youtube_title": "Dumbbell Side Step Up #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Bodyweight Hip Thrust",
+    "description": "Hip thrust sin carga con la espalda alta apoyada en un banco.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "8v7jHaO0PQU",
+    "youtube_title": "Body Weight Hip Thrust #shorts",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Suitcase Crunch",
+    "description": "Tumbado, sube a la vez rodillas y tronco hasta encontrarse en el centro.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "cjhVUZK8GWw",
+    "youtube_title": "Suitcase Crunch #shorts #exerciseathome",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  },
+  {
+    "name": "Weighted Plank",
+    "description": "Plancha sobre antebrazos con un disco sobre la espalda.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Disco"
+    ],
+    "youtube_id": "EB8lFqY4LMU",
+    "youtube_title": "Weighted Plank - progress your planks!",
+    "channel": "MuscleWiki",
+    "orientation": "vertical"
+  }
+]

@@ -66,7 +66,7 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 | `FROM_EMAIL` | Dirección de envío verificada (ej. `noreply@tudominio.com`) |
 | `GOOGLE_CLIENT_ID` | *(Opcional)* Client ID del OAuth 2.0 de Google Cloud Console. Sin él, el login con Google se desactiva |
 | `GOOGLE_CLIENT_SECRET` | *(Opcional)* Client Secret del OAuth 2.0 de Google Cloud Console |
-| `SEED_DEMO_DATA` | `true` para sembrar cuentas de prueba + 100 ejercicios al arrancar (idempotente). `false` en producción real |
+| `SEED_DEMO_DATA` | `true` para sembrar cuentas de prueba + catálogo de ejercicios al arrancar (idempotente). `false` en producción real |
 | `GEMINI_API_KEY` | *(Opcional)* Reportes de progreso con IA |
 | `OPENAI_API_KEY` | *(Opcional)* Botón "Completar con IA" al crear ejercicios |
 
@@ -83,7 +83,7 @@ En `packages/db/sql/` hay 4 scripts **idempotentes** (se pueden ejecutar más de
 | 1 | `01_schema.sql` | Esquema completo. Registra la migración en `drizzle.__drizzle_migrations`, así la API no intenta recrear las tablas al arrancar |
 | 2 | `02_catalogs.sql` | Grupos musculares, músculos y equipamiento (incluye calistenia) |
 | 3 | `03_accounts.sql` | Equipo **Neo** y cuentas de prueba verificadas (ver tabla abajo) |
-| 4 | `04_exercises.sql` | 100 ejercicios de calistenia con video de YouTube (públicos, del admin) + una rutina de ejemplo |
+| 4 | `04_exercises.sql` | Catálogo público de 638 ejercicios con video de YouTube (calistenia, gimnasio, halterofilia, movilidad, pilates…) de la cuenta del sistema `coach@atleta.com` + una rutina de ejemplo |
 
 ```bash
 # Con psql y la DATABASE_URL pública de Railway (pestaña Connect del servicio PostgreSQL)
@@ -94,22 +94,23 @@ for f in packages/db/sql/0*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "
 
 | Correo | Contraseña | Rol en equipo Neo |
 |---|---|---|
-| `calixpert@gmail.com` | `12345678` | Sin equipo — dueña de los 100 ejercicios públicos del catálogo |
+| `coach@atleta.com` | `12345678` | Sin equipo — cuenta del sistema, dueña del catálogo público de ejercicios |
 | `arturogomezgz04@gmail.com` | `admin` | Coach (arma rutinas con los ejercicios públicos) |
 | `tester@gmail.com` | `12345678` | Atleta |
 | `abuela@gmail.com` | `12345678` | Atleta (perfil de pruebas de accesibilidad) |
 
-> Si la base se sembró antes con el coach como dueño de los ejercicios, `04_exercises.sql` los transfiere a `calixpert@gmail.com` conservando sus IDs.
+> Si la base se sembró antes con otra cuenta como dueña de los ejercicios (el coach o `calixpert@gmail.com`), `04_exercises.sql` los transfiere a `coach@atleta.com` conservando sus IDs. Si existe la cuenta `calixpert@gmail.com`, `03_accounts.sql` la renombra a `coach@atleta.com`.
 
 > Si una base anterior tenía la cuenta `chinita@gmail.com`, `03_accounts.sql` la renombra a `tester@gmail.com`.
 
 Alternativa sin consola SQL: con `SEED_DEMO_DATA=true` la API ejecuta el migrador de Drizzle + los scripts 02–04 al arrancar.
 
-**Regenerar los scripts** después de cambiar el schema o el dataset (`packages/db/data/calisthenics-exercises.json`):
+**Regenerar los scripts** después de cambiar el schema o el dataset de ejercicios (`packages/db/data/calisthenics-exercises.json` y `packages/db/data/exercises/*.json`, uno por canal de YouTube):
 
 ```bash
-pnpm --filter @atleta/db generate    # nueva migración en src/migrations
-pnpm --filter @atleta/db build-sql   # reescribe packages/db/sql/*.sql
+pnpm --filter @atleta/db generate        # nueva migración en src/migrations
+pnpm --filter @atleta/db build-sql       # valida el catálogo (nombres y videos únicos, músculos/equipamiento válidos) y reescribe packages/db/sql/*.sql
+pnpm --filter @atleta/db verify-videos   # comprueba vía oEmbed que cada video exista y se pueda embeber
 ```
 
 > ⚠️ La migración base `0000_youtube_baseline.sql` reemplaza al historial anterior (0000–0008). Está pensada para una **base de datos nueva**. No la apliques sobre la base del entorno `testing` anterior sin recrearla.

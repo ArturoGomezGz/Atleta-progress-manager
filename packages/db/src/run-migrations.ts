@@ -24,7 +24,7 @@ export async function runMigrations() {
     // Catálogos: siempre (idempotente)
     await runSqlFile(client, "02_catalogs.sql")
 
-    // Cuentas de prueba + 100 ejercicios: solo si se pide explícitamente
+    // Cuentas de prueba + catálogo de ejercicios: solo si se pide explícitamente
     if (process.env.SEED_DEMO_DATA === "true") {
       await runSqlFile(client, "03_accounts.sql")
       await runSqlFile(client, "04_exercises.sql")

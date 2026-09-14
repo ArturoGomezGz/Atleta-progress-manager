@@ -1,0 +1,2021 @@
+[
+  {
+    "name": "Squat Snatch",
+    "description": "Arrancada: la barra sube del suelo a brazos extendidos sobre la cabeza en un solo movimiento, recibiendo en sentadilla profunda.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge",
+      "squat",
+      "pull"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Deltoides anterior",
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "1Lv1IyigIUY",
+    "youtube_title": "Snatch | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Power Snatch",
+    "description": "Arrancada recibiendo la barra por encima de la sentadilla paralela.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Isquiotibiales",
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "ydHHsju1-Nc",
+    "youtube_title": "Power Snatch | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hang Snatch",
+    "description": "Arrancada desde colgado (barra a la altura de la rodilla o muslo) recibiendo en sentadilla.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge",
+      "squat",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "Php-RclQ1yU",
+    "youtube_title": "Hang Snatch | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hang Power Snatch",
+    "description": "Arrancada de potencia desde colgado; desarrolla la extensión explosiva de cadera.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "SpDPcj0W3Yw",
+    "youtube_title": "Hang Power Snatch | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Muscle Snatch",
+    "description": "Arrancada sin rebote de piernas: la barra gira sobre la cabeza con los brazos; técnica y fuerza de giro.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "push"
+    ],
+    "primary": [
+      "Trapecio",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Deltoides lateral"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "nJmtGVutszE",
+    "youtube_title": "Muscle Snatch | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Snatch Balance",
+    "description": "Desde la barra en la espalda, empuja y cae a sentadilla profunda con la barra sobre la cabeza.",
+    "difficulty": "advanced",
+    "patterns": [
+      "squat",
+      "push"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "8KKQTdnxWso",
+    "youtube_title": "Snatch Balance | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Snatch Pull",
+    "description": "Tirón con agarre de arrancada hasta la extensión completa sin recibir la barra.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "G1QygZ3Kd3w",
+    "youtube_title": "Snatch Pull | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Snatch High-Pull",
+    "description": "Tirón de arrancada terminando con los codos altos y la barra a la altura del pecho.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Deltoides lateral",
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "9WRp0a5hcb0",
+    "youtube_title": "Snatch High-Pull | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Snatch Deadlift",
+    "description": "Peso muerto con agarre de arrancada manteniendo la posición de tirón.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Erector espinal",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "mp9gtX-JqB0",
+    "youtube_title": "Snatch Deadlift | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Snatch-Grip RDL",
+    "description": "Peso muerto rumano con agarre ancho de arrancada; carga espalda alta e isquiotibiales.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "2mcAyCgsPvg",
+    "youtube_title": "Snatch-Grip RDL | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Snatch Push Press",
+    "description": "Push press desde detrás de la nuca con agarre de arrancada.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Cuádriceps"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "KD-9_XjGLfI",
+    "youtube_title": "Snatch Push Press | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Sots Press",
+    "description": "Press con agarre de arrancada desde la posición de sentadilla profunda.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "squat"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "UrdNFJaTAnc",
+    "youtube_title": "Press in Snatch (Sots Press) | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Overhead Squat",
+    "description": "Sentadilla profunda con la barra bloqueada sobre la cabeza y agarre ancho.",
+    "difficulty": "advanced",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Trapecio",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "m_fvfJi94D8",
+    "youtube_title": "Overhead Squat | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Tall Snatch",
+    "description": "Desde de pie con la barra en la cadera, tira del cuerpo bajo la barra hasta la sentadilla.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "squat"
+    ],
+    "primary": [
+      "Trapecio",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Cuádriceps"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "UpDy-VNnUuo",
+    "youtube_title": "Tall Snatch | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Squat Clean",
+    "description": "Cargada: la barra sube del suelo a los hombros recibiéndola en sentadilla frontal.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge",
+      "squat",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "oQIaWLrB318",
+    "youtube_title": "Clean | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Power Clean",
+    "description": "Cargada recibiendo la barra en los hombros por encima de la paralela.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Cuádriceps"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "YG8M_-11C2A",
+    "youtube_title": "Power Clean | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hang Clean",
+    "description": "Cargada desde colgado recibiendo en sentadilla frontal.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge",
+      "squat",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "uUeV3LwisDI",
+    "youtube_title": "Hang Clean | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hang Power Clean",
+    "description": "Cargada de potencia desde colgado; ejercicio clásico de potencia para atletas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "efHjodEVf9w",
+    "youtube_title": "Hang Power Clean | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Muscle Clean",
+    "description": "Cargada sin rebote de piernas: tira alto y gira los codos rápido alrededor de la barra.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Trapecio",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Deltoides lateral"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "vO5JVdcY1jg",
+    "youtube_title": "Muscle Clean | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Clean Pull",
+    "description": "Tirón con agarre de cargada hasta la extensión completa.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "xx8WkFrST2Y",
+    "youtube_title": "Clean Pull | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Clean High-Pull",
+    "description": "Tirón de cargada terminando con los codos altos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge",
+      "pull"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Deltoides lateral",
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "2Qv8pEnprpU",
+    "youtube_title": "Clean High-Pull | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Clean Deadlift",
+    "description": "Peso muerto con posición y agarre de cargada.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "iCWAMA9Zeus",
+    "youtube_title": "Clean Deadlift | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Clean & Jerk",
+    "description": "Dos tiempos: cargada a los hombros seguida de envión por encima de la cabeza.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge",
+      "squat",
+      "push"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Tríceps",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "jiYPejuiNck",
+    "youtube_title": "Clean-Jerk | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Split Jerk",
+    "description": "Envión recibiendo la barra con las piernas en tijera.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "2GPA-cjUFnA",
+    "youtube_title": "Split Jerk | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Push Jerk",
+    "description": "Envión recibiendo la barra con una media sentadilla y pies paralelos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Cuádriceps"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "Om7vLD6x8W0",
+    "youtube_title": "Push Jerk | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Power Jerk",
+    "description": "Envión de potencia saltando los pies al recibir con flexión parcial de rodillas.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "Ir_34nxrk1Q",
+    "youtube_title": "Power Jerk | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Squat Jerk",
+    "description": "Envión recibiendo la barra en sentadilla profunda.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "squat"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "iFc4l24llpw",
+    "youtube_title": "Squat Jerk | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Press Behind the Neck",
+    "description": "Press militar desde detrás de la nuca; requiere buena movilidad de hombro.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "hY-_kXsJl3w",
+    "youtube_title": "Press Behind the Neck | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Arnold Press",
+    "description": "Press con mancuernas girando las palmas desde hacia ti hasta el frente durante la subida.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "y2Z56aTvx_M",
+    "youtube_title": "Arnold Press | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Z-Press",
+    "description": "Press militar sentado en el suelo con piernas extendidas; sin ayuda de piernas ni apoyo lumbar.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "-ym8dYDPx68",
+    "youtube_title": "Z-Press | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hex Press",
+    "description": "Press de pecho juntando las mancuernas entre sí durante todo el recorrido.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "x5QYuXS8z9k",
+    "youtube_title": "Hex Press | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "JM Press",
+    "description": "Híbrido entre press cerrado y rompecráneos; fuerza de tríceps para el bloqueo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [
+      "Pectoral mayor"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "xvSYujmY_EY",
+    "youtube_title": "JM Press | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell Swing",
+    "description": "Balanceo de la kettlebell con extensión explosiva de cadera hasta la altura del pecho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Erector espinal",
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "mBajuiwRTSw",
+    "youtube_title": "Kettlebell Swing | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell Press",
+    "description": "Press de hombro a una mano con kettlebell desde la posición de rack.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "Hfg2Mi3vOhQ",
+    "youtube_title": "Kettlebell Press | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell Windmill",
+    "description": "Con la kettlebell arriba, inclina el tronco hacia el lado contrario hasta tocar el pie.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "rotation",
+      "hinge"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "xkqvxdrfav0",
+    "youtube_title": "Windmill | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pause Back Squat",
+    "description": "Sentadilla trasera con pausa de 2-3 segundos en el fondo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "Yvx2EcC0thI",
+    "youtube_title": "Pause Back Squat | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Plate Overhead Walking Lunge",
+    "description": "Zancadas caminando con un disco bloqueado sobre la cabeza.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Disco"
+    ],
+    "youtube_id": "hVIaVvyY-H8",
+    "youtube_title": "Overhead Walking Lunge - Plate",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cossack Squat",
+    "description": "Sentadilla lateral profunda sobre una pierna con la otra extendida; fuerza y movilidad de aductores.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat",
+      "mobility"
+    ],
+    "primary": [
+      "Aductores",
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "Qn5r1xZkC5Q",
+    "youtube_title": "Cossack Squat | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Spanish Squat",
+    "description": "Sentadilla con banda detrás de las rodillas y torso vertical; carga el tendón rotuliano.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "5dX0Y4tw8Dc",
+    "youtube_title": "Spanish Squat | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hatfield Squat",
+    "description": "Sentadilla con barra de seguridad sujetándose a un soporte para cargar más las piernas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "qwxnNDzaGBE",
+    "youtube_title": "Hatfield Squat | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Petersen Step-Up",
+    "description": "Subida con elevación del talón sobre un escalón bajo para aislar el vasto medial.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "Fpnk0TPRpzg",
+    "youtube_title": "Petersen Step-Up | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Poliquin Step-Up",
+    "description": "Descenso controlado a una pierna desde un step con talón elevado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "VJWAb94U4SM",
+    "youtube_title": "Poliquin Step-Up | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Lateral Step-Down",
+    "description": "De lado sobre un cajón, baja la pierna libre hasta rozar el suelo y sube.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat",
+      "isometric"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Glúteo medio"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "LgcMjYzfc9U",
+    "youtube_title": "Lateral Step-Down | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Walking Lunge",
+    "description": "Zancadas avanzando de forma continua.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Aductores"
+    ],
+    "equipment": [],
+    "youtube_id": "zaOuA-zSkWs",
+    "youtube_title": "Walking Lunge | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Split Squat",
+    "description": "Sentadilla en posición de zancada estática bajando la rodilla trasera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [],
+    "youtube_id": "L1LBRuJSOU8",
+    "youtube_title": "Split Squat | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Leg RDL",
+    "description": "Bisagra de cadera a una pierna con la otra extendida hacia atrás.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Glúteo medio",
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "opvwjIol9Ts",
+    "youtube_title": "Single-Leg RDL | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Nordic Hamstring Curl",
+    "description": "De rodillas con los tobillos fijos, deja caer el cuerpo hacia delante lo más lento posible.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Pantorrillas"
+    ],
+    "equipment": [],
+    "youtube_id": "HrOhaEnwDQY",
+    "youtube_title": "Nordic Curl | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Glute Ham Raise",
+    "description": "En banco GHD, sube el cuerpo flexionando rodillas y extendiendo cadera.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Pantorrillas",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "1TlhdiFSJrU",
+    "youtube_title": "Glute-Ham Raise (GHR) | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Reverse Hyper",
+    "description": "Boca abajo en máquina, eleva las piernas extendidas detrás del cuerpo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "ROV6iVsSJSE",
+    "youtube_title": "Reverse Hyper | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Roman Chair Back Extension",
+    "description": "Extensión de espalda en banco romano.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "skXsFN8NfqU",
+    "youtube_title": "Back Extension | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Jefferson Curl",
+    "description": "Flexión segmentada de la columna con carga ligera, vértebra a vértebra.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "mobility",
+      "hinge"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "lHybIJtacgU",
+    "youtube_title": "Jefferson Curl | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Chainsaw Row",
+    "description": "Remo a una mano con apoyo, tirando hacia la cadera como al arrancar una motosierra.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "eKti83wa9Rk",
+    "youtube_title": "Chainsaw Row | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Neutral-Grip Lat Pulldown",
+    "description": "Jalón con agarre neutro (palmas enfrentadas).",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Redondo mayor"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "zTrAP_4YQ80",
+    "youtube_title": "Neutral-Grip Lat Pulldown | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Wide-Grip Lat Pulldown",
+    "description": "Jalón con agarre muy abierto.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Redondo mayor"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "uAcQQ9jp2zk",
+    "youtube_title": "Wide-Grip Lat Pulldown | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Arm Cable Pulldown",
+    "description": "Jalón a una mano en polea alta.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "c45EAfSrvFo",
+    "youtube_title": "Single-Arm Pulldown | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Head Supported Rear Delt Row",
+    "description": "Remo con codos abiertos apoyando la frente en un banco inclinado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior",
+      "Romboides"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "ZwuKoFW3958",
+    "youtube_title": "Head Supported Rear Delt Row | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Prone YTW Raises",
+    "description": "Boca abajo, eleva los brazos formando Y, T y W para la musculatura escapular.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull",
+      "mobility"
+    ],
+    "primary": [
+      "Trapecio",
+      "Romboides"
+    ],
+    "secondary": [
+      "Deltoides posterior",
+      "Manguito rotador"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "bur6Zh3q3jo",
+    "youtube_title": "YTW | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable Lateral Raise",
+    "description": "Elevación lateral a una mano en polea baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "goVyitDXa5o",
+    "youtube_title": "Cable Lateral Raise | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Leanaway Lateral Raise",
+    "description": "Elevación lateral inclinado sujetándote de un soporte para aumentar la tensión inicial.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides lateral"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "FPO5LTeB7ro",
+    "youtube_title": "Leanaway Lateral Raise | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Lateral to Front Raise",
+    "description": "Elevación lateral seguida de elevación frontal sin bajar los brazos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides lateral",
+      "Deltoides anterior"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "bzI-XoUgQMU",
+    "youtube_title": "Dumbbell Lateral to Front Raise | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Pull-Apart",
+    "description": "Separa una banda elástica con brazos extendidos al frente hasta tocar el pecho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior",
+      "Romboides"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "Xg58d9lDWME",
+    "youtube_title": "Band Pull-Apart | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band External Rotation",
+    "description": "Rotación externa del hombro con banda y el codo pegado al costado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Manguito rotador"
+    ],
+    "secondary": [
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "aePkwVQ1yLw",
+    "youtube_title": "Band External Rotation | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable Curl",
+    "description": "Curl de bíceps en polea baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "yGdzi_CciKY",
+    "youtube_title": "Cable Curl | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Preacher Curl",
+    "description": "Curl en banco Scott con mancuerna.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "a-_aey-v-8I",
+    "youtube_title": "Dumbbell Preacher Curl | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "EZ-Bar Preacher Curl",
+    "description": "Curl en banco Scott con barra EZ.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Barra EZ",
+      "Banco"
+    ],
+    "youtube_id": "90-t0TLEXAE",
+    "youtube_title": "Preacher Curl | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "EZ-Bar Curl",
+    "description": "Curl de bíceps de pie con barra EZ.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Barra EZ"
+    ],
+    "youtube_id": "OgO6cWoezNc",
+    "youtube_title": "EZ Curl | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Reverse-Grip Tricep Pushdown",
+    "description": "Extensión de tríceps en polea alta con agarre supino.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "Xw3MsQTwH_Q",
+    "youtube_title": "Reverse-Grip Tricep Pushdown | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Arm Overhead Cable Tricep Extension",
+    "description": "Extensión de tríceps a una mano por encima de la cabeza en polea.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "TdU3PyRqoU8",
+    "youtube_title": "Single-Arm Overhead Cable Tricep Extension | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Wrist Roller",
+    "description": "Enrolla y desenrolla una cuerda con peso girando un rodillo con los brazos extendidos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Flexores del antebrazo",
+      "Extensores del antebrazo"
+    ],
+    "secondary": [
+      "Braquiorradial"
+    ],
+    "equipment": [],
+    "youtube_id": "McGV72pgEMY",
+    "youtube_title": "Wrist Roller | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable Pallof Press",
+    "description": "Press antirrotación: empuja la polea al frente resistiendo el giro del tronco.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "GfTQ0RLZ7GA",
+    "youtube_title": "Pallof Press | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Ab Wheel Rollout",
+    "description": "Rueda abdominal desde rodillas extendiendo el cuerpo sin arquear la zona lumbar.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Dorsal ancho"
+    ],
+    "equipment": [
+      "Rueda abdominal"
+    ],
+    "youtube_id": "Ojf6jVWJDuU",
+    "youtube_title": "Ab Rollout | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Plank Pull-Through",
+    "description": "En plancha alta, arrastra una mancuerna de un lado a otro por debajo del cuerpo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Transverso abdominal",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "MmBisIuvLeU",
+    "youtube_title": "Plank Pull-Through | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Copenhagen Plank",
+    "description": "Plancha lateral con la pierna superior apoyada en un banco; fuerza de aductores.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Aductores",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "VfjAmomtVa0",
+    "youtube_title": "Copenhagen Plank | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Side Plank",
+    "description": "Plancha lateral sobre el antebrazo con el cuerpo en línea recta.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Glúteo medio"
+    ],
+    "equipment": [],
+    "youtube_id": "JFBx8cpLRTw",
+    "youtube_title": "Side Plank | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "GHD Sit-up",
+    "description": "Abdominal en banco GHD con gran rango de extensión.",
+    "difficulty": "advanced",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "Pnm9TSgvBF0",
+    "youtube_title": "GHD Sit-up | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Jackknife Sit-Up",
+    "description": "Tumbado, eleva a la vez piernas y tronco llevando las manos hacia los pies.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "Pf0Y2yEk9tM",
+    "youtube_title": "Jack Knife | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Overhead Dumbbell Carry",
+    "description": "Caminar con mancuernas bloqueadas sobre la cabeza y el core firme.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "carry"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Tríceps"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "u2zEzUeOI-o",
+    "youtube_title": "Dumbbell Overhead Carry | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Clamshell",
+    "description": "Tumbado de lado con rodillas flexionadas, abre la rodilla superior sin girar la pelvis.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo medio"
+    ],
+    "secondary": [
+      "Glúteo menor"
+    ],
+    "equipment": [],
+    "youtube_id": "wRlgcPJ-F-w",
+    "youtube_title": "Clamshell | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Depth Jump",
+    "description": "Déjate caer de un cajón y salta verticalmente con el mínimo tiempo de contacto.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "GeN0S3XCZnM",
+    "youtube_title": "Depth Jump | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Broad Jump",
+    "description": "Salto horizontal a pies juntos buscando la máxima distancia.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Pantorrillas"
+    ],
+    "equipment": [],
+    "youtube_id": "AOkmLTD8J24",
+    "youtube_title": "Broad Jump | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Tuck Jump",
+    "description": "Salto vertical llevando las rodillas al pecho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Pantorrillas",
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "1XYeIUTmBc8",
+    "youtube_title": "Tuck Jump | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Vertical Jump",
+    "description": "Salto vertical máximo con contramovimiento y brazos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [],
+    "youtube_id": "85FvMEHl3Vo",
+    "youtube_title": "Vertical Jump | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Box Jump",
+    "description": "Salto a un cajón desde sentado en un banco, sin contramovimiento.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "yhBwqIvXHgw",
+    "youtube_title": "Seated Box Jump | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Deadlift",
+    "description": "Peso muerto convencional con barra desde el suelo hasta la extensión completa.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Erector espinal",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "E9hLcC8ZrmA",
+    "youtube_title": "Deadlift | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Machine Pec Fly",
+    "description": "Aperturas de pecho en máquina contractora.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "T3EOhuU5RQg",
+    "youtube_title": "Pec Fly | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Underhand Barbell Row",
+    "description": "Remo inclinado con barra y agarre supino.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "gqLeLrwTZus",
+    "youtube_title": "Reverse-Grip Bent Row | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Barbell Twist",
+    "description": "Con la barra en la espalda, gira el tronco de lado a lado de forma controlada.",
+    "difficulty": "beginner",
+    "patterns": [
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "2Fxy16og_dA",
+    "youtube_title": "Standing Barbell Twist | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Plate Twist",
+    "description": "Gira el tronco sujetando un disco con brazos extendidos al frente.",
+    "difficulty": "beginner",
+    "patterns": [
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Disco"
+    ],
+    "youtube_id": "l1yFpp8PHbM",
+    "youtube_title": "Standing Plate Twist | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Banded Terminal Knee Extension",
+    "description": "Con banda detrás de la rodilla, extiende la rodilla por completo contra la resistencia.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "F1uLWqROsaE",
+    "youtube_title": "TKE (Terminal Knee Extension) | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Leg Glute Bridge",
+    "description": "Puente de glúteo con una pierna extendida en el aire.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "3FE2eZGeT1o",
+    "youtube_title": "Single-Leg Glute Bridge | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Crunch",
+    "description": "Encogimiento abdominal despegando solo los hombros del suelo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Oblicuo externo"
+    ],
+    "equipment": [],
+    "youtube_id": "aqn-hqIk4rk",
+    "youtube_title": "Crunch | Olympic Weightlifting Exercise Library",
+    "channel": "Catalyst Athletics",
+    "orientation": "horizontal"
+  }
+]

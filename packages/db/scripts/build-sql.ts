@@ -4,7 +4,8 @@
  *   sql/01_schema.sql     Esquema completo + registro en drizzle.__drizzle_migrations
  *   sql/02_catalogs.sql   Grupos musculares, músculos y equipamiento
  *   sql/03_accounts.sql   Cuentas de prueba (verificadas) y equipo "Neo"
- *   sql/04_exercises.sql  100 ejercicios de calistenia con video de YouTube + rutina de ejemplo
+ *   sql/04_exercises.sql  Catálogo público de ejercicios con video de YouTube + rutina de ejemplo
+ *                         (fuentes: data/calisthenics-exercises.json y data/exercises/*.json)
  *
  * Todos son idempotentes: se pueden ejecutar varias veces sin duplicar datos.
  * Uso: pnpm --filter @atleta/db build-sql   (después de `drizzle-kit generate`)
@@ -112,7 +113,8 @@ export const EQUIPMENT: string[] = [
   // Gimnasio
   "Mancuernas", "Barra olímpica", "Barra EZ", "Kettlebell", "Máquina / Cable", "Polea alta", "Polea baja",
   "TRX / Suspensión", "Balón medicinal", "Rueda abdominal", "Pelota de estabilidad", "Bosu", "Sled",
-  "Cuerda de batalla", "Trap bar",
+  "Cuerda de batalla", "Trap bar", "Máquina Smith", "Disco", "Landmine", "Saco de arena", "Deslizadores",
+  "Pica / Palo", "Comba", "Chaleco lastrado",
 ]
 
 function buildCatalogs(): string {
@@ -140,15 +142,17 @@ export const TEAM = { id: stableUuid("team:neo"), name: "Neo", maxAthletes: 50, 
 type SeedAccount = { email: string; name: string; password: string; role: "coach" | "athlete" | null }
 
 export const ACCOUNTS: SeedAccount[] = [
-  // Publica el catálogo: dueña de los 100 ejercicios públicos. No pertenece a ningún equipo,
-  // así los coaches de prueba usan esos ejercicios como "públicos" al armar rutinas.
-  { email: "calixpert@gmail.com",       name: "Calixpert",     password: "12345678", role: null },
+  // Cuenta del sistema: publica el catálogo oficial de ejercicios. No pertenece a ningún equipo,
+  // así los coaches usan esos ejercicios como "públicos" al armar rutinas.
+  { email: "coach@atleta.com",          name: "Atleta",        password: "12345678", role: null },
   { email: "arturogomezgz04@gmail.com", name: "Arturo Gómez",  password: "admin",    role: "coach" },
   { email: "tester@gmail.com",          name: "Tester",        password: "12345678", role: "athlete" },
   { email: "abuela@gmail.com",          name: "Rosa Martínez", password: "12345678", role: "athlete" },
 ]
 
-export const EXERCISE_OWNER_EMAIL = "calixpert@gmail.com"
+export const EXERCISE_OWNER_EMAIL = "coach@atleta.com"
+/** Cuentas que fueron dueñas del catálogo en versiones anteriores. */
+const LEGACY_OWNER_EMAILS = ["calixpert@gmail.com"]
 export const COACH_EMAIL = "arturogomezgz04@gmail.com"
 
 function buildAccounts(): string {
@@ -157,6 +161,10 @@ function buildAccounts(): string {
 UPDATE "user" SET "email" = 'tester@gmail.com', "name" = 'Tester', "updated_at" = now()
   WHERE "email" = 'chinita@gmail.com'
     AND NOT EXISTS (SELECT 1 FROM "user" WHERE "email" = 'tester@gmail.com');`,
+    ...LEGACY_OWNER_EMAILS.map((email) => `-- La cuenta dueña del catálogo "${email}" pasa a ser la cuenta del sistema "${EXERCISE_OWNER_EMAIL}"
+UPDATE "user" SET "email" = ${q(EXERCISE_OWNER_EMAIL)}, "updated_at" = now()
+  WHERE "email" = ${q(email)}
+    AND NOT EXISTS (SELECT 1 FROM "user" WHERE "email" = ${q(EXERCISE_OWNER_EMAIL)});`),
     `INSERT INTO "team" ("id", "name", "max_athletes", "max_coaches")
   VALUES ('${TEAM.id}', ${q(TEAM.name)}, ${TEAM.maxAthletes}, ${TEAM.maxCoaches})
   ON CONFLICT ("id") DO UPDATE SET "max_athletes" = EXCLUDED."max_athletes", "max_coaches" = EXCLUDED."max_coaches";`,
@@ -186,6 +194,26 @@ INSERT INTO "team_member" ("team_id", "user_id", "role")
 
 // ─── 04 · Ejercicios ──────────────────────────────────────────────────────────
 
+const MOVEMENT_PATTERNS = ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core"] as const
+
+/** Formato normalizado de un ejercicio del catálogo (data/exercises/*.json). */
+export type SeedExercise = {
+  name: string
+  description: string
+  difficulty: "beginner" | "intermediate" | "advanced"
+  patterns: (typeof MOVEMENT_PATTERNS)[number][]
+  /** Nombres del catálogo de músculos (MUSCLE_GROUPS) */
+  primary: string[]
+  secondary: string[]
+  /** Nombres del catálogo de equipamiento (EQUIPMENT); vacío = peso corporal */
+  equipment: string[]
+  youtube_id: string
+  youtube_title: string
+  channel: string
+  orientation: "horizontal" | "vertical"
+}
+
+/** Formato original del dataset de calistenia (data/calisthenics-exercises.json). */
 type DatasetExercise = {
   name: string
   category: "push" | "pull" | "core" | "leg"
@@ -248,12 +276,79 @@ const PATTERN_MAP: Record<DatasetExercise["category"], string> = {
 
 export const exerciseUuid = (name: string) => stableUuid(`exercise:${name}`)
 
-function buildExercises(dataset: DatasetExercise[]): string {
+/** Convierte el dataset original de calistenia al formato normalizado. */
+function fromCalisthenicsDataset(ex: DatasetExercise): SeedExercise {
+  if (!ex.youtube_verified || !ex.youtube_id) throw new Error(`Ejercicio sin video verificado: ${ex.name}`)
+  const muscles = [...new Set(ex.muscle_groups.map((slug) => {
+    const mapped = MUSCLE_MAP[slug]
+    if (!mapped) throw new Error(`Músculo sin mapear: ${slug}`)
+    return mapped[1]
+  }))]
+  return {
+    name: ex.name,
+    description: ex.description_es,
+    difficulty: ex.level === "pre-beginner" ? "beginner" : ex.level,
+    patterns: [PATTERN_MAP[ex.category] as SeedExercise["patterns"][number]],
+    // En el dataset original los dos primeros grupos son los principales
+    primary: ex.muscle_groups.slice(0, 2).map((slug) => MUSCLE_MAP[slug][1]).filter((m, i, a) => a.indexOf(m) === i),
+    secondary: muscles.filter((m) => !ex.muscle_groups.slice(0, 2).some((slug) => MUSCLE_MAP[slug][1] === m)),
+    equipment: [...new Set(ex.equipment.map((e) => {
+      if (!(e in EQUIPMENT_MAP)) throw new Error(`Equipamiento sin mapear: ${e}`)
+      return EQUIPMENT_MAP[e]
+    }).filter((e): e is string => !!e))],
+    youtube_id: ex.youtube_id,
+    youtube_title: ex.youtube_title ?? ex.name,
+    channel: "Calixpert",
+    orientation: ex.orientation,
+  }
+}
+
+/** Clave para detectar nombres repetidos: sin mayúsculas, acentos, signos ni plurales simples. */
+export function exerciseNameKey(name: string): string {
+  return name
+    .toLowerCase()
+    .normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(" ")
+    .map((w) => (w.length > 3 ? w.replace(/(es|s)$/, "") : w))
+    .join(" ")
+}
+
+/** Valida el catálogo completo; lanza con todos los problemas encontrados. */
+export function validateCatalog(dataset: SeedExercise[]) {
+  const muscleNames = new Set(MUSCLE_GROUPS.flatMap((g) => g.muscles))
+  const equipment = new Set(EQUIPMENT)
+  const names = new Map<string, string>()
+  const videos = new Map<string, string>()
+  const errors: string[] = []
+
+  for (const ex of dataset) {
+    const key = exerciseNameKey(ex.name)
+    if (names.has(key)) errors.push(`Nombre repetido: "${ex.name}" ≈ "${names.get(key)}"`)
+    names.set(key, ex.name)
+    if (!/^[A-Za-z0-9_-]{11}$/.test(ex.youtube_id)) errors.push(`${ex.name}: youtube_id inválido "${ex.youtube_id}"`)
+    if (videos.has(ex.youtube_id)) errors.push(`Video repetido ${ex.youtube_id}: "${ex.name}" y "${videos.get(ex.youtube_id)}"`)
+    videos.set(ex.youtube_id, ex.name)
+    if (!ex.description?.trim()) errors.push(`${ex.name}: sin descripción`)
+    if (!["beginner", "intermediate", "advanced"].includes(ex.difficulty)) errors.push(`${ex.name}: dificultad "${ex.difficulty}"`)
+    if (!ex.patterns.length) errors.push(`${ex.name}: sin patrón de movimiento`)
+    for (const p of ex.patterns) if (!MOVEMENT_PATTERNS.includes(p)) errors.push(`${ex.name}: patrón "${p}"`)
+    if (!ex.primary.length) errors.push(`${ex.name}: sin músculo principal`)
+    for (const m of [...ex.primary, ...ex.secondary]) if (!muscleNames.has(m)) errors.push(`${ex.name}: músculo "${m}"`)
+    for (const e of ex.equipment) if (!equipment.has(e)) errors.push(`${ex.name}: equipamiento "${e}"`)
+  }
+  if (errors.length) throw new Error(`Catálogo de ejercicios inválido:\n  ${errors.join("\n  ")}`)
+}
+
+function buildExercises(dataset: SeedExercise[]): string {
+  validateCatalog(dataset)
+  const muscleGroup = new Map(MUSCLE_GROUPS.flatMap((g) => g.muscles.map((m) => [m, g.name] as const)))
   const adminId = `(SELECT "id" FROM "user" WHERE "email" = ${q(EXERCISE_OWNER_EMAIL)})`
   const seedIds = dataset.map((ex) => `'${exerciseUuid(ex.name)}'`).join(", ")
   const lines: string[] = [
-    // Bases sembradas con versiones anteriores: los ejercicios eran de la cuenta del coach.
-    // Se transfieren a Calixpert conservando los mismos IDs (rutinas y sesiones siguen apuntando bien).
+    // Bases sembradas con versiones anteriores: los ejercicios eran de otra cuenta (coach o Calixpert).
+    // Se transfieren a la cuenta del sistema conservando los mismos IDs (rutinas y sesiones siguen apuntando bien).
     `-- Transferir el catálogo sembrado a ${EXERCISE_OWNER_EMAIL}
 UPDATE "exercise" SET "owner_user_id" = ${adminId}, "owner_team_id" = NULL, "created_by" = ${adminId}, "is_public" = true, "updated_at" = now()
   WHERE "id" IN (${seedIds})
@@ -261,47 +356,39 @@ UPDATE "exercise" SET "owner_user_id" = ${adminId}, "owner_team_id" = NULL, "cre
   ]
 
   for (const ex of dataset) {
-    if (!ex.youtube_verified || !ex.youtube_id) throw new Error(`Ejercicio sin video verificado: ${ex.name}`)
     const id = exerciseUuid(ex.name)
-    const difficulty = ex.level === "pre-beginner" ? "beginner" : ex.level
-    const pattern = PATTERN_MAP[ex.category]
+    const exists = `EXISTS (SELECT 1 FROM "exercise" WHERE "id" = '${id}')`
 
     lines.push(`
--- ${ex.name}
+-- ${ex.name} · ${ex.channel}
 INSERT INTO "exercise" ("id", "name", "description", "difficulty", "movement_patterns", "youtube_video_id", "youtube_title", "video_orientation", "is_public", "owner_user_id", "created_by")
-  VALUES ('${id}', ${q(ex.name)}, ${q(ex.description_es)}, '${difficulty}', '{${pattern}}', '${ex.youtube_id}', ${q(ex.youtube_title ?? null)}, '${ex.orientation}', true, ${adminId}, ${adminId})
+  VALUES ('${id}', ${q(ex.name)}, ${q(ex.description)}, '${ex.difficulty}', '{${[...new Set(ex.patterns)].join(",")}}', '${ex.youtube_id}', ${q(ex.youtube_title)}, '${ex.orientation}', true, ${adminId}, ${adminId})
   ON CONFLICT DO NOTHING;`)
 
-    const seen = new Set<string>()
-    ex.muscle_groups.forEach((slug, i) => {
-      const mapped = MUSCLE_MAP[slug]
-      if (!mapped) throw new Error(`Músculo sin mapear: ${slug}`)
-      const key = mapped.join("/")
-      if (seen.has(key)) return
-      seen.add(key)
-      const role = i < 2 ? "primary" : "secondary"
+    const roles = [
+      ...ex.primary.map((m) => [m, "primary"] as const),
+      ...ex.secondary.filter((m) => !ex.primary.includes(m)).map((m) => [m, "secondary"] as const),
+    ]
+    for (const [muscle, role] of roles) {
       lines.push(`INSERT INTO "exercise_muscle" ("exercise_id", "muscle_id", "role")
   SELECT '${id}', m."id", '${role}' FROM "muscle" m JOIN "muscle_group" g ON g."id" = m."muscle_group_id"
-  WHERE m."name" = ${q(mapped[1])} AND g."name" = ${q(mapped[0])} AND EXISTS (SELECT 1 FROM "exercise" WHERE "id" = '${id}')
-  ON CONFLICT DO NOTHING;`)
-    })
-
-    for (const eqName of new Set(ex.equipment.map((e) => EQUIPMENT_MAP[e]).filter((e): e is string => !!e))) {
-      lines.push(`INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
-  SELECT '${id}', e."id" FROM "equipment" e
-  WHERE e."name" = ${q(eqName)} AND e."is_global" = true AND e."created_by" IS NULL AND EXISTS (SELECT 1 FROM "exercise" WHERE "id" = '${id}')
+  WHERE m."name" = ${q(muscle)} AND g."name" = ${q(muscleGroup.get(muscle)!)} AND ${exists}
   ON CONFLICT DO NOTHING;`)
     }
-    for (const e of ex.equipment) {
-      if (!(e in EQUIPMENT_MAP)) throw new Error(`Equipamiento sin mapear: ${e}`)
+
+    for (const eqName of new Set(ex.equipment)) {
+      lines.push(`INSERT INTO "exercise_equipment" ("exercise_id", "equipment_id")
+  SELECT '${id}', e."id" FROM "equipment" e
+  WHERE e."name" = ${q(eqName)} AND e."is_global" = true AND e."created_by" IS NULL AND ${exists}
+  ON CONFLICT DO NOTHING;`)
     }
   }
 
   lines.push("\n" + buildDemoRoutine(dataset))
-  return header("04 · 100 ejercicios de calistenia (YouTube) + rutina de ejemplo", `BEGIN;\n${lines.join("\n")}\nCOMMIT;`)
+  return header(`04 · Catálogo de ${dataset.length} ejercicios (YouTube) + rutina de ejemplo`, `BEGIN;\n${lines.join("\n")}\nCOMMIT;`)
 }
 
-function buildDemoRoutine(dataset: DatasetExercise[]): string {
+function buildDemoRoutine(dataset: SeedExercise[]): string {
   const pick = (name: string) => {
     if (!dataset.some((d) => d.name === name)) throw new Error(`Ejercicio de la rutina demo no existe: ${name}`)
     return exerciseUuid(name)
@@ -321,7 +408,7 @@ function buildDemoRoutine(dataset: DatasetExercise[]): string {
       })),
       {
         type: "block", id: stableUuid("demo:block"), order: 3, name: "Circuito final", rounds: 2,
-        exercises: dataset.filter((d) => d.category === "core").slice(0, 2).map((d, i) => ({
+        exercises: dataset.filter((d) => d.patterns.includes("core")).slice(0, 2).map((d, i) => ({
           id: stableUuid(`demo:block:${i}`), exerciseId: pick(d.name), order: 4 + i, sets: time(30, 1),
         })),
       },
@@ -337,10 +424,21 @@ INSERT INTO "routine" ("id", "name", "team_id", "created_by", "category", "conte
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
 
-function main() {
-  const dataset = JSON.parse(
+/** Todas las fuentes del catálogo: el dataset original de calistenia + data/exercises/*.json (orden alfabético). */
+export function loadCatalog(): SeedExercise[] {
+  const calisthenics = JSON.parse(
     fs.readFileSync(path.join(ROOT, "data", "calisthenics-exercises.json"), "utf8"),
   ) as DatasetExercise[]
+  const dir = path.join(ROOT, "data", "exercises")
+  const extra = fs.existsSync(dir)
+    ? fs.readdirSync(dir).filter((f) => f.endsWith(".json")).sort()
+        .flatMap((f) => JSON.parse(fs.readFileSync(path.join(dir, f), "utf8")) as SeedExercise[])
+    : []
+  return [...calisthenics.map(fromCalisthenicsDataset), ...extra]
+}
+
+function main() {
+  const dataset = loadCatalog()
 
   fs.mkdirSync(OUT, { recursive: true })
   const files: [string, string][] = [

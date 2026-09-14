@@ -8,19 +8,23 @@ BEGIN;
 UPDATE "user" SET "email" = 'tester@gmail.com', "name" = 'Tester', "updated_at" = now()
   WHERE "email" = 'chinita@gmail.com'
     AND NOT EXISTS (SELECT 1 FROM "user" WHERE "email" = 'tester@gmail.com');
+-- La cuenta dueña del catálogo "calixpert@gmail.com" pasa a ser la cuenta del sistema "coach@atleta.com"
+UPDATE "user" SET "email" = 'coach@atleta.com', "updated_at" = now()
+  WHERE "email" = 'calixpert@gmail.com'
+    AND NOT EXISTS (SELECT 1 FROM "user" WHERE "email" = 'coach@atleta.com');
 INSERT INTO "team" ("id", "name", "max_athletes", "max_coaches")
   VALUES ('09ec5433-f03f-5a98-aad6-6d57e97e4d18', 'Neo', 50, 10)
   ON CONFLICT ("id") DO UPDATE SET "max_athletes" = EXCLUDED."max_athletes", "max_coaches" = EXCLUDED."max_coaches";
 
--- Calixpert <calixpert@gmail.com> · contraseña: 12345678 · rol: sin equipo
+-- Atleta <coach@atleta.com> · contraseña: 12345678 · rol: sin equipo
 INSERT INTO "user" ("id", "name", "email", "email_verified", "created_at", "updated_at")
-  VALUES ('968a6145-b446-53f7-a222-fe6b492607e5', 'Calixpert', 'calixpert@gmail.com', true, now(), now())
+  VALUES ('be0b88bf-8735-5e14-ab9b-00f6ebb60002', 'Atleta', 'coach@atleta.com', true, now(), now())
   ON CONFLICT ("email") DO UPDATE SET "name" = EXCLUDED."name", "email_verified" = true, "updated_at" = now();
 DELETE FROM "account" WHERE "provider_id" = 'credential'
-  AND "user_id" = (SELECT "id" FROM "user" WHERE "email" = 'calixpert@gmail.com');
+  AND "user_id" = (SELECT "id" FROM "user" WHERE "email" = 'coach@atleta.com');
 INSERT INTO "account" ("id", "account_id", "provider_id", "user_id", "password", "created_at", "updated_at")
-  SELECT '5268a5d3-6b51-516e-ae2c-dad1962be1ca', u."id", 'credential', u."id", 'c98880eb92184ddb56134a6ff0bcc5be:2fe70e49f413a9728c0df6e4289e1f2742b49e66f01bec7ea8c4c85b26aaa2805a3c12b60ff6c176862e0cd03dd4983a5999edcd307c44a334aa71d3447ab035', now(), now()
-  FROM "user" u WHERE u."email" = 'calixpert@gmail.com';
+  SELECT '56384487-7534-5156-a6f3-c847d2c4aa75', u."id", 'credential', u."id", '5a75c7437c6a96214cff6fff930555cd:8ab99e26314cfaaf4e0a220db8ff3502d8e30801ad8cd7ff72739dd5e2e3d249eeb791fe51fc7379ff3ed1c9727a922e22f2589df37a594a7c8d3d695c6c061c', now(), now()
+  FROM "user" u WHERE u."email" = 'coach@atleta.com';
 
 -- Arturo Gómez <arturogomezgz04@gmail.com> · contraseña: admin · rol: coach
 INSERT INTO "user" ("id", "name", "email", "email_verified", "created_at", "updated_at")
