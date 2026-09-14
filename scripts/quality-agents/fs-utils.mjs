@@ -113,29 +113,29 @@ export function maskNonCode(input) {
       if (exprMode === "normal") {
         if (ch === "/" && next === "/") {
           exprMode = "line-comment"
-          out += "//"
+          out += "  "
           i++
           continue
         }
         if (ch === "/" && next === "*") {
           exprMode = "block-comment"
-          out += "/*"
+          out += "  "
           i++
           continue
         }
         if (ch === "'") {
           exprMode = "single-quote"
-          out += ch
+          out += " "
           continue
         }
         if (ch === "\"") {
           exprMode = "double-quote"
-          out += ch
+          out += " "
           continue
         }
         if (ch === "`") {
           exprMode = "template-quote"
-          out += ch
+          out += " "
           continue
         }
         if (ch === "{") templateExpressionDepth += 1

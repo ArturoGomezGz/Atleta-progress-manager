@@ -5,6 +5,7 @@ import { spawnSync } from "node:child_process"
 const cwd = process.cwd()
 const outDir = readArg("--out-dir") ?? ".quality-reports"
 const strict = process.argv.includes("--strict")
+const passthroughArgs = readPassthroughArgs()
 const agents = [
   { script: "logging-audit.mjs", report: "logging-audit.json" },
   { script: "error-flow-audit.mjs", report: "error-flow-audit.json" },
@@ -14,7 +15,12 @@ const agents = [
 fs.mkdirSync(outDir, { recursive: true })
 
 for (const agent of agents) {
-  const result = spawnSync("node", [path.join("scripts/quality-agents", agent.script), "--out-dir", outDir], {
+  const result = spawnSync("node", [
+    path.join("scripts/quality-agents", agent.script),
+    "--out-dir",
+    outDir,
+    ...passthroughArgs,
+  ], {
     cwd,
     stdio: "inherit",
   })
@@ -97,6 +103,20 @@ function toMarkdown(summary, reports) {
 function readArg(name) {
   const i = process.argv.indexOf(name)
   return i >= 0 ? process.argv[i + 1] : undefined
+}
+
+function readPassthroughArgs() {
+  const passthrough = []
+  for (let i = 2; i < process.argv.length; i++) {
+    const arg = process.argv[i]
+    if (arg === "--strict") continue
+    if (arg === "--out-dir") {
+      i += 1
+      continue
+    }
+    passthrough.push(arg)
+  }
+  return passthrough
 }
 
 function normalizeSnippet(snippet) {
