@@ -22,7 +22,7 @@ for (const file of files) {
   pushMatches(
     code,
     file,
-    /\.catch\s*\(\s*\(?\s*err\w*\s*\)?\s*=>\s*console\.error\s*\(/g,
+    /\.catch\s*\(\s*\(?\s*err\w*\s*\)?\s*=>\s*(?:console\.error\s*\(|\{[\s\S]{0,200}?console\.error\s*\()/g,
     "medium",
     "Fallo async sin manejo centralizado de error.",
   )

@@ -50,7 +50,8 @@ jobs:
         shell: bash
         run: |
           CMD=(node scripts/quality-agents/run-all.mjs --out-dir .quality-reports)
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.strict }}" == "true" ]]; then
+          STRICT_MODE="${{ github.event_name == 'workflow_dispatch' && inputs.strict || vars.QUALITY_AGENTS_STRICT || 'false' }}"
+          if [[ "$STRICT_MODE" == "true" ]]; then
             CMD+=(--strict)
           fi
           "${CMD[@]}"

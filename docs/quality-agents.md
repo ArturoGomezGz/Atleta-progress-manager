@@ -56,3 +56,9 @@ Al correr por `workflow_dispatch`:
 
 - `strict=true` hace fallar el workflow si hay hallazgos.
 - `action_mode=open-issue` crea un issue con el resumen (`summary.md`) cuando hay hallazgos.
+
+### Strict mode en PR/schedule
+
+Para habilitar `strict` fuera de ejecución manual (`pull_request` y `schedule`), define la variable de repositorio:
+
+- `QUALITY_AGENTS_STRICT=true`
