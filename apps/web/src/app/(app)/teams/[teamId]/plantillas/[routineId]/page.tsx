@@ -25,6 +25,8 @@ import {
 import Link from "next/link"
 import { use, useCallback, useEffect, useRef, useState } from "react"
 
+const DEFAULT_SUGGESTED_REST_SECONDS = 60
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SetType  = "reps" | "time"
@@ -91,6 +93,29 @@ function cloneExercise<T extends RoutineExerciseContent>(ex: T): T {
   return { ...ex, id: uuid(), sets: ex.sets.map((s) => ({ ...s })) }
 }
 
+/** Autocompleta el descanso del último ejercicio de una lista de ejercicios (plana o dentro de un circuito) cuando aún no tiene uno, para que separe del que se está por agregar. */
+function applyAutoRestOnLastExercise(exercises: RoutineExerciseContent[], suggestedSeconds: number): RoutineExerciseContent[] {
+  if (exercises.length === 0) return exercises
+  const sorted = [...exercises].sort((a, b) => a.order - b.order)
+  const last = sorted[sorted.length - 1]
+  if (last.restSeconds != null) return exercises
+  return exercises.map((e) => (e.id === last.id ? { ...e, restSeconds: suggestedSeconds } : e))
+}
+
+/** Igual que arriba, pero para la lista de items de nivel superior (ejercicios sueltos o circuitos). */
+function applyAutoRestOnLastItem(items: Array<RoutineItemExercise | RoutineItemBlock>, suggestedSeconds: number): Array<RoutineItemExercise | RoutineItemBlock> {
+  if (items.length === 0) return items
+  const sorted = [...items].sort((a, b) => a.order - b.order)
+  const last = sorted[sorted.length - 1]
+  if (last.type === "exercise") {
+    if (last.restSeconds != null) return items
+    return items.map((i) => (i.id === last.id ? { ...i, restSeconds: suggestedSeconds } : i))
+  }
+  const updatedExercises = applyAutoRestOnLastExercise(last.exercises, suggestedSeconds)
+  if (updatedExercises === last.exercises) return items
+  return items.map((i) => (i.id === last.id ? { ...i, exercises: updatedExercises } : i))
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function RoutinePage({ params }: { params: Promise<{ teamId: string; routineId: string }> }) {
@@ -118,6 +143,8 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   const [dirty, setDirty]               = useState(false)
   const [name, setName]                 = useState("")
   const [preview, setPreview]           = useState<ExerciseInfo | null>(null)
+  // Último valor de descanso usado por el entrenador: sugiere ese mismo valor para el próximo descanso que se autocomplete.
+  const [suggestedRest, setSuggestedRest] = useState(DEFAULT_SUGGESTED_REST_SECONDS)
 
   useEffect(() => { if (routineData) setName(routineData.name) }, [routineData])
 
@@ -161,12 +188,18 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           ]
         : reps(3, 10),
     }
-    mutate((c) => ({ ...c, items: renumber([...[...c.items].sort((a, b) => a.order - b.order), newEx]) }))
+    mutate((c) => {
+      const existing = applyAutoRestOnLastItem([...c.items].sort((a, b) => a.order - b.order), suggestedRest)
+      return { ...c, items: renumber([...existing, newEx]) }
+    })
   }
 
   function addBlock() {
     const block: RoutineItemBlock = { type: "block", id: uuid(), order: sorted.length, name: "Circuito", rounds: 3, exercises: [] }
-    mutate((c) => ({ ...c, items: renumber([...[...c.items].sort((a, b) => a.order - b.order), block]) }))
+    mutate((c) => {
+      const existing = applyAutoRestOnLastItem([...c.items].sort((a, b) => a.order - b.order), suggestedRest)
+      return { ...c, items: renumber([...existing, block]) }
+    })
   }
 
   function moveItem(id: string, dir: -1 | 1) {
@@ -296,16 +329,25 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
             onRemove: () => removeItem(item.id),
           }
           return item.type === "exercise" ? (
-            <ExerciseCard
-              key={item.id}
-              item={item}
-              label={String(idx + 1)}
-              isEvaluation={isEvaluation}
-              info={infoFor(item.exerciseId)}
-              onPreview={setPreview}
-              onUpdate={(patch) => updateItem(item.id, patch)}
-              {...moveProps}
-            />
+            <div key={item.id}>
+              <ExerciseCard
+                item={item}
+                label={String(idx + 1)}
+                isEvaluation={isEvaluation}
+                info={infoFor(item.exerciseId)}
+                onPreview={setPreview}
+                onUpdate={(patch) => updateItem(item.id, patch)}
+                {...moveProps}
+              />
+              {!isEvaluation && (
+                <RestRow
+                  seconds={item.restSeconds}
+                  onAdd={() => updateItem(item.id, { restSeconds: suggestedRest })}
+                  onChange={(n) => { updateItem(item.id, { restSeconds: n }); setSuggestedRest(n) }}
+                  onClear={() => updateItem(item.id, { restSeconds: undefined })}
+                />
+              )}
+            </div>
           ) : (
             <BlockCard
               key={item.id}
@@ -315,6 +357,8 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
               catalog={catalog ?? []}
               onPreview={setPreview}
               onUpdate={(patch) => updateItem(item.id, patch)}
+              suggestedRest={suggestedRest}
+              onSuggestedRestChange={setSuggestedRest}
               {...moveProps}
             />
           )
@@ -422,6 +466,54 @@ function ItemActions({ onMoveUp, onMoveDown, onDuplicate, onRemove }: {
   )
 }
 
+// ─── Descanso entre ejercicios ────────────────────────────────────────────────
+// Fila compacta (no es un ítem numerado) que representa el descanso que el atleta
+// hará después de este ejercicio y antes del siguiente. Vive sobre el campo
+// `restSeconds` del propio ejercicio.
+
+function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
+  seconds?: number
+  label?: string
+  onAdd: () => void
+  onChange: (seconds: number) => void
+  onClear: () => void
+}) {
+  if (seconds == null) {
+    return (
+      <button
+        type="button"
+        onClick={onAdd}
+        className="flex items-center gap-1.5 ml-9 pl-1 text-[11px] text-muted-foreground/60 hover:text-primary transition-colors cursor-pointer"
+      >
+        <PlusIcon className="w-3 h-3" /> Agregar descanso
+      </button>
+    )
+  }
+  return (
+    <div className="flex items-center gap-1.5 ml-9 px-2 py-1 text-[11px] text-muted-foreground">
+      <PauseIcon className="w-3 h-3 shrink-0" />
+      <span className="shrink-0">{label}</span>
+      <input
+        type="number"
+        min={0}
+        value={seconds}
+        onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
+        className="w-14 bg-background border border-border rounded-md px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary"
+        aria-label="Segundos de descanso"
+      />
+      <span className="shrink-0">seg</span>
+      <button
+        type="button"
+        onClick={onClear}
+        className="ml-1 p-0.5 text-muted-foreground/60 hover:text-destructive transition-colors cursor-pointer"
+        aria-label="Quitar descanso"
+      >
+        <XIcon className="w-3 h-3" />
+      </button>
+    </div>
+  )
+}
+
 // ─── Exercise card ────────────────────────────────────────────────────────────
 
 function ExerciseCard({
@@ -441,7 +533,7 @@ function ExerciseCard({
 }) {
   const [expanded, setExpanded]   = useState(false)
   const [drafts, setDrafts]       = useState<DraftSet[]>(() => item.sets.map(draftFromSet))
-  const [meta, setMeta]           = useState({ tempo: item.tempo ?? "", restSeconds: item.restSeconds?.toString() ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
+  const [meta, setMeta]           = useState({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
   const [quick, setQuick]         = useState({ count: String(item.sets.length || 3), value: "" })
   const [tempoInfo, setTempoInfo] = useState(false)
   const tempoRef                  = useRef<HTMLDivElement>(null)
@@ -461,7 +553,7 @@ function ExerciseCard({
 
   function openEditor() {
     setDrafts(item.sets.map(draftFromSet))
-    setMeta({ tempo: item.tempo ?? "", restSeconds: item.restSeconds?.toString() ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
+    setMeta({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
     setExpanded((v) => !v)
   }
 
@@ -480,10 +572,9 @@ function ExerciseCard({
     onUpdate({
       sets: drafts.map(draftToSet),
       ...(isEvaluation ? {} : {
-        tempo:       meta.tempo || undefined,
-        restSeconds: meta.restSeconds ? Number(meta.restSeconds) : undefined,
-        goal:        (meta.goal as RoutineExerciseContent["goal"]) || undefined,
-        notes:       meta.notes || undefined,
+        tempo: meta.tempo || undefined,
+        goal:  (meta.goal as RoutineExerciseContent["goal"]) || undefined,
+        notes: meta.notes || undefined,
       }),
     })
     setExpanded(false)
@@ -585,42 +676,34 @@ function ExerciseCard({
           {!isEvaluation && (
             <div className="px-4 py-3 border-t border-border space-y-3 bg-muted/5">
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Detalles para el atleta</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-1">
-                    <label className="text-xs text-muted-foreground">Ritmo (tempo)</label>
-                    <div ref={tempoRef} className="relative group">
-                      <button
-                        type="button"
-                        onClick={() => setTempoInfo((v) => !v)}
-                        className="text-muted-foreground/40 hover:text-muted-foreground transition-colors cursor-pointer"
-                      >
-                        <InfoIcon className="w-3 h-3" />
-                      </button>
-                      <div className={cn(
-                        "absolute left-0 top-5 z-50 w-48 transition-opacity duration-150",
-                        "pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto",
-                        tempoInfo && "opacity-100 pointer-events-auto",
-                      )}>
-                        <div className="text-[11px] text-muted-foreground bg-card border border-border rounded-lg px-2.5 py-2 leading-relaxed shadow-lg">
-                          <p className="font-semibold text-foreground mb-1">Ejemplo: 3-1-2-0</p>
-                          <p>El atleta verá: “Baja en 3 s, pausa 1 s, sube en 2 s, pausa 0 s”.</p>
-                        </div>
+              <div className="space-y-1 max-w-[calc(50%-0.375rem)]">
+                <div className="flex items-center gap-1">
+                  <label className="text-xs text-muted-foreground">Ritmo (tempo)</label>
+                  <div ref={tempoRef} className="relative group">
+                    <button
+                      type="button"
+                      onClick={() => setTempoInfo((v) => !v)}
+                      className="text-muted-foreground/40 hover:text-muted-foreground transition-colors cursor-pointer"
+                    >
+                      <InfoIcon className="w-3 h-3" />
+                    </button>
+                    <div className={cn(
+                      "absolute left-0 top-5 z-50 w-48 transition-opacity duration-150",
+                      "pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto",
+                      tempoInfo && "opacity-100 pointer-events-auto",
+                    )}>
+                      <div className="text-[11px] text-muted-foreground bg-card border border-border rounded-lg px-2.5 py-2 leading-relaxed shadow-lg">
+                        <p className="font-semibold text-foreground mb-1">Ejemplo: 3-1-2-0</p>
+                        <p>El atleta verá: “Baja en 3 s, pausa 1 s, sube en 2 s, pausa 0 s”.</p>
                       </div>
                     </div>
                   </div>
-                  <input type="text" placeholder="3-1-2-0" value={meta.tempo} onChange={(e) => setMeta((m) => ({ ...m, tempo: e.target.value }))} className={inputCls} />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">
-                    {nested ? "Descanso antes del siguiente ejercicio" : "Descanso entre series"}
-                  </label>
-                  <div className="flex items-center gap-1.5">
-                    <input type="number" min={0} placeholder="90" value={meta.restSeconds} onChange={(e) => setMeta((m) => ({ ...m, restSeconds: e.target.value }))} className={inputCls} />
-                    <span className="text-xs text-muted-foreground shrink-0">seg</span>
-                  </div>
-                </div>
+                <input type="text" placeholder="3-1-2-0" value={meta.tempo} onChange={(e) => setMeta((m) => ({ ...m, tempo: e.target.value }))} className={inputCls} />
               </div>
+              <p className="text-[11px] text-muted-foreground">
+                El descanso se edita en la fila “Descanso” debajo de este ejercicio, no aquí.
+              </p>
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Objetivo</label>
                 <select value={meta.goal} onChange={(e) => setMeta((m) => ({ ...m, goal: e.target.value }))} className={cn(inputCls, "cursor-pointer")}>
@@ -664,6 +747,7 @@ function ExerciseCard({
 
 function BlockCard({
   item, label, infoFor, catalog, onUpdate, onPreview, onMoveUp, onMoveDown, onDuplicate, onRemove,
+  suggestedRest, onSuggestedRestChange,
 }: {
   item: RoutineItemBlock
   label: string
@@ -675,6 +759,8 @@ function BlockCard({
   onMoveDown?: () => void
   onDuplicate?: () => void
   onRemove: () => void
+  suggestedRest: number
+  onSuggestedRestChange: (seconds: number) => void
 }) {
   const exercises = [...item.exercises].sort((a, b) => a.order - b.order)
   const setExercises = (list: RoutineExerciseContent[]) => onUpdate({ exercises: renumber(list) })
@@ -745,24 +831,38 @@ function BlockCard({
           <p className="text-xs text-muted-foreground text-center py-3">Agrega al menos un ejercicio a este circuito.</p>
         )}
         {exercises.map((ex, i) => (
-          <ExerciseCard
-            key={ex.id}
-            nested
-            item={ex}
-            label={`${label}.${i + 1}`}
-            isEvaluation={false}
-            info={infoFor(ex.exerciseId)}
-            onPreview={onPreview}
-            onUpdate={(patch) => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, ...patch } : e)))}
-            onMoveUp={i > 0 ? () => move(i, -1) : undefined}
-            onMoveDown={i < exercises.length - 1 ? () => move(i, 1) : undefined}
-            onRemove={() => setExercises(exercises.filter((e) => e.id !== ex.id))}
-          />
+          <div key={ex.id}>
+            <ExerciseCard
+              nested
+              item={ex}
+              label={`${label}.${i + 1}`}
+              isEvaluation={false}
+              info={infoFor(ex.exerciseId)}
+              onPreview={onPreview}
+              onUpdate={(patch) => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, ...patch } : e)))}
+              onMoveUp={i > 0 ? () => move(i, -1) : undefined}
+              onMoveDown={i < exercises.length - 1 ? () => move(i, 1) : undefined}
+              onRemove={() => setExercises(exercises.filter((e) => e.id !== ex.id))}
+            />
+            <RestRow
+              seconds={ex.restSeconds}
+              label={i === exercises.length - 1 ? "Descanso al terminar el circuito" : "Descanso"}
+              onAdd={() => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: suggestedRest } : e)))}
+              onChange={(n) => {
+                setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: n } : e)))
+                onSuggestedRestChange(n)
+              }}
+              onClear={() => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: undefined } : e)))}
+            />
+          </div>
         ))}
         <AddExerciseRow
           exercises={catalog}
           placeholder="Agregar ejercicio al circuito…"
-          onAdd={(exerciseId) => setExercises([...exercises, { id: uuid(), exerciseId, order: exercises.length, sets: reps(1, 10) }])}
+          onAdd={(exerciseId) => {
+            const withRest = applyAutoRestOnLastExercise(exercises, suggestedRest)
+            setExercises([...withRest, { id: uuid(), exerciseId, order: withRest.length, sets: reps(1, 10) }])
+          }}
         />
         {exercises.length > 0 && (
           <p className="text-[11px] text-muted-foreground px-1 flex items-center gap-1">

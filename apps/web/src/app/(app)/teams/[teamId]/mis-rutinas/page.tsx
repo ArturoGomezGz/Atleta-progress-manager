@@ -2,7 +2,7 @@
 
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import { CalendarIcon, CheckCircleIcon, ChevronRightIcon, DumbbellIcon, PlayIcon } from "lucide-react"
+import { CalendarIcon, CheckCircleIcon, ChevronRightIcon, CompassIcon, DumbbellIcon, PlayIcon } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 
@@ -93,8 +93,6 @@ export default function MisRutinasPage() {
     )
   }
 
-  const isEmpty = !sessions || sessions.length === 0
-
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
       <div className="space-y-1">
@@ -102,30 +100,33 @@ export default function MisRutinasPage() {
         <p className="text-base text-muted-foreground">Toca una rutina para ver los ejercicios y sus videos.</p>
       </div>
 
-      {isEmpty ? (
-        <div className="flex flex-col items-center justify-center py-16 gap-4 text-center border border-dashed border-border rounded-2xl px-6">
-          <DumbbellIcon className="w-12 h-12 text-muted-foreground/50" />
-          <p className="text-lg">Aún no tienes rutinas.</p>
-          <p className="text-base text-muted-foreground">Cuando tu entrenador te asigne una, aparecerá aquí.</p>
-        </div>
-      ) : (
-        <>
-          {active.length > 0 && (
-            <Section title="En curso">
-              {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
-            </Section>
-          )}
-          {scheduled.length > 0 && (
-            <Section title="Para hacer">
-              {scheduled.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
-            </Section>
-          )}
-          {past.length > 0 && (
-            <Section title="Terminadas">
-              {past.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
-            </Section>
-          )}
-        </>
+      {active.length > 0 && (
+        <Section title="En curso">
+          {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+        </Section>
+      )}
+
+      <Section title="Para hacer">
+        {scheduled.length > 0 ? (
+          scheduled.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)
+        ) : (
+          <div className="flex flex-col items-center justify-center py-16 gap-4 text-center border border-dashed border-border rounded-2xl px-6">
+            <DumbbellIcon className="w-12 h-12 text-muted-foreground/50" />
+            <p className="text-lg">No tienes rutinas pendientes.</p>
+            <Link
+              href={`/teams/${teamId}/explorar`}
+              className="inline-flex items-center gap-2 mt-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-base font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <CompassIcon className="w-5 h-5" /> Puedes explorar ejercicios
+            </Link>
+          </div>
+        )}
+      </Section>
+
+      {past.length > 0 && (
+        <Section title="Terminadas">
+          {past.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+        </Section>
       )}
     </div>
   )

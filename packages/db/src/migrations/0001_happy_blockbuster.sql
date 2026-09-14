@@ -1,0 +1,1 @@
+ALTER TABLE "user_preferences" ADD COLUMN "rest_auto_continue" boolean DEFAULT true NOT NULL;
