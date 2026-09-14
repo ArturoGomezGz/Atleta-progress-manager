@@ -32,6 +32,7 @@ export function repoRelative(cwd, filePath) {
 export function maskNonCode(input) {
   let out = ""
   let state = "normal"
+  let templateExpressionDepth = 0
   for (let i = 0; i < input.length; i++) {
     const ch = input[i]
     const next = input[i + 1]
@@ -86,6 +87,31 @@ export function maskNonCode(input) {
         out += input[i + 1] === "\n" ? "\n" : " "
         i++
       }
+      continue
+    }
+
+    if (state === "template") {
+      if (ch === "$" && next === "{") {
+        state = "template-expression"
+        templateExpressionDepth = 1
+        out += "${"
+        i++
+        continue
+      }
+      if (ch === "`") {
+        state = "normal"
+        out += " "
+      } else {
+        out += ch === "\n" ? "\n" : " "
+      }
+      continue
+    }
+
+    if (state === "template-expression") {
+      if (ch === "{") templateExpressionDepth += 1
+      if (ch === "}") templateExpressionDepth -= 1
+      out += ch
+      if (templateExpressionDepth === 0) state = "template"
       continue
     }
 

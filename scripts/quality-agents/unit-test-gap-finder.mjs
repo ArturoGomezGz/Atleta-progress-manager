@@ -93,14 +93,12 @@ function expectedTestModulePaths(targetNoExt) {
   if (targetNoExt.startsWith("apps/api/src/")) {
     const suffix = targetNoExt.slice("apps/api/src/".length)
     const suffixDir = p.dirname(suffix)
-    expected.add(`apps/api/test/${suffix}`)
-    expected.add(
-      `apps/api/test/${suffixDir === "." ? "__tests__" : `${suffixDir}/__tests__`}/${fileName}`.replace(/\/+/g, "/"),
-    )
-    expected.add(`apps/api/tests/${suffix}`)
-    expected.add(
-      `apps/api/tests/${suffixDir === "." ? "__tests__" : `${suffixDir}/__tests__`}/${fileName}`.replace(/\/+/g, "/"),
-    )
+    for (const root of ["test", "tests"]) {
+      expected.add(`apps/api/${root}/${suffix}`)
+      expected.add(
+        `apps/api/${root}/${suffixDir === "." ? "__tests__" : `${suffixDir}/__tests__`}/${fileName}`.replace(/\/+/g, "/"),
+      )
+    }
   }
 
   return expected
