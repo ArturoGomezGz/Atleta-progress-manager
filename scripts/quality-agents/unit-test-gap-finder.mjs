@@ -18,19 +18,7 @@ const testFiles = testRoots.flatMap((root) => listFiles(root, [".ts", ".tsx", ".
 const findings = []
 const normalizedTestModules = testFiles.map((f) => normalizeTestModulePath(repoRelative(cwd, f)))
 
-if (testFiles.length === 0) {
-  findings.push({
-    category: "testing",
-    severity: "high",
-    file: "apps/api",
-    line: null,
-    message: "No se detectaron archivos .test/.spec en API.",
-    snippet: null,
-  })
-}
-
 for (const target of criticalTargets) {
-  if (testFiles.length === 0) break
   const related = hasRelatedTest(target, normalizedTestModules)
   if (!related) {
     const fileName = path.basename(target, path.extname(target))

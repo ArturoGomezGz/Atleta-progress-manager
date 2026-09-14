@@ -32,16 +32,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
-
-      - name: Set up pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -51,7 +51,13 @@ jobs:
         shell: bash
         run: |
           CMD=(node scripts/quality-agents/run-all.mjs --out-dir .quality-reports)
-          STRICT_MODE="${{ github.event_name == 'workflow_dispatch' && inputs.strict || vars.QUALITY_AGENTS_STRICT || 'false' }}"
+          STRICT_MODE="false"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            STRICT_MODE="${{ inputs.strict }}"
+          elif [[ -n "${{ vars.QUALITY_AGENTS_STRICT }}" ]]; then
+            STRICT_MODE="${{ vars.QUALITY_AGENTS_STRICT }}"
+          fi
+          STRICT_MODE=$(echo "$STRICT_MODE" | tr '[:upper:]' '[:lower:]')
           if [[ "$STRICT_MODE" == "true" ]]; then
             CMD+=(--strict)
           fi
@@ -85,7 +91,13 @@ jobs:
             echo "Quality agents run failed."
             exit 1
           fi
-          STRICT_MODE="${{ github.event_name == 'workflow_dispatch' && inputs.strict || vars.QUALITY_AGENTS_STRICT || 'false' }}"
+          STRICT_MODE="false"
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+            STRICT_MODE="${{ inputs.strict }}"
+          elif [[ -n "${{ vars.QUALITY_AGENTS_STRICT }}" ]]; then
+            STRICT_MODE="${{ vars.QUALITY_AGENTS_STRICT }}"
+          fi
+          STRICT_MODE=$(echo "$STRICT_MODE" | tr '[:upper:]' '[:lower:]')
           if [[ "$STRICT_MODE" == "true" && "${{ steps.summary.outputs.findings_total }}" != "0" ]]; then
             echo "Strict mode enabled and findings detected."
             exit 1
