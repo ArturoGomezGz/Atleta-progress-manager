@@ -82,6 +82,9 @@ function toMarkdown(summary, reports) {
       lines.push(
         `- [${finding.severity}] \`${finding.file}${finding.line ? `:${finding.line}` : ""}\` — ${finding.message}`,
       )
+      if (finding.snippet) {
+        lines.push(`  - snippet: \`${normalizeSnippet(finding.snippet)}\``)
+      }
     }
     if (report.findings.length > 20) {
       lines.push(`- ... ${report.findings.length - 20} hallazgos adicionales`)
@@ -94,4 +97,8 @@ function toMarkdown(summary, reports) {
 function readArg(name) {
   const i = process.argv.indexOf(name)
   return i >= 0 ? process.argv[i + 1] : undefined
+}
+
+function normalizeSnippet(snippet) {
+  return String(snippet).replace(/\s+/g, " ").trim().replaceAll("`", "'")
 }

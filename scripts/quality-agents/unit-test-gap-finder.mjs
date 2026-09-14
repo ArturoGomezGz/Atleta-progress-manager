@@ -83,14 +83,31 @@ function normalizeTestModulePath(relPath) {
 
 function hasRelatedTest(targetPath, normalizedTests) {
   const targetNoExt = targetPath.replace(/\.[^.]+$/, "")
-  const targetLeafDir = path.basename(path.dirname(targetNoExt))
-  const fileName = path.basename(targetNoExt)
-  const expectedSuffixes = [
-    `/${targetLeafDir}/${fileName}`,
-    `/src/${targetLeafDir}/${fileName}`,
-    `/test/${targetLeafDir}/${fileName}`,
-    `/tests/${targetLeafDir}/${fileName}`,
-  ]
+  const expected = expectedTestModulePaths(targetNoExt)
+  return normalizedTests.some((testModule) => expected.has(testModule))
+}
 
-  return normalizedTests.some((testModule) => expectedSuffixes.some((suffix) => testModule.endsWith(suffix)))
+function expectedTestModulePaths(targetNoExt) {
+  const p = path.posix
+  const expected = new Set()
+  expected.add(targetNoExt)
+
+  const targetDir = p.dirname(targetNoExt)
+  const fileName = p.basename(targetNoExt)
+  expected.add(p.join(targetDir, "__tests__", fileName))
+
+  if (targetNoExt.startsWith("apps/api/src/")) {
+    const suffix = targetNoExt.slice("apps/api/src/".length)
+    const suffixDir = p.dirname(suffix)
+    expected.add(`apps/api/test/${suffix}`)
+    expected.add(
+      `apps/api/test/${suffixDir === "." ? "__tests__" : `${suffixDir}/__tests__`}/${fileName}`.replace(/\/+/g, "/"),
+    )
+    expected.add(`apps/api/tests/${suffix}`)
+    expected.add(
+      `apps/api/tests/${suffixDir === "." ? "__tests__" : `${suffixDir}/__tests__`}/${fileName}`.replace(/\/+/g, "/"),
+    )
+  }
+
+  return expected
 }
