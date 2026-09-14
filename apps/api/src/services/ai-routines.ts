@@ -8,7 +8,7 @@ import { attachDetails, getOpenAI } from "../routers/exercises"
 import { AI_ROUTINE_SYSTEM_PROMPT } from "./ai-routines-prompt"
 
 const MODEL = "gpt-4o-mini"
-const MAX_TURNS = 10
+const MAX_TURNS = 16
 const MAX_NEW_EXERCISES = 2
 
 const goals = ["strength", "hypertrophy", "endurance", "power", "cardio", "recovery"] as const
@@ -385,6 +385,7 @@ export async function generateRoutineWithAI(input: AiRoutineInput, userId: strin
   ]
 
   const usage = { input: 0, output: 0 }
+  let lastError: string | undefined
 
   for (let turn = 1; turn <= MAX_TURNS; turn++) {
     const response = await getOpenAI().chat.completions.create({
@@ -399,8 +400,13 @@ export async function generateRoutineWithAI(input: AiRoutineInput, userId: strin
     usage.output += response.usage?.completion_tokens ?? 0
 
     const message = response.choices[0]?.message
-    if (!message?.tool_calls?.length) break
+    if (!message?.tool_calls?.length) {
+      lastError = `El modelo dejó de llamar tools sin enviar submit_routine (finish_reason=${response.choices[0]?.finish_reason})`
+      break
+    }
     messages.push(message)
+
+    const turnLog: { tool: string; error?: string }[] = []
 
     for (const call of message.tool_calls) {
       if (call.type !== "function") continue
@@ -410,24 +416,34 @@ export async function generateRoutineWithAI(input: AiRoutineInput, userId: strin
         if (call.function.name === "submit_routine") {
           const built = buildRoutine(args, ctx)
           if (!("error" in built)) {
-            console.info("[ai-routines]", { teamId: input.teamId, turns: turn, tokens: usage, created: ctx.created.length })
+            console.info("[ai-routines] éxito", { teamId: input.teamId, turns: turn, tokens: usage, created: ctx.created.length })
             return { ...built, createdExercises: ctx.created }
           }
           result = built
+          lastError = built.error
+          turnLog.push({ tool: call.function.name, error: built.error })
         } else if (call.function.name === "search_exercises") {
           result = await searchExercises(args, ctx)
+          turnLog.push({ tool: call.function.name })
         } else if (call.function.name === "propose_new_exercise") {
           result = await proposeNewExercise(args, ctx)
+          turnLog.push({ tool: call.function.name })
         } else {
-          result = { error: `Tool desconocida: ${call.function.name}` }
+          const unknownToolError = `Tool desconocida: ${call.function.name}`
+          result = { error: unknownToolError }
+          turnLog.push({ tool: call.function.name, error: unknownToolError })
         }
       } catch (err) {
-        result = { error: err instanceof z.ZodError ? err.issues.map((i) => i.message).join("; ") : "Argumentos inválidos" }
+        const message = err instanceof z.ZodError ? err.issues.map((i) => i.message).join("; ") : "Argumentos inválidos"
+        result = { error: message }
+        turnLog.push({ tool: call.function.name, error: message })
+        if (call.function.name === "submit_routine") lastError = message
       }
       messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) })
     }
+    console.info("[ai-routines] turno", { teamId: input.teamId, turn, calls: turnLog })
   }
 
-  console.warn("[ai-routines] sin rutina válida", { teamId: input.teamId, tokens: usage })
+  console.warn("[ai-routines] sin rutina válida", { teamId: input.teamId, tokens: usage, lastError, exercisesCreated: ctx.created.length })
   throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "La IA no logró completar la rutina. Intenta de nuevo o agrega más detalle." })
 }
