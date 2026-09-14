@@ -212,14 +212,21 @@ export const exercisesRouter = router({
         )
         .orderBy(asc(exercise.name))
 
+      const saves = await db
+        .select({ exerciseId: exerciseSave.exerciseId })
+        .from(exerciseSave)
+        .where(eq(exerciseSave.userId, userId))
+      const savedIds = new Set(saves.map((s) => s.exerciseId))
+
       const targetTeamId = input?.teamId
       const enriched = await attachDetails(exercises)
 
       return enriched.map((ex) => {
-        let category: "team" | "system" | "mine" | "public"
+        let category: "team" | "system" | "mine" | "saved" | "public"
         if (targetTeamId && ex.ownerTeamId === targetTeamId) category = "team"
-        else if (!ex.ownerUserId && !ex.ownerTeamId) category = "system"
         else if (ex.ownerUserId === userId) category = "mine"
+        else if (savedIds.has(ex.id)) category = "saved"
+        else if (!ex.ownerUserId && !ex.ownerTeamId) category = "system"
         else category = "public"
         return { ...ex, category }
       })

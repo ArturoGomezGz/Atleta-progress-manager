@@ -1039,7 +1039,6 @@ function YoutubeField({ form, set }: { form: FormState; set: (patch: Partial<For
             videoId={form.youtubeVideoId}
             title={form.youtubeTitle ?? form.name}
             orientation={form.videoOrientation}
-            toolbar={false}
             compact
           />
           {status.kind === "ok" && (

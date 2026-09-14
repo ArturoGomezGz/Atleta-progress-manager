@@ -3,22 +3,25 @@
 import { YouTubeThumb } from "@/components/youtube-player"
 import { ChevronDownIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 
 export type PickerExercise = {
   id: string
   name: string
-  category: "team" | "system" | "mine" | "public"
+  category: "team" | "system" | "mine" | "saved" | "public"
   youtubeVideoId?: string | null
 }
 
 const CATEGORY_LABELS: Record<PickerExercise["category"], string> = {
   team: "Del equipo",
-  system: "Sistema",
   mine: "Mis ejercicios",
+  saved: "Guardados",
+  system: "Sistema",
   public: "Públicos",
 }
 
-const CATEGORY_ORDER: PickerExercise["category"][] = ["team", "system", "mine", "public"]
+// Propios primero (equipo y personales), luego guardados, para encontrarlos rápido.
+const CATEGORY_ORDER: PickerExercise["category"][] = ["team", "mine", "saved", "system", "public"]
 
 type Props = {
   exercises: PickerExercise[]
@@ -30,21 +33,41 @@ type Props = {
 export function ExercisePicker({ exercises, value, onChange, placeholder = "Seleccionar ejercicio..." }: Props) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
+  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
 
   const selected = exercises.find((e) => e.id === value)
 
-  // Close on outside click
+  // Close on outside click (el dropdown vive en un portal, así que se revisan ambos refs)
   useEffect(() => {
     function onMouseDown(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        setOpen(false)
-      }
+      const target = e.target as Node
+      if (containerRef.current?.contains(target)) return
+      if (dropdownRef.current?.contains(target)) return
+      setOpen(false)
     }
     document.addEventListener("mousedown", onMouseDown)
     return () => document.removeEventListener("mousedown", onMouseDown)
   }, [])
+
+  // Posiciona el dropdown (portal en <body>) relativo al trigger, para que nunca
+  // quede recortado por un ancestro con overflow-hidden (p. ej. la tarjeta de un circuito).
+  useEffect(() => {
+    if (!open) return
+    function updatePosition() {
+      const rect = containerRef.current?.getBoundingClientRect()
+      if (rect) setCoords({ top: rect.bottom + 6, left: rect.left, width: rect.width })
+    }
+    updatePosition()
+    window.addEventListener("scroll", updatePosition, true)
+    window.addEventListener("resize", updatePosition)
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true)
+      window.removeEventListener("resize", updatePosition)
+    }
+  }, [open])
 
   // Focus search when opening — skip on touch devices to avoid keyboard pop-up
   useEffect(() => {
@@ -105,9 +128,13 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
         />
       </button>
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute z-50 left-0 right-0 top-full mt-1.5 border border-border rounded-lg shadow-2xl bg-popover overflow-hidden">
+      {/* Dropdown — en un portal para no quedar recortado por contenedores con overflow-hidden */}
+      {open && coords && typeof document !== "undefined" && createPortal(
+        <div
+          ref={dropdownRef}
+          style={{ top: coords.top, left: coords.left, width: coords.width }}
+          className="fixed z-50 border border-border rounded-lg shadow-2xl bg-popover overflow-hidden"
+        >
           {/* Search */}
           <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
             <svg className="w-3.5 h-3.5 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -162,7 +189,8 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
               <p className="px-4 py-5 text-sm text-muted-foreground text-center">Sin resultados</p>
             )}
           </div>
-        </div>
+        </div>,
+        document.body,
       )}
     </div>
   )
