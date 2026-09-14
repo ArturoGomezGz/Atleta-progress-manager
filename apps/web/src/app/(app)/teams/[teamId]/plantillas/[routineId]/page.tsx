@@ -1,5 +1,6 @@
 "use client"
 
+import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
@@ -16,6 +17,7 @@ import {
   PlayIcon,
   PlusIcon,
   RepeatIcon,
+  SparklesIcon,
   Trash2Icon,
   XIcon,
 } from "lucide-react"
@@ -97,6 +99,19 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   const { data: catalog }              = trpc.exercises.list.useQuery({ teamId })
   const updateContent                  = trpc.routines.updateContent.useMutation({ onSuccess: () => refetch() })
   const renameRoutine                  = trpc.routines.rename.useMutation({ onSuccess: () => refetch() })
+  const { data: aiAvailable }          = trpc.routines.aiAvailable.useQuery({ teamId })
+  const utils                          = trpc.useUtils()
+
+  const [aiOpen, setAiOpen]     = useState(false)
+  const [aiResult, setAiResult] = useState<Omit<AiRoutineResult, "content"> | null>(null)
+
+  function applyAiResult(result: AiRoutineResult) {
+    setLocalContent(result.content)
+    setDirty(true)
+    setAiResult({ summary: result.summary, createdExercises: result.createdExercises })
+    setAiOpen(false)
+    if (result.createdExercises.length > 0) utils.exercises.list.invalidate({ teamId })
+  }
 
   const [localContent, setLocalContent] = useState<RoutineContent | null>(null)
   const [dirty, setDirty]               = useState(false)
@@ -234,6 +249,42 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
         </p>
       </div>
 
+      {/* IA (experimental, solo equipos habilitados) */}
+      {aiAvailable && !isEvaluation && (aiOpen ? (
+        <AiRoutineGenerator
+          teamId={teamId}
+          replacesContent={content.items.length > 0}
+          onGenerated={applyAiResult}
+          onClose={() => setAiOpen(false)}
+        />
+      ) : (
+        <button
+          type="button"
+          onClick={() => setAiOpen(true)}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-primary/40 bg-primary/5 text-sm text-primary font-medium hover:bg-primary/10 cursor-pointer transition-colors"
+        >
+          <SparklesIcon className="w-4 h-4" /> Generar con IA
+        </button>
+      ))}
+
+      {aiResult && (
+        <div className="border border-primary/30 bg-primary/5 rounded-xl px-4 py-3 space-y-1.5">
+          <div className="flex items-start gap-2">
+            <SparklesIcon className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+            <p className="text-xs flex-1 leading-relaxed">{aiResult.summary}</p>
+            <button type="button" onClick={() => setAiResult(null)} className="p-0.5 text-muted-foreground hover:text-foreground cursor-pointer" aria-label="Cerrar resumen">
+              <XIcon className="w-3.5 h-3.5" />
+            </button>
+          </div>
+          {aiResult.createdExercises.length > 0 && (
+            <p className="text-[11px] text-muted-foreground pl-6">
+              Ejercicios nuevos añadidos al catálogo del equipo, sin video: {aiResult.createdExercises.map((e) => e.name).join(", ")}. Revísalos en Mis ejercicios.
+            </p>
+          )}
+          <p className="text-[11px] text-muted-foreground pl-6">Es una propuesta: ajústala y pulsa <strong>Guardar cambios</strong> para conservarla.</p>
+        </div>
+      )}
+
       {/* Items */}
       <div className="space-y-3">
         {sorted.map((item, idx) => {
@@ -302,7 +353,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
                 : "Tienes cambios sin guardar"}
             </p>
             <button
-              onClick={() => { setLocalContent(null); setDirty(false) }}
+              onClick={() => { setLocalContent(null); setDirty(false); setAiResult(null) }}
               className="text-sm px-3 py-2 rounded-xl border border-border text-muted-foreground hover:text-foreground cursor-pointer"
             >
               Descartar
