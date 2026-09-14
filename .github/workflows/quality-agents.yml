@@ -1,0 +1,90 @@
+name: quality-agents
+
+on:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      strict:
+        description: "Fail the workflow when findings are detected"
+        required: false
+        default: false
+        type: boolean
+      action_mode:
+        description: "report-only or open-issue"
+        required: false
+        default: "report-only"
+        type: choice
+        options:
+          - report-only
+          - open-issue
+  schedule:
+    - cron: "0 8 * * *"
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  run-quality-agents:
+    runs-on: ubuntu-latest
+    outputs:
+      findings_total: ${{ steps.summary.outputs.findings_total }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run quality agents
+        shell: bash
+        run: |
+          STRICT_FLAG=""
+          if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.strict }}" == "true" ]]; then
+            STRICT_FLAG="--strict"
+          fi
+          node scripts/quality-agents/run-all.mjs --out-dir .quality-reports $STRICT_FLAG
+
+      - name: Read summary
+        id: summary
+        run: |
+          FINDINGS_TOTAL=$(node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('.quality-reports/summary.json','utf8'));process.stdout.write(String(s.totalFindings));")
+          echo "findings_total=$FINDINGS_TOTAL" >> "$GITHUB_OUTPUT"
+          echo "Total findings: $FINDINGS_TOTAL"
+
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-agents-reports
+          path: .quality-reports/
+
+  open-issue:
+    needs: run-quality-agents
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.action_mode == 'open-issue' && needs.run-quality-agents.outputs.findings_total != '0' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download reports
+        uses: actions/download-artifact@v4
+        with:
+          name: quality-agents-reports
+          path: .quality-reports
+
+      - name: Open issue with report
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require("fs")
+            const body = fs.readFileSync(".quality-reports/summary.md", "utf8")
+            const title = `Quality agents report - ${new Date().toISOString().slice(0, 10)}`
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body
+            })
+

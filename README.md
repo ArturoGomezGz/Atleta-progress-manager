@@ -66,3 +66,11 @@ Cada atleta tiene una vista individual donde se puede consultar su progreso por 
 - **Stack tecnológico**: framework frontend, backend y base de datos.
 - **Métricas de progreso**: cálculo del PR, tendencias, comparativas entre sesiones.
 - **Modelo de datos**: estructura de equipos, usuarios, rutinas, sesiones y series.
+
+---
+
+## Calidad automática
+
+Se agregaron agentes de calidad para auditoría de logging, manejo de errores y cobertura de pruebas unitarias.
+
+- Guía: `/home/runner/work/Atleta-progress-manager/Atleta-progress-manager/docs/quality-agents.md`
