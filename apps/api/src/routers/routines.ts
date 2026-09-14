@@ -3,6 +3,8 @@ import { exercise, routine, type RoutineContent, type RoutineExerciseContent, ty
 import { TRPCError } from "@trpc/server"
 import { and, eq, inArray } from "drizzle-orm"
 import { z } from "zod"
+import { aiRoutineInputSchema, generateRoutineWithAI } from "../services/ai-routines"
+import { canUseAiRoutines } from "../services/feature-access"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
 
@@ -128,6 +130,25 @@ export const routinesRouter = router({
         .where(eq(routine.id, input.id))
         .returning()
       return updated
+    }),
+
+  aiAvailable: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertMember(ctx.session.user.id, input.teamId)
+      return canUseAiRoutines(ctx.session.user, input.teamId)
+    }),
+
+  // Experimental: devuelve una propuesta; el entrenador la revisa y guarda con updateContent
+  generateWithAI: protectedProcedure
+    .input(aiRoutineInputSchema)
+    .mutation(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      if (!canUseAiRoutines(ctx.session.user, input.teamId)) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "La generación con IA no está habilitada para este equipo" })
+      }
+      const result = await generateRoutineWithAI(input, ctx.session.user.id)
+      return { ...result, content: routineContentSchema.parse(result.content) }
     }),
 
   rename: protectedProcedure

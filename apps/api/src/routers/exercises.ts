@@ -21,7 +21,7 @@ import { resolveYoutube } from "../services/youtube"
 
 // Se crea bajo demanda: sin OPENAI_API_KEY la API arranca igual y solo falla el autocompletado
 let openaiClient: OpenAI | null = null
-function getOpenAI() {
+export function getOpenAI() {
   if (!process.env.OPENAI_API_KEY) {
     throw new TRPCError({ code: "PRECONDITION_FAILED", message: "El autocompletado con IA no está configurado" })
   }
@@ -47,7 +47,7 @@ const muscleInputSchema = z.object({
 
 // ── Helper: attach muscles + equipment to a list of exercises ─────────────────
 
-async function attachDetails(exercises: (typeof exercise.$inferSelect)[]) {
+export async function attachDetails(exercises: (typeof exercise.$inferSelect)[]) {
   if (exercises.length === 0) return []
 
   const ids = exercises.map((e) => e.id)
