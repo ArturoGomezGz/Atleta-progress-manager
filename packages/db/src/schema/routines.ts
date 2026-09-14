@@ -37,6 +37,8 @@ export type RoutineItemBlock = {
   order: number
   name?: string
   rounds: number
+  /** Descanso al terminar una vuelta completa del circuito, antes de iniciar la siguiente. */
+  restBetweenRoundsSeconds?: number
   exercises: RoutineExerciseContent[]
 }
 

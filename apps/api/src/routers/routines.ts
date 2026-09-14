@@ -39,6 +39,7 @@ const routineItemSchema = z.discriminatedUnion("type", [
     order:     z.number().int().min(0),
     name:      z.string().optional(),
     rounds:    z.number().int().min(2),
+    restBetweenRoundsSeconds: z.number().int().positive().optional(),
     exercises: z.array(exerciseContentSchema).min(1),
   }) satisfies z.ZodType<RoutineItemBlock>,
 ])
