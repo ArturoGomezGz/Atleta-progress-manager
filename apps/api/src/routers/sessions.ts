@@ -21,23 +21,49 @@ import { assertCoach, assertMember } from "./teams"
 
 
 
-type FlatExercise = RoutineExerciseContent & { blockName: string | null; rounds: number }
+type FlatExercise = RoutineExerciseContent & { blockName: string | null; rounds: number; roundNumber: number | null }
 
 /**
  * Aplana el contenido de una rutina en el orden en que el atleta lo ejecuta.
- * Los ejercicios de un circuito conservan el nombre del bloque y sus rondas.
  * La posición en esta lista es el `order` de session_exercise.
+ *
+ * Los circuitos se expanden ronda por ronda, alternando entre sus ejercicios
+ * (A, B, A, B, …) en vez de agrupar todas las rondas de un mismo ejercicio
+ * seguidas — así el atleta hace una vuelta completa del circuito antes de
+ * repetirla, en vez de repetir un solo ejercicio varias veces.
+ *
+ * El `restSeconds` de cada entrada ya queda resuelto aquí: para la última
+ * entrada de una ronda (salvo la última ronda) se usa el descanso "entre
+ * rondas" del bloque si está definido; para el resto, el descanso propio
+ * del ejercicio.
  */
 function flattenContent(content: RoutineContent | null | undefined): FlatExercise[] {
   return [...(content?.items ?? [])]
     .sort((a, b) => a.order - b.order)
-    .flatMap<FlatExercise>((item) =>
-      item.type === "exercise"
-        ? [{ ...item, blockName: null, rounds: 1 }]
-        : [...item.exercises]
-            .sort((a, b) => a.order - b.order)
-            .map((ex) => ({ ...ex, blockName: item.name ?? "Circuito", rounds: item.rounds })),
-    )
+    .flatMap<FlatExercise>((item) => {
+      if (item.type === "exercise") {
+        return [{ ...item, blockName: null, rounds: 1, roundNumber: null }]
+      }
+
+      const sortedExercises = [...item.exercises].sort((a, b) => a.order - b.order)
+      const blockName = item.name ?? "Circuito"
+      const out: FlatExercise[] = []
+
+      for (let round = 1; round <= item.rounds; round++) {
+        sortedExercises.forEach((ex, i) => {
+          const isLastInRound = i === sortedExercises.length - 1
+          const isLastRound = round === item.rounds
+          const restSeconds =
+            isLastInRound && !isLastRound && item.restBetweenRoundsSeconds != null
+              ? item.restBetweenRoundsSeconds
+              : ex.restSeconds
+
+          out.push({ ...ex, blockName, rounds: item.rounds, roundNumber: round, restSeconds })
+        })
+      }
+
+      return out
+    })
 }
 
 async function getRoutineCategory(routineId: string | null): Promise<"evaluation" | "training" | null> {
@@ -149,6 +175,7 @@ export const sessionsRouter = router({
             notes: meta?.notes ?? null,
             blockName: meta?.blockName ?? null,
             rounds: meta?.rounds ?? 1,
+            roundNumber: meta?.roundNumber ?? null,
             targets: targets.filter((t) => t.sessionExerciseId === ex.id),
             sets: mySets.filter((s) => s.sessionExerciseId === ex.id),
           }
@@ -219,9 +246,8 @@ export const sessionsRouter = router({
             .values({ sessionId: session.id, exerciseId: ex.exerciseId, order: position })
             .returning()
 
-          // En un circuito, cada ronda repite las series del ejercicio
-          const expanded = Array.from({ length: ex.rounds }, () => ex.sets).flat()
-          const targets = expanded.map((s, i) => ({
+          // Cada entrada del circuito ya representa una sola ronda (ver flattenContent)
+          const targets = ex.sets.map((s, i) => ({
             sessionExerciseId: se.id,
             setNumber: i + 1,
             setType: s.setType,
@@ -273,6 +299,13 @@ export const sessionsRouter = router({
         .where(eq(sessionExercise.sessionId, input.id))
         .orderBy(asc(sessionExercise.order))
 
+      // Metadata desde el snapshot JSON (descanso, circuito, ronda) por posición
+      const flat = flattenContent(session.content)
+      const metaFor = (order: number, exerciseId: string) => {
+        const m = flat[order]
+        return m && m.exerciseId === exerciseId ? m : null
+      }
+
       const exercisesWithTargets = await Promise.all(
         exercises.map(async (ex) => {
           const targets = await db
@@ -280,7 +313,14 @@ export const sessionsRouter = router({
             .from(sessionSetTarget)
             .where(eq(sessionSetTarget.sessionExerciseId, ex.id))
             .orderBy(asc(sessionSetTarget.setNumber))
-          return { ...ex, targets }
+          const meta = metaFor(ex.order, ex.exerciseId)
+          return {
+            ...ex,
+            blockName: meta?.blockName ?? null,
+            rounds: meta?.rounds ?? 1,
+            roundNumber: meta?.roundNumber ?? null,
+            targets,
+          }
         }),
       )
 

@@ -61,6 +61,7 @@ type Exercise = {
   notes: string | null
   blockName: string | null
   rounds: number
+  roundNumber: number | null
   targets: Target[]
   sets: SetRec[]
 }
@@ -121,7 +122,11 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
   )
 
   const { data: prefs } = trpc.preferences.get.useQuery(undefined, {
-    enabled: progress?.status === "active",
+    enabled: progress?.status === "active" || progress?.status === "scheduled",
+  })
+  const utils = trpc.useUtils()
+  const updatePrefs = trpc.preferences.update.useMutation({
+    onSuccess: () => utils.preferences.get.invalidate(),
   })
 
   const backHref = `/teams/${teamId}/mis-rutinas`
@@ -139,7 +144,17 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
   const typed = progress as unknown as Progress
 
   if (typed.status === "scheduled") {
-    return <ScheduledPreview sessionId={sessionId} progress={typed} backHref={backHref} onActivated={() => refetch()} />
+    return (
+      <ScheduledPreview
+        sessionId={sessionId}
+        progress={typed}
+        backHref={backHref}
+        onActivated={() => refetch()}
+        restTimerEnabled={prefs?.restTimerEnabled ?? true}
+        restTimerSeconds={prefs?.restTimerSeconds ?? 90}
+        onSavePrefs={(patch) => updatePrefs.mutate(patch)}
+      />
+    )
   }
 
   if (typed.status === "active") {
@@ -153,6 +168,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
         restTimerSeconds={prefs?.restTimerSeconds ?? 90}
         backHref={backHref}
         onUpdate={() => refetch()}
+        onSavePrefs={(patch) => updatePrefs.mutate(patch)}
       />
     )
   }
@@ -244,6 +260,7 @@ function ExerciseOverviewCard({
           {exercise.blockName && (
             <p className="text-sm text-primary flex items-center gap-1">
               <RepeatIcon className="w-4 h-4" /> {exercise.blockName}
+              {exercise.roundNumber && ` · ronda ${exercise.roundNumber} de ${exercise.rounds}`}
             </p>
           )}
         </div>
@@ -281,12 +298,15 @@ function ExerciseOverviewCard({
 // ─── Scheduled preview ─────────────────────────────────────────────────────────
 
 function ScheduledPreview({
-  sessionId, progress, backHref, onActivated,
+  sessionId, progress, backHref, onActivated, restTimerEnabled, restTimerSeconds, onSavePrefs,
 }: {
   sessionId: string
   progress: Progress
   backHref: string
   onActivated: () => void
+  restTimerEnabled: boolean
+  restTimerSeconds: number
+  onSavePrefs: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number }) => void
 }) {
   const activate = trpc.sessions.activate.useMutation({ onSuccess: onActivated })
   const [video, setVideo] = useState<Exercise | null>(null)
@@ -308,6 +328,8 @@ function ScheduledPreview({
         Antes de empezar, puedes tocar cada ejercicio para <strong>ver el video</strong> de cómo se hace.
         Cuando estés listo, pulsa <strong>Empezar rutina</strong>.
       </div>
+
+      <RestTimerSettings enabled={restTimerEnabled} seconds={restTimerSeconds} onSave={onSavePrefs} />
 
       <div className="space-y-3">
         {progress.exercises.map((ex, i) => (
@@ -339,7 +361,7 @@ function ScheduledPreview({
 // ─── Active execution ──────────────────────────────────────────────────────────
 
 function ActiveExecution({
-  sessionId, userId, progress, rms, restTimerEnabled, restTimerSeconds, backHref, onUpdate,
+  sessionId, userId, progress, rms, restTimerEnabled, restTimerSeconds, backHref, onUpdate, onSavePrefs,
 }: {
   sessionId: string
   userId: string
@@ -349,6 +371,7 @@ function ActiveExecution({
   restTimerSeconds: number
   backHref: string
   onUpdate: () => void
+  onSavePrefs: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number }) => void
 }) {
   const [rest, setRest] = useState<{ left: number; total: number } | null>(null)
   const [showOverview, setShowOverview] = useState(false)
@@ -388,7 +411,11 @@ function ActiveExecution({
       <RestTimer
         seconds={rest.left}
         totalSeconds={rest.total}
-        upcoming={`${position.exercise.exerciseName} · serie ${position.target.setNumber} de ${position.exercise.targets.length}`}
+        upcoming={
+          position.exercise.roundNumber
+            ? `${position.exercise.exerciseName} · ronda ${position.exercise.roundNumber} de ${position.exercise.rounds}`
+            : `${position.exercise.exerciseName} · serie ${position.target.setNumber} de ${position.exercise.targets.length}`
+        }
         onSkip={skipRest}
       />
     )
@@ -440,6 +467,9 @@ function ActiveExecution({
       defaultWeight={calcWeight(curTarget.targetPercent, rmLbs)}
       backHref={backHref}
       onShowOverview={() => setShowOverview(true)}
+      restTimerEnabled={restTimerEnabled}
+      restTimerSeconds={restTimerSeconds}
+      onSavePrefs={onSavePrefs}
       onComplete={(isLastSet) => {
         onUpdate()
         vibrate(60)
@@ -454,6 +484,7 @@ function ActiveExecution({
 function SetExecution({
   sessionId, userId, exercise, target, exerciseIdx, totalExercises,
   totalSetsGlobal, doneSetsGlobal, defaultWeight, backHref, onComplete, onShowOverview,
+  restTimerEnabled, restTimerSeconds, onSavePrefs,
 }: {
   sessionId: string
   userId: string
@@ -467,10 +498,14 @@ function SetExecution({
   backHref: string
   onComplete: (isLastSet: boolean) => void
   onShowOverview: () => void
+  restTimerEnabled: boolean
+  restTimerSeconds: number
+  onSavePrefs: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number }) => void
 }) {
   const isTime = isTimeTarget(target)
   const freeReps = !isTime && target.targetReps == null
   const [reps, setReps] = useState(8)
+  const [showSettings, setShowSettings] = useState(false)
 
   const recordSet = trpc.sessions.recordSet.useMutation({
     onSuccess: () => onComplete(doneSetsGlobal + 1 >= totalSetsGlobal),
@@ -503,7 +538,24 @@ function SetExecution({
           <p className="text-base text-muted-foreground">
             Ejercicio <strong className="text-foreground">{exerciseIdx + 1}</strong> de {totalExercises}
           </p>
+          <button
+            type="button"
+            onClick={() => setShowSettings((v) => !v)}
+            className={cn(
+              "shrink-0 p-2.5 rounded-xl transition-colors cursor-pointer",
+              showSettings ? "bg-primary/15 text-primary" : "text-muted-foreground hover:text-foreground hover:bg-muted/40",
+            )}
+            aria-label="Ajustes del descanso"
+            aria-expanded={showSettings}
+          >
+            <TimerIcon className="w-5 h-5" />
+          </button>
         </div>
+        {showSettings && (
+          <div className="max-w-xl mx-auto px-4 pb-3">
+            <RestTimerSettings enabled={restTimerEnabled} seconds={restTimerSeconds} onSave={onSavePrefs} />
+          </div>
+        )}
       </div>
 
       {/* ── Contenido ── */}
@@ -512,7 +564,9 @@ function SetExecution({
           {exercise.blockName && (
             <p className="text-base text-primary font-medium flex items-center gap-1.5">
               <RepeatIcon className="w-4 h-4" /> {exercise.blockName}
-              {exercise.rounds > 1 && ` · ${exercise.rounds} vueltas`}
+              {exercise.roundNumber
+                ? ` · ronda ${exercise.roundNumber} de ${exercise.rounds}`
+                : exercise.rounds > 1 && ` · ${exercise.rounds} vueltas`}
             </p>
           )}
           <h1 className="text-3xl font-bold leading-tight">{exercise.exerciseName}</h1>
@@ -578,7 +632,11 @@ function SetExecution({
             )}
             {exercise.restSeconds && (
               <p className="flex items-start gap-2 text-muted-foreground">
-                <PauseIcon className="w-5 h-5 mt-0.5 shrink-0" /> <span><strong className="text-foreground">Descanso:</strong> {formatDuration(exercise.restSeconds)} entre series</span>
+                <PauseIcon className="w-5 h-5 mt-0.5 shrink-0" />
+                <span>
+                  <strong className="text-foreground">Descanso:</strong> {formatDuration(exercise.restSeconds)}{" "}
+                  {exercise.blockName ? "antes del siguiente ejercicio" : "entre series"}
+                </span>
               </p>
             )}
           </div>
@@ -690,6 +748,57 @@ function TimeCountdown({ seconds }: { seconds: number }) {
           </button>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─── Ajustes del temporizador de descanso ───────────────────────────────────────
+
+function RestTimerSettings({ enabled, seconds, onSave }: {
+  enabled: boolean
+  seconds: number
+  onSave: (patch: { restTimerEnabled?: boolean; restTimerSeconds?: number }) => void
+}) {
+  const [draft, setDraft] = useState(String(seconds))
+  useEffect(() => { setDraft(String(seconds)) }, [seconds])
+
+  function commit() {
+    const n = Math.max(10, Math.min(600, Number(draft) || 90))
+    setDraft(String(n))
+    if (n !== seconds) onSave({ restTimerSeconds: n })
+  }
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 space-y-3">
+      <label className="flex items-center justify-between gap-3 cursor-pointer">
+        <span className="flex items-center gap-2 text-base font-medium">
+          <TimerIcon className="w-5 h-5 text-primary shrink-0" />
+          Descanso automático entre series
+        </span>
+        <input
+          type="checkbox"
+          checked={enabled}
+          onChange={(e) => onSave({ restTimerEnabled: e.target.checked })}
+          className="w-5 h-5 accent-primary cursor-pointer shrink-0"
+          aria-label="Activar temporizador de descanso automático"
+        />
+      </label>
+      {enabled && (
+        <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground pl-7">
+          <span>Descanso por defecto:</span>
+          <input
+            type="number"
+            min={10}
+            max={600}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onBlur={commit}
+            className="w-16 bg-background border border-border rounded-lg px-2 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+            aria-label="Segundos de descanso por defecto"
+          />
+          <span>seg (cuando el ejercicio no tiene un descanso propio)</span>
+        </div>
+      )}
     </div>
   )
 }

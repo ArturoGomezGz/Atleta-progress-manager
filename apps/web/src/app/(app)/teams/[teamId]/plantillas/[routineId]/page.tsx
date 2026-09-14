@@ -14,6 +14,7 @@ import {
   CopyIcon,
   InfoIcon,
   MinusIcon,
+  PauseIcon,
   PlayIcon,
   PlusIcon,
   RepeatIcon,
@@ -611,7 +612,9 @@ function ExerciseCard({
                   <input type="text" placeholder="3-1-2-0" value={meta.tempo} onChange={(e) => setMeta((m) => ({ ...m, tempo: e.target.value }))} className={inputCls} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">Descanso entre series</label>
+                  <label className="text-xs text-muted-foreground">
+                    {nested ? "Descanso antes del siguiente ejercicio" : "Descanso entre series"}
+                  </label>
                   <div className="flex items-center gap-1.5">
                     <input type="number" min={0} placeholder="90" value={meta.restSeconds} onChange={(e) => setMeta((m) => ({ ...m, restSeconds: e.target.value }))} className={inputCls} />
                     <span className="text-xs text-muted-foreground shrink-0">seg</span>
@@ -721,6 +724,22 @@ function BlockCard({
         <ItemActions onMoveUp={onMoveUp} onMoveDown={onMoveDown} onDuplicate={onDuplicate} onRemove={onRemove} />
       </div>
 
+      <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/15 text-xs">
+        <PauseIcon className="w-3.5 h-3.5 text-primary shrink-0" />
+        <label htmlFor={`rest-rounds-${item.id}`} className="text-muted-foreground shrink-0">Descanso entre rondas</label>
+        <input
+          id={`rest-rounds-${item.id}`}
+          type="number"
+          min={0}
+          placeholder="60"
+          value={item.restBetweenRoundsSeconds ?? ""}
+          onChange={(e) => onUpdate({ restBetweenRoundsSeconds: e.target.value ? Number(e.target.value) : undefined })}
+          className="w-16 bg-background border border-border rounded-lg px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-primary"
+          aria-label="Descanso entre rondas del circuito, en segundos"
+        />
+        <span className="text-muted-foreground shrink-0">seg</span>
+      </div>
+
       <div className="p-3 space-y-2">
         {exercises.length === 0 && (
           <p className="text-xs text-muted-foreground text-center py-3">Agrega al menos un ejercicio a este circuito.</p>
@@ -748,7 +767,7 @@ function BlockCard({
         {exercises.length > 0 && (
           <p className="text-[11px] text-muted-foreground px-1 flex items-center gap-1">
             <PlayIcon className="w-3 h-3" />
-            Las series de cada ejercicio se repiten {item.rounds} veces.
+            El circuito completo (todos los ejercicios en orden) se repite {item.rounds} veces.
           </p>
         )}
       </div>

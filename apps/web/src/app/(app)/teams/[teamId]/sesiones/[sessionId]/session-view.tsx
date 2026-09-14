@@ -12,6 +12,7 @@ import {
   PencilIcon,
   PlayIcon,
   PlusIcon,
+  RepeatIcon,
   RotateCcwIcon,
   XIcon,
 } from "lucide-react"
@@ -276,6 +277,9 @@ type Exercise = {
   youtubeVideoId: string | null
   videoOrientation: "horizontal" | "vertical"
   order: number
+  blockName: string | null
+  rounds: number
+  roundNumber: number | null
   targets: SessionSetTarget[]
 }
 type SetRecord = { id: string; setNumber: number; sessionSetTargetId: string | null; reps: number; weightLbs: string; status: "valid" | "invalid" }
@@ -356,6 +360,12 @@ function ExerciseCard({ sessionId, athleteId, exercise, sets, isActive, canRecor
           </button>
         )}
         <div className="flex-1 min-w-0">
+          {exercise.blockName && (
+            <p className="text-xs text-primary flex items-center gap-1">
+              <RepeatIcon className="w-3 h-3" /> {exercise.blockName}
+              {exercise.roundNumber && ` · ronda ${exercise.roundNumber} de ${exercise.rounds}`}
+            </p>
+          )}
           <p className="font-semibold text-sm truncate">{exercise.exerciseName}</p>
           <p className="text-xs text-muted-foreground">{doneCount}/{totalTargets} series</p>
         </div>
