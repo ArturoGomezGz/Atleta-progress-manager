@@ -5,25 +5,24 @@ import { spawnSync } from "node:child_process"
 const cwd = process.cwd()
 const outDir = readArg("--out-dir") ?? ".quality-reports"
 const strict = process.argv.includes("--strict")
-const scripts = [
-  "logging-audit.mjs",
-  "error-flow-audit.mjs",
-  "unit-test-gap-finder.mjs",
+const agents = [
+  { script: "logging-audit.mjs", report: "logging-audit.json" },
+  { script: "error-flow-audit.mjs", report: "error-flow-audit.json" },
+  { script: "unit-test-gap-finder.mjs", report: "unit-test-gap-finder.json" },
 ]
 
 fs.mkdirSync(outDir, { recursive: true })
 
-for (const script of scripts) {
-  const result = spawnSync("node", [path.join("scripts/quality-agents", script), "--out-dir", outDir], {
+for (const agent of agents) {
+  const result = spawnSync("node", [path.join("scripts/quality-agents", agent.script), "--out-dir", outDir], {
     cwd,
     stdio: "inherit",
   })
   if (result.status !== 0) process.exit(result.status ?? 1)
 }
 
-const reports = scripts.map((script) => {
-  const reportName = script.replace(".mjs", ".json")
-  const reportPath = path.join(cwd, outDir, reportName)
+const reports = agents.map((agent) => {
+  const reportPath = path.join(cwd, outDir, agent.report)
   return JSON.parse(fs.readFileSync(reportPath, "utf8"))
 })
 
@@ -96,4 +95,3 @@ function readArg(name) {
   const i = process.argv.indexOf(name)
   return i >= 0 ? process.argv[i + 1] : undefined
 }
-

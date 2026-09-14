@@ -42,7 +42,7 @@ Los reportes se guardan en `.quality-reports/`.
 
 Workflow:
 
-- `/home/runner/work/Atleta-progress-manager/Atleta-progress-manager/.github/workflows/quality-agents.yml`
+- `.github/workflows/quality-agents.yml`
 
 Triggers:
 
@@ -56,4 +56,3 @@ Al correr por `workflow_dispatch`:
 
 - `strict=true` hace fallar el workflow si hay hallazgos.
 - `action_mode=open-issue` crea un issue con el resumen (`summary.md`) cuando hay hallazgos.
-

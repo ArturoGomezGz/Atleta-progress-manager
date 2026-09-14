@@ -73,4 +73,4 @@ Cada atleta tiene una vista individual donde se puede consultar su progreso por 
 
 Se agregaron agentes de calidad para auditoría de logging, manejo de errores y cobertura de pruebas unitarias.
 
-- Guía: `/home/runner/work/Atleta-progress-manager/Atleta-progress-manager/docs/quality-agents.md`
+- Guía: `docs/quality-agents.md`

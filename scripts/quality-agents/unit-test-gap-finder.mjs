@@ -23,11 +23,12 @@ const testFiles = testRoots.flatMap((root) => listFiles(root, [".ts", ".tsx", ".
   .filter((f) => /\.test\.|\.spec\./.test(path.basename(f)))
 
 const findings = []
+const normalizedTestModules = testFiles.map((f) => normalizeTestModulePath(repoRelative(cwd, f)))
 
 for (const target of criticalTargets) {
-  const fileName = path.basename(target, path.extname(target))
-  const related = testFiles.some((testFile) => path.basename(testFile).includes(fileName))
+  const related = hasRelatedTest(target, normalizedTestModules)
   if (!related) {
+    const fileName = path.basename(target, path.extname(target))
     findings.push({
       category: "testing",
       severity: "high",
@@ -73,3 +74,23 @@ function readArg(name) {
   return i >= 0 ? process.argv[i + 1] : undefined
 }
 
+function normalizeTestModulePath(relPath) {
+  return relPath
+    .replace(/\.(test|spec)\.[^.]+$/, "")
+    .replace(/\.[^.]+$/, "")
+    .replace(/\/+/g, "/")
+}
+
+function hasRelatedTest(targetPath, normalizedTests) {
+  const targetNoExt = targetPath.replace(/\.[^.]+$/, "")
+  const targetLeafDir = path.basename(path.dirname(targetNoExt))
+  const fileName = path.basename(targetNoExt)
+  const expectedSuffixes = [
+    `/${targetLeafDir}/${fileName}`,
+    `/src/${targetLeafDir}/${fileName}`,
+    `/test/${targetLeafDir}/${fileName}`,
+    `/tests/${targetLeafDir}/${fileName}`,
+  ]
+
+  return normalizedTests.some((testModule) => expectedSuffixes.some((suffix) => testModule.endsWith(suffix)))
+}
