@@ -11,7 +11,7 @@ const findings = []
 for (const file of files) {
   const content = fs.readFileSync(file, "utf8")
   const code = maskNonCode(content)
-  pushMatches(code, file, /(?:\)|\]|\b[\w$]+)\s*!\s*(?:\.|\[)/g, "high", "Uso de non-null assertion con acceso inmediato; puede provocar crash en runtime.")
+  pushMatches(code, file, /[A-Za-z0-9_$\]\)\.]\s*!\s*(?:\.|\[)/g, "high", "Uso de non-null assertion con acceso inmediato; puede provocar crash en runtime.")
   pushMatches(
     code,
     file,

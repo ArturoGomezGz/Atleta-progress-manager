@@ -5,7 +5,7 @@ import { listFiles, repoRelative } from "./fs-utils.mjs"
 const cwd = process.cwd()
 const outDir = readArg("--out-dir") ?? ".quality-reports"
 const configPath = readArg("--config") ?? "scripts/quality-agents/config/critical-targets.json"
-const criticalTargets = JSON.parse(fs.readFileSync(path.join(cwd, configPath), "utf8"))
+const criticalTargets = readCriticalTargets(path.join(cwd, configPath))
 
 const testRoots = [
   path.join(cwd, "apps/api/test"),
@@ -67,6 +67,14 @@ function hasRelatedTest(targetPath, normalizedTests) {
   const targetNoExt = targetPath.replace(/\.[^.]+$/, "")
   const expected = expectedTestModulePaths(targetNoExt)
   return normalizedTests.some((testModule) => expected.has(testModule))
+}
+
+function readCriticalTargets(absoluteConfigPath) {
+  const raw = JSON.parse(fs.readFileSync(absoluteConfigPath, "utf8"))
+  if (!Array.isArray(raw) || raw.some((item) => typeof item !== "string" || item.length === 0)) {
+    throw new Error(`Invalid critical-targets config at ${absoluteConfigPath}: expected a JSON array of non-empty strings.`)
+  }
+  return raw
 }
 
 function expectedTestModulePaths(targetNoExt) {

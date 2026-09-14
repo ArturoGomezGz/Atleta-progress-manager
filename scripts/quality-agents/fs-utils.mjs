@@ -149,15 +149,19 @@ export function maskNonCode(input) {
       }
 
       if (exprMode === "line-comment") {
-        out += ch
-        if (ch === "\n") exprMode = "normal"
+        if (ch === "\n") {
+          out += "\n"
+          exprMode = "normal"
+        } else {
+          out += " "
+        }
         continue
       }
 
       if (exprMode === "block-comment") {
-        out += ch
+        out += ch === "\n" ? "\n" : " "
         if (ch === "*" && next === "/") {
-          out += "/"
+          out += " "
           i++
           exprMode = "normal"
         }
@@ -165,15 +169,15 @@ export function maskNonCode(input) {
       }
 
       if (ch === "\\") {
-        out += ch
+        out += " "
         if (i + 1 < input.length) {
-          out += input[i + 1]
+          out += input[i + 1] === "\n" ? "\n" : " "
           i++
         }
         continue
       }
 
-      out += ch
+      out += ch === "\n" ? "\n" : " "
       if (exprMode === "single-quote" && ch === "'") exprMode = "normal"
       else if (exprMode === "double-quote" && ch === "\"") exprMode = "normal"
       else if (exprMode === "template-quote" && ch === "`") exprMode = "normal"
