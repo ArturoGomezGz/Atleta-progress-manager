@@ -2,7 +2,7 @@
 
 Este repositorio incluye agentes de calidad orientados a:
 
-- logging estructurado y trackeable
+- logging estructurado y rastreable
 - manejo de errores
 - detección de huecos de pruebas unitarias
 

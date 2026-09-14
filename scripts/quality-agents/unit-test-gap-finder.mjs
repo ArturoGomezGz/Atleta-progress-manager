@@ -4,14 +4,8 @@ import { listFiles, repoRelative } from "./fs-utils.mjs"
 
 const cwd = process.cwd()
 const outDir = readArg("--out-dir") ?? ".quality-reports"
-const criticalTargets = [
-  "apps/api/src/routers/sessions.ts",
-  "apps/api/src/routers/rms.ts",
-  "apps/api/src/routers/teams.ts",
-  "apps/api/src/trpc.ts",
-  "apps/api/src/services/report-trigger.ts",
-  "apps/api/src/services/ai-reports.ts",
-]
+const configPath = readArg("--config") ?? "scripts/quality-agents/config/critical-targets.json"
+const criticalTargets = JSON.parse(fs.readFileSync(path.join(cwd, configPath), "utf8"))
 
 const testRoots = [
   path.join(cwd, "apps/api/src"),

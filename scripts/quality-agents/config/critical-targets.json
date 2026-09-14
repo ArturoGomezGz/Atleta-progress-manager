@@ -1,0 +1,9 @@
+[
+  "apps/api/src/routers/sessions.ts",
+  "apps/api/src/routers/rms.ts",
+  "apps/api/src/routers/teams.ts",
+  "apps/api/src/trpc.ts",
+  "apps/api/src/services/report-trigger.ts",
+  "apps/api/src/services/ai-reports.ts"
+]
+

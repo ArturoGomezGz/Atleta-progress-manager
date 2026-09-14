@@ -10,9 +10,10 @@ const findings = []
 
 for (const file of files) {
   const content = fs.readFileSync(file, "utf8")
-  pushMatches(content, file, /console\.(error|warn|info|log)\s*\(/g, "medium", "Evitar console.*; usar logger estructurado con contexto.")
+  const code = maskNonCode(content)
+  pushMatches(code, file, /console\.(error|warn|info|log)\s*\(/g, "medium", "Evitar console.*; usar logger estructurado con contexto.")
   pushMatches(
-    content,
+    code,
     file,
     /\.catch\s*\(\s*\(?\s*err\w*\s*\)?\s*=>\s*console\.error\s*\(/g,
     "high",
@@ -52,3 +53,77 @@ function readArg(name) {
   return i >= 0 ? process.argv[i + 1] : undefined
 }
 
+function maskNonCode(input) {
+  let out = ""
+  let state = "normal"
+  for (let i = 0; i < input.length; i++) {
+    const ch = input[i]
+    const next = input[i + 1]
+    if (state === "normal") {
+      if (ch === "/" && next === "/") {
+        state = "line-comment"
+        out += "  "
+        i++
+      } else if (ch === "/" && next === "*") {
+        state = "block-comment"
+        out += "  "
+        i++
+      } else if (ch === "'") {
+        state = "single-quote"
+        out += " "
+      } else if (ch === "\"") {
+        state = "double-quote"
+        out += " "
+      } else if (ch === "`") {
+        state = "template"
+        out += " "
+      } else {
+        out += ch
+      }
+      continue
+    }
+
+    if (state === "line-comment") {
+      if (ch === "\n") {
+        state = "normal"
+        out += "\n"
+      } else {
+        out += " "
+      }
+      continue
+    }
+
+    if (state === "block-comment") {
+      if (ch === "*" && next === "/") {
+        state = "normal"
+        out += "  "
+        i++
+      } else {
+        out += ch === "\n" ? "\n" : " "
+      }
+      continue
+    }
+
+    if ((state === "single-quote" || state === "double-quote" || state === "template") && ch === "\\") {
+      out += " "
+      if (i + 1 < input.length) {
+        out += input[i + 1] === "\n" ? "\n" : " "
+        i++
+      }
+      continue
+    }
+
+    if (
+      (state === "single-quote" && ch === "'")
+      || (state === "double-quote" && ch === "\"")
+      || (state === "template" && ch === "`")
+    ) {
+      state = "normal"
+      out += " "
+      continue
+    }
+
+    out += ch === "\n" ? "\n" : " "
+  }
+  return out
+}

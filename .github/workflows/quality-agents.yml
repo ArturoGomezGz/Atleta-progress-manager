@@ -49,11 +49,11 @@ jobs:
       - name: Run quality agents
         shell: bash
         run: |
-          STRICT_FLAG=""
+          CMD=(node scripts/quality-agents/run-all.mjs --out-dir .quality-reports)
           if [[ "${{ github.event_name }}" == "workflow_dispatch" && "${{ inputs.strict }}" == "true" ]]; then
-            STRICT_FLAG="--strict"
+            CMD+=(--strict)
           fi
-          node scripts/quality-agents/run-all.mjs --out-dir .quality-reports $STRICT_FLAG
+          "${CMD[@]}"
 
       - name: Read summary
         id: summary
