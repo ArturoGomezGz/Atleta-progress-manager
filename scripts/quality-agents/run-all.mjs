@@ -114,6 +114,7 @@ function readPassthroughArgs() {
       i += 1
       continue
     }
+    if (arg.startsWith("--out-dir=")) continue
     passthrough.push(arg)
   }
   return passthrough

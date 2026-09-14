@@ -32,7 +32,7 @@ export function repoRelative(cwd, filePath) {
 export function maskNonCode(input) {
   let out = ""
   let state = "normal"
-  let templateExpressionDepth = 0
+  const templateExprStack = []
   let exprMode = "normal"
   for (let i = 0; i < input.length; i++) {
     const ch = input[i]
@@ -94,7 +94,8 @@ export function maskNonCode(input) {
     if (state === "template") {
       if (ch === "$" && next === "{") {
         state = "template-expression"
-        templateExpressionDepth = 1
+        templateExprStack.length = 0
+        templateExprStack.push("root")
         exprMode = "normal"
         out += "${"
         i++
@@ -138,13 +139,18 @@ export function maskNonCode(input) {
           out += " "
           continue
         }
-        if (ch === "{") templateExpressionDepth += 1
-        if (ch === "}") templateExpressionDepth -= 1
-        out += ch
-        if (templateExpressionDepth === 0) {
-          state = "template"
-          exprMode = "normal"
+        if (ch === "{") templateExprStack.push("brace")
+        if (ch === "}") {
+          const marker = templateExprStack.pop()
+          out += ch
+          if (marker === "template-hole") exprMode = "template-quote"
+          if (templateExprStack.length === 0) {
+            state = "template"
+            exprMode = "normal"
+          }
+          continue
         }
+        out += ch
         continue
       }
 
@@ -174,6 +180,14 @@ export function maskNonCode(input) {
           out += input[i + 1] === "\n" ? "\n" : " "
           i++
         }
+        continue
+      }
+
+      if (exprMode === "template-quote" && ch === "$" && next === "{") {
+        templateExprStack.push("template-hole")
+        exprMode = "normal"
+        out += "  "
+        i++
         continue
       }
 
