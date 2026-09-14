@@ -30,10 +30,16 @@ type Props = {
   placeholder?: string
 }
 
+const DROPDOWN_MARGIN = 8
+const DROPDOWN_PREFERRED_HEIGHT = 320 // igual al max-h-80 original
+const DROPDOWN_MIN_HEIGHT = 160
+
+type DropdownCoords = { left: number; width: number; maxHeight: number; top?: number; bottom?: number }
+
 export function ExercisePicker({ exercises, value, onChange, placeholder = "Seleccionar ejercicio..." }: Props) {
   const [open, setOpen] = useState(false)
   const [search, setSearch] = useState("")
-  const [coords, setCoords] = useState<{ top: number; left: number; width: number } | null>(null)
+  const [coords, setCoords] = useState<DropdownCoords | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const searchRef = useRef<HTMLInputElement>(null)
@@ -54,11 +60,23 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
 
   // Posiciona el dropdown (portal en <body>) relativo al trigger, para que nunca
   // quede recortado por un ancestro con overflow-hidden (p. ej. la tarjeta de un circuito).
+  // Si el trigger está cerca del borde inferior de la pantalla (plantilla con varios
+  // ejercicios ya agregados), no hay espacio para abrir hacia abajo: se abre hacia
+  // arriba y se limita la altura al espacio realmente disponible en cualquier caso.
   useEffect(() => {
     if (!open) return
     function updatePosition() {
       const rect = containerRef.current?.getBoundingClientRect()
-      if (rect) setCoords({ top: rect.bottom + 6, left: rect.left, width: rect.width })
+      if (!rect) return
+      const viewportHeight = window.innerHeight
+      const spaceBelow = viewportHeight - rect.bottom - DROPDOWN_MARGIN
+      const spaceAbove = rect.top - DROPDOWN_MARGIN
+      const openUp = spaceBelow < DROPDOWN_MIN_HEIGHT && spaceAbove > spaceBelow
+      const available = openUp ? spaceAbove : spaceBelow
+      const maxHeight = Math.max(DROPDOWN_MIN_HEIGHT, Math.min(DROPDOWN_PREFERRED_HEIGHT, available))
+      setCoords(openUp
+        ? { bottom: viewportHeight - rect.top + 6, left: rect.left, width: rect.width, maxHeight }
+        : { top: rect.bottom + 6, left: rect.left, width: rect.width, maxHeight })
     }
     updatePosition()
     window.addEventListener("scroll", updatePosition, true)
@@ -132,11 +150,16 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
       {open && coords && typeof document !== "undefined" && createPortal(
         <div
           ref={dropdownRef}
-          style={{ top: coords.top, left: coords.left, width: coords.width }}
-          className="fixed z-50 border border-border rounded-lg shadow-2xl bg-popover overflow-hidden"
+          style={{
+            ...(coords.top !== undefined ? { top: coords.top } : { bottom: coords.bottom }),
+            left: coords.left,
+            width: coords.width,
+            maxHeight: coords.maxHeight,
+          }}
+          className="fixed z-50 flex flex-col border border-border rounded-lg shadow-2xl bg-popover overflow-hidden"
         >
           {/* Search */}
-          <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+          <div className="flex items-center gap-2 px-3 py-2 border-b border-border shrink-0">
             <svg className="w-3.5 h-3.5 text-muted-foreground shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-4.35-4.35M17 11A6 6 0 1 1 5 11a6 6 0 0 1 12 0z" />
             </svg>
@@ -151,7 +174,7 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
           </div>
 
           {/* List */}
-          <div className="max-h-80 overflow-y-auto">
+          <div className="flex-1 min-h-0 overflow-y-auto">
             {Object.entries(grouped).map(([cat, items]) => (
               <div key={cat}>
                 <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground bg-muted/20 sticky top-0"
