@@ -33,6 +33,7 @@ export function maskNonCode(input) {
   let out = ""
   let state = "normal"
   let templateExpressionDepth = 0
+  let exprMode = "normal"
   for (let i = 0; i < input.length; i++) {
     const ch = input[i]
     const next = input[i + 1]
@@ -94,6 +95,7 @@ export function maskNonCode(input) {
       if (ch === "$" && next === "{") {
         state = "template-expression"
         templateExpressionDepth = 1
+        exprMode = "normal"
         out += "${"
         i++
         continue
@@ -108,10 +110,73 @@ export function maskNonCode(input) {
     }
 
     if (state === "template-expression") {
-      if (ch === "{") templateExpressionDepth += 1
-      if (ch === "}") templateExpressionDepth -= 1
+      if (exprMode === "normal") {
+        if (ch === "/" && next === "/") {
+          exprMode = "line-comment"
+          out += "//"
+          i++
+          continue
+        }
+        if (ch === "/" && next === "*") {
+          exprMode = "block-comment"
+          out += "/*"
+          i++
+          continue
+        }
+        if (ch === "'") {
+          exprMode = "single-quote"
+          out += ch
+          continue
+        }
+        if (ch === "\"") {
+          exprMode = "double-quote"
+          out += ch
+          continue
+        }
+        if (ch === "`") {
+          exprMode = "template-quote"
+          out += ch
+          continue
+        }
+        if (ch === "{") templateExpressionDepth += 1
+        if (ch === "}") templateExpressionDepth -= 1
+        out += ch
+        if (templateExpressionDepth === 0) {
+          state = "template"
+          exprMode = "normal"
+        }
+        continue
+      }
+
+      if (exprMode === "line-comment") {
+        out += ch
+        if (ch === "\n") exprMode = "normal"
+        continue
+      }
+
+      if (exprMode === "block-comment") {
+        out += ch
+        if (ch === "*" && next === "/") {
+          out += "/"
+          i++
+          exprMode = "normal"
+        }
+        continue
+      }
+
+      if (ch === "\\") {
+        out += ch
+        if (i + 1 < input.length) {
+          out += input[i + 1]
+          i++
+        }
+        continue
+      }
+
       out += ch
-      if (templateExpressionDepth === 0) state = "template"
+      if (exprMode === "single-quote" && ch === "'") exprMode = "normal"
+      else if (exprMode === "double-quote" && ch === "\"") exprMode = "normal"
+      else if (exprMode === "template-quote" && ch === "`") exprMode = "normal"
       continue
     }
 

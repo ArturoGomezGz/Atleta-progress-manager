@@ -22,7 +22,6 @@ on:
 
 permissions:
   contents: read
-  issues: write
 
 jobs:
   run-quality-agents:
@@ -61,8 +60,13 @@ jobs:
 
       - name: Read summary
         id: summary
+        if: always()
         run: |
-          FINDINGS_TOTAL=$(node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('.quality-reports/summary.json','utf8'));process.stdout.write(String(s.totalFindings));")
+          if [ -f ".quality-reports/summary.json" ]; then
+            FINDINGS_TOTAL=$(node -e "const fs=require('fs');const s=JSON.parse(fs.readFileSync('.quality-reports/summary.json','utf8'));process.stdout.write(String(s.totalFindings));")
+          else
+            FINDINGS_TOTAL="0"
+          fi
           echo "findings_total=$FINDINGS_TOTAL" >> "$GITHUB_OUTPUT"
           echo "Total findings: $FINDINGS_TOTAL"
 
@@ -77,6 +81,10 @@ jobs:
         if: always()
         shell: bash
         run: |
+          if [[ "${{ steps.run.outcome }}" != "success" ]]; then
+            echo "Quality agents run failed."
+            exit 1
+          fi
           STRICT_MODE="${{ github.event_name == 'workflow_dispatch' && inputs.strict || vars.QUALITY_AGENTS_STRICT || 'false' }}"
           if [[ "$STRICT_MODE" == "true" && "${{ steps.summary.outputs.findings_total }}" != "0" ]]; then
             echo "Strict mode enabled and findings detected."
@@ -84,6 +92,9 @@ jobs:
           fi
 
   open-issue:
+    permissions:
+      contents: read
+      issues: write
     needs: run-quality-agents
     runs-on: ubuntu-latest
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.action_mode == 'open-issue' && needs.run-quality-agents.outputs.findings_total != '0' }}
