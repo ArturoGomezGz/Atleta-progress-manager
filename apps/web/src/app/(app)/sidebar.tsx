@@ -1,21 +1,37 @@
 "use client"
 
+import React from "react"
 import { trpc } from "@/lib/trpc/client"
-import { ChartBarIcon, ClipboardListIcon, DumbbellIcon, ListIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
+import { CalendarIcon, ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, PaletteIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 import { AccountMenu } from "./account-menu"
+import { cn } from "@/lib/utils"
 
-const COACH_NAV = [
-  { key: "equipo",     label: "Equipo",      icon: UsersIcon },
-  { key: "plantillas", label: "Plantillas",  icon: ClipboardListIcon },
-  { key: "sesiones",   label: "Sesiones",    icon: DumbbellIcon },
-  { key: "progreso",   label: "Progreso",    icon: ChartBarIcon },
+type SubNavItem = { key: string; label: string; sections: string[]; hrefSuffix: string }
+type NavItem = { key: string; label: string; icon: React.ElementType; hrefSuffix?: string; children?: SubNavItem[] }
+
+const COACH_NAV: NavItem[] = [
+  { key: "equipo",      label: "Equipo",         icon: UsersIcon,    hrefSuffix: "equipo" },
+  { key: "apariencia",  label: "Apariencia",     icon: PaletteIcon,  hrefSuffix: "apariencia" },
+  {
+    key: "rutinas", label: "Rutinas", icon: CalendarIcon,
+    children: [
+      { key: "plantillas", label: "Plantillas", sections: ["plantillas"], hrefSuffix: "plantillas" },
+      { key: "sesiones",   label: "Sesiones",   sections: ["rutinas", "sesiones"], hrefSuffix: "rutinas" },
+    ],
+  },
+  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
+  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",    label: "Explorar",       icon: CompassIcon,  hrefSuffix: "explorar" },
 ]
 
-const ATHLETE_NAV = [
-  { key: "progreso", label: "Progreso", icon: ChartBarIcon },
+const ATHLETE_NAV: NavItem[] = [
+  { key: "mis-rutinas", label: "Mis rutinas",   icon: CalendarIcon, hrefSuffix: "mis-rutinas" },
+  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
+  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",    label: "Explorar",        icon: CompassIcon,  hrefSuffix: "explorar" },
 ]
 
 function extractTeamId(pathname: string): string | null {
@@ -28,16 +44,77 @@ function extractSection(pathname: string): string | null {
   return m ? m[1] : null
 }
 
-function TeamInitials({ name }: { name: string }) {
-  const initials = name
-    .split(" ")
-    .map((w) => w[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase()
+function TeamLogo({ name, logoDataUrl }: { name: string; logoDataUrl?: string | null }) {
+  if (logoDataUrl) {
+    return (
+      <img
+        src={logoDataUrl}
+        alt={name}
+        className="w-6 h-6 rounded-md object-cover overflow-hidden shrink-0"
+      />
+    )
+  }
+  const initials = name.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
   return (
     <div className="w-6 h-6 rounded-md bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0 tracking-wide">
       {initials}
+    </div>
+  )
+}
+
+function NavGroup({
+  item, currentSection, effectiveTeamId, disabled,
+}: {
+  item: NavItem & { children: SubNavItem[] }
+  currentSection: string | null
+  effectiveTeamId: string | null
+  disabled: boolean
+}) {
+  const groupActive = item.children.some((c) => c.sections.includes(currentSection ?? ""))
+  const [open, setOpen] = useState(groupActive)
+  const Icon = item.icon
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className={cn(
+          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer",
+          groupActive ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+        )}
+      >
+        <Icon className={cn("w-4 h-4 shrink-0", groupActive && "text-primary")} />
+        <span className="flex-1 text-left">{item.label}</span>
+        <ChevronDownIcon className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", open ? "rotate-180" : "")} />
+      </button>
+
+      {/* grid-rows animación: 0fr → 1fr sin medir altura con JS */}
+      <div className={cn("grid transition-[grid-template-rows] duration-200 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
+        <div className="overflow-hidden">
+          <div className="ml-3 pl-4 border-l border-border space-y-0.5 mt-0.5 pb-0.5">
+            {item.children.map((child) => {
+              const childHref   = effectiveTeamId ? `/teams/${effectiveTeamId}/${child.hrefSuffix}` : "#"
+              const childActive = child.sections.includes(currentSection ?? "")
+              return (
+                <Link
+                  key={child.key}
+                  href={childHref}
+                  aria-disabled={disabled}
+                  onClick={(e) => disabled && e.preventDefault()}
+                  className={cn(
+                    "relative flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-150",
+                    childActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                    disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
+                  )}
+                >
+                  {childActive && <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />}
+                  {child.label}
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }
@@ -59,7 +136,7 @@ export function Sidebar() {
       setNewTeamName("")
       setTeamPickerOpen(false)
       setMobileOpen(false)
-      router.push(`/teams/${team.id}/sesiones`)
+      router.push(`/teams/${team.id}/equipo`)
     },
   })
 
@@ -74,10 +151,11 @@ export function Sidebar() {
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
-    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso") {
+    if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar" && currentSection !== "mis-rutinas") {
       router.replace(`/teams/${currentTeamId}/progreso`)
     }
   }, [isAthlete, currentTeamId, currentSection, router])
+
 
   async function handleCreateTeam(e: React.FormEvent) {
     e.preventDefault()
@@ -114,7 +192,7 @@ export function Sidebar() {
           onClick={() => setTeamPickerOpen((v) => !v)}
           className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/60 text-sm font-medium transition-colors text-foreground cursor-pointer"
         >
-          {currentTeam && <TeamInitials name={currentTeam.team.name} />}
+          {currentTeam && <TeamLogo name={currentTeam.team.name} logoDataUrl={currentTeam.team.logoDataUrl} />}
           <span className="truncate flex-1 text-left">
             {currentTeam ? currentTeam.team.name : "Seleccionar equipo"}
           </span>
@@ -128,12 +206,12 @@ export function Sidebar() {
               {teams?.map(({ team }) => (
                 <button
                   key={team.id}
-                  onClick={() => { router.push(`/teams/${team.id}/sesiones`); setTeamPickerOpen(false) }}
+                  onClick={() => { router.push(`/teams/${team.id}/equipo`); setTeamPickerOpen(false) }}
                   className={`w-full flex items-center gap-2.5 text-left px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors cursor-pointer ${
                     team.id === currentTeamId ? "font-medium text-primary" : "text-foreground"
                   }`}
                 >
-                  <TeamInitials name={team.name} />
+                  <TeamLogo name={team.name} logoDataUrl={team.logoDataUrl} />
                   {team.name}
                 </button>
               ))}
@@ -171,48 +249,46 @@ export function Sidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 space-y-0.5">
-        {navItems.map(({ key, label, icon: Icon }) => {
-          const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${key}` : "#"
-          const isActive = currentSection === key
+        {navItems.map((item) => {
           const disabled = !effectiveTeamId
+          const Icon = item.icon
+
+          // Collapsible group with sub-items
+          if (item.children) {
+            return (
+              <NavGroup
+                key={item.key}
+                item={item as NavItem & { children: SubNavItem[] }}
+                currentSection={currentSection}
+                effectiveTeamId={effectiveTeamId}
+                disabled={disabled}
+              />
+            )
+          }
+
+          // Simple item
+          const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${item.hrefSuffix}` : "#"
+          const isActive = currentSection === item.hrefSuffix
           return (
             <Link
-              key={key}
+              key={item.key}
               href={href}
               aria-disabled={disabled}
               onClick={(e) => disabled && e.preventDefault()}
-              className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200
-                ${isActive
-                  ? "bg-primary/10 text-primary font-semibold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"}
-                ${disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer"}
-              `}
+              className={cn(
+                "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200",
+                isActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
+                disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
+              )}
             >
               {isActive && (
                 <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
               )}
-              <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-primary" : ""}`} />
-              {label}
+              <Icon className={cn("w-4 h-4 shrink-0", isActive && "text-primary")} />
+              {item.label}
             </Link>
           )
         })}
-
-        <div className="pt-1 mt-1 border-t border-border/50">
-          <Link
-            href="/exercises"
-            className={`relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer
-              ${pathname === "/exercises"
-                ? "bg-primary/10 text-primary font-semibold"
-                : "text-muted-foreground hover:text-foreground hover:bg-muted/60"}
-            `}
-          >
-            {pathname === "/exercises" && (
-              <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />
-            )}
-            <ListIcon className="w-4 h-4 shrink-0" />
-            Mis ejercicios
-          </Link>
-        </div>
       </nav>
 
       {/* Account */}
@@ -233,9 +309,17 @@ export function Sidebar() {
           <MenuIcon className="w-5 h-5" />
         </button>
         <div className="flex items-center gap-2 flex-1 min-w-0">
-          <div className="w-6 h-6 rounded-md bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
-            <DumbbellIcon className="w-3 h-3 text-primary" />
-          </div>
+          {currentTeam?.team.logoDataUrl ? (
+            <img
+              src={currentTeam.team.logoDataUrl}
+              alt={currentTeam.team.name}
+              className="w-6 h-6 rounded-md object-cover overflow-hidden shrink-0"
+            />
+          ) : (
+            <div className="w-6 h-6 rounded-md bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
+              <DumbbellIcon className="w-3 h-3 text-primary" />
+            </div>
+          )}
           <span
             className="font-bold text-sm tracking-widest uppercase text-foreground truncate"
             style={{ fontFamily: "var(--font-barlow-condensed)" }}

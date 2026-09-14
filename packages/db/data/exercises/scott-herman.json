@@ -1,0 +1,3104 @@
+[
+  {
+    "name": "Barbell Bench Press",
+    "description": "Press de banca plano con barra: baja la barra al pecho con escápulas retraídas y empuja hasta extender los brazos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "ysUTNll8JQ8",
+    "youtube_title": "How To: Barbell Bench Press | 3 GOLDEN RULES (MADE BETTER!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Incline Barbell Bench Press",
+    "description": "Press de banca en banco inclinado con barra; mayor énfasis en la porción superior del pectoral.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "SrqOu55lrYU",
+    "youtube_title": "How To: Incline Barbell Bench Press | 3 GOLDEN RULES! (MADE BETTER!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Decline Bench Press",
+    "description": "Press de banca en banco declinado; enfatiza la porción inferior del pectoral.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "LfyQBUKR8SE",
+    "youtube_title": "How To: Barbell Decline Bench Press",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Close-Grip Barbell Bench Press",
+    "description": "Press de banca con agarre cerrado y codos pegados para cargar el tríceps.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "nEF0bv2FW94",
+    "youtube_title": "How To: Close-Grip Barbell Bench Press",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Bench Press",
+    "description": "Press de pecho tumbado en banco plano con mancuernas; permite mayor rango y trabajo independiente de cada brazo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "Y_7aHqXeCfQ",
+    "youtube_title": "How To: Dumbbell Bench Press | 3 GOLDEN RULES",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Incline Dumbbell Press",
+    "description": "Press con mancuernas en banco inclinado para el pectoral superior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "hChjZQhX1Ls",
+    "youtube_title": "How To: Dumbbell Incline Press | 3 GOLDEN RULES (MADE BETTER!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Flat Dumbbell Fly",
+    "description": "Aperturas con mancuernas en banco plano abriendo los brazos en arco con codos ligeramente flexionados.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "MxfVDZrsdZ0",
+    "youtube_title": "How To: Flat Dumbbell Fly",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Incline Dumbbell Fly",
+    "description": "Aperturas con mancuernas en banco inclinado para estirar y contraer el pectoral superior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Deltoides anterior"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "idAvu2HvqSQ",
+    "youtube_title": "HOW TO: Incline Dumbbell Fly || PERFECT FORM (GROWTH & STRENGTH)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Floor Press",
+    "description": "Press de pecho tumbado en el suelo; limita el rango y protege el hombro.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "uUGDRwge4F8",
+    "youtube_title": "How To: Dumbbell Floor Press",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Pullover",
+    "description": "Tumbado en banco, lleva una mancuerna desde encima del pecho hasta detrás de la cabeza con brazos semiextendidos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Serrato anterior"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "ZhPOEQJRzBU",
+    "youtube_title": "How To: Dumbbell Pull-Over (Target Chest Or Lats)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Low-To-High Cable Fly",
+    "description": "Cruce de poleas desde abajo hacia arriba para el pectoral superior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Deltoides anterior"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "eQ_NBB6OBH4",
+    "youtube_title": "HOW TO: Chest \"Low-To-High\" Cable Fly (BIGGER UPPER CHEST) || PERFECT FORM",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "High-To-Low Cable Fly",
+    "description": "Cruce de poleas desde arriba hacia abajo para el pectoral inferior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "8Um35Es-ROE",
+    "youtube_title": "How To: Cable Fly (High-To-Low) || 3 GOLDEN RULES",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Middle Cable Chest Fly",
+    "description": "Aperturas en polea a la altura del pecho juntando las manos al frente.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "WEM9FCIPlxQ",
+    "youtube_title": "How To: Middle Cable Chest Fly",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Smith Machine Bench Press",
+    "description": "Press de banca guiado en máquina Smith; trayectoria fija y más estable.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Máquina Smith",
+      "Banco"
+    ],
+    "youtube_id": "z_r6hDOYtO0",
+    "youtube_title": "How To: Smith Machine- Bench Press",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Smith Machine Incline Bench Press",
+    "description": "Press inclinado en máquina Smith para el pectoral superior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Máquina Smith",
+      "Banco"
+    ],
+    "youtube_id": "b8DqTO6ak0k",
+    "youtube_title": "How To: Smith Machine- Incline Bench Press",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Machine Chest Press",
+    "description": "Press de pecho sentado en máquina; ideal para aprender el patrón de empuje horizontal.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "xUm0BiZCWlQ",
+    "youtube_title": "How To: Chest Press (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Swiss Ball Dumbbell Chest Press",
+    "description": "Press con mancuernas con la espalda alta apoyada en pelota de estabilidad y cadera elevada.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Transverso abdominal"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Pelota de estabilidad"
+    ],
+    "youtube_id": "uxgA5qEi2mc",
+    "youtube_title": "How To: Swiss Ball Dumbbell Chest Press",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knuckle Push-Up",
+    "description": "Flexión apoyando los nudillos; fortalece muñecas y aumenta ligeramente el rango.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Flexores del antebrazo",
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "Q3MhYgeY2lc",
+    "youtube_title": "How To: Knuckle Push-Up (Bodyweight INNER CHEST Muscle Builder!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Medicine Ball Push-Up",
+    "description": "Flexión con una mano sobre balón medicinal para trabajar estabilidad y carga asimétrica.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Transverso abdominal"
+    ],
+    "equipment": [
+      "Balón medicinal"
+    ],
+    "youtube_id": "NN9R4wGK47E",
+    "youtube_title": "How To: Medicine Ball Push-Up",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Swiss Ball Push-Up",
+    "description": "Flexión con las manos sobre pelota de estabilidad; exige control del core y del hombro.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Transverso abdominal",
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Pelota de estabilidad"
+    ],
+    "youtube_id": "orPv4L77rZQ",
+    "youtube_title": "How To: Swiss Ball Push-Up",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Shoulder Press",
+    "description": "Press de hombro con mancuernas desde la altura de las orejas hasta extender los brazos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "GFblCmuEE18",
+    "youtube_title": "HOW TO: Dumbbell Shoulder Press (BIGGER SHOULDERS & BIGGER BENCH PRESS!) || PERFECT FORM",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Barbell Shoulder Press",
+    "description": "Press militar sentado con barra desde la clavícula hasta encima de la cabeza.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "oBGeXxnigsQ",
+    "youtube_title": "How To: Seated Barbell Shoulder Press",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Overhead Press",
+    "description": "Press militar de pie con barra manteniendo glúteos y abdomen firmes.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Trapecio",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "2yjwXTZQDDI",
+    "youtube_title": "How To: Standing Straight-Bar Military / Overhead Press",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Push Press",
+    "description": "Press por encima de la cabeza ayudado por un impulso de piernas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push",
+      "squat"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "fFY7CGKjGNM",
+    "youtube_title": "How To: Barbell Push-Press (Increase Upper & Lower Body Explosive Strength!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Side Lateral Raise",
+    "description": "Elevaciones laterales con mancuernas hasta la altura de los hombros.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "3VcKaXpzqRo",
+    "youtube_title": "How To: Dumbbell Side Lateral Raise",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Front Raise",
+    "description": "Elevaciones frontales con mancuernas hasta la altura de los ojos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Deltoides lateral",
+      "Pectoral mayor"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "-t7fuZ0KhDA",
+    "youtube_title": "How To: Dumbbell Front Raise",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Front Raise",
+    "description": "Elevación frontal con barra y brazos casi extendidos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Deltoides lateral"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "Ofo2DQdT7DA",
+    "youtube_title": "How To: Barbell Front Raise | 2 MOST COMMON MISTAKES! (STOP)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Plate Front Raise",
+    "description": "Elevación frontal sujetando un disco con ambas manos hasta por encima de la cabeza.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Deltoides lateral",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Disco"
+    ],
+    "youtube_id": "e8my9OOCXVo",
+    "youtube_title": "How To: Overhead Front Raise (With Plate)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Rear Delt Raise",
+    "description": "Inclinado hacia delante, eleva las mancuernas lateralmente para el deltoides posterior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior"
+    ],
+    "secondary": [
+      "Romboides",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "ttvfGg9d76c",
+    "youtube_title": "How To: Dumbbell Bent-Over Raise",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Incline Dumbbell W Raise",
+    "description": "Boca abajo en banco inclinado, eleva las mancuernas formando una W con los brazos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior",
+      "Romboides"
+    ],
+    "secondary": [
+      "Manguito rotador"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "ezBH3fcvNY4",
+    "youtube_title": "How To: Incline Dumbbell W Raise",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Upright Row",
+    "description": "Remo al mentón con barra llevando los codos hacia arriba y afuera.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides lateral",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "amCU-ziHITM",
+    "youtube_title": "How To: Barbell Upright Row",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Upright-Row",
+    "description": "Remo al mentón con mancuernas; más libertad de movimiento para el hombro.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides lateral",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "IhZLB48kluc",
+    "youtube_title": "How To: Dumbbell Upright-Row",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Resistance Band Upright-Row",
+    "description": "Remo al mentón pisando una banda elástica.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides lateral",
+      "Trapecio"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "bfzl23IIOi8",
+    "youtube_title": "How To: Resistance Band Upright-Row",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Resistance Band Reverse Fly",
+    "description": "Aperturas posteriores con banda elástica para deltoides posterior y romboides.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior",
+      "Romboides"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "cyihFNmsq-A",
+    "youtube_title": "How To: Resistance Band Reverse Fly",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable Face Pull",
+    "description": "Tira de la cuerda de la polea alta hacia la cara separando las manos; salud del hombro.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior",
+      "Romboides"
+    ],
+    "secondary": [
+      "Manguito rotador",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "rep-qVOkqgk",
+    "youtube_title": "How To: Face Pull",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Machine Rear Delt Fly",
+    "description": "Aperturas posteriores en máquina con los brazos a la altura de los hombros.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior",
+      "Romboides"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "JQsEq37gJbY",
+    "youtube_title": "How To: Row/Rear Delt (Cybex) \"Rear Delt\"",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Machine Shoulder Press",
+    "description": "Press de hombro sentado en máquina.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "Wqq43dKW1TU",
+    "youtube_title": "How To: Overhead Press (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Shrug",
+    "description": "Encogimientos de hombros con mancuernas para el trapecio superior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Trapecio"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "xDt6qbKgLkY",
+    "youtube_title": "How To: Dumbbell Shrug",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Wide-Grip Barbell Shrug",
+    "description": "Encogimientos con barra y agarre ancho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Trapecio"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "pqYr_lb04O4",
+    "youtube_title": "How To: Wide-Grip Barbell Shrug",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Bent-Over Row",
+    "description": "Remo con barra inclinado a unos 45° llevando la barra al abdomen.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Deltoides posterior",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "9efgcAjQe7E",
+    "youtube_title": "How To: Barbell Bent-Over Row",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pendlay Row",
+    "description": "Remo con barra desde el suelo en cada repetición con el torso paralelo al suelo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "8CrrVQi6t4w",
+    "youtube_title": "How To: Pendlay Row | 3 GOLDEN RULES (EXPLOSIVE BACK GROWTH!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "T-Bar Row",
+    "description": "Remo en barra T con agarre cerrado llevando el peso al pecho.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Landmine"
+    ],
+    "youtube_id": "j3Igk5nyZE4",
+    "youtube_title": "How To: T-Bar Row",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Arm Dumbbell Row",
+    "description": "Remo a una mano con rodilla y mano apoyadas en banco.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "KRN38chlkds",
+    "youtube_title": "How To: Dumbbell Single-Arm Row (On Bench)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Bent-Over Row",
+    "description": "Remo inclinado con dos mancuernas a la vez.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "6TSP1TRMUzs",
+    "youtube_title": "How To:  Dumbbell Bent-Over Row",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Cable Row",
+    "description": "Remo sentado en polea baja llevando el agarre al abdomen con la espalda recta.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "7o2oolbmzeI",
+    "youtube_title": "How To: Seated Cable Low-Row || PERFECT FORM",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Lat Pulldown",
+    "description": "Jalón al pecho en polea alta con agarre ancho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Redondo mayor"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "CAwf7n6Luuc",
+    "youtube_title": "How To: Lat Pulldown | 3 GOLDEN RULES",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Reverse Grip Lat Pulldown",
+    "description": "Jalón al pecho con agarre supino; mayor participación del bíceps.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Redondo mayor"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "apzFTbsm7HU",
+    "youtube_title": "How To: Reverse Lat Pulldown",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Smith Machine Inverted Row",
+    "description": "Remo invertido colgado de la barra de la máquina Smith.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Máquina Smith"
+    ],
+    "youtube_id": "XZV9IwluPjw",
+    "youtube_title": "How To: Smith Machine- Inverted Row",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "TRX Row",
+    "description": "Remo inclinado con correas de suspensión; la inclinación regula la dificultad.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "TRX / Suspensión"
+    ],
+    "youtube_id": "TKrTvPSIi0w",
+    "youtube_title": "How To: Suspended Row (TRX / Jungle Gym)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Rack Pull",
+    "description": "Peso muerto parcial desde soportes a la altura de la rodilla; carga la parte alta del tirón.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "P-Ir835AWhQ",
+    "youtube_title": "How To: Rack Pull || Increase Your Deadlift MAX & Explosive Power!",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Deficit Deadlift",
+    "description": "Peso muerto de pie sobre un disco o plataforma para aumentar el rango del tirón.",
+    "difficulty": "advanced",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Erector espinal",
+      "Cuádriceps",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Disco"
+    ],
+    "youtube_id": "m7Q8igdp3lA",
+    "youtube_title": "How To: Deficit Deadlift- Improve Form & Increase Your MAX",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Sumo Deadlift",
+    "description": "Peso muerto con postura ancha y agarre entre las piernas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Aductores"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Isquiotibiales",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "1v4r9hht_K4",
+    "youtube_title": "How To: Sumo Deadlift (Wide Stance Deadlift)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Stiff-Leg Deadlift",
+    "description": "Peso muerto con piernas casi rectas para estirar y cargar isquiotibiales.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "1uDiW5--rAE",
+    "youtube_title": "How To: Barbell Stiff-Leg Deadlift",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Romanian Deadlift",
+    "description": "Bisagra de cadera con barra pegada a las piernas bajando hasta media tibia.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal",
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "JCXUYuzwNrM",
+    "youtube_title": "How To: Romanian Deadlift (Barbell)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Romanian Deadlift",
+    "description": "Peso muerto rumano con mancuernas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "FQKfr1YDhEk",
+    "youtube_title": "How To: Dumbbell Romanian Deadlift",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Leg Dumbbell Deadlift",
+    "description": "Bisagra de cadera a una pierna con mancuerna; trabaja equilibrio y glúteo medio.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Glúteo medio",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "DGavj41F_Cs",
+    "youtube_title": "How To: Dumbbell Stiff-Leg Single-Leg Deadlift",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Suitcase Deadlift",
+    "description": "Peso muerto con una sola mancuerna a un lado resistiendo la inclinación lateral.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge",
+      "carry"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Flexores del antebrazo",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "FePRQacwd6I",
+    "youtube_title": "How To: Suitcase Deadlift",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell Sumo Deadlift",
+    "description": "Peso muerto sumo con kettlebell entre los pies.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Aductores"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Cuádriceps"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "sGNMEtZCkRY",
+    "youtube_title": "How To: Kettlebell Sumo Deadlift",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Good Morning",
+    "description": "Con la barra en la espalda, inclina el torso desde la cadera con rodillas ligeramente flexionadas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "5Xj6XUa77qc",
+    "youtube_title": "How To: Good Mornings",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Deadlift",
+    "description": "Peso muerto con mancuernas a los lados; buena introducción a la bisagra.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "lJ3QwaXNJfw",
+    "youtube_title": "How To: Dumbbell Deadlift",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Hip Thrust",
+    "description": "Con la espalda alta en banco y barra sobre la cadera, extiende la cadera apretando glúteos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Cuádriceps"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "SEdqd1n0cvg",
+    "youtube_title": "How To: Hip Thrust",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Glute Bridge",
+    "description": "Puente de glúteo desde el suelo con barra sobre la cadera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "0od5lwWMGV8",
+    "youtube_title": "How To: Barbell Glute Bridge | 3 GOLDEN RULES (BUILD BIGGER GLUTES!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Back Squat",
+    "description": "Sentadilla con barra alta en la espalda bajando al menos hasta la paralela.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Aductores",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "1oed-UmAxFs",
+    "youtube_title": "How To: Barbell Squat | 3 GOLDEN RULES! (MADE BETTER!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Front Squat",
+    "description": "Sentadilla con la barra apoyada en los deltoides frontales y codos altos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "tlfahNdNPPI",
+    "youtube_title": "How To: Front Squat (Barbell)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Zercher Squat",
+    "description": "Sentadilla sujetando la barra en el pliegue de los codos.",
+    "difficulty": "advanced",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Bíceps",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "vpy4ADmlo1E",
+    "youtube_title": "How To: Zercher Squat",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Jefferson Squat",
+    "description": "Sentadilla a horcajadas sobre la barra con un agarre delante y otro detrás.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Aductores"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "9TbV93ZQEXY",
+    "youtube_title": "How To: Jefferson Squat || BUILD MASSIVE QUADS!",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Goblet Squat",
+    "description": "Sentadilla sujetando una mancuerna frente al pecho; enseña la postura erguida.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "MeIiIdhvXT4",
+    "youtube_title": "How To: Goblet Squat",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Smith Machine Squat",
+    "description": "Sentadilla guiada en máquina Smith.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Máquina Smith"
+    ],
+    "youtube_id": "AHnX-aimA4E",
+    "youtube_title": "How To: Smith Machine- Squat",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Smith Machine Hack Squat",
+    "description": "Sentadilla en Smith con los pies adelantados para enfatizar cuádriceps.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Máquina Smith"
+    ],
+    "youtube_id": "LfEhHboTcow",
+    "youtube_title": "How To: Smith Machine- Hack Squat",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Leg Press",
+    "description": "Prensa de piernas empujando la plataforma sin despegar la zona lumbar.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "oujca3_Shgw",
+    "youtube_title": "How To: Leg Press (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Leg Press",
+    "description": "Prensa de piernas a una pierna para corregir desequilibrios.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "xT5-HS6e9O4",
+    "youtube_title": "How To: One-Leg Press (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Leg Extension",
+    "description": "Extensión de rodillas en máquina para aislar cuádriceps.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "YyvSfVjQeL0",
+    "youtube_title": "How To: Leg Extension (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Leg Curl",
+    "description": "Curl femoral sentado en máquina.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "ELOCsoDSmrg",
+    "youtube_title": "How To: Seated Leg Curl (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Lying Leg Curl",
+    "description": "Curl femoral tumbado boca abajo en máquina.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "1Tq3QdYUuHs",
+    "youtube_title": "How To: Prone Leg Curl (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hip Adduction Machine",
+    "description": "Cierre de piernas en máquina para los aductores.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Aductores"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "GmRSV_n2E_0",
+    "youtube_title": "How To: Hip Adduction (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hip Abduction Machine",
+    "description": "Apertura de piernas en máquina para glúteo medio y menor.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo medio",
+      "Glúteo menor"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "2b97cvyH9sE",
+    "youtube_title": "How To: Hip Abduction (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Hamstring Curl",
+    "description": "Curl femoral boca abajo en banco sujetando una mancuerna entre los pies.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "xSjmKTf4QbA",
+    "youtube_title": "How To: Dumbbell Hamstring Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Leg Curl on Exercise Ball",
+    "description": "Con cadera elevada y un talón sobre la pelota, acerca la pelota flexionando la rodilla.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Pantorrillas",
+      "Transverso abdominal"
+    ],
+    "equipment": [
+      "Pelota de estabilidad"
+    ],
+    "youtube_id": "e3EeeA6L3YQ",
+    "youtube_title": "How To: Single-Leg Curl on Exercise Ball",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Barbell Calf Raise",
+    "description": "Elevación de talones de pie con barra en la espalda.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Pantorrillas",
+      "Sóleo"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "3UWi44yN-wM",
+    "youtube_title": "How To: Standing Barbell Calf Raise",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Donkey Calf Raise",
+    "description": "Elevación de talones con el torso inclinado en máquina tipo burro.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Pantorrillas"
+    ],
+    "secondary": [
+      "Sóleo"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "Gh7dXfWNzIw",
+    "youtube_title": "How To: Donkey Calf Press \"Inside Stance\" (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Reverse Lunge",
+    "description": "Zancada hacia atrás con barra en la espalda.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Aductores"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "n8q1hQMw4xE",
+    "youtube_title": "How To: Barbell Reverse Lunge",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Stepping Lunge",
+    "description": "Zancada hacia delante con barra en la espalda volviendo a la posición inicial.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "0_9sJd9P8M0",
+    "youtube_title": "How To: Barbell Stepping Lunge",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Reverse Lunge",
+    "description": "Zancada hacia atrás con mancuernas a los lados.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "sjlsISvHyZs",
+    "youtube_title": "How To: Dumbbell Reverse Lunge",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Stepping Lunge",
+    "description": "Zancada hacia delante con mancuernas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "D7KaRcUTQeE",
+    "youtube_title": "How To: Dumbbell Stepping Lunge",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pistol Squat",
+    "description": "Sentadilla completa a una pierna con la otra extendida al frente.",
+    "difficulty": "advanced",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Aductores",
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "7NvOuty_Fnc",
+    "youtube_title": "How To: Pistol Squat - Build Leg Strength & Correct Muscle Imbalances!",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Leg Box Squat",
+    "description": "Sentadilla a una pierna hasta sentarse en un cajón y levantarse.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Aductores"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "DuE_ScvXwtg",
+    "youtube_title": "How To: Single-Leg Box Squat",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bosu Ball Squat",
+    "description": "Sentadilla de pie sobre un bosu para añadir inestabilidad.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [
+      "Bosu"
+    ],
+    "youtube_id": "3tpdgI1RZig",
+    "youtube_title": "How To: Bosu Ball Squat",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Box Jump",
+    "description": "Salto vertical aterrizando suave sobre un cajón con ambos pies.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "hxldG9FX4j4",
+    "youtube_title": "How To: Box Jump",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Lateral Bench Hop",
+    "description": "Saltos laterales por encima de un banco de forma continua.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Pantorrillas"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Aductores"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "EwFUlxfe5G8",
+    "youtube_title": "How To: Lateral Hop (On Bench)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Farmers Walk",
+    "description": "Caminar con peso pesado en cada mano manteniendo la postura erguida.",
+    "difficulty": "beginner",
+    "patterns": [
+      "carry"
+    ],
+    "primary": [
+      "Flexores del antebrazo",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "Tgi5SNDbBZQ",
+    "youtube_title": "How To: Farmers Walk",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bear Crawl",
+    "description": "Gateo en cuadrupedia con rodillas despegadas del suelo avanzando mano y pie contrarios.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "WMXbyYpZ9oY",
+    "youtube_title": "How To: Bear Crawl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Burpee",
+    "description": "De pie a plancha, flexión y salto vertical; ejercicio metabólico de cuerpo completo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat",
+      "push"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Recto abdominal",
+      "Glúteo mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "wS4OsJ4yzx4",
+    "youtube_title": "How To: Burpee",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Bicep Curl",
+    "description": "Curl de bíceps de pie con barra recta.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial",
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "QZEqB6wUPxQ",
+    "youtube_title": "How To: Barbell Bicep Curl | 3 GOLDEN RULES",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Hammer Curl",
+    "description": "Curl con agarre neutro para braquial y braquiorradial.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Braquiorradial",
+      "Braquial"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "zC3nLlEvin4",
+    "youtube_title": "How To: Dumbbell Hammer Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Alternating Dumbbell Curl",
+    "description": "Curl de bíceps alternando brazos con supinación.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "sAq_ocpRh_I",
+    "youtube_title": "How To: Alternating Dumbbell Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Concentration Curl",
+    "description": "Curl sentado con el codo apoyado en el muslo para aislar el bíceps.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "Jvj2wV0vOYU",
+    "youtube_title": "How To: Dumbbell Concentration Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Spider Curl",
+    "description": "Curl boca abajo en banco inclinado con los brazos colgando.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "BsE9zhhTU1A",
+    "youtube_title": "How To: Spider Curl - Ultimate Bicep Isolator! (PERFECT FORM)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Incline Dumbbell Bicep Curl",
+    "description": "Curl en banco inclinado con los brazos por detrás del cuerpo para estirar el bíceps.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "soxrZlIl35U",
+    "youtube_title": "How To: Seated Incline Dumbbell Bicep Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Zottman Curl",
+    "description": "Sube con agarre supino y baja con agarre prono para trabajar bíceps y antebrazo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps",
+      "Braquiorradial"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "ZrpRBgswtHs",
+    "youtube_title": "How To: Zottman Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Drag Curl",
+    "description": "Curl arrastrando la barra pegada al torso con los codos hacia atrás.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "LMdNTHH6G8I",
+    "youtube_title": "How To: Barbell Drag Curl (Increase Bicep Peaks!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Reverse Barbell Curl",
+    "description": "Curl con barra y agarre prono.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Braquiorradial",
+      "Braquial"
+    ],
+    "secondary": [
+      "Extensores del antebrazo"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "didEQUuieRQ",
+    "youtube_title": "How To: Reverse Barbell Curl | BICEPS BUILDER",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Close-Grip EZ-Bar Curl",
+    "description": "Curl con barra EZ y agarre cerrado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Barra EZ"
+    ],
+    "youtube_id": "o74HeVd6BIw",
+    "youtube_title": "How To: Close-Grip EZ-Bar Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Rope Hammer Curl",
+    "description": "Curl martillo con cuerda en polea baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Braquiorradial",
+      "Braquial"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "1Quc_tOv97I",
+    "youtube_title": "How To: Rope Hammer Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Cable Double-Bicep Curl",
+    "description": "Curl con dos poleas altas y brazos en cruz, llevando las manos hacia la cabeza.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "L9GwtjwAM8Y",
+    "youtube_title": "How To: Standing Cable Double-Bicep Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable Triceps Pushdown",
+    "description": "Extensión de codos en polea alta con barra manteniendo los codos pegados.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "_w-HpW70nSQ",
+    "youtube_title": "HOW TO: Cable Triceps Pushdown || 3 Golden Rules (FOR GROWTH)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Rope Push-Down",
+    "description": "Extensión de tríceps con cuerda en polea alta separando las manos al final.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "vB5OHsJ3EME",
+    "youtube_title": "How To: Rope Push-Down",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "EZ-Bar Skull Crusher",
+    "description": "Tumbado, baja la barra EZ hacia la frente flexionando solo los codos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Barra EZ",
+      "Banco"
+    ],
+    "youtube_id": "d_KZxkY_0cM",
+    "youtube_title": "How To: Skull Crushers",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Skull Crusher",
+    "description": "Rompecráneos con mancuernas y agarre neutro.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "ir5PsbniVSc",
+    "youtube_title": "How To: Dumbbell Skull Crusher",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Overhead Dumbbell Tricep Extension",
+    "description": "Extensión de tríceps por encima de la cabeza con una mancuerna a dos manos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "-Vyt2QdsR7E",
+    "youtube_title": "How To: Standing Overhead Dumbbell Tricep Extension",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated EZ-Bar Overhead Extension",
+    "description": "Extensión de tríceps sentado con barra EZ por detrás de la cabeza.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Barra EZ",
+      "Banco"
+    ],
+    "youtube_id": "priRWVpDV8c",
+    "youtube_title": "How To: Seated Overhead Tricep Extension with an EZ-Curl Bar",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Tricep Kickback",
+    "description": "Inclinado, extiende el codo hacia atrás con el brazo pegado al cuerpo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "6SS6K3lAwZ8",
+    "youtube_title": "How To: Tricep Kickback (Dumbbell)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Tate Press",
+    "description": "Tumbado, baja las mancuernas hacia el pecho con los codos abiertos y extiende.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [
+      "Pectoral mayor"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "IgSjoXbpy1M",
+    "youtube_title": "How To: Tate Press | INCREASE YOUR BENCH & BUILD BIGGER TRICEPS!",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Resistance Band Skull Crusher",
+    "description": "Extensión de tríceps tumbado con banda elástica anclada.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "xtb-gltsmMU",
+    "youtube_title": "How To: Resistance Band Skull Crusher",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Wrist Curl",
+    "description": "Flexión de muñeca sentado con antebrazos apoyados en los muslos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Flexores del antebrazo"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "qMtmHwaCmYI",
+    "youtube_title": "How To: Seated Wrist Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Reverse Seated Wrist Curl",
+    "description": "Extensión de muñeca con agarre prono y antebrazos apoyados.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Extensores del antebrazo"
+    ],
+    "secondary": [
+      "Braquiorradial"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "FW7URAaC-vE",
+    "youtube_title": "How To: Reverse Seated Wrist Curl",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Sit-Up",
+    "description": "Abdominal completo desde tumbado hasta sentado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Oblicuo externo"
+    ],
+    "equipment": [],
+    "youtube_id": "0OWEtuS7-pE",
+    "youtube_title": "How To: Sit-Up || 3 Golden Rules (BUILD ABS FAST!)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Decline Sit-Up",
+    "description": "Abdominal completo en banco declinado.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Oblicuo externo"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "QhGU5cmNZds",
+    "youtube_title": "How To: Decline Sit-Up",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "V-Up",
+    "description": "Eleva a la vez tronco y piernas extendidas tocando los pies arriba.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "wRCgPeligF4",
+    "youtube_title": "How To:  V-Up (Hardcore Abdominal Exercise)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Janda Sit-Up",
+    "description": "Abdominal con isquiotibiales activos para reducir la participación del flexor de cadera.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "UsFGTXPmPaI",
+    "youtube_title": "How To: Janda Sit-Up",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Floor Wiper",
+    "description": "Tumbado sujetando la barra arriba, lleva las piernas juntas de un lado a otro.",
+    "difficulty": "advanced",
+    "patterns": [
+      "core",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "WUU0MVoszJc",
+    "youtube_title": "How To: Floor Wiper",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hanging Windshield Wiper",
+    "description": "Colgado con piernas elevadas, gíralas de lado a lado como un limpiaparabrisas.",
+    "difficulty": "advanced",
+    "patterns": [
+      "core",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Flexores de cadera",
+      "Dorsal ancho"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "arDUVmCzyhc",
+    "youtube_title": "How To: Hanging Windshield Wiper",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Landmine Oblique Twist",
+    "description": "Con brazos extendidos sujetando la punta de la barra, llévala en arco de un lado a otro.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "rotation",
+      "core"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Landmine",
+      "Barra olímpica"
+    ],
+    "youtube_id": "epdBIT32SS0",
+    "youtube_title": "How To: Landmine Oblique Twist",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Stomach Vacuum",
+    "description": "Exhala y mete el ombligo hacia la columna manteniendo la contracción del transverso.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "gDx1xfSobG4",
+    "youtube_title": "How To: Stomach Vacuum || TIGHTER CORE TRAINING!",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Scissor Flutter Kicks",
+    "description": "Tumbado con piernas elevadas, cruza y alterna las piernas en tijera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "_2bLRJGcpuM",
+    "youtube_title": "How To: Scissor Flutter Kicks",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hanging Serratus Crunch",
+    "description": "Colgado, eleva las rodillas hacia un lado contrayendo oblicuos y serrato.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Serrato anterior"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "G6bcPEPRkUM",
+    "youtube_title": "How To: Hanging Serratus Crunch",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Ab Rollout",
+    "description": "Desde rodillas, rueda la barra hacia delante extendiendo el cuerpo y regresa.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Dorsal ancho",
+      "Serrato anterior"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Disco"
+    ],
+    "youtube_id": "mIYuVpQF3N8",
+    "youtube_title": "How To: Barbell Ab Rollout On Knees (Upper & Lower Abs)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Ball Crunch",
+    "description": "Crunch con la zona lumbar apoyada en la pelota de estabilidad.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Oblicuo externo"
+    ],
+    "equipment": [
+      "Pelota de estabilidad"
+    ],
+    "youtube_id": "Imui46JTe7s",
+    "youtube_title": "How To: Ball Crunch",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Machine Ab Crunch",
+    "description": "Crunch sentado en máquina con resistencia.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Oblicuo externo"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "4sJACG-H4Fs",
+    "youtube_title": "How To: Seated Abdominal Crunch (Cybex)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Weighted Side Bend",
+    "description": "De pie con un disco a un lado, inclina el tronco lateralmente y regresa.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Disco"
+    ],
+    "youtube_id": "unMZPDjMn10",
+    "youtube_title": "How To: Standing Oblique Crunch (With Plate or Dumbbell)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Supine Medicine Ball Chest Throw",
+    "description": "Tumbado, lanza el balón medicinal hacia arriba de forma explosiva y recíbelo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Balón medicinal"
+    ],
+    "youtube_id": "ZlrvmNflFJw",
+    "youtube_title": "How To: Supine Medicine Ball Chest Throw",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Sandbag Front Squat",
+    "description": "Sentadilla con saco de arena sujeto delante del pecho.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Saco de arena"
+    ],
+    "youtube_id": "44eHWUBx54I",
+    "youtube_title": "How To: Sandbag Front Squat",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Sandbag Bent-Over Row",
+    "description": "Remo inclinado con saco de arena.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Saco de arena"
+    ],
+    "youtube_id": "z_pdE61Uk64",
+    "youtube_title": "How To: Sandbag Bent-Over Row",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell High-Pull",
+    "description": "Tirón explosivo de la kettlebell desde entre las piernas hasta el pecho con codos altos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "hinge"
+    ],
+    "primary": [
+      "Trapecio",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "Li4g5p6s2eM",
+    "youtube_title": "How To: Kettlebell High-Pull",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Groiner",
+    "description": "Desde plancha, salta llevando ambos pies junto a las manos y regresa.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Aductores"
+    ],
+    "equipment": [],
+    "youtube_id": "rAClKi7pN_w",
+    "youtube_title": "How To: Groiner- Total Body Exhaustion Exercise! (Lower Abs, Arms, Shoulders, Quads)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hanging Cross-Body Knee Raise",
+    "description": "Colgado, eleva las rodillas en diagonal hacia cada lado.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "KG0d3TgC6XI",
+    "youtube_title": "How To: Hanging Cross-Body Knee Raise",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single-Leg Calf Raise",
+    "description": "Elevación de talón a una pierna sobre un escalón.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Pantorrillas",
+      "Sóleo"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "ORT4oJ_R8Qs",
+    "youtube_title": "How To: Single-Leg Calf Raise",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bar Muscle Up",
+    "description": "Dominada explosiva que pasa por encima de la barra hasta el soporte con brazos extendidos.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "push"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Pectoral mayor",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "kAw6IMk3Ogk",
+    "youtube_title": "How To: Muscle-Up (Step by Step Progression)",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Ring Muscle Up",
+    "description": "Muscle up completo en anillas con agarre falso y transición controlada.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "push"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Pectoral mayor"
+    ],
+    "equipment": [
+      "Anillas"
+    ],
+    "youtube_id": "86bwH-yHgMQ",
+    "youtube_title": "How To: Muscle-Up On Rings",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Wall Handstand Push Up",
+    "description": "Flexión en pino apoyando los pies en la pared, bajando la cabeza hacia el suelo.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Pared"
+    ],
+    "youtube_id": "V6RUHPQBzg4",
+    "youtube_title": "How To: Learn How To Do A Handstand Push-Up!",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Renegade Row",
+    "description": "Flexión sobre mancuernas seguida de un remo alterno sin girar la cadera.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "push",
+      "core"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "Mk5dUWaZVGk",
+    "youtube_title": "How To: Dumbbell Push-Up into a Row",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Arm Circles",
+    "description": "Círculos amplios con los brazos extendidos para calentar los hombros.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Deltoides lateral",
+      "Manguito rotador"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "bP52FXTlzjA",
+    "youtube_title": "How To: Arm Circles",
+    "channel": "ScottHermanFitness",
+    "orientation": "horizontal"
+  }
+]

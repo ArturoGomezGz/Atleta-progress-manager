@@ -1,0 +1,3079 @@
+[
+  {
+    "name": "Bodyweight Hip Rows",
+    "description": "Remo invertido bajo una barra baja llevando cadera y pecho a la vez hacia la barra con el cuerpo alineado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Deltoides posterior",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "RqB2Z7BVsGQ",
+    "youtube_title": "Bodyweight Hip Rows",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Weighted Ring Push Ups",
+    "description": "Flexión en anillas con lastre; exige estabilidad de hombro y fuerza de empuje avanzada.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Serrato anterior",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Anillas",
+      "Cinturón de lastre"
+    ],
+    "youtube_id": "7zWqCtL9QCE",
+    "youtube_title": "Weighted Ring Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Ring Dips",
+    "description": "Descenso lento desde el soporte en anillas hasta el fondo; construye fuerza excéntrica para los fondos en anillas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Anillas"
+    ],
+    "youtube_id": "Vo8Q-Ap8rVg",
+    "youtube_title": "Negative Ring Dips",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Floor Assisted Ring Dips",
+    "description": "Fondos en anillas bajas apoyando los pies en el suelo para descargar parte del peso.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Anillas"
+    ],
+    "youtube_id": "4kAKr2i99UE",
+    "youtube_title": "Floor Assisted Ring Dips",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Skin The Cat",
+    "description": "Rotación completa de hombros colgado de anillas con apoyo de pies para controlar el giro.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "mobility"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Manguito rotador"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Anillas"
+    ],
+    "youtube_id": "uCKa9mqiw_M",
+    "youtube_title": "Assisted Skin The Cat",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knee Pseudo Push Ups",
+    "description": "Flexión de rodillas con las manos a la altura de la cintura e inclinación hacia delante; iniciación a la planche.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Serrato anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "M-OPy3adR5o",
+    "youtube_title": "Knee Pseudo Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Ring False Grip Hang",
+    "description": "Colgarse de las anillas con agarre falso (muñeca sobre la anilla); base del muscle up en anillas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores del antebrazo",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Braquiorradial"
+    ],
+    "equipment": [
+      "Anillas"
+    ],
+    "youtube_id": "eWktjOk_x4U",
+    "youtube_title": "Ring False Grip Hang",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "L Shape With Leg Extension",
+    "description": "Sentado en forma de L, eleva y extiende las piernas de forma alterna para trabajar la compresión.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Cuádriceps"
+    ],
+    "equipment": [],
+    "youtube_id": "uxwRa3SawOw",
+    "youtube_title": "L Shape With Leg Extension",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dynamic Compression Lifts",
+    "description": "Sentado con piernas extendidas, eleva ambas piernas con las manos junto a las rodillas para mejorar la compresión activa.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Cuádriceps"
+    ],
+    "equipment": [],
+    "youtube_id": "BSFLDKUVwFw",
+    "youtube_title": "Dynamic Compression Lifts",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Belly Back Raises",
+    "description": "Tumbado boca abajo, eleva pecho y piernas del suelo para fortalecer toda la cadena posterior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Romboides",
+      "Isquiotibiales"
+    ],
+    "equipment": [],
+    "youtube_id": "SPz2lhgDuF4",
+    "youtube_title": "Belly Back Raises",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Tuck Planche",
+    "description": "Tuck planche con apoyo parcial de los pies para acostumbrarse a la inclinación y la protracción escapular.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Serrato anterior"
+    ],
+    "secondary": [
+      "Pectoral mayor",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "AgA48rrBVgQ",
+    "youtube_title": "Assisted Tuck Planche",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Reversed Bulgarian Split Squat",
+    "description": "Zancada búlgara con el pie delantero elevado para aumentar el rango de flexión de rodilla y cadera.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Aductores"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "QWJWN8fQ5n0",
+    "youtube_title": "Reversed Bulgarian Split Squat",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Handstand To Tuck",
+    "description": "Desde el pino, baja de forma controlada hasta la posición agrupada sin perder el apoyo de manos.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "core"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Tríceps"
+    ],
+    "equipment": [],
+    "youtube_id": "1p8kW3ZkEJg",
+    "youtube_title": "Negative Handstand To tuck",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Handstand To L Sit",
+    "description": "Desde el pino, desciende con piernas juntas y extendidas hasta un L-sit controlado.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "core"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Flexores de cadera"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "jCyQLNm3CxM",
+    "youtube_title": "Negative Handstand To L Sit",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Handstand Press To Stalder",
+    "description": "Descenso controlado del pino a la posición straddle con cadera alta; trabajo excéntrico del press a pino.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "core"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Flexores de cadera",
+      "Trapecio"
+    ],
+    "equipment": [],
+    "youtube_id": "qSCzk9U5xKA",
+    "youtube_title": "Negative Handstand Press To Stalder",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Box Assisted Pistol Squat",
+    "description": "Descenso lento a una pierna hasta sentarse en una caja; progresión hacia la pistol squat.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Aductores",
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "8mdERXQaiIw",
+    "youtube_title": "Negative Box Assisted Pistol Squat",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "L Sit Support Raises",
+    "description": "Desde el soporte en paralelas bajas, eleva las piernas extendidas hacia la posición de L.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "4OspQJ0xWjc",
+    "youtube_title": "L Sit Support Raises",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Negative Pistol Squat",
+    "description": "Descenso a una pierna sujetándote de un apoyo para controlar el equilibrio y la bajada.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Aductores"
+    ],
+    "equipment": [],
+    "youtube_id": "12VuUDfrHbs",
+    "youtube_title": "Assisted Negative Pistol Squat",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted 90 Degree Chin Up Hold",
+    "description": "Isométrico con agarre supino a 90° de flexión de codo usando apoyo de pies.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "taTB0GBEtoQ",
+    "youtube_title": "Assisted 90 Degree Chin Up Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Straddle Pike Push Ups With Shoulder Taps",
+    "description": "Pike push up con piernas abiertas añadiendo toques de hombro para exigir estabilidad.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "tGHcMtC_l8E",
+    "youtube_title": "Straddle Pike Push Ups With Shoulder Taps",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pike Push Ups With Shoulder Taps",
+    "description": "Pike push up alternando toques de hombro en la posición alta; empuje vertical y control anti-rotación.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "u3AE14GPt4o",
+    "youtube_title": "Pike Push Ups With Shoulder Taps",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "L Sit To Bent Arm Handstand",
+    "description": "Transición desde L-sit hasta pino con brazos flexionados usando fuerza de compresión y empuje.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "core"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "-0LRbufljQo",
+    "youtube_title": "L Sit To Bent Arm Handstand",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hollow Body To Support L Sit",
+    "description": "Desde hollow body en el suelo, pasa a soporte en L con brazos rectos; integra core y compresión.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "ThZMuZ7j4-s",
+    "youtube_title": "Hollow Body To Support L Sit",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Floor Assisted Negative Muscle Up",
+    "description": "Negativa de muscle up en barra baja con apoyo de pies para aprender la transición.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "push"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Pectoral mayor"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "-DzbtZCVVZQ",
+    "youtube_title": "Floor Assisted Negative Muscle Up",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bent Arm Handstand Hold",
+    "description": "Mantener el pino con los codos flexionados; fuerza específica para press y handstand push ups.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "2rgE0PTlzIw",
+    "youtube_title": "Bent Arm Handstand Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted 90 Degree Chin Ups",
+    "description": "Dominadas supinas de medio recorrido hasta 90° con apoyo de pies.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "CZxaJvHRkjw",
+    "youtube_title": "Assisted 90 Degree Chin Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Active Plank",
+    "description": "Plancha con brazos extendidos empujando el suelo y escápulas en protracción.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Serrato anterior",
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "gzj7zD_g7rk",
+    "youtube_title": "Active Plank",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "90 Degree Chin Ups",
+    "description": "Dominadas supinas desde colgado hasta codos a 90°; trabaja la parte baja del recorrido.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo",
+      "Romboides"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "h7EbOytyU7M",
+    "youtube_title": "90 Degree Chin Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "90 Degree Chin Up Hold",
+    "description": "Isométrico colgado con agarre supino y codos a 90°.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "ZuLZ13NNIGE",
+    "youtube_title": "90 Degree Chin Up Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "45 Degree Pistol Squat Hold",
+    "description": "Isométrico a una pierna con la rodilla a 45°; fuerza y equilibrio para la pistol squat.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat",
+      "isometric"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Aductores"
+    ],
+    "equipment": [],
+    "youtube_id": "gnEPSXiRASo",
+    "youtube_title": "45 Degree Pistol Squat Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Commando Pull Ups",
+    "description": "Dominada con agarre mixto alterno llevando la cabeza a cada lado de la barra, con apoyo de pies.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Oblicuo externo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "D9RHYtG1xkQ",
+    "youtube_title": "Assisted Commando Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Hanging L-sit Hold",
+    "description": "Colgado de la barra, mantener las piernas elevadas en L con ayuda para reducir la palanca.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "a_N1ht5CvHg",
+    "youtube_title": "Assisted Hanging L sit Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted One Arm Hang",
+    "description": "Colgado a una mano con asistencia de la otra mano o una toalla; fuerza de agarre unilateral.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores del antebrazo",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Manguito rotador"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "4a9YzKb4oUU",
+    "youtube_title": "Assisted One Arm Hang",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted One Arm Scapula Pull Ups",
+    "description": "Retracción y depresión escapular colgado a una mano con asistencia.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "dhZRMfjUrBI",
+    "youtube_title": "Assisted One Arm Scapula Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Toes To Bar",
+    "description": "Desde pies en la barra, baja las piernas extendidas lentamente hasta colgado.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Dorsal ancho",
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "THmksRA6BeQ",
+    "youtube_title": "Negative Toes To Bar",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "One Arm Dead Hang",
+    "description": "Colgado pasivo a una mano; fuerza de agarre y descompresión de hombro.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores del antebrazo",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Manguito rotador"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "gMwMFSbiQZw",
+    "youtube_title": "One Arm Dead Hang",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "One Arm Active Hang",
+    "description": "Colgado a una mano con la escápula activa y el hombro lejos de la oreja.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores del antebrazo",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Manguito rotador"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "jjyLApgv_5c",
+    "youtube_title": "One Arm Hang",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "One Arm Scapula Pull Ups",
+    "description": "Elevaciones escapulares colgado a una sola mano sin flexionar el codo.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Flexores del antebrazo",
+      "Romboides"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "_gFx4nK0nDk",
+    "youtube_title": "One Arm Scapula Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "One Leg L-sit Hold",
+    "description": "L-sit con una pierna extendida y la otra flexionada; progresión hacia el L-sit completo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "Cfb5JgiMiwg",
+    "youtube_title": "One Leg L-sit Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Chin Ups",
+    "description": "Descenso lento desde arriba con agarre supino; fuerza excéntrica para las primeras chin ups.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "_XGCuNoC6-w",
+    "youtube_title": "Negative Chin Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hanging One Leg L-sit Hold",
+    "description": "Colgado de la barra con una pierna extendida al frente y la otra flexionada.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Flexores del antebrazo",
+      "Dorsal ancho"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "hzwm5vjrf-U",
+    "youtube_title": "Hanging One Leg L-sit Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hanging L-sit Hold",
+    "description": "Colgado de la barra manteniendo ambas piernas extendidas a 90°.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Flexores del antebrazo",
+      "Dorsal ancho"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "4KwEVyrfKS4",
+    "youtube_title": "Hanging L sit Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Inch Worm",
+    "description": "Desde de pie, camina con las manos hasta plancha y regresa; calentamiento de isquios y core.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility",
+      "core"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Serrato anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "hmtzPbILmBU",
+    "youtube_title": "Inch worm",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Tuck Front Lever Scapula Pull Ups",
+    "description": "Elevaciones escapulares manteniendo la posición de tuck front lever.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "LaGoZEuQplk",
+    "youtube_title": "Tuck Front Lever Scapula Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Front Lever Raises",
+    "description": "Desde colgado invertido, baja lentamente el cuerpo recto hasta front lever y más allá.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "core"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Redondo mayor",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "f9L3M-dpX-s",
+    "youtube_title": "Negative Front Lever Raises",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Inverted Deadlift",
+    "description": "Colgado de la barra, eleva la cadera hasta posición invertida con brazos rectos y regresa controlado.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "core"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Flexores de cadera",
+      "Redondo mayor"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "Qo3sPNIekQE",
+    "youtube_title": "Inverted Deadlift",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Halflay Front Lever Raises",
+    "description": "Elevaciones con brazos rectos en posición halflay (una pierna o piernas semiflexionadas) hacia el front lever.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "core"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Redondo mayor",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "evlsQFAycnA",
+    "youtube_title": "Halflay Front Lever Raises",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Tuck Front Lever Pull Ups",
+    "description": "Dominadas manteniendo tuck front lever con ayuda de banda elástica.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Barra de dominadas",
+      "Banda elástica"
+    ],
+    "youtube_id": "n-4J5LFB5yo",
+    "youtube_title": "Assisted Tuck Front Lever Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Straddle Halflay Front Lever",
+    "description": "Front lever con piernas abiertas y semiflexionadas usando banda elástica para reducir carga.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Redondo mayor"
+    ],
+    "equipment": [
+      "Barra de dominadas",
+      "Banda elástica"
+    ],
+    "youtube_id": "oMGXPjihlOA",
+    "youtube_title": "Assisted Straddle Halflay Front Lever",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Halflay Front Lever",
+    "description": "Front lever halflay con asistencia de banda elástica.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Redondo mayor"
+    ],
+    "equipment": [
+      "Barra de dominadas",
+      "Banda elástica"
+    ],
+    "youtube_id": "34XMcKsj6Iw",
+    "youtube_title": "Assisted Halflay Front Lever",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Tuck Planche Push Ups",
+    "description": "Flexiones sin apoyar los pies manteniendo la tuck planche.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Serrato anterior"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "jJH_ET6NMrU",
+    "youtube_title": "Tuck Planche Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Supinated Tuck Planche",
+    "description": "Tuck planche con las palmas hacia fuera y dedos hacia atrás; fortalece tendones del bíceps.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Serrato anterior",
+      "Pectoral mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "-qUKj9asW1E",
+    "youtube_title": "Supinated Tuck Planche",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "One Leg Planche",
+    "description": "Planche con una pierna extendida y la otra agrupada; paso intermedio hacia la full planche.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Serrato anterior"
+    ],
+    "secondary": [
+      "Pectoral mayor",
+      "Recto abdominal",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "-p4fzmeiXn8",
+    "youtube_title": "One Leg Planche",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Halflay Planche",
+    "description": "Planche con piernas semiextendidas; reduce la palanca respecto a la straddle planche.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Serrato anterior"
+    ],
+    "secondary": [
+      "Pectoral mayor",
+      "Recto abdominal",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "W1DAtsE-Zgk",
+    "youtube_title": "Halflay Planche",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Floor Assisted Tuck Planche",
+    "description": "Tuck planche con las puntas de los pies rozando el suelo como apoyo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Serrato anterior"
+    ],
+    "secondary": [
+      "Pectoral mayor"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "jcMlm1kb7i0",
+    "youtube_title": "Floor Assisted Tuck Planche",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Elevated Planche Lean",
+    "description": "Planche lean con manos en paralelas bajas para mayor rango e inclinación.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Serrato anterior"
+    ],
+    "secondary": [
+      "Pectoral mayor",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "tZAW65lvnk0",
+    "youtube_title": "Elevated Planche Lean",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Advanced Tuck Front Lever Scapula Pull Ups",
+    "description": "Elevaciones escapulares en advanced tuck front lever.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Recto abdominal",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "z065zPp4fbk",
+    "youtube_title": "Advanced Tuck Scapula Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Advanced Tuck Front Lever Raises",
+    "description": "Desde colgado invertido, baja y sube a advanced tuck front lever con brazos rectos.",
+    "difficulty": "advanced",
+    "patterns": [
+      "pull",
+      "core"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Redondo mayor"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "Rk7cJ3TXELY",
+    "youtube_title": "Advanced Tuck Front Lever Raises",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Tiger Bend Push Ups",
+    "description": "Desde apoyo sobre antebrazos, empuja hasta brazos extendidos; tríceps muy exigido.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Pectoral mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "V63uYCiswWo",
+    "youtube_title": "Tiger Bend Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Top Hold Rows",
+    "description": "Remo invertido con pausa isométrica con el pecho pegado a la barra.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Romboides",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "1_rB7xIZT8c",
+    "youtube_title": "Top Hold Rows",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knee Diamond Push Ups",
+    "description": "Flexión diamante apoyando rodillas; regresión con énfasis en tríceps.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "mj4ZQtNbbog",
+    "youtube_title": "Knee Diamond Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Close Grip Pull Ups",
+    "description": "Dominada con agarre cerrado desde sentado bajo una barra baja, ayudándote con las piernas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "A2b6qr_G77c",
+    "youtube_title": "Seated Close Grip Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knee Wide Push Ups",
+    "description": "Flexión de rodillas con agarre amplio para enfatizar pecho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [],
+    "youtube_id": "MXZJOCtm_ts",
+    "youtube_title": "Knee Wide Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Close Grip Chin Ups",
+    "description": "Chin up con agarre supino cerrado desde sentado bajo barra baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "86BYXHyjwW8",
+    "youtube_title": "Seated Close Grip Chin Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Triceps Push Ups",
+    "description": "Flexión con codos pegados al cuerpo apuntando atrás para cargar el tríceps.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "RC2WGJq6YMg",
+    "youtube_title": "Triceps Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Wall Angels",
+    "description": "Espalda contra la pared, desliza los brazos arriba y abajo manteniendo el contacto; movilidad de hombro y postura.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Trapecio",
+      "Romboides"
+    ],
+    "secondary": [
+      "Manguito rotador",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Pared"
+    ],
+    "youtube_id": "c9hHcb5tk9E",
+    "youtube_title": "Wall Angels",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knee Archer Push Ups",
+    "description": "Flexión arquero apoyando rodillas; carga unilateral progresiva.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "bhd8UXWE7Vo",
+    "youtube_title": "Knee Archer Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Wide Pull Ups",
+    "description": "Dominada con agarre ancho desde sentado bajo barra baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Redondo mayor"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "nHoF7yUv_g8",
+    "youtube_title": "Seated Wide Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hyperextension Hold",
+    "description": "Isométrico en extensión de cadera y espalda boca abajo; resistencia de la zona lumbar.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge",
+      "isometric"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [],
+    "youtube_id": "gajkYP0rosg",
+    "youtube_title": "Hyperextension Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cobra Push Ups",
+    "description": "Flexión que termina en posición de cobra extendiendo la columna.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push",
+      "mobility"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Erector espinal",
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "SVouNS6Q33M",
+    "youtube_title": "Cobra Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Commando Pull Ups",
+    "description": "Commando pull up desde sentado bajo barra baja con agarre mixto paralelo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Oblicuo externo"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "ZQ6Dr0htEcE",
+    "youtube_title": "Seated Commando Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Side Lunges",
+    "description": "Zancada lateral flexionando una rodilla con la otra pierna extendida; trabaja aductores y glúteos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Aductores"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Glúteo medio"
+    ],
+    "equipment": [],
+    "youtube_id": "_u-N4QOPuBU",
+    "youtube_title": "Side Lunges",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Leg Assisted Dips",
+    "description": "Fondos en paralelas con apoyo de pies para reducir la carga.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Paralelas"
+    ],
+    "youtube_id": "C06THaykQjk",
+    "youtube_title": "Leg Assisted Dips",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hanging High Knee Raises",
+    "description": "Colgado, lleva las rodillas por encima de la cadera enrollando la pelvis.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Flexores del antebrazo",
+      "Oblicuo externo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "UxAO5nIFfnc",
+    "youtube_title": "Hanging High Knee Raises",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Spiderman Push Ups",
+    "description": "Flexión llevando la rodilla hacia el codo del mismo lado en cada bajada.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push",
+      "core"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Flexores de cadera"
+    ],
+    "equipment": [],
+    "youtube_id": "8J0lvBIPDSU",
+    "youtube_title": "Spiderman Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pull Up Top Hold With Knee Raises",
+    "description": "Mantener la barbilla sobre la barra mientras elevas las rodillas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "core"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Flexores de cadera"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "51p9sVdzy9M",
+    "youtube_title": "Pull Up Top Hold With Knee Raises",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Close Grip Chin Ups",
+    "description": "Chin up con manos juntas y agarre supino; máximo énfasis en bíceps.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "ZouXLZwAUvs",
+    "youtube_title": "Close Grip Chin Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Chin Up Hold",
+    "description": "Isométrico arriba de la chin up desde sentado bajo barra baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "EvQC9Rgz_o8",
+    "youtube_title": "Seated Chin Up Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Plank Hold With Leg Crunch",
+    "description": "Desde plancha, lleva alternadamente la rodilla hacia el pecho de forma controlada.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Oblicuo externo",
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "dPuHwLPQBos",
+    "youtube_title": "Plank Hold With Leg Crunch",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Push Up With Knee Touch",
+    "description": "Flexión y, en la posición alta, lleva una rodilla al codo contrario.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push",
+      "core"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Flexores de cadera",
+      "Oblicuo externo"
+    ],
+    "equipment": [],
+    "youtube_id": "fgmJAhwiwyA",
+    "youtube_title": "Push Up With Knee Touch",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knees To Elbows",
+    "description": "Colgado, eleva las rodillas hasta tocar los codos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Dorsal ancho",
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "anK0fu7z91c",
+    "youtube_title": "Knees To Elbows",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Elevated Seated Chin Ups",
+    "description": "Chin up desde sentado con la barra más alta para aumentar el recorrido.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "9rZse_RSYPk",
+    "youtube_title": "Elevated Seated Chin Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Floor Angels",
+    "description": "Boca abajo, desliza los brazos en arco manteniéndolos elevados; movilidad y fuerza escapular.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Trapecio",
+      "Romboides"
+    ],
+    "secondary": [
+      "Manguito rotador",
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "KGpW4TQvr1w",
+    "youtube_title": "Floor Angels",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Laying Bent Leg Raises",
+    "description": "Elevaciones de piernas tumbado con rodillas flexionadas; regresión de las elevaciones rectas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "T31_qyE7Xqw",
+    "youtube_title": "Laying Bent Leg Raises",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Push Up Hold With Shoulder Tap",
+    "description": "En posición alta de flexión, toca alternadamente el hombro contrario sin girar la cadera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Serrato anterior",
+      "Transverso abdominal",
+      "Oblicuo externo"
+    ],
+    "equipment": [],
+    "youtube_id": "7d0HKiNZUfA",
+    "youtube_title": "Push Up Hold With Shoulder Tap",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Step Ups",
+    "description": "Sube a un cajón con una pierna y baja controlado; fuerza unilateral de pierna.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "XB0jUG5-3sk",
+    "youtube_title": "Step Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hollow Body To Superman Hold",
+    "description": "Gira desde hollow body boca arriba a superman boca abajo sin tocar el suelo con brazos ni piernas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "8L-kEMG-aLI",
+    "youtube_title": "Hollow Body To Superman Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Narrow Knee Push Ups",
+    "description": "Flexión cerrada apoyando rodillas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "KPqUwbWbS8A",
+    "youtube_title": "Narrow Knee Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hollow Body To Tuck V Ups",
+    "description": "Desde hollow body, recoge rodillas y torso hasta V agrupada y vuelve a extender.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "1QFieOmxC20",
+    "youtube_title": "Hollow Body To Tuck V Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hamstring Walk Outs",
+    "description": "Puente de glúteo caminando los talones hacia fuera y hacia dentro; fuerza de isquiotibiales.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal",
+      "Pantorrillas"
+    ],
+    "equipment": [],
+    "youtube_id": "My3y862aJto",
+    "youtube_title": "Hamstring Walk Outs",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "L-sit Support Hold With Leg Lift",
+    "description": "En soporte con brazos rectos, eleva alternadamente una pierna extendida.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Cuádriceps"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "ElScAbxYdH0",
+    "youtube_title": "L sit Support Hold With Leg Lift",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Chin Ups",
+    "description": "Chin up desde sentado bajo barra baja ayudándote con las piernas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra baja"
+    ],
+    "youtube_id": "f54HWz6XSi8",
+    "youtube_title": "Seated Chin Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knee Scapula Push Ups",
+    "description": "Protracción y retracción escapular apoyando rodillas, sin flexionar codos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Serrato anterior",
+      "Pectoral menor"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "XCfo4LqigBA",
+    "youtube_title": "Knee Scapula Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Straddle Pike Push Ups",
+    "description": "Pike push up con piernas abiertas para cargar más peso sobre los hombros.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [],
+    "youtube_id": "EpIPXR0XxX0",
+    "youtube_title": "Straddle Pike Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knee Push Up Hold With Shoulder Taps",
+    "description": "Toques de hombro alternos en posición alta de flexión con rodillas apoyadas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Serrato anterior",
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "8AJWGb2hRWA",
+    "youtube_title": "Knee Push Up Hold With Shoulder Taps",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "L-sit Shrugs To One Leg Lift",
+    "description": "Encogimientos escapulares en soporte que terminan elevando una pierna extendida.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Serrato anterior",
+      "Recto abdominal",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "BDIXumcR-WI",
+    "youtube_title": "L sit Shrugs To One Leg Lift",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Laying Leg Raises With Toe Crunch",
+    "description": "Elevación de piernas tumbado terminando con un crunch hacia las puntas de los pies.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "4nec2TTjENw",
+    "youtube_title": "Laying Leg Raises With Toe Crunch",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hollow Body To Arch",
+    "description": "Rueda de hollow body boca arriba a arch boca abajo manteniendo la tensión.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "9lXLwWoNWrw",
+    "youtube_title": "Hollow Body To Arch",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Hanging Leg Raises",
+    "description": "Colgado, baja lentamente las piernas extendidas desde 90°.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "xurP2g-EDzA",
+    "youtube_title": "Negative Hanging Leg Raises",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Penguin Hold",
+    "description": "Tumbado con hombros elevados, mantén la flexión lateral hacia un talón.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "Byuqd8264Ms",
+    "youtube_title": "Penguin Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Knee Push Ups",
+    "description": "Bajada lenta de flexión con rodillas apoyadas; primer paso de fuerza de empuje.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "SkBR6K1OjYA",
+    "youtube_title": "Negative Knee Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Penguin Sit Ups",
+    "description": "Con hombros elevados, toca alternadamente cada talón con flexión lateral del tronco.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Oblicuo interno"
+    ],
+    "equipment": [],
+    "youtube_id": "zU_07Z5Ptcs",
+    "youtube_title": "Penguin Sit Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Jackknife Top Hold",
+    "description": "Isométrico arriba de la dominada con los pies apoyados en un cajón en posición de navaja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas",
+      "Caja / Step"
+    ],
+    "youtube_id": "R_mqhacFBBI",
+    "youtube_title": "Jackknife Top Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hyperextensions",
+    "description": "Boca abajo, eleva el tronco extendiendo la espalda; fortalece la zona lumbar.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [],
+    "youtube_id": "nSOn_ifgo9M",
+    "youtube_title": "Hyperextensions",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "L-sit Support Shrugs",
+    "description": "En soporte con brazos rectos, sube y baja el cuerpo solo con la escápula.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Serrato anterior",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "iAVCsYjvfTI",
+    "youtube_title": "L sit Support Shrugs",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Lean Into Frogstand",
+    "description": "Apoya las rodillas en los codos e inclínate hasta despegar los pies; entrada a la frog stand.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Flexores del antebrazo"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "fj6xUgEXPW8",
+    "youtube_title": "Lean Into Frogstand",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Negative Leg Raises On Dip Bar",
+    "description": "En soporte sobre paralelas, baja lentamente las piernas extendidas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Paralelas"
+    ],
+    "youtube_id": "mp_zbTpnXE4",
+    "youtube_title": "Negative Leg Raises On Dip Bar",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pike Pulses",
+    "description": "Sentado en pike, eleva los pies del suelo en pulsos cortos; compresión activa.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Cuádriceps"
+    ],
+    "equipment": [],
+    "youtube_id": "H8lTODKmvSU",
+    "youtube_title": "Pike Pulses",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Plank On Knees",
+    "description": "Plancha sobre antebrazos apoyando rodillas; regresión de la plancha.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "UiVmGwCgMh0",
+    "youtube_title": "Plank On Knees",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Jackknife Pull Ups",
+    "description": "Dominada con los pies apoyados en un cajón para reducir peso corporal.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "Barra de dominadas",
+      "Caja / Step"
+    ],
+    "youtube_id": "fRJDlmUrN84",
+    "youtube_title": "Jackknife Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Superman Diagonals",
+    "description": "Boca abajo, eleva brazo y pierna contrarios en diagonal de forma alterna.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Deltoides posterior",
+      "Romboides"
+    ],
+    "equipment": [],
+    "youtube_id": "FvXwu21xefo",
+    "youtube_title": "Superman Diagonals",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Resistance Band Scapula Pull Down",
+    "description": "Jalón con banda elástica usando solo la depresión escapular.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "atMt6130UI8",
+    "youtube_title": "Resistance Band Scapula Pull Down",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Plank To Push Up",
+    "description": "Pasa de plancha sobre antebrazos a brazos extendidos y regresa, alternando brazos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Pectoral mayor",
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "zeNUDLzGZP4",
+    "youtube_title": "Plank To Push Up",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Straddle Hyperextensions",
+    "description": "Hiperextensiones con piernas abiertas para cambiar el énfasis a glúteos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Aductores"
+    ],
+    "equipment": [],
+    "youtube_id": "xWHFYrYtaT8",
+    "youtube_title": "Straddle Hyperextensions",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "L-sit Support Hold",
+    "description": "Soporte con brazos rectos elevando la cadera y talones apoyados; paso previo al L-sit.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Tríceps",
+      "Serrato anterior"
+    ],
+    "secondary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "vVybJ3hTpFw",
+    "youtube_title": "L sit Support Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "One Leg Pike Pulses",
+    "description": "Sentado en pike, eleva una pierna del suelo en pulsos cortos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Cuádriceps"
+    ],
+    "equipment": [],
+    "youtube_id": "PsNfE_cIC3A",
+    "youtube_title": "One Leg Pike Pulses",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Reverse Crunch",
+    "description": "Tumbado, lleva las rodillas al pecho despegando la pelvis del suelo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Oblicuo externo"
+    ],
+    "equipment": [],
+    "youtube_id": "pGkrkwkzxeA",
+    "youtube_title": "Reversed Crunch",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Elevated Jackknife Pull Ups",
+    "description": "Jackknife pull up con los pies más altos para cargar más peso en los brazos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "Barra de dominadas",
+      "Caja / Step"
+    ],
+    "youtube_id": "-CbP18o0ma8",
+    "youtube_title": "Elevated Jackknife Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Downward Dog To Arch",
+    "description": "Alterna entre perro boca abajo y arco de espalda (cobra); movilidad de hombro, columna y cadena posterior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Pantorrillas",
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "0yGuPxoD_44",
+    "youtube_title": "Downward Dog To Arch",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knee Raises On Dip Bars",
+    "description": "En soporte sobre paralelas, eleva las rodillas hacia el pecho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Paralelas"
+    ],
+    "youtube_id": "WliuvUpe4LI",
+    "youtube_title": "Knee Raises On Dip Bars",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Leg Raises On Dip Bars",
+    "description": "En soporte sobre paralelas, eleva las piernas extendidas hasta 90°.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Paralelas"
+    ],
+    "youtube_id": "OeSrrGhAAig",
+    "youtube_title": "Leg Raises On Dip Bars",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Chin Up Top Hold",
+    "description": "Isométrico con la barbilla sobre la barra y agarre supino.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "bxwxaXRhFWw",
+    "youtube_title": "Chin Up Top Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Wall Pike Pulses",
+    "description": "Sentado de espaldas a la pared en pike, eleva las piernas en pulsos cortos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Pared"
+    ],
+    "youtube_id": "ifi7-8jRvBI",
+    "youtube_title": "Wall Pike Pulses",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Chair Dips With Straight Legs",
+    "description": "Fondos con manos en una silla y piernas extendidas; más carga que con rodillas flexionadas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Pectoral mayor"
+    ],
+    "equipment": [
+      "Silla"
+    ],
+    "youtube_id": "k1UV1O7EOY8",
+    "youtube_title": "Chair Dips With Straight Legs",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Tuck Hollow Body To Arch",
+    "description": "Rueda de hollow body agrupado a arch boca abajo; regresión del hollow to arch.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Transverso abdominal",
+      "Glúteo mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "7GlV2HeKJDs",
+    "youtube_title": "Tuck Hollow Body To Arch",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Box Walks",
+    "description": "Con pies sobre un cajón, camina con las manos para acercarte a la posición de pino.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "gwB9O6YKjP8",
+    "youtube_title": "Box Walks",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Pull Up Top Hold",
+    "description": "Isométrico arriba de la dominada con apoyo parcial de los pies.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "Vdu_OQjDiZc",
+    "youtube_title": "Assisted Pull Up Top Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Scapula Pull Ups",
+    "description": "Elevaciones escapulares colgado con apoyo de pies.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "QEL91gaCqro",
+    "youtube_title": "Assisted Scapula Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Push Ups",
+    "description": "Flexiones con banda elástica bajo el torso que ayuda en la subida.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "wRN7inUj4ao",
+    "youtube_title": "Assisted Push Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Negative Pull Ups",
+    "description": "Negativas de dominada con apoyo parcial de pies para controlar el descenso.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "CDU2ssAPip8",
+    "youtube_title": "Assisted Negative Pull Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted L-sit Hold",
+    "description": "L-sit con apoyo parcial de los talones en el suelo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "cAipEfk_dbo",
+    "youtube_title": "Assisted L sit Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Chin Ups",
+    "description": "Chin ups con apoyo parcial de pies para completar repeticiones.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "ljmYZPcqIVQ",
+    "youtube_title": "Assisted Chin Ups",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dip Shrugs",
+    "description": "En soporte sobre paralelas, sube y baja los hombros sin flexionar codos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Trapecio",
+      "Serrato anterior"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Paralelas"
+    ],
+    "youtube_id": "HjzMSo1P5y8",
+    "youtube_title": "Dip Shrugs",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted 90 Degree Dip Hold",
+    "description": "Isométrico en la parte baja del fondo a 90° con apoyo de pies.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push",
+      "isometric"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Paralelas"
+    ],
+    "youtube_id": "DvDU_g2IhuU",
+    "youtube_title": "Assisted 90 Degree Dip Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted Chin Up Top Hold",
+    "description": "Isométrico con barbilla sobre la barra y apoyo parcial de pies.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Bíceps",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "-waskzzdoU8",
+    "youtube_title": "Assisted Chin Up Top Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Resistance Band Active Hang",
+    "description": "Colgado activo con banda elástica para aprender la depresión escapular.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Trapecio"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Banda elástica",
+      "Barra de dominadas"
+    ],
+    "youtube_id": "87SzNGBV5JY",
+    "youtube_title": "Resistance Band Active Hang",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Assisted 90 Degree Pull Up Hold",
+    "description": "Isométrico a 90° de dominada pronada con apoyo de pies.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull",
+      "isometric"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Flexores del antebrazo"
+    ],
+    "equipment": [
+      "Barra de dominadas"
+    ],
+    "youtube_id": "vEWv5tO7rhg",
+    "youtube_title": "Assisted 90 Degree Pull Up Hold",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "V-Sit",
+    "description": "Soporte con brazos rectos elevando las piernas por encima de la horizontal formando una V.",
+    "difficulty": "advanced",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Paralelas bajas"
+    ],
+    "youtube_id": "X9HDJlQ8T9Y",
+    "youtube_title": "A V-sit",
+    "channel": "Calixpert",
+    "orientation": "horizontal"
+  }
+]

@@ -1,0 +1,2560 @@
+[
+  {
+    "name": "World's Greatest Stretch",
+    "description": "Zancada profunda con codo hacia el tobillo y rotación torácica; moviliza cadera, isquios y columna.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Aductores"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Erector espinal",
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "Utq8EFO3NzY",
+    "youtube_title": "World's Greatest Stretch",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "90/90 Hip Transitions",
+    "description": "Sentado con ambas rodillas a 90°, gira las piernas de un lado a otro trabajando rotación interna y externa.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Aductores"
+    ],
+    "equipment": [],
+    "youtube_id": "Y-L0s5uSQ-E",
+    "youtube_title": "90/90 Hip Transitions",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Half Kneeling Hip Flexor Stretch",
+    "description": "En posición de caballero, adelanta la cadera apretando el glúteo de la pierna trasera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Cuádriceps"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "vIDzsqJiAIo",
+    "youtube_title": "Half Kneeling Hip Flexor Stretch",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Couch Stretch",
+    "description": "Rodilla trasera en el suelo con el empeine apoyado en alto; estiramiento intenso de cuádriceps y psoas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Flexores de cadera"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "p24DLakBhYM",
+    "youtube_title": "Half Kneeling Quad Stretch (Couch Stretch)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pigeon Pose",
+    "description": "Postura de paloma: pierna delantera cruzada flexionada y la trasera extendida; abre la cadera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Glúteo menor"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [],
+    "youtube_id": "ac5QAU5nq98",
+    "youtube_title": "Pigeon Pose",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Downward Dog",
+    "description": "Perro boca abajo: cadera arriba, brazos y espalda en línea, talones hacia el suelo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Pantorrillas"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "eUhdJkytbkA",
+    "youtube_title": "Downward Dog",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cobra Pose",
+    "description": "Boca abajo, extiende la columna empujando con las manos y la pelvis apoyada.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Erector espinal"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "pftzn94i0pM",
+    "youtube_title": "Cobra Pose",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Child's Pose",
+    "description": "Sentado sobre los talones, estira los brazos al frente relajando la espalda.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "KVItAfkdGi0",
+    "youtube_title": "Child's Pose Rocking",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cat Cow",
+    "description": "En cuadrupedia, alterna flexión y extensión de toda la columna.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Recto abdominal"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "FLQDiUccsko",
+    "youtube_title": "Global Cat Cow  | Spine Range of Motion | Flexion & Extension",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Open Book",
+    "description": "Tumbado de lado con rodillas flexionadas, abre el brazo superior rotando la columna torácica.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility",
+      "rotation"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "XmpMtdllbfQ",
+    "youtube_title": "Open Book",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Quadruped Thoracic Rotation",
+    "description": "En cuadrupedia con una mano detrás de la cabeza, rota el tronco hacia el techo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility",
+      "rotation"
+    ],
+    "primary": [
+      "Romboides",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "ADeGAWCDjhQ",
+    "youtube_title": "Quadruped Thoracic Rotation",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Thoracic Extension on Bench",
+    "description": "De rodillas con los codos en un banco, deja caer el pecho para extender la columna torácica.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "Sfmtd1wt3JU",
+    "youtube_title": "Thoracic Extension on Bench",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bretzel",
+    "description": "Estiramiento combinado de cuádriceps, flexor de cadera y rotación torácica tumbado de lado.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "mobility",
+      "rotation"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Oblicuo externo",
+      "Pectoral mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "1pdOdIt-rI4",
+    "youtube_title": "Bretzel",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Sleeper Stretch",
+    "description": "Tumbado de lado sobre el hombro, lleva el antebrazo hacia el suelo para rotación interna.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Manguito rotador"
+    ],
+    "secondary": [
+      "Deltoides posterior"
+    ],
+    "equipment": [],
+    "youtube_id": "shoHVYt8sbc",
+    "youtube_title": "Sleeper Stretch (Shoulder Internal Rotation)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Calf Stretch",
+    "description": "Con las manos en la pared y una pierna atrás recta, empuja el talón al suelo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Pantorrillas"
+    ],
+    "secondary": [
+      "Sóleo"
+    ],
+    "equipment": [
+      "Pared"
+    ],
+    "youtube_id": "yZCfQ6YbAvA",
+    "youtube_title": "Standing Calf Stretch (Knee Straight)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Hamstring Stretch",
+    "description": "Sentado con una pierna extendida, inclina el tronco desde la cadera hacia el pie.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "jkKpCt3ylH0",
+    "youtube_title": "Seated Hamstring Stretch",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Supine Figure 4 Stretch",
+    "description": "Tumbado, cruza el tobillo sobre la rodilla contraria y acerca las piernas al pecho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Glúteo menor"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "SSbRKbeoFCs",
+    "youtube_title": "Supine Figure 4 Stretch",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Upper Trap Stretch",
+    "description": "Inclina la cabeza hacia un lado ayudándote con la mano para estirar el trapecio superior.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Trapecio"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "EjkFVidgy7o",
+    "youtube_title": "Upper Trap Stretch",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Adductor Rock Back",
+    "description": "En cuadrupedia con una pierna extendida al lado, lleva la cadera hacia atrás.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Aductores"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "1sSnSh-yKJU",
+    "youtube_title": "Adductor Rock Back",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Ankle CARs",
+    "description": "Rotaciones articulares controladas del tobillo en todo su rango.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Tibial anterior",
+      "Pantorrillas"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "1fafom5aV4U",
+    "youtube_title": "Ankle CARs",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Quadruped Hip CARs",
+    "description": "En cuadrupedia, dibuja el círculo más amplio posible con la rodilla sin mover la pelvis.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Glúteo medio"
+    ],
+    "equipment": [],
+    "youtube_id": "-BqKXK7ash4",
+    "youtube_title": "Quadruped Hip CARs",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knee to Wall Ankle Mobilization",
+    "description": "En semiarrodillado frente a la pared, lleva la rodilla hacia la pared sin despegar el talón.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Pantorrillas",
+      "Sóleo"
+    ],
+    "secondary": [
+      "Tibial anterior"
+    ],
+    "equipment": [
+      "Pared"
+    ],
+    "youtube_id": "Y2bimE51myU",
+    "youtube_title": "Half Kneeling Knee to Wall",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Scorpion",
+    "description": "Boca abajo, lleva un pie hacia la mano contraria rotando la cadera.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "vIGWLQq_I50",
+    "youtube_title": "Scorpion",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Front-to-Back Leg Swings",
+    "description": "Balanceos de pierna adelante y atrás apoyado en una pared; calentamiento dinámico de cadera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "KAxtr0DwaQA",
+    "youtube_title": "Leg Swings (Flexion and Extension)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Side-to-Side Leg Swings",
+    "description": "Balanceos laterales de pierna cruzando por delante del cuerpo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Aductores",
+      "Glúteo medio"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "6yKgqrpiBYs",
+    "youtube_title": "Leg Swings (Abduction and Adduction)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Shoulder Pass Throughs",
+    "description": "Con brazos extendidos, lleva la banda desde delante hasta detrás del cuerpo y regresa.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Manguito rotador"
+    ],
+    "secondary": [
+      "Pectoral mayor",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "8t35ohbETSU",
+    "youtube_title": "Banded Pass Throughs",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Prone Swimmers",
+    "description": "Boca abajo con brazos elevados, dibuja un arco desde encima de la cabeza hasta la espalda baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility",
+      "pull"
+    ],
+    "primary": [
+      "Trapecio",
+      "Romboides"
+    ],
+    "secondary": [
+      "Deltoides posterior",
+      "Manguito rotador"
+    ],
+    "equipment": [],
+    "youtube_id": "adaYRRBFG2M",
+    "youtube_title": "Prone Swimmers",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Up Dog to Down Dog",
+    "description": "Transición fluida entre perro boca arriba y perro boca abajo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "hvrzr2VzK3Y",
+    "youtube_title": "Up Dog to Down Dog",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Hindu Push Up",
+    "description": "Flexión en arco desde perro boca abajo hasta cobra y vuelta.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push",
+      "mobility"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "A0RIx3L0Bgg",
+    "youtube_title": "Hindu Push Up",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dive Bomber Push Up",
+    "description": "Flexión que desciende en picado desde pike hasta cobra rozando el suelo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push",
+      "mobility"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "q_B5fQzxKbE",
+    "youtube_title": "Dive Bomber Push Up",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Push Up Plus",
+    "description": "Flexión completa añadiendo protracción escapular máxima al final.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Serrato anterior",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [],
+    "youtube_id": "RFbjeyq_ZPc",
+    "youtube_title": "Push Up Plus",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Deficit Push Up",
+    "description": "Flexión con las manos elevadas sobre soportes para bajar el pecho más allá de las manos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "TVge5xrwlT0",
+    "youtube_title": "Deficit Push Up",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Weighted Push Up",
+    "description": "Flexión con un disco sobre la espalda.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Disco"
+    ],
+    "youtube_id": "ljYSjoKSJHg",
+    "youtube_title": "Weighted Push Up",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "One Arm Push Up",
+    "description": "Flexión con un solo brazo y piernas abiertas para equilibrar.",
+    "difficulty": "advanced",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Oblicuo externo",
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "zaK5QdSgb9k",
+    "youtube_title": "Single Arm Push Up",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Staggered Push Up",
+    "description": "Flexión con una mano adelantada y otra atrasada para cargar más un lado.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "nCylnCj-BWY",
+    "youtube_title": "Staggered Push Up",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bosu Push Up",
+    "description": "Flexión con las manos sobre un bosu invertido.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [
+      "Bosu"
+    ],
+    "youtube_id": "igTlD6qk7NA",
+    "youtube_title": "Bosu Push Up",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Short Copenhagen Plank",
+    "description": "Plancha Copenhague con la rodilla superior apoyada en el banco; versión de palanca corta.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Aductores",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "p2xXd1fPh2A",
+    "youtube_title": "Short Copenhagen Plank",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Side Plank Hip Abduction",
+    "description": "En plancha lateral, eleva la pierna superior extendida.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Glúteo medio"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "Oa6GZa-w5_I",
+    "youtube_title": "Side Plank Hip Abduction",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Side Plank Rotation",
+    "description": "En plancha lateral, pasa el brazo por debajo del cuerpo rotando y vuelve a abrir.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "NovdQNMKjKM",
+    "youtube_title": "Side Plank Rotation",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Knee Side Plank",
+    "description": "Plancha lateral apoyando la rodilla; regresión de la plancha lateral.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Glúteo medio"
+    ],
+    "equipment": [],
+    "youtube_id": "QAg3vvgnbXE",
+    "youtube_title": "Short Side Plank",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bear Plank",
+    "description": "En cuadrupedia, despega las rodillas unos centímetros y mantén.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Transverso abdominal",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Cuádriceps"
+    ],
+    "equipment": [],
+    "youtube_id": "Z68gfocVEh0",
+    "youtube_title": "Bear Plank",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bear Plank Shoulder Taps",
+    "description": "En posición de oso, toca alternadamente el hombro contrario sin mover la cadera.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Transverso abdominal",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "dVjsewOK-Jc",
+    "youtube_title": "Bear Plank Shoulder Taps",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Lateral Bear Crawl",
+    "description": "Desplazamiento lateral en posición de oso.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Oblicuo externo"
+    ],
+    "equipment": [],
+    "youtube_id": "fhXCyJRZWA4",
+    "youtube_title": "Lateral Bear Crawl",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "RKC Plank",
+    "description": "Plancha sobre antebrazos con máxima tensión: glúteos, abdomen y codos hacia los pies.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Oblicuo externo"
+    ],
+    "equipment": [],
+    "youtube_id": "qD5PNJ4H740",
+    "youtube_title": "RKC Plank",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Stir the Pot",
+    "description": "En plancha con los antebrazos sobre la pelota, dibuja círculos pequeños.",
+    "difficulty": "advanced",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Oblicuo externo",
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Pelota de estabilidad"
+    ],
+    "youtube_id": "MSsN5em0F6w",
+    "youtube_title": "Stir the Pot",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Slider Body Saw",
+    "description": "En plancha con los pies sobre deslizadores, desplaza el cuerpo adelante y atrás.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Serrato anterior"
+    ],
+    "equipment": [
+      "Deslizadores"
+    ],
+    "youtube_id": "_zzDEpCT_Qs",
+    "youtube_title": "Tall Plank Bodysaw with Sliders",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Half Kneeling Band Pallof Press",
+    "description": "Press antirrotación con banda en posición de semiarrodillado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "P4394cXqs3E",
+    "youtube_title": "Half Kneeling Pallof Press (Band)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Landmine Rotation",
+    "description": "Con la barra landmine arriba, llévala en arco de una cadera a la otra pivotando los pies.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "rotation",
+      "core"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Landmine",
+      "Barra olímpica"
+    ],
+    "youtube_id": "pH6CNjvtQsc",
+    "youtube_title": "Standing Landmine Rotation",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Landmine Press",
+    "description": "Press de pie empujando la punta de la barra landmine hacia arriba y al frente.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Serrato anterior"
+    ],
+    "equipment": [
+      "Landmine",
+      "Barra olímpica"
+    ],
+    "youtube_id": "elz2R3RhnRg",
+    "youtube_title": "Landmine Press",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Half Kneeling Single Arm Landmine Press",
+    "description": "Press a una mano con landmine en semiarrodillado; amigable para el hombro.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Oblicuo externo"
+    ],
+    "equipment": [
+      "Landmine",
+      "Barra olímpica"
+    ],
+    "youtube_id": "k6muAWLIU7E",
+    "youtube_title": "Half Kneeling Single Arm Landmine Press",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Landmine Squat",
+    "description": "Sentadilla sujetando la punta de la barra landmine frente al pecho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Landmine",
+      "Barra olímpica"
+    ],
+    "youtube_id": "tdOIg8rN2XE",
+    "youtube_title": "Landmine Squat",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Landmine Single Leg RDL",
+    "description": "Peso muerto a una pierna sujetando la barra landmine.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Glúteo medio"
+    ],
+    "equipment": [
+      "Landmine",
+      "Barra olímpica"
+    ],
+    "youtube_id": "3VYYgk3ZpHw",
+    "youtube_title": "Landmine Single Leg Deadlift",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single Arm Landmine Row",
+    "description": "Remo a una mano con la punta de la barra landmine.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Landmine",
+      "Barra olímpica"
+    ],
+    "youtube_id": "hgQuM2g4NkA",
+    "youtube_title": "Landmine Bentover Row Single Arm",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Meadows Row",
+    "description": "Remo a una mano con agarre por encima del extremo de la barra landmine, postura escalonada.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Landmine",
+      "Barra olímpica"
+    ],
+    "youtube_id": "PkBxJbqZSZM",
+    "youtube_title": "Meadows Row",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Landmine Reverse Lunge",
+    "description": "Zancada atrás sujetando la barra landmine frente al pecho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Landmine",
+      "Barra olímpica"
+    ],
+    "youtube_id": "U0eEJIOkkE4",
+    "youtube_title": "Landmine Reverse Lunge (2 Hands)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Trap Bar Deadlift",
+    "description": "Peso muerto dentro de una barra hexagonal con agarres neutros.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge",
+      "squat"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Erector espinal",
+      "Trapecio"
+    ],
+    "equipment": [
+      "Trap bar"
+    ],
+    "youtube_id": "wHadKZqjYDE",
+    "youtube_title": "Trap Bar Deadlift",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Low Bar Back Squat",
+    "description": "Sentadilla con la barra baja sobre los deltoides posteriores y mayor inclinación del torso.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "eqotxJFnEwQ",
+    "youtube_title": "Low Bar Back Squat",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Box Squat",
+    "description": "Sentadilla hasta sentarse en un cajón controlando el descenso.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Caja / Step"
+    ],
+    "youtube_id": "LYtagQH6P5k",
+    "youtube_title": "Box Squat",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Heel Elevated Goblet Squat",
+    "description": "Sentadilla goblet con talones elevados para mayor profundidad y énfasis en cuádriceps.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Disco"
+    ],
+    "youtube_id": "2r4JzdrMycw",
+    "youtube_title": "Heel Elevated Goblet Squat",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell Front Rack Squat",
+    "description": "Sentadilla con kettlebell en posición de rack frontal.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "JoGyD4MtHzo",
+    "youtube_title": "Kettlebell Front Rack Squat",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Skater Squat",
+    "description": "Sentadilla a una pierna llevando la rodilla trasera hacia el suelo detrás del cuerpo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Glúteo medio"
+    ],
+    "equipment": [],
+    "youtube_id": "yXrnsKlzo_Y",
+    "youtube_title": "Skater Squat (1 Pad)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Bulgarian Split Squat",
+    "description": "Zancada búlgara con el pie trasero en un banco y mancuernas a los lados.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales",
+      "Aductores"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "7Dn5YbmkV1E",
+    "youtube_title": "Dumbbell Rear Foot Elevated Split Squat",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Curtsy Lunge",
+    "description": "Zancada cruzando la pierna por detrás en diagonal, como una reverencia.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Glúteo medio"
+    ],
+    "secondary": [
+      "Cuádriceps",
+      "Aductores"
+    ],
+    "equipment": [],
+    "youtube_id": "6jAe6HFHt1Q",
+    "youtube_title": "Bodyweight Curtsy Lunge",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Calf Raise",
+    "description": "Elevación de talones sentado con peso sobre las rodillas; enfatiza el sóleo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Sóleo"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "dgy2QrUWGfs",
+    "youtube_title": "Seated Weighted Heel Raise",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Leg Press Calf Raise",
+    "description": "Elevación de talones empujando la plataforma de la prensa con las puntas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Pantorrillas",
+      "Sóleo"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "6n1E-zu5qPE",
+    "youtube_title": "Heel Raise on Leg Press",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Slider Hamstring Curl",
+    "description": "En puente con los talones sobre deslizadores, flexiona y extiende las rodillas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Deslizadores"
+    ],
+    "youtube_id": "uHDLEITrSQU",
+    "youtube_title": "Hamstring Curl with Sliders",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Stability Ball Hamstring Curl",
+    "description": "En puente con los talones sobre la pelota, acércala flexionando las rodillas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [
+      "Pelota de estabilidad"
+    ],
+    "youtube_id": "pGRbtmijGgc",
+    "youtube_title": "Hamstring Curl with Ball",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single Leg Hip Thrust",
+    "description": "Hip thrust a una pierna con la espalda alta en un banco.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "AMk-RkRaqNE",
+    "youtube_title": "Single Leg Hip Thrust",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Smith Machine Hip Thrust",
+    "description": "Hip thrust con la barra de la máquina Smith sobre la cadera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Máquina Smith",
+      "Banco"
+    ],
+    "youtube_id": "hR8f64fXl88",
+    "youtube_title": "Smith Machine Hip Thrust",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable Glute Kickback",
+    "description": "Patada de glúteo hacia atrás con tobillera en polea baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "-QjWnf6qeNs",
+    "youtube_title": "Standing Glute Kickback (Cable Column)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable Hip Abduction",
+    "description": "Separación lateral de la pierna con tobillera en polea baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo medio"
+    ],
+    "secondary": [
+      "Glúteo menor"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "Gu7leKx2Tms",
+    "youtube_title": "Standing Hip Abduction (Cable Column)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable Hip Flexion",
+    "description": "Elevación de rodilla al frente contra la resistencia de la polea baja.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "3Td865xWxHQ",
+    "youtube_title": "Standing Hip Flexion (Cable Column)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Monster Walk",
+    "description": "Caminar en diagonal en semisentadilla con banda sobre las rodillas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Glúteo medio",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Cuádriceps"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "kfm8QOPfD9k",
+    "youtube_title": "Monster Walk (Band Above Knees)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Lateral Walk",
+    "description": "Pasos laterales en semisentadilla con banda sobre las rodillas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Glúteo medio"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "LXPYmkXoqig",
+    "youtube_title": "Sidestep (Band Above Knees)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Sidelying Hip Abduction",
+    "description": "Tumbado de lado, eleva la pierna superior extendida ligeramente hacia atrás.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo medio"
+    ],
+    "secondary": [
+      "Glúteo menor"
+    ],
+    "equipment": [],
+    "youtube_id": "s6lDpy4AO6w",
+    "youtube_title": "Sidelying Hip Abduction",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Donkey Kick",
+    "description": "En cuadrupedia, eleva una pierna flexionada empujando el talón hacia el techo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [],
+    "youtube_id": "UIptc0Z3Q3A",
+    "youtube_title": "Quadruped Hip Extension",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Chest Supported Dumbbell Row",
+    "description": "Remo con mancuernas boca abajo en banco inclinado, sin carga lumbar.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Deltoides posterior",
+      "Bíceps"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "Xdr2YQ1tuDM",
+    "youtube_title": "Chest Supported Row",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell Gorilla Row",
+    "description": "En bisagra con dos kettlebells en el suelo, rema alternando brazos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps",
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "705ikY15BZI",
+    "youtube_title": "Kettlebell Gorilla Row",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Seal Row",
+    "description": "Remo con barra tumbado boca abajo en un banco alto.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Deltoides posterior",
+      "Bíceps"
+    ],
+    "equipment": [
+      "Barra olímpica",
+      "Banco"
+    ],
+    "youtube_id": "vHLfy0kdNHE",
+    "youtube_title": "Barbell Seal Row (Pronated Grip)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bird Dog Row",
+    "description": "En cuadrupedia sobre banco, rema con una mano mientras extiendes la pierna contraria.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "core"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Romboides",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "vssZYIms82o",
+    "youtube_title": "Bird Dog Row",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable Straight Arm Pulldown",
+    "description": "Con brazos casi rectos, lleva la barra de la polea alta hasta los muslos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Redondo mayor"
+    ],
+    "secondary": [
+      "Tríceps"
+    ],
+    "equipment": [
+      "Polea alta"
+    ],
+    "youtube_id": "upoAEPb2daM",
+    "youtube_title": "Straight Arm Pulldown",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Machine Assisted Pull Up",
+    "description": "Dominadas en máquina con contrapeso que reduce la carga.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Bíceps"
+    ],
+    "secondary": [
+      "Redondo mayor"
+    ],
+    "equipment": [
+      "Máquina / Cable"
+    ],
+    "youtube_id": "oBGH9Uq43cY",
+    "youtube_title": "Assisted Pull Up (Machine)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "TRX Face Pull",
+    "description": "Remo inclinado con TRX llevando las manos junto a la cabeza con rotación externa.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior",
+      "Manguito rotador"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "TRX / Suspensión"
+    ],
+    "youtube_id": "QPWImG4kJUg",
+    "youtube_title": "TRX Face Pull/External Rotation (90/90)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "TRX Assisted Pistol Squat",
+    "description": "Sentadilla a una pierna sujetando las correas del TRX como ayuda.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Aductores"
+    ],
+    "equipment": [
+      "TRX / Suspensión"
+    ],
+    "youtube_id": "YzLuiF4dsdY",
+    "youtube_title": "TRX Assisted Pistol Squat",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cable External Rotation",
+    "description": "Rotación externa de hombro en polea con el codo pegado al costado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Manguito rotador"
+    ],
+    "secondary": [
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "X-JP6sJTZAI",
+    "youtube_title": "Cable Shoulder External Rotation",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Side-Lying Dumbbell External Rotation",
+    "description": "Tumbado de lado, rota el antebrazo hacia arriba con una mancuerna ligera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Manguito rotador"
+    ],
+    "secondary": [
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "YzL3koB1mE4",
+    "youtube_title": "Sidelying External Rotation",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Cuban Press",
+    "description": "Remo al mentón, rotación externa y press por encima de la cabeza en una secuencia.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "pull",
+      "push"
+    ],
+    "primary": [
+      "Manguito rotador",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Deltoides posterior"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "dIg0bLZ_hco",
+    "youtube_title": "Cuban Press",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Prone Y Raise",
+    "description": "Boca abajo en banco, eleva los brazos en Y con los pulgares arriba.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Trapecio",
+      "Deltoides posterior"
+    ],
+    "secondary": [
+      "Romboides"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "zN60xc0PwmY",
+    "youtube_title": "Prone Y on Bench",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Prone T Raise",
+    "description": "Boca abajo en banco, eleva los brazos en cruz juntando las escápulas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Romboides",
+      "Deltoides posterior"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "aCfbxhLkhqI",
+    "youtube_title": "Prone T on Bench",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Egyptian Cable Lateral Raise",
+    "description": "Elevación lateral en polea inclinándote hacia fuera sujeto al poste.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Trapecio"
+    ],
+    "equipment": [
+      "Polea baja"
+    ],
+    "youtube_id": "fjqnDGmlKOg",
+    "youtube_title": "Egyptian Cable Lateral Raise",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single Arm Dumbbell Overhead Press",
+    "description": "Press de hombro a una mano de pie resistiendo la inclinación lateral.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Deltoides anterior",
+      "Deltoides lateral"
+    ],
+    "secondary": [
+      "Tríceps",
+      "Oblicuo externo"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "p4O1fFRDvSg",
+    "youtube_title": "Single Arm Dumbbell Overhead Press",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Decline Dumbbell Bench Press",
+    "description": "Press con mancuernas en banco declinado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "ICJticLFT2w",
+    "youtube_title": "Decline Dumbbell Bench Press",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Squeeze Press",
+    "description": "Press de pecho apretando las mancuernas entre sí.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Mancuernas",
+      "Banco"
+    ],
+    "youtube_id": "MExcW5UcJfw",
+    "youtube_title": "Dumbbell Bench Press (Squeeze Press)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Barbell Floor Press",
+    "description": "Press de banca desde el suelo con pausa de codos.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps",
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Barra olímpica"
+    ],
+    "youtube_id": "RAFTP9a7xHI",
+    "youtube_title": "Barbell Floor Press",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Chest Fly",
+    "description": "Aperturas de pecho de pie con banda anclada detrás.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "mDcri_F_sOc",
+    "youtube_title": "Standing Banded Fly",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Chest Press",
+    "description": "Press de pecho de pie con banda anclada detrás.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Pectoral mayor",
+      "Tríceps"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "p3WA3yiEo-k",
+    "youtube_title": "Standing Band Press",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Row",
+    "description": "Remo de pie con banda anclada al frente.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Dorsal ancho",
+      "Romboides"
+    ],
+    "secondary": [
+      "Bíceps"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "UNIio_9Xf_Y",
+    "youtube_title": "Standing Banded Row",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Face Pull",
+    "description": "Face pull con banda elástica anclada a la altura de la cara.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Deltoides posterior",
+      "Romboides"
+    ],
+    "secondary": [
+      "Manguito rotador"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "zAKh8KZllEQ",
+    "youtube_title": "Banded Face Pull",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Biceps Curl",
+    "description": "Curl de bíceps pisando una banda elástica.",
+    "difficulty": "beginner",
+    "patterns": [
+      "pull"
+    ],
+    "primary": [
+      "Bíceps"
+    ],
+    "secondary": [
+      "Braquial"
+    ],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "ky6N6s1MyWk",
+    "youtube_title": "Band Single Arm Biceps Curl",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Band Triceps Pushdown",
+    "description": "Extensión de tríceps con banda anclada en alto.",
+    "difficulty": "beginner",
+    "patterns": [
+      "push"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Banda elástica"
+    ],
+    "youtube_id": "Oi8Ww1liTdo",
+    "youtube_title": "Banded Triceps Pushdown",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Suitcase Carry",
+    "description": "Caminar con peso en una sola mano sin inclinarte hacia ese lado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "carry",
+      "core"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Flexores del antebrazo"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "IAa-5uP7tSY",
+    "youtube_title": "Suitcase Carry",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell Romanian Deadlift",
+    "description": "Peso muerto rumano sujetando una kettlebell con ambas manos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "P0VM5afBhao",
+    "youtube_title": "Kettlebell Romanian Deadlift",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell Deadlift",
+    "description": "Peso muerto con kettlebell entre los pies; aprendizaje de la bisagra.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Cuádriceps"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "aYZDE2t7Rrs",
+    "youtube_title": "Kettlebell Deadlift",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Kettlebell Single Leg Deadlift",
+    "description": "Peso muerto a una pierna con la kettlebell en la mano contraria a la pierna de apoyo.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Glúteo medio"
+    ],
+    "equipment": [
+      "Kettlebell"
+    ],
+    "youtube_id": "ejaC0QxtzN0",
+    "youtube_title": "Contralateral Kettlebell Single Leg Deadlift",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Lateral Shuffles",
+    "description": "Desplazamientos laterales rápidos en posición atlética.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo medio"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [],
+    "youtube_id": "r_r1U7XxLVA",
+    "youtube_title": "Lateral Shuffles",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Ickey Shuffle",
+    "description": "Patrón de pies rápido lateral dentro y fuera de una línea o escalera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Pantorrillas",
+      "Cuádriceps"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "9ncAUHAB2xM",
+    "youtube_title": "Side to Side Steps (Ickey Shuffle)",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Medicine Ball Side Toss",
+    "description": "Lanzamiento lateral explosivo de balón medicinal contra la pared.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Balón medicinal"
+    ],
+    "youtube_id": "3RkDaSZf16g",
+    "youtube_title": "Sideways Medball Toss",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Rainbow Medicine Ball Slam",
+    "description": "Lleva el balón por encima de la cabeza en arco y golpéalo al suelo a cada lado.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Balón medicinal"
+    ],
+    "youtube_id": "sAO9sKZWspc",
+    "youtube_title": "Rainbow Medball Slam",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Prone Press Up",
+    "description": "Boca abajo, extiende los brazos elevando el tronco con la pelvis apoyada.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Erector espinal"
+    ],
+    "secondary": [
+      "Recto abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "GaRsF7kQ_bk",
+    "youtube_title": "Prone Press Up",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pelvic Tilts",
+    "description": "Tumbado con rodillas flexionadas, bascula la pelvis aplanando y arqueando la zona lumbar.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility",
+      "core"
+    ],
+    "primary": [
+      "Transverso abdominal",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "4IsHdPiDWik",
+    "youtube_title": "Hooklying Pelvic Tilts",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Lower Trunk Rotation",
+    "description": "Tumbado con rodillas flexionadas, déjalas caer de un lado a otro.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Erector espinal"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "57h47-j9_FM",
+    "youtube_title": "Lower Trunk Rotation",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Double Knee to Chest",
+    "description": "Tumbado, abraza ambas rodillas contra el pecho.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Glúteo mayor"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "mNRR88sxuFs",
+    "youtube_title": "Double Knee to Chest",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Supine Straight Leg Raise",
+    "description": "Tumbado, eleva una pierna recta manteniendo el cuádriceps contraído.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Cuádriceps"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "wnjvV2yQ42I",
+    "youtube_title": "Supine Straight Leg Raise",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Single Leg Balance",
+    "description": "Mantener el equilibrio sobre una pierna con la rodilla ligeramente flexionada.",
+    "difficulty": "beginner",
+    "patterns": [
+      "isometric"
+    ],
+    "primary": [
+      "Glúteo medio",
+      "Pantorrillas"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "nLHy38nxMmY",
+    "youtube_title": "Single Leg Balance",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Wheel Pose",
+    "description": "Puente completo con manos y pies en el suelo y la columna en extensión.",
+    "difficulty": "advanced",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Tríceps"
+    ],
+    "equipment": [],
+    "youtube_id": "1EQNNWHTeB8",
+    "youtube_title": "Wheel Pose",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Quad Stretch",
+    "description": "De pie, lleva el talón hacia el glúteo sujetando el tobillo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Cuádriceps"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [],
+    "youtube_id": "R7g1POiEoZs",
+    "youtube_title": "Standing Quad Stretch",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Runner's Stretch",
+    "description": "Zancada baja alternando entre flexor de cadera e isquiotibiales.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [],
+    "youtube_id": "KxUSHwgbiMA",
+    "youtube_title": "Runner's Stretch",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dowel Hip Hinge",
+    "description": "Bisagra de cadera con un palo en la espalda tocando cabeza, dorsal y sacro.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge",
+      "mobility"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Pica / Palo"
+    ],
+    "youtube_id": "oSfNnSJWlMw",
+    "youtube_title": "Hip Hinge",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "PVC Overhead Squat",
+    "description": "Sentadilla profunda sujetando un palo sobre la cabeza; evalúa y mejora movilidad.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat",
+      "mobility"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Trapecio",
+      "Recto abdominal"
+    ],
+    "equipment": [
+      "Pica / Palo"
+    ],
+    "youtube_id": "QOj0xIafCyU",
+    "youtube_title": "PVC Pipe Overhead Squat",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Roman Chair Side Bend",
+    "description": "De lado en banco romano, flexiona y eleva el tronco lateralmente.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [
+      "Banco"
+    ],
+    "youtube_id": "K94AABAKps8",
+    "youtube_title": "Side Bend on Roman Chair",
+    "channel": "E3 Rehab Exercise Library",
+    "orientation": "horizontal"
+  }
+]

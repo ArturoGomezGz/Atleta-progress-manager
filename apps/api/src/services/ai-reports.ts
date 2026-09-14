@@ -1,6 +1,12 @@
-import Anthropic from "@anthropic-ai/sdk"
+import { GoogleGenerativeAI } from "@google/generative-ai"
 
-const client = new Anthropic()
+// Se crea bajo demanda para que la API arranque aunque GEMINI_API_KEY no esté configurada
+let genai: GoogleGenerativeAI | null = null
+function getGenai() {
+  if (!process.env.GEMINI_API_KEY) throw new Error("GEMINI_API_KEY no configurada")
+  genai ??= new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+  return genai
+}
 
 export type RmEntry = { rmLbs: string; recordedAt: Date | string; source: "auto" | "manual" }
 
@@ -22,20 +28,19 @@ export async function generateExerciseProgressReport(input: {
     })
     .join("\n")
 
-  const prompt = `Eres un asistente de entrenamiento deportivo. En 2 oraciones cortas en español y sin formato markdown, resume el progreso del atleta en "${exerciseName}": menciona el PR actual, ${pctChange ? `el cambio de ${pctChange}% respecto al registro anterior` : "que es el primer registro"}, y termina con una frase de aliento o advertencia según la tendencia.
+  const prompt = `Eres un entrenador deportivo. En 3 oraciones en español y sin formato markdown, analiza el progreso del atleta en "${exerciseName}": menciona el PR actual, ${pctChange ? `el cambio de ${pctChange}% respecto al registro anterior` : "que es el primer registro"}, y cierra siempre con un mensaje motivacional breve que anime a seguir mejorando y a mantener la técnica.
 
 Historial:
 ${historyLines}
 
 PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateString("es", { dateStyle: "long" })})`
 
-  const message = await client.messages.create({
-    model: "claude-haiku-4-5-20251001",
-    max_tokens: 120,
-    messages: [{ role: "user", content: prompt }],
+  const model = getGenai().getGenerativeModel({ model: "gemini-2.5-flash" })
+  const result = await model.generateContent({
+    contents: [{ role: "user", parts: [{ text: prompt }] }],
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    generationConfig: { maxOutputTokens: 250, thinkingConfig: { thinkingBudget: 0 } } as any,
   })
 
-  const block = message.content[0]
-  if (block.type !== "text") throw new Error("Unexpected response from Anthropic")
-  return block.text.trim()
+  return result.response.text().trim()
 }

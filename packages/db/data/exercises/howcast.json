@@ -1,0 +1,683 @@
+[
+  {
+    "name": "Pilates Hundred",
+    "description": "Tumbado con hombros y piernas elevados, bombea los brazos respirando en series de cinco.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [],
+    "youtube_id": "UaqpuUzs1i8",
+    "youtube_title": "How to Do The Hundred | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Roll Up",
+    "description": "Desde tumbado con brazos arriba, enrolla la columna vértebra a vértebra hasta sentado.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Flexores de cadera",
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "FZNwIJ03fhQ",
+    "youtube_title": "How to Do a Roll Up | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Single Leg Stretch",
+    "description": "Con hombros elevados, alterna llevar una rodilla al pecho mientras la otra pierna se extiende.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [],
+    "youtube_id": "IdsOhji7Hjg",
+    "youtube_title": "How to Do a Single Leg Stretch | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Double Leg Stretch",
+    "description": "Desde posición agrupada, extiende brazos y piernas a la vez y vuelve a recoger.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [],
+    "youtube_id": "N-jZas9tMSU",
+    "youtube_title": "How to Do a Double Leg Stretch | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Bicycle Crunch",
+    "description": "Crunch llevando el codo a la rodilla contraria en movimiento de pedaleo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [],
+    "youtube_id": "ZE87TqDnbNM",
+    "youtube_title": "How to Do a Bicycle Crunch | Bosu Ball Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Saw",
+    "description": "Sentado con piernas abiertas, rota y lleva la mano hacia el pie contrario.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility",
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "1XcU-WsTcaU",
+    "youtube_title": "How to Do the Saw | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Swan Dive",
+    "description": "Boca abajo, extiende la columna y balancéate adelante y atrás manteniendo el arco.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Glúteo mayor"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "H46PeYhAuA4",
+    "youtube_title": "How to Do the Swan Dive | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Teaser",
+    "description": "Equilibrio en V sobre los isquiones subiendo tronco y piernas a la vez.",
+    "difficulty": "advanced",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "UJ5gZQSqlXo",
+    "youtube_title": "How to Do Teaser 1 | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Open Leg Rocker",
+    "description": "En V con piernas abiertas sujetando los tobillos, rueda hacia atrás y vuelve al equilibrio.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Isquiotibiales"
+    ],
+    "equipment": [],
+    "youtube_id": "ZbtEw_pcPp4",
+    "youtube_title": "How to Do the Open Leg Rocker | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Rolling Like a Ball",
+    "description": "Agrupado sujetando las espinillas, rueda sobre la espalda y vuelve al equilibrio.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "EfVURwxctv8",
+    "youtube_title": "How to Do Rolling Like a Ball Exercise | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Corkscrew",
+    "description": "Con piernas juntas elevadas, dibuja círculos controlados con ellas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "rotation"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Oblicuo externo"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [],
+    "youtube_id": "Go6UA7SHdoE",
+    "youtube_title": "How to Do the Corkscrew | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Single Leg Circles",
+    "description": "Tumbado, dibuja círculos con una pierna extendida manteniendo la pelvis quieta.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core",
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Recto abdominal"
+    ],
+    "secondary": [
+      "Aductores"
+    ],
+    "equipment": [],
+    "youtube_id": "pg4WRNkbnjA",
+    "youtube_title": "How to Do Single Leg Circles | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Single Leg Kick",
+    "description": "Boca abajo apoyado en antebrazos, lleva los talones al glúteo de forma alterna.",
+    "difficulty": "beginner",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Isquiotibiales",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "sAamLbKW-Zc",
+    "youtube_title": "How to Do a Single Leg Kick | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Swimming",
+    "description": "Boca abajo, eleva y alterna brazos y piernas contrarios con pequeños movimientos rápidos.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Deltoides posterior"
+    ],
+    "equipment": [],
+    "youtube_id": "bY6ZyiO_7ek",
+    "youtube_title": "How to Do Swimming | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Spine Stretch Forward",
+    "description": "Sentado con piernas abiertas, flexiona la columna hacia delante como sobre una pelota.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Erector espinal",
+      "Isquiotibiales"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "yso-Y3Ik2BM",
+    "youtube_title": "How to Do the Spine Stretch Forward | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Spine Twist",
+    "description": "Sentado erguido con brazos en cruz, rota el tronco a cada lado.",
+    "difficulty": "beginner",
+    "patterns": [
+      "rotation",
+      "mobility"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "XbQzj8rjBbw",
+    "youtube_title": "How to Do the Spine Twist | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Mermaid",
+    "description": "Sentado de lado, estira el brazo por encima de la cabeza en flexión lateral.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Dorsal ancho"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "h2qOGvu1a3U",
+    "youtube_title": "How to Do the Mermaid | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Pilates Shoulder Bridge",
+    "description": "En puente de glúteo, eleva y baja una pierna extendida sin mover la pelvis.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "hinge"
+    ],
+    "primary": [
+      "Glúteo mayor",
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Erector espinal"
+    ],
+    "equipment": [],
+    "youtube_id": "jCSfXZToPCI",
+    "youtube_title": "How to Do the Shoulder Bridge | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Jumping Jacks",
+    "description": "Saltos abriendo y cerrando piernas y brazos a la vez; calentamiento cardiovascular.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Pantorrillas",
+      "Glúteo medio"
+    ],
+    "secondary": [
+      "Deltoides lateral"
+    ],
+    "equipment": [],
+    "youtube_id": "6mjF76Rj-0E",
+    "youtube_title": "How to Do Jumping Jacks | Water Aerobics",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Jumping Lunge",
+    "description": "Zancadas alternando las piernas en el aire con un salto.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [],
+    "youtube_id": "y7Iug7eC0dk",
+    "youtube_title": "How to Do a Jumping Lunge | Plyometric Exercises",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Thruster",
+    "description": "Sentadilla frontal con mancuernas enlazada con un press por encima de la cabeza.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "squat",
+      "push"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Deltoides anterior"
+    ],
+    "secondary": [
+      "Glúteo mayor",
+      "Tríceps"
+    ],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "SnHdBY_sK6M",
+    "youtube_title": "How to Do a Dumbbell Thruster | Warrior Fitness",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Dumbbell Side Bend",
+    "description": "De pie con una mancuerna, inclina el tronco lateralmente y regresa.",
+    "difficulty": "beginner",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Mancuernas"
+    ],
+    "youtube_id": "dL9ZzqtQI5c",
+    "youtube_title": "How to Do a Dumbbell Side Bend | Ab Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Medicine Ball Wood Chop",
+    "description": "Lleva el balón en diagonal desde encima de un hombro hasta la cadera contraria.",
+    "difficulty": "beginner",
+    "patterns": [
+      "rotation"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Glúteo mayor"
+    ],
+    "equipment": [
+      "Balón medicinal"
+    ],
+    "youtube_id": "kz1q4fQ3V7E",
+    "youtube_title": "How to Do a Medicine Ball Chop | Abs Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Stability Ball Jackknife",
+    "description": "En plancha con las espinillas sobre la pelota, acércala al pecho flexionando rodillas.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Flexores de cadera"
+    ],
+    "secondary": [
+      "Deltoides anterior",
+      "Transverso abdominal"
+    ],
+    "equipment": [
+      "Pelota de estabilidad"
+    ],
+    "youtube_id": "avRJLkvU6gA",
+    "youtube_title": "How to Do an Exercise Ball Jackknife | Ab Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Stability Ball Wall Squat",
+    "description": "Sentadilla con la pelota entre la espalda y la pared.",
+    "difficulty": "beginner",
+    "patterns": [
+      "squat"
+    ],
+    "primary": [
+      "Cuádriceps",
+      "Glúteo mayor"
+    ],
+    "secondary": [],
+    "equipment": [
+      "Pelota de estabilidad"
+    ],
+    "youtube_id": "rdpFZtaIwKc",
+    "youtube_title": "How to Do a Wall Squat with Exercise Ball | Knee Exercises",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Stability Ball Plank",
+    "description": "Plancha con los antebrazos apoyados sobre la pelota de estabilidad.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core",
+      "isometric"
+    ],
+    "primary": [
+      "Recto abdominal",
+      "Transverso abdominal"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [
+      "Pelota de estabilidad"
+    ],
+    "youtube_id": "kKVwsBI3CbE",
+    "youtube_title": "How to Do Front Plank on Exercise Ball | Ab Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Side Plank Hip Dips",
+    "description": "En plancha lateral, baja y sube la cadera de forma controlada.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "core"
+    ],
+    "primary": [
+      "Oblicuo externo",
+      "Oblicuo interno"
+    ],
+    "secondary": [
+      "Transverso abdominal"
+    ],
+    "equipment": [],
+    "youtube_id": "LgaYt4Hi6-g",
+    "youtube_title": "How to Do a Side Plank with Hip Lifts | Abs Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Butterfly Stretch",
+    "description": "Sentado con las plantas de los pies juntas, deja caer las rodillas hacia el suelo.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Aductores"
+    ],
+    "secondary": [
+      "Flexores de cadera"
+    ],
+    "equipment": [],
+    "youtube_id": "rdxD3POKbV8",
+    "youtube_title": "How to Do a Butterfly Stretch | Sexy Legs Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Chest Stretch",
+    "description": "Con los brazos detrás del cuerpo, abre el pecho llevando las escápulas juntas.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Pectoral mayor"
+    ],
+    "secondary": [
+      "Deltoides anterior"
+    ],
+    "equipment": [],
+    "youtube_id": "AFFiBiHtOfM",
+    "youtube_title": "How to Do a Chest Stretch | Yoga",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Lat Stretch",
+    "description": "Estira el brazo por encima de la cabeza inclinando el tronco hacia el lado contrario.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Dorsal ancho"
+    ],
+    "secondary": [
+      "Redondo mayor"
+    ],
+    "equipment": [],
+    "youtube_id": "js4wA4f2lac",
+    "youtube_title": "How to Do a Lat Stretch | Back Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Hamstring Stretch",
+    "description": "De pie con una pierna adelantada y recta, inclina el tronco desde la cadera.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Isquiotibiales"
+    ],
+    "secondary": [
+      "Pantorrillas"
+    ],
+    "equipment": [],
+    "youtube_id": "Eg6M42FgDF4",
+    "youtube_title": "How to Do Standing Hamstring Stretch | Sexy Legs Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Seated Straddle Stretch",
+    "description": "Sentado con piernas muy abiertas, inclina el tronco hacia delante.",
+    "difficulty": "intermediate",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Aductores",
+      "Isquiotibiales"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "H8UCr4paLZU",
+    "youtube_title": "How to Do a Seated Split Stretch | Thighs Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Overhead Triceps Stretch",
+    "description": "Lleva la mano detrás de la cabeza y empuja el codo con la otra mano.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Tríceps"
+    ],
+    "secondary": [
+      "Dorsal ancho"
+    ],
+    "equipment": [],
+    "youtube_id": "hSaqjF0dMMg",
+    "youtube_title": "How to Stretch Your Triceps",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  },
+  {
+    "name": "Standing Hip Circles",
+    "description": "De pie sobre una pierna, dibuja círculos amplios con la rodilla de la otra.",
+    "difficulty": "beginner",
+    "patterns": [
+      "mobility"
+    ],
+    "primary": [
+      "Flexores de cadera",
+      "Glúteo medio"
+    ],
+    "secondary": [],
+    "equipment": [],
+    "youtube_id": "dN1elhfKzYo",
+    "youtube_title": "How to Do Hip Circles | Pilates Workout",
+    "channel": "Howcast",
+    "orientation": "horizontal"
+  }
+]

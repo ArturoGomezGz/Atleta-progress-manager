@@ -2,12 +2,23 @@ import cors from "@fastify/cors"
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify"
 import { fromNodeHeaders } from "better-auth/node"
 import Fastify from "fastify"
+import { runMigrations } from "./migrate"
 import { auth } from "./auth"
 import { appRouter } from "./routers"
 import { createContext } from "./trpc"
 
 async function main() {
-  const app = Fastify({ logger: true })
+  console.log("🚀 Iniciando API...")
+  try {
+    await runMigrations()
+  } catch (err) {
+    console.error("❌ Error en migraciones:", err)
+    throw err
+  }
+
+  // maxParamLength: tRPC agrupa varios procedimientos en la ruta (/trpc/a,b,c…); con el
+  // límite por defecto de Fastify (100) las páginas con muchas consultas reciben 404
+  const app = Fastify({ logger: true, maxParamLength: 5000 })
 
   await app.register(cors, {
     origin: process.env.WEB_URL ?? "http://localhost:3000",

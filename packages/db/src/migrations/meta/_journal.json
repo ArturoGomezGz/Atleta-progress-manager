@@ -5,43 +5,8 @@
     {
       "idx": 0,
       "version": "7",
-      "when": 1778093767281,
-      "tag": "0000_polite_the_captain",
-      "breakpoints": true
-    },
-    {
-      "idx": 1,
-      "version": "7",
-      "when": 1746576000000,
-      "tag": "0001_athlete_exercise_rm",
-      "breakpoints": true
-    },
-    {
-      "idx": 2,
-      "version": "7",
-      "when": 1746748800000,
-      "tag": "0002_athlete_session_exercise_cancelled",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
-      "when": 1778214336080,
-      "tag": "0003_public_mojo",
-      "breakpoints": true
-    },
-    {
-      "idx": 4,
-      "version": "7",
-      "when": 1778219868977,
-      "tag": "0004_elite_arachne",
-      "breakpoints": true
-    },
-    {
-      "idx": 5,
-      "version": "7",
-      "when": 1778220000000,
-      "tag": "0005_exercise_ownership",
+      "when": 1789240808304,
+      "tag": "0000_youtube_baseline",
       "breakpoints": true
     }
   ]

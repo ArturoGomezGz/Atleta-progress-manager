@@ -1,74 +1,85 @@
 "use client"
 
 import { trpc } from "@/lib/trpc/client"
-import { DumbbellIcon, PlusIcon, ShieldCheckIcon, Trash2Icon } from "lucide-react"
+import { cn } from "@/lib/utils"
+import {
+  AlertTriangleIcon,
+  CheckIcon,
+  ChevronRightIcon,
+  ClipboardIcon,
+  DumbbellIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  ShieldCheckIcon,
+  Trash2Icon,
+  UsersIcon,
+  XIcon,
+} from "lucide-react"
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 
 export default function EquipoPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = use(params)
   const router = useRouter()
-
-  const [newMemberEmail, setNewMemberEmail] = useState("")
-  const [newMemberRole, setNewMemberRole] = useState<"coach" | "athlete">("athlete")
-  const [addMemberError, setAddMemberError] = useState("")
-  const [addingMember, setAddingMember] = useState(false)
   const [deleteDialog, setDeleteDialog] = useState<null | "confirm" | "warn">(null)
 
   const { data: teams } = trpc.teams.list.useQuery()
   const { data: members, refetch: refetchMembers } = trpc.teams.members.useQuery({ teamId })
 
-  const addMember = trpc.teams.addMemberByEmail.useMutation({
-    onSuccess: () => { refetchMembers(); setAddingMember(false); setNewMemberEmail(""); setAddMemberError("") },
-    onError: (err) => setAddMemberError(err.message),
-  })
   const updateRole = trpc.teams.updateMemberRole.useMutation({ onSuccess: refetchMembers })
   const removeMember = trpc.teams.removeMember.useMutation({ onSuccess: refetchMembers })
-  const deleteTeam = trpc.teams.deleteTeam.useMutation({
-    onSuccess: () => router.push("/dashboard"),
-  })
+  const deleteTeam = trpc.teams.deleteTeam.useMutation({ onSuccess: () => router.push("/dashboard") })
 
   const currentTeam = teams?.find((t) => t.team.id === teamId)
   const isCoach = currentTeam?.role === "coach"
+  const maxAthletes = currentTeam?.team.maxAthletes ?? 1
+  const maxCoaches = currentTeam?.team.maxCoaches ?? 1
+  const athleteCount = members?.filter((m) => m.role === "athlete").length ?? 0
+  const coachCount = members?.filter((m) => m.role === "coach").length ?? 0
+  const overLimit = athleteCount > maxAthletes || coachCount > maxCoaches
+  const atCapacity = athleteCount >= maxAthletes
   const otherMembersCount = (members?.length ?? 1) - 1
-
-  function handleDeleteClick() {
-    setDeleteDialog(otherMembersCount > 0 ? "warn" : "confirm")
-  }
-
-  async function handleAddMember(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newMemberEmail.trim()) return
-    setAddMemberError("")
-    addMember.mutate({ teamId, email: newMemberEmail.trim(), role: newMemberRole })
-  }
 
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
       <h1 className="text-xl font-semibold">Equipo</h1>
 
+      {isCoach && overLimit && (
+        <div className="flex items-start gap-3 border border-amber-500/40 bg-amber-500/8 rounded-lg px-4 py-3 text-sm">
+          <AlertTriangleIcon className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+          <div className="space-y-1">
+            <p className="font-medium text-foreground">Este equipo supera el límite de tu plan actual</p>
+            <p className="text-muted-foreground">
+              No puedes invitar más miembros hasta ajustar el tamaño del equipo.{" "}
+              <a href="mailto:soporte@atletacmw.com" className="text-primary hover:brightness-110 font-medium">
+                Contacta a soporte
+              </a>{" "}
+              para ampliar tu plan.
+            </p>
+          </div>
+        </div>
+      )}
+
       <MembersSection
         teamId={teamId}
         isCoach={!!isCoach}
         members={members ?? []}
-        addingMember={addingMember}
-        setAddingMember={setAddingMember}
-        newMemberEmail={newMemberEmail}
-        setNewMemberEmail={setNewMemberEmail}
-        newMemberRole={newMemberRole}
-        setNewMemberRole={setNewMemberRole}
-        addMemberError={addMemberError}
-        setAddMemberError={setAddMemberError}
-        onAddMember={handleAddMember}
-        addMemberPending={addMember.isPending}
+        maxAthletes={maxAthletes}
+        maxCoaches={maxCoaches}
+        athleteCount={athleteCount}
+        coachCount={coachCount}
+        atCapacity={atCapacity}
+        overLimit={overLimit}
         onUpdateRole={(userId, role) => updateRole.mutateAsync({ teamId, userId, role })}
         onRemove={(userId) => removeMember.mutateAsync({ teamId, userId })}
       />
 
+      <GruposSection teamId={teamId} isCoach={!!isCoach} />
+
       {isCoach && (
         <div className="pt-4 border-t border-border">
           <button
-            onClick={handleDeleteClick}
+            onClick={() => setDeleteDialog(otherMembersCount > 0 ? "warn" : "confirm")}
             className="flex items-center gap-2 text-sm text-destructive border border-destructive/40 px-3 py-1.5 rounded-md hover:bg-destructive/10 transition-colors"
           >
             <Trash2Icon className="w-4 h-4" />
@@ -123,30 +134,24 @@ type Member = { id: string; userId: string; role: string; userName: string; user
 
 function MembersSection({
   teamId, isCoach, members,
-  addingMember, setAddingMember,
-  newMemberEmail, setNewMemberEmail,
-  newMemberRole, setNewMemberRole,
-  addMemberError, setAddMemberError,
-  onAddMember, addMemberPending,
+  maxAthletes, maxCoaches, athleteCount, coachCount,
+  atCapacity, overLimit,
   onUpdateRole, onRemove,
 }: {
   teamId: string
   isCoach: boolean
   members: Member[]
-  addingMember: boolean
-  setAddingMember: (v: boolean) => void
-  newMemberEmail: string
-  setNewMemberEmail: (v: string) => void
-  newMemberRole: "coach" | "athlete"
-  setNewMemberRole: (v: "coach" | "athlete") => void
-  addMemberError: string
-  setAddMemberError: (v: string) => void
-  onAddMember: (e: React.FormEvent) => void
-  addMemberPending: boolean
+  maxAthletes: number
+  maxCoaches: number
+  athleteCount: number
+  coachCount: number
+  atCapacity: boolean
+  overLimit: boolean
   onUpdateRole: (userId: string, role: "coach" | "athlete") => Promise<unknown>
   onRemove: (userId: string) => Promise<unknown>
 }) {
   const [editing, setEditing] = useState(false)
+  const [showInvite, setShowInvite] = useState(false)
   const [pendingRoles, setPendingRoles] = useState<Record<string, "coach" | "athlete">>({})
   const [saving, setSaving] = useState(false)
 
@@ -157,11 +162,6 @@ function MembersSection({
     setEditing(true)
   }
 
-  function cancelEditing() {
-    setPendingRoles({})
-    setEditing(false)
-  }
-
   async function saveChanges() {
     setSaving(true)
     const changed = members.filter((m) => pendingRoles[m.userId] && pendingRoles[m.userId] !== m.role)
@@ -170,73 +170,63 @@ function MembersSection({
     setEditing(false)
   }
 
+  const canInvite = isCoach && !atCapacity && !overLimit
+
   return (
     <div className="space-y-3">
-      {isCoach && (
-        <div className="flex justify-end gap-2">
-          {editing ? (
-            <>
-              <button onClick={cancelEditing} className="text-sm border px-3 py-1.5 rounded-md hover:bg-muted">
-                Cancelar
-              </button>
-              <button onClick={saveChanges} disabled={saving} className="text-sm bg-primary text-primary-foreground px-3 py-1.5 rounded-md disabled:opacity-50">
-                {saving ? "Guardando..." : "Guardar cambios"}
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setAddingMember(true)}
-                className="flex items-center gap-1 text-sm border px-3 py-1.5 rounded-md hover:bg-muted"
-              >
-                <PlusIcon className="w-4 h-4" />
-                Agregar miembro
-              </button>
-              <button onClick={startEditing} className="text-sm border px-3 py-1.5 rounded-md hover:bg-muted">
-                Editar
-              </button>
-            </>
-          )}
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="text-sm font-medium">Miembros</span>
+          <span className="text-xs text-muted-foreground">
+            {athleteCount}/{maxAthletes} atleta{maxAthletes !== 1 ? "s" : ""} · {coachCount}/{maxCoaches} entrenador{maxCoaches !== 1 ? "es" : ""}
+          </span>
         </div>
-      )}
 
-      {addingMember && !editing && (
-        <form onSubmit={onAddMember} className="border rounded-lg p-4 space-y-3">
-          <p className="text-sm font-medium">Agregar miembro</p>
-          <div className="flex gap-2 items-end flex-wrap">
-            <div className="flex-1 space-y-1 min-w-48">
-              <label className="text-xs text-muted-foreground">Correo electrónico</label>
-              <input
-                autoFocus
-                type="email"
-                value={newMemberEmail}
-                onChange={(e) => setNewMemberEmail(e.target.value)}
-                placeholder="usuario@ejemplo.com"
-                className="w-full border rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Rol</label>
-              <select
-                value={newMemberRole}
-                onChange={(e) => setNewMemberRole(e.target.value as "coach" | "athlete")}
-                className="border rounded-md px-3 py-2 text-sm bg-background"
-              >
-                <option value="athlete">Atleta</option>
-                <option value="coach">Entrenador</option>
-              </select>
-            </div>
-            <button type="submit" disabled={addMemberPending} className="bg-primary text-primary-foreground px-4 py-2 text-sm rounded-md disabled:opacity-50">
-              {addMemberPending ? "Agregando..." : "Agregar"}
+        {isCoach && !editing && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={startEditing}
+              className="text-xs text-muted-foreground border border-border px-2.5 py-1 rounded-md hover:bg-muted transition-colors"
+            >
+              Editar
             </button>
-            <button type="button" onClick={() => { setAddingMember(false); setAddMemberError("") }} className="px-4 py-2 text-sm rounded-md border">
-              Cancelar
+            <button
+              onClick={() => setShowInvite((v) => !v)}
+              disabled={!canInvite}
+              title={atCapacity || overLimit ? "Equipo lleno" : "Invitar atleta"}
+              className="flex items-center justify-center w-7 h-7 rounded-md border border-border hover:bg-muted transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <PlusIcon className="w-3.5 h-3.5" />
             </button>
           </div>
-          {addMemberError && <p className="text-destructive text-xs">{addMemberError}</p>}
-        </form>
+        )}
+
+        {editing && (
+          <div className="flex gap-2">
+            <button
+              onClick={() => { setPendingRoles({}); setEditing(false) }}
+              className="text-xs border px-2.5 py-1 rounded-md hover:bg-muted"
+            >
+              Cancelar
+            </button>
+            <button
+              onClick={saveChanges}
+              disabled={saving}
+              className="text-xs bg-primary text-primary-foreground px-2.5 py-1 rounded-md disabled:opacity-50"
+            >
+              {saving ? "Guardando..." : "Guardar"}
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Invite panel */}
+      {showInvite && canInvite && (
+        <InvitePanel teamId={teamId} onClose={() => setShowInvite(false)} />
       )}
 
+      {/* Member list */}
       <div className="space-y-2">
         {[...members]
           .sort((a, b) => {
@@ -263,18 +253,110 @@ function MembersSection({
   )
 }
 
+// ─── Invite panel ─────────────────────────────────────────────────────────────
+
+function InvitePanel({ teamId, onClose }: { teamId: string; onClose: () => void }) {
+  const [copied, setCopied] = useState(false)
+
+  const { data: existing, isLoading: loadingExisting } = trpc.teams.getInviteLink.useQuery({ teamId })
+
+  const generate = trpc.teams.generateInviteLink.useMutation({
+    onSuccess: () => { /* query cache auto-updates via refetch below */ },
+  })
+
+  const utils = trpc.useUtils()
+  const activeToken = generate.data?.token ?? existing?.token ?? null
+  const activeExpiry = generate.data?.expiresAt ?? existing?.expiresAt ?? null
+
+  const inviteUrl = activeToken ? `${window.location.origin}/join/${activeToken}` : null
+
+  async function handleCopy() {
+    if (!inviteUrl) return
+    await navigator.clipboard.writeText(inviteUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  async function handleRegenerate() {
+    await generate.mutateAsync({ teamId })
+    await utils.teams.getInviteLink.invalidate({ teamId })
+    setCopied(false)
+  }
+
+  const isLoading = loadingExisting || generate.isPending
+
+  return (
+    <div className="border border-border rounded-lg p-4 space-y-3 bg-muted/30">
+      <div className="flex items-center justify-between">
+        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Enlace de invitación</p>
+        <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+          <XIcon className="w-3.5 h-3.5" />
+        </button>
+      </div>
+
+      {isLoading && !inviteUrl ? (
+        <p className="text-xs text-muted-foreground">Cargando...</p>
+      ) : inviteUrl ? (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <input
+              readOnly
+              value={inviteUrl}
+              className="flex-1 text-xs border border-border rounded-md px-3 py-2 bg-background text-muted-foreground font-mono truncate"
+            />
+            <button
+              onClick={handleCopy}
+              className="shrink-0 flex items-center gap-1.5 text-xs border border-border px-3 py-2 rounded-md hover:bg-muted transition-colors whitespace-nowrap"
+            >
+              {copied ? <CheckIcon className="w-3 h-3 text-primary" /> : <ClipboardIcon className="w-3 h-3" />}
+              {copied ? "Copiado" : "Copiar"}
+            </button>
+          </div>
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">
+              Un solo uso · expira el{" "}
+              {activeExpiry ? new Date(activeExpiry).toLocaleDateString("es", { day: "numeric", month: "long" }) : "—"}
+            </p>
+            <button
+              onClick={handleRegenerate}
+              disabled={generate.isPending}
+              className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50"
+            >
+              <RefreshCwIcon className="w-3 h-3" />
+              Regenerar
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            El enlace es de un solo uso. El atleta podrá unirse al equipo directamente.
+          </p>
+          <button
+            onClick={() => generate.mutate({ teamId })}
+            disabled={generate.isPending}
+            className="text-xs bg-primary text-primary-foreground px-3 py-1.5 rounded-md hover:brightness-110 disabled:opacity-50 transition-all"
+          >
+            {generate.isPending ? "Generando..." : "Generar enlace"}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Member row ───────────────────────────────────────────────────────────────
 
 const ROLE_STYLES = {
   coach: {
-    card: "border-violet-800/60 bg-violet-950/50",
-    avatar: "bg-violet-600 text-white",
-    badge: "bg-violet-900/50 text-violet-300 border-violet-700/60",
+    card: "border-primary/25 bg-primary/5",
+    avatar: "bg-primary/20 text-primary",
+    badge: "bg-primary/10 text-primary border-primary/25",
     icon: <ShieldCheckIcon className="w-3 h-3" />,
     label: "Entrenador",
   },
   athlete: {
-    card: "border-border bg-background",
+    card: "border-border bg-card",
     avatar: "bg-muted text-muted-foreground",
     badge: "bg-muted text-muted-foreground border-border",
     icon: <DumbbellIcon className="w-3 h-3" />,
@@ -324,6 +406,156 @@ function MemberRow({
             {styles.icon}
             {styles.label}
           </span>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Grupos section ───────────────────────────────────────────────────────────
+
+function GruposSection({ teamId, isCoach }: { teamId: string; isCoach: boolean }) {
+  const [creating, setCreating]         = useState(false)
+  const [newGroupName, setNewGroupName] = useState("")
+  const [expanded, setExpanded]         = useState<string | null>(null)
+  const [addingTo, setAddingTo]         = useState<string | null>(null)
+
+  const { data: groups, refetch } = trpc.groups.list.useQuery({ teamId })
+  const { data: members }         = trpc.teams.members.useQuery({ teamId })
+
+  const createGroup  = trpc.groups.create.useMutation({ onSuccess: () => { refetch(); setCreating(false); setNewGroupName("") } })
+  const deleteGroup  = trpc.groups.delete.useMutation({ onSuccess: refetch })
+  const addMember    = trpc.groups.addMember.useMutation({ onSuccess: refetch })
+  const removeMember = trpc.groups.removeMember.useMutation({ onSuccess: refetch })
+
+  const athletes = members?.filter((m) => m.role === "athlete") ?? []
+
+  return (
+    <div className="space-y-3 pt-4 border-t border-border">
+      <div className="flex items-center justify-between">
+        <span className="text-sm font-medium">Grupos</span>
+        {isCoach && (
+          !creating ? (
+            <button
+              onClick={() => setCreating(true)}
+              className="flex items-center justify-center w-7 h-7 rounded-md border border-border hover:bg-muted transition-colors cursor-pointer"
+            >
+              <PlusIcon className="w-3.5 h-3.5" />
+            </button>
+          ) : (
+            <form
+              onSubmit={(e) => { e.preventDefault(); if (newGroupName.trim()) createGroup.mutate({ teamId, name: newGroupName.trim() }) }}
+              className="flex gap-2"
+            >
+              <input
+                autoFocus
+                value={newGroupName}
+                onChange={(e) => setNewGroupName(e.target.value)}
+                placeholder="Nombre del grupo"
+                className="border border-border rounded-md px-3 py-1 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
+              />
+              <button type="submit" disabled={createGroup.isPending} className="text-sm bg-primary text-primary-foreground px-3 py-1 rounded-md disabled:opacity-50 cursor-pointer font-medium">
+                Crear
+              </button>
+              <button type="button" onClick={() => setCreating(false)} className="text-sm border border-border px-2.5 py-1 rounded-md text-muted-foreground hover:text-foreground cursor-pointer">
+                Cancelar
+              </button>
+            </form>
+          )
+        )}
+      </div>
+
+      <div className="space-y-2">
+        {groups?.map((g) => {
+          const isExpanded   = expanded === g.id
+          const isAddingHere = addingTo === g.id
+          const groupIds     = new Set(g.members.map((m) => m.athleteId))
+          const available    = athletes.filter((a) => !groupIds.has(a.userId))
+
+          return (
+            <div key={g.id} className="border border-border rounded-lg overflow-hidden">
+              <div className="flex items-center gap-3 px-4 py-3 hover:bg-muted/30 transition-colors">
+                <button
+                  onClick={() => setExpanded(isExpanded ? null : g.id)}
+                  className="flex items-center gap-3 flex-1 min-w-0 cursor-pointer text-left"
+                >
+                  <ChevronRightIcon className={cn("w-4 h-4 text-muted-foreground shrink-0 transition-transform duration-200", isExpanded && "rotate-90")} />
+                  <UsersIcon className="w-4 h-4 text-muted-foreground shrink-0" />
+                  <span className="font-medium text-sm flex-1">{g.name}</span>
+                  <span className="text-xs text-muted-foreground">{g.members.length} {g.members.length === 1 ? "atleta" : "atletas"}</span>
+                </button>
+                {isCoach && (
+                  <button
+                    onClick={() => deleteGroup.mutate({ groupId: g.id })}
+                    className="p-1.5 text-muted-foreground hover:text-destructive rounded-md transition-colors cursor-pointer"
+                  >
+                    <Trash2Icon className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+
+              {isExpanded && (
+                <div className="border-t border-border bg-muted/10 divide-y divide-border">
+                  {g.members.map((m) => (
+                    <div key={m.athleteId} className="flex items-center gap-3 px-5 py-2.5">
+                      <div className="w-7 h-7 rounded-full bg-muted flex items-center justify-center text-xs font-semibold text-muted-foreground shrink-0">
+                        {m.name.split(" ").map((w: string) => w[0]).join("").slice(0, 2).toUpperCase()}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm truncate">{m.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{m.email}</p>
+                      </div>
+                      {isCoach && (
+                        <button
+                          onClick={() => removeMember.mutate({ groupId: g.id, athleteId: m.athleteId })}
+                          className="text-xs text-muted-foreground hover:text-destructive transition-colors cursor-pointer shrink-0"
+                        >
+                          Quitar
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {g.members.length === 0 && (
+                    <p className="text-xs text-muted-foreground px-5 py-3">Sin atletas en este grupo.</p>
+                  )}
+                  {isCoach && (
+                    <div className="px-5 py-3">
+                      {!isAddingHere ? (
+                        <button
+                          onClick={() => setAddingTo(isAddingHere ? null : g.id)}
+                          disabled={available.length === 0}
+                          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer"
+                        >
+                          <PlusIcon className="w-3.5 h-3.5" />
+                          {available.length === 0 ? "Todos los atletas están en el grupo" : "Agregar atleta"}
+                        </button>
+                      ) : (
+                        <div className="flex gap-2">
+                          <select
+                            defaultValue=""
+                            onChange={(e) => { if (e.target.value) { addMember.mutate({ groupId: g.id, athleteId: e.target.value }); setAddingTo(null) } }}
+                            className="flex-1 bg-background border border-border rounded-md px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground cursor-pointer"
+                          >
+                            <option value="">Seleccionar atleta...</option>
+                            {available.map((a) => <option key={a.userId} value={a.userId}>{a.userName}</option>)}
+                          </select>
+                          <button type="button" onClick={() => setAddingTo(null)} className="text-xs text-muted-foreground hover:text-foreground border border-border px-2 py-1.5 rounded-md cursor-pointer">
+                            Cancelar
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {groups?.length === 0 && (
+          <p className="text-sm text-muted-foreground text-center py-8 border rounded-lg">
+            Sin grupos todavía.{isCoach ? " Crea uno para asignar rutinas a varios atletas a la vez." : ""}
+          </p>
         )}
       </div>
     </div>

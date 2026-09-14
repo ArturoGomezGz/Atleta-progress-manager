@@ -4,12 +4,15 @@
   "private": true,
   "exports": {
     "./schema": "./src/schema/index.ts",
-    "./client": "./src/client.ts"
+    "./client": "./src/client.ts",
+    "./migrate": "./src/run-migrations.ts",
+    "./youtube": "./src/lib/youtube.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
+    "build-sql": "tsx scripts/build-sql.ts",
+    "verify-videos": "tsx scripts/verify-videos.ts",
     "migrate": "tsx src/migrate.ts",
-    "seed": "tsx --env-file=.env src/seed.ts",
     "studio": "drizzle-kit studio"
   },
   "dependencies": {
