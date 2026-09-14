@@ -59,7 +59,6 @@ function readArg(name) {
 function normalizeTestModulePath(relPath) {
   return relPath
     .replace(/\.(test|spec)\.[^.]+$/, "")
-    .replace(/\.[^.]+$/, "")
     .replace(/\/+/g, "/")
 }
 
