@@ -527,6 +527,12 @@ function SetExecution({
   const freeReps = !isTime && target.targetReps == null
   const [reps, setReps] = useState(8)
   const [showNotes, setShowNotes] = useState(false)
+  const [timerPhase, setTimerPhase] = useState<CountdownPhase>("idle")
+
+  const timerPreparing = isTime && timerPhase === "prepare"
+  const timerRunning = isTime && (timerPhase === "running" || timerPhase === "paused")
+  const timerFinished = isTime && timerPhase === "finished"
+  const timerAlert = timerPreparing || timerFinished
 
   const recordSet = trpc.sessions.recordSet.useMutation({
     onSuccess: () => onComplete(doneSetsGlobal + 1 >= totalSetsGlobal),
@@ -604,13 +610,27 @@ function SetExecution({
         )}
 
         {/* Objetivo de la serie */}
-        <div className="rounded-2xl border-2 border-primary/40 bg-card p-5 text-center space-y-3">
-          <p className="text-xl font-semibold text-primary">
+        <div
+          className={cn(
+            "rounded-2xl border-2 bg-card p-5 text-center space-y-3 transition-colors duration-700",
+            timerAlert ? "border-destructive/60" : timerRunning ? "border-emerald-500/60" : "border-primary/40",
+          )}
+        >
+          <p
+            className={cn(
+              "text-xl font-semibold transition-colors duration-500",
+              timerAlert ? "text-destructive" : timerRunning ? "text-emerald-500" : "text-primary",
+            )}
+          >
             Serie {target.setNumber} de {exercise.targets.length}
           </p>
 
           {isTime ? (
-            <TimeCountdown seconds={target.targetDurationSeconds ?? 30} />
+            <TimeCountdown
+              seconds={target.targetDurationSeconds ?? 30}
+              phase={timerPhase}
+              onPhaseChange={setTimerPhase}
+            />
           ) : freeReps ? (
             <div className="space-y-2">
               <p className="text-base text-muted-foreground">Haz las que puedas y anota cuántas fueron:</p>
@@ -705,8 +725,13 @@ function RepsStepper({ value, onChange }: { value: number; onChange: (v: number)
 
 type CountdownPhase = "idle" | "prepare" | "running" | "paused" | "finished"
 
-function TimeCountdown({ seconds }: { seconds: number }) {
-  const [phase, setPhase] = useState<CountdownPhase>("idle")
+function TimeCountdown({
+  seconds, phase, onPhaseChange,
+}: {
+  seconds: number
+  phase: CountdownPhase
+  onPhaseChange: (phase: CountdownPhase) => void
+}) {
   const [prepareLeft, setPrepareLeft] = useState(3)
   const [left, setLeft] = useState(seconds)
 
@@ -715,21 +740,21 @@ function TimeCountdown({ seconds }: { seconds: number }) {
     vibrate(60)
     if (prepareLeft <= 1) {
       const id = setTimeout(() => {
-        setPhase("running")
+        onPhaseChange("running")
         vibrate(120)
       }, 1000)
       return () => clearTimeout(id)
     }
     const id = setTimeout(() => setPrepareLeft((prev) => prev - 1), 1000)
     return () => clearTimeout(id)
-  }, [phase, prepareLeft])
+  }, [phase, prepareLeft, onPhaseChange])
 
   useEffect(() => {
     if (phase !== "running") return
     const id = setInterval(() => {
       setLeft((prev) => {
         if (prev <= 1) {
-          setPhase("finished")
+          onPhaseChange("finished")
           vibrate([300, 150, 300])
           return 0
         }
@@ -737,19 +762,19 @@ function TimeCountdown({ seconds }: { seconds: number }) {
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [phase])
+  }, [phase, onPhaseChange])
 
   function handleStart() {
     setPrepareLeft(3)
-    setPhase("prepare")
+    onPhaseChange("prepare")
   }
 
   function handleTogglePause() {
-    setPhase((p) => (p === "running" ? "paused" : "running"))
+    onPhaseChange(phase === "running" ? "paused" : "running")
   }
 
   function handleReset() {
-    setPhase("idle")
+    onPhaseChange("idle")
     setPrepareLeft(3)
     setLeft(seconds)
   }
