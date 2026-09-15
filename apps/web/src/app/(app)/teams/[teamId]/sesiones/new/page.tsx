@@ -170,14 +170,10 @@ function NewSessionForm({ teamId }: { teamId: string }) {
 
   const { data: routines } = trpc.routines.list.useQuery({ teamId })
   const { data: members }  = trpc.teams.members.useQuery({ teamId })
-  const createSession = trpc.sessions.create.useMutation({
-    onSuccess: (session) => router.push(`/teams/${teamId}/sesiones/${session.id}`),
-  })
-  // Genera el enlace (o reutiliza el vigente) y lleva a la vista donde se comparte,
-  // se revisa asistencia y se desactiva — la misma a la que se llega desde Sesiones.
-  const createLink = trpc.share.createLink.useMutation({
-    onSuccess: () => router.push(`/teams/${teamId}/rutinas/enlace/${selectedRoutineId}`),
-  })
+  const createSession = trpc.sessions.create.useMutation()
+  // Genera el enlace (o reutiliza el vigente); la navegación se decide en
+  // handleSubmit una vez que todo lo que se pidió terminó de crearse.
+  const createLink = trpc.share.createLink.useMutation()
 
   const athletes = members?.filter((m) => m.role === "athlete" || m.selfAthlete) ?? []
 
@@ -203,18 +199,40 @@ function NewSessionForm({ teamId }: { teamId: string }) {
     )
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  // Una sola acción: crea la sesión para los atletas elegidos y/o el enlace del
+  // invitado, y navega adonde corresponda según lo que se haya pedido. Antes
+  // eran dos botones separados y, con ambos marcados, "Comenzar sesión" nunca
+  // llegaba a generar el enlace.
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!selectedRoutineId || selectedAthleteIds.size === 0) return
-    createSession.mutate({
-      routineId: selectedRoutineId,
-      teamId,
-      athleteIds: Array.from(selectedAthleteIds),
-      ...(startMode === "scheduled" ? { scheduledDate } : {}),
-    })
+    if (!selectedRoutineId || !canSubmit) return
+    try {
+      const [session] = await Promise.all([
+        selectedAthleteIds.size > 0
+          ? createSession.mutateAsync({
+              routineId: selectedRoutineId,
+              teamId,
+              athleteIds: Array.from(selectedAthleteIds),
+              ...(startMode === "scheduled" ? { scheduledDate } : {}),
+            })
+          : Promise.resolve(null),
+        guestSelected ? createLink.mutateAsync({ routineId: selectedRoutineId }) : Promise.resolve(null),
+      ])
+      // El enlace manda: es la vista donde se comparte, se ve la asistencia y
+      // se desactiva, así que si hay invitado se va ahí aunque también se
+      // haya creado una sesión para atletas reales.
+      if (guestSelected) {
+        router.push(`/teams/${teamId}/rutinas/enlace/${selectedRoutineId}`)
+      } else if (session) {
+        router.push(`/teams/${teamId}/sesiones/${session.id}`)
+      }
+    } catch {
+      // El error ya queda expuesto por createSession.error / createLink.error
+    }
   }
 
-  const canSubmit = !!selectedRoutineId && selectedAthleteIds.size > 0 && !createSession.isPending
+  const isSubmitting = createSession.isPending || createLink.isPending
+  const submitError = createSession.error?.message ?? createLink.error?.message ?? null
 
   // Una rutina de evaluación la registra el coach en persona, así que no se comparte
   const guestBlockedReason = !selectedRoutine
@@ -224,7 +242,12 @@ function NewSessionForm({ teamId }: { teamId: string }) {
       : (selectedRoutine.content as RoutineContent).items.length === 0
         ? "Esta plantilla todavía no tiene ejercicios."
         : null
-  const canShare = guestSelected && guestBlockedReason === null
+
+  const canSubmit =
+    !!selectedRoutineId &&
+    (selectedAthleteIds.size > 0 || guestSelected) &&
+    (!guestSelected || guestBlockedReason === null) &&
+    !isSubmitting
 
   // Determine which type filters to show
   const availableCategories = [...new Set((routines ?? []).map((r) => r.category))]
@@ -520,39 +543,22 @@ function NewSessionForm({ teamId }: { teamId: string }) {
         </section>
 
         <div className="space-y-2">
-          {/* Con solo invitados no hay sesión que crear: el enlace es la acción principal */}
-          {(!guestSelected || selectedAthleteIds.size > 0) && (
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className="w-full bg-primary text-primary-foreground py-3 rounded-xl text-sm font-semibold disabled:opacity-40 hover:bg-primary/90 transition-colors cursor-pointer"
-            >
-              {createSession.isPending
-                ? "Creando..."
-                : startMode === "scheduled"
-                ? "Programar sesión"
-                : "Comenzar sesión"}
-            </button>
-          )}
-
-          {guestSelected && (
-            <button
-              type="button"
-              onClick={() => selectedRoutineId && createLink.mutate({ routineId: selectedRoutineId })}
-              disabled={!canShare || createLink.isPending}
-              className={cn(
-                "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40",
-                selectedAthleteIds.size > 0
-                  ? "border border-border text-foreground hover:bg-muted/40"
-                  : "bg-primary text-primary-foreground hover:bg-primary/90",
-              )}
-            >
-              <Link2Icon className="w-4 h-4" />
-              {createLink.isPending ? "Generando…" : "Compartir enlace"}
-            </button>
-          )}
-          {createLink.isError && (
-            <p className="text-xs text-destructive text-center">{createLink.error.message}</p>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl text-sm font-semibold disabled:opacity-40 hover:bg-primary/90 transition-colors cursor-pointer"
+          >
+            {guestSelected && <Link2Icon className="w-4 h-4" />}
+            {isSubmitting
+              ? "Creando..."
+              : guestSelected && selectedAthleteIds.size === 0
+              ? "Compartir enlace"
+              : startMode === "scheduled"
+              ? "Programar sesión"
+              : "Comenzar sesión"}
+          </button>
+          {submitError && (
+            <p className="text-xs text-destructive text-center">{submitError}</p>
           )}
         </div>
       </form>
