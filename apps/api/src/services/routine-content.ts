@@ -1,6 +1,7 @@
 import type { RoutineContent, RoutineExerciseContent, RoutineSet } from "@atleta/db/schema"
 
 export type FlatExercise = RoutineExerciseContent & {
+  blockId: string | null
   blockName: string | null
   rounds: number
   roundNumber: number | null
@@ -26,7 +27,7 @@ export function flattenContent(content: RoutineContent | null | undefined): Flat
     .sort((a, b) => a.order - b.order)
     .flatMap<FlatExercise>((item) => {
       if (item.type === "exercise") {
-        return [{ ...item, blockName: null, rounds: 1, roundNumber: null }]
+        return [{ ...item, blockId: null, blockName: null, rounds: 1, roundNumber: null }]
       }
 
       const sortedExercises = [...item.exercises].sort((a, b) => a.order - b.order)
@@ -42,7 +43,7 @@ export function flattenContent(content: RoutineContent | null | undefined): Flat
               ? item.restBetweenRoundsSeconds
               : ex.restSeconds
 
-          out.push({ ...ex, blockName, rounds: item.rounds, roundNumber: round, restSeconds })
+          out.push({ ...ex, blockId: item.id, blockName, rounds: item.rounds, roundNumber: round, restSeconds })
         })
       }
 

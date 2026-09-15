@@ -64,6 +64,7 @@ export type WorkoutExercise = {
   tempo: string | null
   restSeconds: number | null
   notes: string | null
+  blockId: string | null
   blockName: string | null
   rounds: number
   roundNumber: number | null
@@ -279,6 +280,88 @@ function ExerciseOverviewCard({
 
 // ─── Vista previa (antes de empezar) ───────────────────────────────────────────
 
+type PreviewItem =
+  | { kind: "exercise"; exercise: WorkoutExercise }
+  | { kind: "circuit"; blockId: string; blockName: string; rounds: number; exercises: WorkoutExercise[] }
+
+/**
+ * Agrupa las rondas de un mismo circuito en una sola entrada. `flattenContent`
+ * expande cada circuito ronda por ronda (A, B, A, B, …) para que el ejecutor
+ * sepa el orden exacto; para la vista previa eso solo repite el mismo bloque
+ * varias veces, así que aquí nos quedamos con los ejercicios de la primera
+ * ronda y mostramos cuántas veces se repite en vez de listarlos todos.
+ */
+function groupForPreview(exercises: WorkoutExercise[]): PreviewItem[] {
+  const items: PreviewItem[] = []
+  for (const ex of exercises) {
+    const prev = items[items.length - 1]
+    if (ex.blockId && prev?.kind === "circuit" && prev.blockId === ex.blockId) {
+      if (ex.roundNumber === 1) prev.exercises.push(ex)
+      continue
+    }
+    if (ex.blockId) {
+      items.push({
+        kind: "circuit",
+        blockId: ex.blockId,
+        blockName: ex.blockName ?? "Circuito",
+        rounds: ex.rounds,
+        exercises: ex.roundNumber === 1 ? [ex] : [],
+      })
+      continue
+    }
+    items.push({ kind: "exercise", exercise: ex })
+  }
+  return items
+}
+
+function CircuitOverviewCard({
+  blockName, rounds, exercises, onWatch,
+}: {
+  blockName: string
+  rounds: number
+  exercises: WorkoutExercise[]
+  onWatch: (exercise: WorkoutExercise) => void
+}) {
+  return (
+    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-4 py-3 bg-primary/5 border-b border-border">
+        <p className="font-semibold flex items-center gap-2">
+          <RepeatIcon className="w-4 h-4 text-primary" /> {blockName}
+        </p>
+        <span className="text-sm font-medium text-primary bg-primary/10 rounded-full px-2.5 py-1">
+          × {rounds} {rounds === 1 ? "ronda" : "rondas"}
+        </span>
+      </div>
+      <div className="divide-y divide-border">
+        {exercises.map((ex) => (
+          <div key={ex.id} className="flex gap-3 p-3">
+            {ex.youtubeVideoId ? (
+              <button
+                onClick={() => onWatch(ex)}
+                className="shrink-0 cursor-pointer rounded-xl overflow-hidden"
+                aria-label={`Ver video de ${ex.exerciseName}`}
+              >
+                <YouTubeThumb videoId={ex.youtubeVideoId} alt={ex.exerciseName} showPlay className="w-24 sm:w-32 aspect-video" />
+              </button>
+            ) : (
+              <div className="shrink-0 w-24 sm:w-32 aspect-video rounded-xl bg-muted" />
+            )}
+            <div className="flex-1 min-w-0 space-y-1 py-0.5">
+              <p className="text-base font-semibold leading-snug">{ex.exerciseName}</p>
+              <p className="text-base">{summarizeTargets(ex.targets)}</p>
+              {ex.notes && (
+                <p className="text-sm text-muted-foreground flex gap-1.5">
+                  <MessageSquareIcon className="w-4 h-4 mt-0.5 shrink-0" /> {ex.notes}
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 export function RoutinePreview({
   progress, onStart, starting, error, back, intro, children, withSidebar = true,
 }: {
@@ -295,6 +378,8 @@ export function RoutinePreview({
 }) {
   const [video, setVideo] = useState<WorkoutExercise | null>(null)
   const total = totalSets(progress.exercises)
+  const groups = groupForPreview(progress.exercises)
+  const exerciseCount = groups.reduce((n, g) => n + (g.kind === "circuit" ? g.exercises.length : 1), 0)
 
   return (
     <div className="max-w-xl mx-auto px-4 sm:px-6 py-5 space-y-6 pb-40">
@@ -305,7 +390,7 @@ export function RoutinePreview({
         <h1 className="text-3xl font-bold leading-tight">{sc(progress.routineName ?? "Rutina")}</h1>
         <p className="text-base text-muted-foreground flex items-center gap-2">
           <CalendarIcon className="w-5 h-5" />
-          {progress.exercises.length} ejercicios · {total} series en total
+          {exerciseCount} ejercicios · {total} series en total
         </p>
       </div>
 
@@ -319,9 +404,19 @@ export function RoutinePreview({
       </div>
 
       <div className="space-y-3">
-        {progress.exercises.map((ex, i) => (
-          <ExerciseOverviewCard key={ex.id} exercise={ex} index={i} onWatch={() => setVideo(ex)} />
-        ))}
+        {groups.map((g, i) =>
+          g.kind === "circuit" ? (
+            <CircuitOverviewCard
+              key={g.blockId}
+              blockName={g.blockName}
+              rounds={g.rounds}
+              exercises={g.exercises}
+              onWatch={setVideo}
+            />
+          ) : (
+            <ExerciseOverviewCard key={g.exercise.id} exercise={g.exercise} index={i} onWatch={() => setVideo(g.exercise)} />
+          ),
+        )}
       </div>
 
       <div className={cn(

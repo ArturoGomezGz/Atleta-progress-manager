@@ -129,6 +129,7 @@ export const sessionsRouter = router({
             tempo: meta?.tempo ?? null,
             restSeconds: meta?.restSeconds ?? null,
             notes: meta?.notes ?? null,
+            blockId: meta?.blockId ?? null,
             blockName: meta?.blockName ?? null,
             rounds: meta?.rounds ?? 1,
             roundNumber: meta?.roundNumber ?? null,
