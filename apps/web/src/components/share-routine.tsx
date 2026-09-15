@@ -27,7 +27,7 @@ export function ShareRoutineButton({ routineId, routineName }: { routineId: stri
   )
 }
 
-function ShareRoutineSheet({
+export function ShareRoutineSheet({
   routineId, routineName, onClose,
 }: {
   routineId: string

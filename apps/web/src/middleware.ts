@@ -30,5 +30,9 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth).*)"],
+  // `/trpc` queda fuera: cada procedimiento autoriza por su cuenta (y los de
+  // invitado son públicos a propósito). Si pasara por aquí, las llamadas de
+  // quien no tiene sesión se redirigirían al login — y las de quien sí la
+  // tiene pagarían una consulta de sesión extra por cada petición de datos.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth|trpc).*)"],
 }

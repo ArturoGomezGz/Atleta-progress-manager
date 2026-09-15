@@ -3,7 +3,8 @@
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
-import { ChevronLeftIcon, InfoIcon, SearchIcon, XIcon } from "lucide-react"
+import { ShareRoutineSheet } from "@/components/share-routine"
+import { ChevronLeftIcon, InfoIcon, Link2Icon, SearchIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { use, useState, Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -165,6 +166,9 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const [search, setSearch] = useState("")
   const [typeFilter, setTypeFilter] = useState<"all" | "evaluation" | "training">(category ?? "all")
   const [previewId, setPreviewId] = useState<string | null>(null)
+  // Invitado: no es un miembro del equipo, es un enlace que cualquiera puede abrir
+  const [guestSelected, setGuestSelected] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const { data: routines } = trpc.routines.list.useQuery({ teamId })
   const { data: members }  = trpc.teams.members.useQuery({ teamId })
@@ -208,6 +212,16 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   }
 
   const canSubmit = !!selectedRoutineId && selectedAthleteIds.size > 0 && !createSession.isPending
+
+  // Una rutina de evaluación la registra el coach en persona, así que no se comparte
+  const guestBlockedReason = !selectedRoutine
+    ? "Elige primero una plantilla."
+    : selectedRoutine.category !== "training"
+      ? "Solo puedes compartir plantillas de entrenamiento: las de evaluación las registras tú en persona."
+      : (selectedRoutine.content as RoutineContent).items.length === 0
+        ? "Esta plantilla todavía no tiene ejercicios."
+        : null
+  const canShare = guestSelected && guestBlockedReason === null
 
   // Determine which type filters to show
   const availableCategories = [...new Set((routines ?? []).map((r) => r.category))]
@@ -430,7 +444,45 @@ function NewSessionForm({ teamId }: { teamId: string }) {
                 </button>
               )
             })}
+
+            {/* Invitado: no ocupa lugar en el equipo, entrena con el enlace */}
+            <button
+              type="button"
+              onClick={() => setGuestSelected((v) => !v)}
+              className={cn(
+                "w-full flex items-center gap-3 px-4 py-3 rounded-xl border border-dashed text-left transition-all duration-150 cursor-pointer",
+                guestSelected ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20" : "border-border bg-card/50 hover:bg-card/80",
+              )}
+            >
+              <div className={cn(
+                "w-4 h-4 rounded border-2 shrink-0 flex items-center justify-center transition-colors",
+                guestSelected ? "border-primary bg-primary" : "border-border",
+              )}>
+                {guestSelected && (
+                  <svg className="w-2.5 h-2.5 text-primary-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                  </svg>
+                )}
+              </div>
+              <Link2Icon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <span className="flex-1 min-w-0">
+                <span className="block text-sm">Invitado</span>
+                <span className="block text-xs text-muted-foreground">Cualquiera con el enlace, sin cuenta</span>
+              </span>
+            </button>
           </div>
+
+          {guestSelected && (
+            <div className={cn(
+              "rounded-xl border px-3 py-2.5 text-xs leading-relaxed",
+              guestBlockedReason ? "border-border bg-muted/30 text-muted-foreground" : "border-primary/20 bg-primary/5",
+            )}>
+              {guestBlockedReason ?? (
+                <>Se genera un enlace para hacer <strong>{sc(selectedRoutine!.name)}</strong> sin cuenta.
+                Al terminar se invita a la persona a registrarse y su entrenamiento se guarda en su historial.</>
+              )}
+            </div>
+          )}
         </section>
 
         {/* ── Cuándo ── */}
@@ -464,18 +516,48 @@ function NewSessionForm({ teamId }: { teamId: string }) {
           )}
         </section>
 
-        <button
-          type="submit"
-          disabled={!canSubmit}
-          className="w-full bg-primary text-primary-foreground py-3 rounded-xl text-sm font-semibold disabled:opacity-40 hover:bg-primary/90 transition-colors cursor-pointer"
-        >
-          {createSession.isPending
-            ? "Creando..."
-            : startMode === "scheduled"
-            ? "Programar sesión"
-            : "Comenzar sesión"}
-        </button>
+        <div className="space-y-2">
+          {/* Con solo invitados no hay sesión que crear: el enlace es la acción principal */}
+          {(!guestSelected || selectedAthleteIds.size > 0) && (
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full bg-primary text-primary-foreground py-3 rounded-xl text-sm font-semibold disabled:opacity-40 hover:bg-primary/90 transition-colors cursor-pointer"
+            >
+              {createSession.isPending
+                ? "Creando..."
+                : startMode === "scheduled"
+                ? "Programar sesión"
+                : "Comenzar sesión"}
+            </button>
+          )}
+
+          {guestSelected && (
+            <button
+              type="button"
+              onClick={() => setShareOpen(true)}
+              disabled={!canShare}
+              className={cn(
+                "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40",
+                selectedAthleteIds.size > 0
+                  ? "border border-border text-foreground hover:bg-muted/40"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90",
+              )}
+            >
+              <Link2Icon className="w-4 h-4" />
+              Compartir enlace
+            </button>
+          )}
+        </div>
       </form>
+
+      {shareOpen && selectedRoutine && (
+        <ShareRoutineSheet
+          routineId={selectedRoutine.id}
+          routineName={sc(selectedRoutine.name)}
+          onClose={() => setShareOpen(false)}
+        />
+      )}
 
       {/* Preview bottom sheet */}
       {previewId && (

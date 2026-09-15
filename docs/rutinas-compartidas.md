@@ -32,8 +32,16 @@ Plantilla → Compartir
 | Entrada manual del código | `/r` | No |
 | Guardar en la cuenta | `/reclamar` | Sí |
 
+El entrenador genera el enlace desde dos sitios: **Nueva sesión**, marcando
+*Invitado* junto a los atletas, o el botón **Compartir** de la plantilla.
+
 El middleware deja `/r` fuera de la autenticación; `/reclamar` sí la exige, así
 que quien llega sin sesión pasa por login y vuelve.
+
+`/trpc` también queda fuera del middleware: cada procedimiento autoriza por su
+cuenta, y si pasara por ahí las llamadas del invitado se redirigirían al login.
+De paso, las de cualquier usuario dejan de pagar una consulta de sesión extra
+por cada petición de datos.
 
 ---
 
