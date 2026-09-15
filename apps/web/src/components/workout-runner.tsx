@@ -524,26 +524,6 @@ export function WorkoutRunner({
     )
   }
 
-  if (rest) {
-    return (
-      <RestTimer
-        seconds={rest.left}
-        totalSeconds={rest.total}
-        overtime={rest.overtime}
-        upcoming={
-          position.exercise.roundNumber
-            ? `${position.exercise.exerciseName} · ronda ${position.exercise.roundNumber} de ${position.exercise.rounds}`
-            : `${position.exercise.exerciseName} · serie ${position.target.setNumber} de ${position.exercise.targets.length}`
-        }
-        onSkip={skipRest}
-        autoContinue={autoContinue}
-        onToggleAutoContinue={setAutoContinue}
-        onShowOverview={openOverview}
-        withSidebar={withSidebar}
-      />
-    )
-  }
-
   if (showOverview) {
     return (
       <div className="max-w-xl mx-auto px-4 sm:px-6 py-5 space-y-5 pb-32">
@@ -551,7 +531,7 @@ export function WorkoutRunner({
           onClick={closeOverview}
           className="inline-flex items-center gap-2 px-3 py-2.5 -ml-3 rounded-xl text-base text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer"
         >
-          <ArrowLeftIcon className="w-5 h-5" /> Volver al ejercicio
+          <ArrowLeftIcon className="w-5 h-5" /> {rest ? "Volver al descanso" : "Volver al ejercicio"}
         </button>
         <div>
           <h1 className="text-3xl font-bold">{sc(progress.routineName ?? "Rutina")}</h1>
@@ -570,6 +550,26 @@ export function WorkoutRunner({
         </div>
         {video && <VideoModal exercise={video} onClose={() => setVideo(null)} />}
       </div>
+    )
+  }
+
+  if (rest) {
+    return (
+      <RestTimer
+        seconds={rest.left}
+        totalSeconds={rest.total}
+        overtime={rest.overtime}
+        upcoming={
+          position.exercise.roundNumber
+            ? `${position.exercise.exerciseName} · ronda ${position.exercise.roundNumber} de ${position.exercise.rounds}`
+            : `${position.exercise.exerciseName} · serie ${position.target.setNumber} de ${position.exercise.targets.length}`
+        }
+        onSkip={skipRest}
+        autoContinue={autoContinue}
+        onToggleAutoContinue={setAutoContinue}
+        onShowOverview={openOverview}
+        withSidebar={withSidebar}
+      />
     )
   }
 
