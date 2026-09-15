@@ -2,12 +2,18 @@ import { betterFetch } from "@better-fetch/fetch"
 import type { Session } from "better-auth/types"
 import { NextResponse, type NextRequest } from "next/server"
 
-const PUBLIC_PATHS = ["/login", "/register", "/verify-email", "/forgot-password", "/reset-password"]
+// `/r` son las rutinas compartidas por enlace: se entrenan sin cuenta.
+// La cuenta se pide al terminar, en /reclamar, que sí exige sesión.
+const PUBLIC_PATHS = ["/login", "/register", "/verify-email", "/forgot-password", "/reset-password", "/r"]
+
+function isPublic(pathname: string) {
+  return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
+}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  if (PUBLIC_PATHS.some((p) => pathname.startsWith(p))) return NextResponse.next()
+  if (isPublic(pathname)) return NextResponse.next()
 
   const { data: session } = await betterFetch<Session>("/api/auth/get-session", {
     baseURL: process.env.NEXT_PUBLIC_API_URL,

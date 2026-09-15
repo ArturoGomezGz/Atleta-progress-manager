@@ -76,6 +76,24 @@ La autorización de rol (coach/atleta) se verifica dentro de cada procedimiento.
 | `sessions.complete` | mutation | Marcar sesión como completada. | Coach del equipo |
 | `sessions.cancel` | mutation | Cancelar sesión completa. | Coach del equipo |
 
+### `share`
+
+Rutinas compartidas por enlace. Los procedimientos marcados como **público** no
+requieren sesión — son la única superficie del API abierta a invitados.
+Ver `docs/rutinas-compartidas.md`.
+
+| Procedimiento | Tipo | Descripción | Autorización |
+|---|---|---|---|
+| `share.forRoutine` | query | Enlace activo de la rutina y su resumen de uso. | Coach del equipo |
+| `share.createLink` | mutation | Generar el enlace (o devolver el vigente). Solo rutinas de entrenamiento. | Coach del equipo |
+| `share.revokeLink` | mutation | Desactivar el enlace. | Coach del equipo |
+| `share.preview` | query | Rutina y quién la comparte, antes de empezar. | **Público** (código válido) |
+| `share.start` | mutation | Empezar el entrenamiento; devuelve el token del invitado. | **Público** (código válido) |
+| `share.workout` | query | Estado del entrenamiento del invitado. | **Público** (token) |
+| `share.recordSet` | mutation | Registrar una serie; solo las que existen en el snapshot. | **Público** (token) |
+| `share.complete` | mutation | Cerrar el entrenamiento y devolver el resumen. | **Público** (token) |
+| `share.claim` | mutation | Convertir el entrenamiento anónimo en una sesión de la cuenta. | Usuario autenticado |
+
 ---
 
 ## Contexto tRPC
@@ -105,3 +123,4 @@ tRPC usa los códigos estándar de `TRPCError`:
 | `FORBIDDEN` | Sin el rol requerido (no es coach, no es miembro) |
 | `NOT_FOUND` | Recurso no existe |
 | `BAD_REQUEST` | Operación no válida (ej. registrar serie en sesión no activa) |
+| `TOO_MANY_REQUESTS` | Enlace compartido con demasiados entrenamientos en la última hora |

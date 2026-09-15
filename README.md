@@ -39,6 +39,17 @@ Todos los entrenadores dentro de un equipo tienen los mismos permisos; no existe
 
 ---
 
+## Rutinas compartidas con invitados
+
+Un entrenador puede compartir una rutina con un enlace o un código corto. Quien
+lo recibe la entrena **sin crear cuenta**; al terminar se le invita a
+registrarse y su entrenamiento se guarda en el historial de la cuenta nueva.
+
+Es el canal para invitar gente a la plataforma: primero entrenan, después
+deciden. Detalles en `docs/rutinas-compartidas.md`.
+
+---
+
 ## Visualización de progreso
 
 Cada atleta tiene una vista individual donde se puede consultar su progreso por ejercicio. La métrica principal a desarrollar es el **porcentaje del PR (récord personal)**: qué tan cerca estuvo el atleta de su mejor marca en cada ejercicio durante una sesión.
@@ -57,6 +68,7 @@ Cada atleta tiene una vista individual donde se puede consultar su progreso por 
 | Stack tecnológico | Pendiente |
 | Lógica de procesamiento y métricas | Pendiente |
 | Diseño de UI/UX | Pendiente |
+| Rutinas compartidas con invitados | Implementado |
 
 ---
 

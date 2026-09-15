@@ -2,6 +2,7 @@
 
 import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
+import { ShareRoutineButton } from "@/components/share-routine"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -126,6 +127,8 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   const updateContent                  = trpc.routines.updateContent.useMutation({ onSuccess: () => refetch() })
   const renameRoutine                  = trpc.routines.rename.useMutation({ onSuccess: () => refetch() })
   const { data: aiAvailable }          = trpc.routines.aiAvailable.useQuery({ teamId })
+  const { data: teams }                = trpc.teams.list.useQuery()
+  const isCoach                        = teams?.find((t) => t.team.id === teamId)?.role === "coach"
   const utils                          = trpc.useUtils()
 
   const [aiOpen, setAiOpen]     = useState(false)
@@ -278,9 +281,14 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           style={{ fontFamily: "var(--font-barlow-condensed)" }}
           aria-label="Nombre de la plantilla"
         />
-        <p className="text-xs text-muted-foreground mt-1">
-          {sorted.length} {sorted.length === 1 ? "bloque" : "bloques"} · toca <strong>Editar</strong> para cambiar series, descanso y notas
-        </p>
+        <div className="flex items-center justify-between gap-3 mt-1">
+          <p className="text-xs text-muted-foreground">
+            {sorted.length} {sorted.length === 1 ? "bloque" : "bloques"} · toca <strong>Editar</strong> para cambiar series, descanso y notas
+          </p>
+          {isCoach && !isEvaluation && content.items.length > 0 && (
+            <ShareRoutineButton routineId={routineId} routineName={routineData.name} />
+          )}
+        </div>
       </div>
 
       {/* IA (experimental, solo equipos habilitados) */}

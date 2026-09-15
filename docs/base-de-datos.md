@@ -168,6 +168,58 @@ Serie individual registrada durante la sesión. Captura **lo que realmente ocurr
 
 ---
 
+## Rutinas compartidas con invitados
+
+Ver `docs/rutinas-compartidas.md` para el flujo completo.
+
+### `routine_share`
+Enlace público de una rutina de entrenamiento.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `routine_id` | uuid FK → routine | cascade delete |
+| `team_id` | uuid FK → team | cascade delete |
+| `code` | text UNIQUE | 8 caracteres sin `0/O/1/I`; viaja en `/r/<code>` |
+| `created_by` | text FK → user | Coach que lo generó |
+| `revoked_at` | timestamptz nullable | `null` = activo |
+| `created_at` | timestamptz | |
+
+### `guest_workout`
+Ejecución anónima de una rutina compartida.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `share_id` | uuid FK → routine_share | cascade delete |
+| `routine_id` | uuid FK → routine nullable | `SET NULL` si se borra la rutina |
+| `team_id` | uuid FK → team | cascade delete |
+| `token` | text UNIQUE | Credencial del invitado; vive en su `localStorage` |
+| `routine_name` | text | Copiado al empezar |
+| `content` | jsonb | Snapshot de `RoutineContent` al empezar |
+| `status` | enum | `active` \| `completed` \| `claimed` |
+| `started_at` / `completed_at` | timestamptz | |
+| `claimed_by` | text FK → user nullable | Cuenta que lo guardó |
+| `claimed_at` | timestamptz nullable | |
+| `claimed_session_id` | uuid FK → training_session nullable | Sesión generada al reclamar |
+
+### `guest_set_record`
+Serie registrada sin cuenta. No referencia `session_exercise` porque esa fila
+todavía no existe: la posición en el contenido aplanado basta para reconstruirla.
+
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `guest_workout_id` | uuid FK → guest_workout | cascade delete |
+| `exercise_id` | uuid FK → exercise | cascade delete |
+| `exercise_order` | integer | Posición en el contenido aplanado |
+| `set_number` | integer | |
+| `reps` | integer | |
+| `weight_lbs` | numeric(6,2) | |
+| `recorded_at` | timestamptz | |
+
+---
+
 ## Diagrama de relaciones
 
 ```
@@ -200,3 +252,4 @@ user ─────────────────────────
 - **Series extra en sesión**: si el atleta supera los objetivos, el coach puede añadir sets adicionales. Estos `set_record` tienen `session_set_target_id = null`.
 - **`routine_id` nullable en `training_session`**: si una rutina se elimina, las sesiones históricas conservan sus datos vía `SET NULL`.
 - **Sin lock de horario**: `started_at` se registra pero no bloquea al entrenador.
+- **Invitado antes que cuenta**: un `guest_workout` guarda el entrenamiento sin usuario; al reclamarlo se materializa en `training_session` + `athlete_session` + `set_record`, de modo que el historial de una cuenta nueva se lee igual que el de cualquier atleta.

@@ -5,6 +5,7 @@ import { preferencesRouter } from "./preferences"
 import { rmsRouter } from "./rms"
 import { routinesRouter } from "./routines"
 import { sessionsRouter } from "./sessions"
+import { shareRouter } from "./share"
 import { teamsRouter } from "./teams"
 
 export const appRouter = router({
@@ -15,6 +16,7 @@ export const appRouter = router({
   rms: rmsRouter,
   groups: groupsRouter,
   preferences: preferencesRouter,
+  share: shareRouter,
 })
 
 export type AppRouter = typeof appRouter
