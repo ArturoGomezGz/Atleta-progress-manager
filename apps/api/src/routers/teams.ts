@@ -21,7 +21,7 @@ export const teamsRouter = router({
 
   list: protectedProcedure.query(async ({ ctx }) => {
     return db
-      .select({ team, role: teamMember.role })
+      .select({ team, role: teamMember.role, selfAthlete: teamMember.selfAthlete })
       .from(teamMember)
       .innerJoin(team, eq(teamMember.teamId, team.id))
       .where(eq(teamMember.userId, ctx.session.user.id))
@@ -106,6 +106,19 @@ export const teamsRouter = router({
         .where(and(eq(teamMember.teamId, input.teamId), eq(teamMember.userId, input.userId)))
     }),
 
+  // Permite a un coach entrenar dentro de su propio equipo (aparecer como atleta
+  // en la asignación de sesiones) sin pasar por updateMemberRole, que bloquea
+  // que un coach edite su propio rol de gestión.
+  toggleSelfTraining: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid(), enabled: z.boolean() }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      await db
+        .update(teamMember)
+        .set({ selfAthlete: input.enabled })
+        .where(and(eq(teamMember.teamId, input.teamId), eq(teamMember.userId, ctx.session.user.id)))
+    }),
+
   deleteTeam: protectedProcedure
     .input(z.object({ teamId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
@@ -132,6 +145,7 @@ export const teamsRouter = router({
           id: teamMember.id,
           userId: teamMember.userId,
           role: teamMember.role,
+          selfAthlete: teamMember.selfAthlete,
           userName: user.name,
           userEmail: user.email,
         })

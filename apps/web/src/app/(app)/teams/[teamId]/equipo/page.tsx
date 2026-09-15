@@ -1,5 +1,6 @@
 "use client"
 
+import { useSession } from "@/lib/auth"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
@@ -21,6 +22,7 @@ import { useRouter } from "next/navigation"
 export default function EquipoPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = use(params)
   const router = useRouter()
+  const { data: session } = useSession()
   const [deleteDialog, setDeleteDialog] = useState<null | "confirm" | "warn">(null)
 
   const { data: teams } = trpc.teams.list.useQuery()
@@ -28,10 +30,12 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
 
   const updateRole = trpc.teams.updateMemberRole.useMutation({ onSuccess: refetchMembers })
   const removeMember = trpc.teams.removeMember.useMutation({ onSuccess: refetchMembers })
+  const toggleSelfTraining = trpc.teams.toggleSelfTraining.useMutation({ onSuccess: refetchMembers })
   const deleteTeam = trpc.teams.deleteTeam.useMutation({ onSuccess: () => router.push("/dashboard") })
 
   const currentTeam = teams?.find((t) => t.team.id === teamId)
   const isCoach = currentTeam?.role === "coach"
+  const selfMember = members?.find((m) => m.userId === session?.user.id)
   const maxAthletes = currentTeam?.team.maxAthletes ?? 1
   const maxCoaches = currentTeam?.team.maxCoaches ?? 1
   const athleteCount = members?.filter((m) => m.role === "athlete").length ?? 0
@@ -63,6 +67,7 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
       <MembersSection
         teamId={teamId}
         isCoach={!!isCoach}
+        currentUserId={session?.user.id ?? null}
         members={members ?? []}
         maxAthletes={maxAthletes}
         maxCoaches={maxCoaches}
@@ -73,6 +78,14 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
         onUpdateRole={(userId, role) => updateRole.mutateAsync({ teamId, userId, role })}
         onRemove={(userId) => removeMember.mutateAsync({ teamId, userId })}
       />
+
+      {isCoach && selfMember && (
+        <SelfTrainingSection
+          enabled={selfMember.selfAthlete}
+          pending={toggleSelfTraining.isPending}
+          onToggle={(enabled) => toggleSelfTraining.mutate({ teamId, enabled })}
+        />
+      )}
 
       <GruposSection teamId={teamId} isCoach={!!isCoach} />
 
@@ -130,16 +143,17 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
 
 // ─── Members section ──────────────────────────────────────────────────────────
 
-type Member = { id: string; userId: string; role: string; userName: string; userEmail: string }
+type Member = { id: string; userId: string; role: string; selfAthlete: boolean; userName: string; userEmail: string }
 
 function MembersSection({
-  teamId, isCoach, members,
+  teamId, isCoach, currentUserId, members,
   maxAthletes, maxCoaches, athleteCount, coachCount,
   atCapacity, overLimit,
   onUpdateRole, onRemove,
 }: {
   teamId: string
   isCoach: boolean
+  currentUserId: string | null
   members: Member[]
   maxAthletes: number
   maxCoaches: number
@@ -237,6 +251,7 @@ function MembersSection({
             <MemberRow
               key={m.id}
               member={m}
+              isSelf={m.userId === currentUserId}
               editing={editing}
               pendingRole={pendingRoles[m.userId] ?? (m.role as "coach" | "athlete")}
               onRoleChange={(role) => setPendingRoles((prev) => ({ ...prev, [m.userId]: role }))}
@@ -365,9 +380,10 @@ const ROLE_STYLES = {
 }
 
 function MemberRow({
-  member, editing, pendingRole, onRoleChange, onRemove,
+  member, isSelf, editing, pendingRole, onRoleChange, onRemove,
 }: {
   member: Member
+  isSelf: boolean
   editing: boolean
   pendingRole: "coach" | "athlete"
   onRoleChange: (role: "coach" | "athlete") => void
@@ -376,6 +392,7 @@ function MemberRow({
   const displayRole = editing ? pendingRole : (member.role as "coach" | "athlete")
   const styles = ROLE_STYLES[displayRole]
   const initials = member.userName.split(" ").map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+  const showsSelfTrainingHint = !editing && isSelf && member.role === "coach" && member.selfAthlete
 
   return (
     <div className={`flex items-center gap-3 px-4 py-3 border rounded-lg transition-colors ${styles.card}`}>
@@ -383,31 +400,83 @@ function MemberRow({
         {initials}
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium truncate">{member.userName}</p>
+        <p className="text-sm font-medium truncate">{member.userName}{isSelf && <span className="text-muted-foreground font-normal"> (tú)</span>}</p>
         <p className="text-xs text-muted-foreground truncate">{member.userEmail}</p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         {editing ? (
           <>
-            <select
-              value={pendingRole}
-              onChange={(e) => onRoleChange(e.target.value as "coach" | "athlete")}
-              className="text-xs border rounded-md px-2 py-1 bg-background"
-            >
-              <option value="athlete">Atleta</option>
-              <option value="coach">Entrenador</option>
-            </select>
-            <button onClick={onRemove} className="text-xs text-destructive hover:underline">
-              Eliminar
-            </button>
+            {isSelf ? (
+              <span className="text-xs text-muted-foreground italic">tu rol se edita aparte</span>
+            ) : (
+              <select
+                value={pendingRole}
+                onChange={(e) => onRoleChange(e.target.value as "coach" | "athlete")}
+                className="text-xs border rounded-md px-2 py-1 bg-background"
+              >
+                <option value="athlete">Atleta</option>
+                <option value="coach">Entrenador</option>
+              </select>
+            )}
+            {!isSelf && (
+              <button onClick={onRemove} className="text-xs text-destructive hover:underline">
+                Eliminar
+              </button>
+            )}
           </>
         ) : (
-          <span className={`flex items-center gap-1 text-xs border rounded-full px-2.5 py-0.5 font-medium ${styles.badge}`}>
-            {styles.icon}
-            {styles.label}
-          </span>
+          <>
+            <span className={`flex items-center gap-1 text-xs border rounded-full px-2.5 py-0.5 font-medium ${styles.badge}`}>
+              {styles.icon}
+              {styles.label}
+            </span>
+            {showsSelfTrainingHint && (
+              <span
+                title="También entrenas en este equipo"
+                className="w-2 h-2 rounded-full bg-primary"
+              />
+            )}
+          </>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─── Self-training toggle ─────────────────────────────────────────────────────
+
+function SelfTrainingSection({
+  enabled, pending, onToggle,
+}: {
+  enabled: boolean
+  pending: boolean
+  onToggle: (enabled: boolean) => void
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 border border-dashed border-border rounded-lg px-4 py-3.5 bg-muted/20">
+      <div className="space-y-0.5">
+        <p className="text-sm font-medium">Auto-entrenamiento</p>
+        <p className="text-xs text-muted-foreground max-w-sm">
+          Aparecerás como atleta en tus propias sesiones sin cambiar tu rol de entrenador del equipo.
+        </p>
+      </div>
+      <button
+        role="switch"
+        aria-checked={enabled}
+        disabled={pending}
+        onClick={() => onToggle(!enabled)}
+        className={cn(
+          "relative shrink-0 w-10 h-6 rounded-full transition-colors disabled:opacity-50",
+          enabled ? "bg-primary" : "bg-muted-foreground/30",
+        )}
+      >
+        <span
+          className={cn(
+            "absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-background shadow transition-transform",
+            enabled && "translate-x-4",
+          )}
+        />
+      </button>
     </div>
   )
 }
@@ -428,7 +497,7 @@ function GruposSection({ teamId, isCoach }: { teamId: string; isCoach: boolean }
   const addMember    = trpc.groups.addMember.useMutation({ onSuccess: refetch })
   const removeMember = trpc.groups.removeMember.useMutation({ onSuccess: refetch })
 
-  const athletes = members?.filter((m) => m.role === "athlete") ?? []
+  const athletes = members?.filter((m) => m.role === "athlete" || m.selfAthlete) ?? []
 
   return (
     <div className="space-y-3 pt-4 border-t border-border">

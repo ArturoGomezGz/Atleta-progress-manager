@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils"
 type SubNavItem = { key: string; label: string; sections: string[]; hrefSuffix: string }
 type NavItem = { key: string; label: string; icon: React.ElementType; hrefSuffix?: string; children?: SubNavItem[] }
 
-const COACH_NAV: NavItem[] = [
+const COACH_NAV_BASE: NavItem[] = [
   { key: "equipo",      label: "Equipo",         icon: UsersIcon,    hrefSuffix: "equipo" },
   {
     key: "rutinas", label: "Rutinas", icon: CalendarIcon,
@@ -25,6 +25,10 @@ const COACH_NAV: NavItem[] = [
   { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
   { key: "explorar",    label: "Explorar",       icon: CompassIcon,  hrefSuffix: "explorar" },
 ]
+
+// Coach con "auto-entrenamiento" activo en el equipo actual: gana un acceso
+// directo a sus propias sesiones, sin perder ninguno de sus ítems de gestión.
+const COACH_SELF_TRAINING_ITEM: NavItem = { key: "mis-rutinas", label: "Mis rutinas", icon: CalendarIcon, hrefSuffix: "mis-rutinas" }
 
 const ATHLETE_NAV: NavItem[] = [
   { key: "mis-rutinas", label: "Mis rutinas",   icon: CalendarIcon, hrefSuffix: "mis-rutinas" },
@@ -145,7 +149,11 @@ export function Sidebar() {
   // When on a non-team page (/exercises, etc.) fall back to the first team so nav links stay usable
   const effectiveTeamId = currentTeamId ?? teams?.[0]?.team.id ?? null
   const isAthlete = currentTeam?.role === "athlete"
-  const navItems = isAthlete ? ATHLETE_NAV : COACH_NAV
+  const navItems = isAthlete
+    ? ATHLETE_NAV
+    : currentTeam?.selfAthlete
+      ? [...COACH_NAV_BASE, COACH_SELF_TRAINING_ITEM]
+      : COACH_NAV_BASE
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
