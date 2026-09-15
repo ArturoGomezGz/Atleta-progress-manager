@@ -18,7 +18,7 @@ function NewSessionForm() {
     onSuccess: (session) => router.push(`/sessions/${session.id}`),
   })
 
-  const athletes = members?.filter((m) => m.role === "athlete") ?? []
+  const athletes = members?.filter((m) => m.role === "athlete" || m.selfAthlete) ?? []
 
   function toggleAthlete(id: string) {
     setSelectedAthleteIds((prev) => {

@@ -8,11 +8,12 @@ import {
   sessionExercise,
   sessionSetTarget,
   setRecord,
+  teamMember,
   trainingSession,
   user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, desc, eq, gt, gte, inArray, lte, SQL } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, inArray, lte, or, SQL } from "drizzle-orm"
 import type { RoutineContent, RoutineExerciseContent } from "@atleta/db/schema"
 import { z } from "zod"
 import { triggerExerciseReport } from "../services/report-trigger"
@@ -216,6 +217,23 @@ export const sessionsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
+
+      // Solo atletas del equipo, o el propio coach si activó "entrenar en este equipo",
+      // pueden ser asignados a una sesión.
+      const eligible = await db
+        .select({ userId: teamMember.userId })
+        .from(teamMember)
+        .where(
+          and(
+            eq(teamMember.teamId, input.teamId),
+            or(eq(teamMember.role, "athlete"), eq(teamMember.selfAthlete, true)),
+          ),
+        )
+      const eligibleIds = new Set(eligible.map((m) => m.userId))
+      const invalidIds = input.athleteIds.filter((id) => !eligibleIds.has(id))
+      if (invalidIds.length > 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Uno o más atletas seleccionados no pertenecen a este equipo" })
+      }
 
       const [r] = await db.select().from(routine).where(eq(routine.id, input.routineId)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
@@ -422,10 +440,12 @@ export const sessionsRouter = router({
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
 
-      // Coach puede registrar para cualquier atleta; atleta solo para sí mismo
+      // Coach puede registrar para cualquier atleta; atleta solo para sí mismo.
+      // Si el coach registra para sí mismo (auto-entrenamiento), cuenta como atleta.
       const member = await assertMember(userId, session.teamId)
-      if (member.role !== "coach" && input.athleteId !== userId) throw new TRPCError({ code: "FORBIDDEN" })
-      if (member.role === "coach") {
+      const recordingForSelf = input.athleteId === userId
+      if (member.role !== "coach" && !recordingForSelf) throw new TRPCError({ code: "FORBIDDEN" })
+      if (member.role === "coach" && !recordingForSelf) {
         const category = await getRoutineCategory(session.routineId)
         if (category === "training") throw new TRPCError({ code: "FORBIDDEN", message: "El entrenador no puede registrar series en sesiones de entrenamiento" })
       }

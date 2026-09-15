@@ -1,4 +1,4 @@
-import { integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { boolean, integer, jsonb, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 
 export const teamRoleEnum = pgEnum("team_role", ["coach", "athlete"])
@@ -24,6 +24,9 @@ export const teamMember = pgTable("team_member", {
     .notNull()
     .references(() => user.id, { onDelete: "cascade" }),
   role: teamRoleEnum("role").notNull(),
+  // Permite que un coach también aparezca como atleta en su propio equipo
+  // (asignarse rutinas a sí mismo) sin cambiar su rol de gestión del equipo.
+  selfAthlete: boolean("self_athlete").notNull().default(false),
   joinedAt: timestamp("joined_at").notNull().defaultNow(),
 })
 

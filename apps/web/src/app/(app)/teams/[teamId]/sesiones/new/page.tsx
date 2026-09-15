@@ -172,7 +172,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
     onSuccess: (session) => router.push(`/teams/${teamId}/sesiones/${session.id}`),
   })
 
-  const athletes = members?.filter((m) => m.role === "athlete") ?? []
+  const athletes = members?.filter((m) => m.role === "athlete" || m.selfAthlete) ?? []
 
   const filtered = (routines ?? []).filter((r) => {
     if (typeFilter !== "all" && r.category !== typeFilter) return false
