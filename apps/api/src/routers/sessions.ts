@@ -440,10 +440,12 @@ export const sessionsRouter = router({
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
 
-      // Coach puede registrar para cualquier atleta; atleta solo para sí mismo
+      // Coach puede registrar para cualquier atleta; atleta solo para sí mismo.
+      // Si el coach registra para sí mismo (auto-entrenamiento), cuenta como atleta.
       const member = await assertMember(userId, session.teamId)
-      if (member.role !== "coach" && input.athleteId !== userId) throw new TRPCError({ code: "FORBIDDEN" })
-      if (member.role === "coach") {
+      const recordingForSelf = input.athleteId === userId
+      if (member.role !== "coach" && !recordingForSelf) throw new TRPCError({ code: "FORBIDDEN" })
+      if (member.role === "coach" && !recordingForSelf) {
         const category = await getRoutineCategory(session.routineId)
         if (category === "training") throw new TRPCError({ code: "FORBIDDEN", message: "El entrenador no puede registrar series en sesiones de entrenamiento" })
       }
