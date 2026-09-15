@@ -34,6 +34,14 @@ Plantilla → Compartir
 
 El entrenador genera el enlace desde dos sitios: **Nueva sesión**, marcando
 *Invitado* junto a los atletas, o el botón **Compartir** de la plantilla.
+Ambos llevan a la misma vista de detalle (`/teams/<teamId>/rutinas/enlace/<routineId>`),
+que también es donde se llega al abrir la tarjeta "Enlace activo" en Sesiones.
+
+Mientras el enlace sigue vigente, se muestra ahí como una sesión más "en
+curso" — es la señal de que sigue habiendo una puerta abierta a invitados.
+La tarjeta desaparece de la lista en cuanto se desactiva; los entrenamientos
+ya hechos se conservan y se siguen viendo en la vista de detalle mientras
+el enlace exista (`share.attendance` devuelve `null` una vez revocado).
 
 El middleware deja `/r` fuera de la autenticación; `/reclamar` sí la exige, así
 que quien llega sin sesión pasa por login y vuelve.
@@ -141,6 +149,8 @@ Un enlace público es una superficie de escritura sin sesión, así que está ac
 | `share.forRoutine` | Coach | Enlace activo y cuántos empezaron / terminaron / se registraron |
 | `share.createLink` | Coach | Crea el enlace (o devuelve el vigente) |
 | `share.revokeLink` | Coach | Desactiva el enlace |
+| `share.listForTeam` | Coach | Enlaces activos del equipo, para la lista de Sesiones |
+| `share.attendance` | Coach | Cada entrenamiento del enlace: quién lo hizo (o "Invitado") y su avance |
 | `share.preview` | — | Rutina, ejercicios y quién la comparte, antes de empezar |
 | `share.start` | — | Crea el entrenamiento y devuelve el token |
 | `share.workout` | — | Estado del entrenamiento, con el formato de `sessions.myProgress` |

@@ -3,7 +3,6 @@
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
-import { ShareRoutineSheet } from "@/components/share-routine"
 import { ChevronLeftIcon, InfoIcon, Link2Icon, SearchIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { use, useState, Suspense, useEffect } from "react"
@@ -168,12 +167,16 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const [previewId, setPreviewId] = useState<string | null>(null)
   // Invitado: no es un miembro del equipo, es un enlace que cualquiera puede abrir
   const [guestSelected, setGuestSelected] = useState(false)
-  const [shareOpen, setShareOpen] = useState(false)
 
   const { data: routines } = trpc.routines.list.useQuery({ teamId })
   const { data: members }  = trpc.teams.members.useQuery({ teamId })
   const createSession = trpc.sessions.create.useMutation({
     onSuccess: (session) => router.push(`/teams/${teamId}/sesiones/${session.id}`),
+  })
+  // Genera el enlace (o reutiliza el vigente) y lleva a la vista donde se comparte,
+  // se revisa asistencia y se desactiva — la misma a la que se llega desde Sesiones.
+  const createLink = trpc.share.createLink.useMutation({
+    onSuccess: () => router.push(`/teams/${teamId}/rutinas/enlace/${selectedRoutineId}`),
   })
 
   const athletes = members?.filter((m) => m.role === "athlete" || m.selfAthlete) ?? []
@@ -535,8 +538,8 @@ function NewSessionForm({ teamId }: { teamId: string }) {
           {guestSelected && (
             <button
               type="button"
-              onClick={() => setShareOpen(true)}
-              disabled={!canShare}
+              onClick={() => selectedRoutineId && createLink.mutate({ routineId: selectedRoutineId })}
+              disabled={!canShare || createLink.isPending}
               className={cn(
                 "w-full flex items-center justify-center gap-2 py-3 rounded-xl text-sm font-semibold transition-colors cursor-pointer disabled:opacity-40",
                 selectedAthleteIds.size > 0
@@ -545,19 +548,14 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               )}
             >
               <Link2Icon className="w-4 h-4" />
-              Compartir enlace
+              {createLink.isPending ? "Generando…" : "Compartir enlace"}
             </button>
+          )}
+          {createLink.isError && (
+            <p className="text-xs text-destructive text-center">{createLink.error.message}</p>
           )}
         </div>
       </form>
-
-      {shareOpen && selectedRoutine && (
-        <ShareRoutineSheet
-          routineId={selectedRoutine.id}
-          routineName={sc(selectedRoutine.name)}
-          onClose={() => setShareOpen(false)}
-        />
-      )}
 
       {/* Preview bottom sheet */}
       {previewId && (

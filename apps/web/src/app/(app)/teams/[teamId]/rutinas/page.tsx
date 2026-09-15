@@ -2,7 +2,7 @@
 
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import { PlusIcon } from "lucide-react"
+import { Link2Icon, PlusIcon } from "lucide-react"
 import Link from "next/link"
 import { use, useState, Suspense } from "react"
 
@@ -51,6 +51,38 @@ function SessionCard({ teamId, session }: { teamId: string; session: SessionItem
   )
 }
 
+type ActiveShare = {
+  routineId: string
+  code: string
+  routineName: string
+  createdAt: string
+  stats: { started: number; completed: number; claimed: number }
+}
+
+function ShareLinkCard({ teamId, share }: { teamId: string; share: ActiveShare }) {
+  return (
+    <Link
+      href={`/teams/${teamId}/rutinas/enlace/${share.routineId}`}
+      className="group flex items-center gap-3 p-3.5 border border-dashed border-primary/30 rounded-xl hover:border-primary/60 bg-primary/5 transition-all duration-200 cursor-pointer"
+    >
+      <Link2Icon className="w-4 h-4 text-primary shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
+          {sc(share.routineName)}
+        </p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          {share.stats.started === 0
+            ? "Nadie ha entrado todavía"
+            : `${share.stats.started} ${share.stats.started === 1 ? "empezó" : "empezaron"} · ${share.stats.completed} ${share.stats.completed === 1 ? "terminó" : "terminaron"}`}
+        </p>
+      </div>
+      <span className="text-xs font-medium px-2 py-0.5 rounded-full border shrink-0 bg-primary/10 text-primary border-primary/20">
+        Enlace activo
+      </span>
+    </Link>
+  )
+}
+
 function SesionesContent({ teamId }: { teamId: string }) {
   const [histFilter, setHistFilter] = useState<"all" | "evaluation" | "training">("all")
 
@@ -59,6 +91,12 @@ function SesionesContent({ teamId }: { teamId: string }) {
 
   const { data: evalSessions }     = trpc.sessions.list.useQuery({ teamId, category: "evaluation" })
   const { data: trainingSessions } = trpc.sessions.list.useQuery({ teamId, category: "training" })
+  // Un enlace sin revocar es, para el entrenador, una sesión abierta más
+  const { data: activeShares } = trpc.share.listForTeam.useQuery(
+    { teamId },
+    { enabled: !!isCoach, refetchInterval: 15000 },
+  )
+  const shares = activeShares ?? []
 
   const allSessions: SessionItem[] = [
     ...(evalSessions ?? []).map((s) => ({ ...s, routineCategory: "evaluation" as const })),
@@ -93,16 +131,17 @@ function SesionesContent({ teamId }: { teamId: string }) {
         )}
       </div>
 
-      {/* Active + Scheduled */}
-      {(active.length > 0 || scheduled.length > 0) && (
+      {/* Active + Scheduled + Enlaces */}
+      {(active.length > 0 || scheduled.length > 0 || shares.length > 0) && (
         <div className="space-y-4">
-          {active.length > 0 && (
+          {(active.length > 0 || shares.length > 0) && (
             <section className="space-y-2">
               <div className="flex items-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">En curso</p>
               </div>
               {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+              {shares.map((sh) => <ShareLinkCard key={sh.routineId} teamId={teamId} share={sh} />)}
             </section>
           )}
 
@@ -118,7 +157,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
         </div>
       )}
 
-      {active.length === 0 && scheduled.length === 0 && (
+      {active.length === 0 && scheduled.length === 0 && shares.length === 0 && (
         <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl gap-2 text-center">
           <p className="text-sm text-muted-foreground">Sin sesiones activas o programadas.</p>
           {isCoach && (

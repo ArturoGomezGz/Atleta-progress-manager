@@ -154,7 +154,7 @@ export function ShareRoutineSheet({
   )
 }
 
-function Stat({ label, value }: { label: string; value: number }) {
+export function Stat({ label, value }: { label: string; value: number }) {
   return (
     <div className="rounded-xl border border-border bg-muted/20 py-2.5">
       <p className="text-xl font-bold tabular-nums">{value}</p>
@@ -163,7 +163,7 @@ function Stat({ label, value }: { label: string; value: number }) {
   )
 }
 
-function CopyButton({ value, label }: { value: string; label: string }) {
+export function CopyButton({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false)
 
   async function handleCopy() {

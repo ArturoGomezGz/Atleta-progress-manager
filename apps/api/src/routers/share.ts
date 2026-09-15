@@ -294,6 +294,107 @@ export const shareRouter = router({
         .where(and(eq(routineShare.routineId, input.routineId), isNull(routineShare.revokedAt)))
     }),
 
+  /**
+   * Enlaces activos del equipo, para mostrarlos junto a las sesiones en curso:
+   * un `routine_share` sin revocar es, para el entrenador, una "sesión" abierta
+   * mientras nadie sabe cuántos invitados van a pasar por ella.
+   */
+  listForTeam: protectedProcedure
+    .input(z.object({ teamId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+
+      const shares = await db
+        .select({
+          id: routineShare.id,
+          routineId: routineShare.routineId,
+          code: routineShare.code,
+          createdAt: routineShare.createdAt,
+          routineName: routine.name,
+        })
+        .from(routineShare)
+        .innerJoin(routine, eq(routineShare.routineId, routine.id))
+        .where(and(eq(routineShare.teamId, input.teamId), isNull(routineShare.revokedAt)))
+        .orderBy(desc(routineShare.createdAt))
+
+      if (shares.length === 0) return []
+
+      const shareIds = shares.map((s) => s.id)
+      const stats = await db
+        .select({
+          shareId: guestWorkout.shareId,
+          started: count(),
+          completed: sql<number>`count(*) filter (where ${guestWorkout.status} <> 'active')::int`,
+          claimed: sql<number>`count(*) filter (where ${guestWorkout.claimedBy} is not null)::int`,
+        })
+        .from(guestWorkout)
+        .where(inArray(guestWorkout.shareId, shareIds))
+        .groupBy(guestWorkout.shareId)
+      const statsByShare = new Map(stats.map((s) => [s.shareId, s]))
+
+      return shares.map((s) => ({
+        ...s,
+        stats: statsByShare.get(s.id) ?? { started: 0, completed: 0, claimed: 0 },
+      }))
+    }),
+
+  /** Detalle de asistencia de un enlace: cada entrenamiento, quién lo hizo y cuánto avanzó. */
+  attendance: protectedProcedure
+    .input(z.object({ routineId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [r] = await db.select().from(routine).where(eq(routine.id, input.routineId)).limit(1)
+      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, r.teamId)
+
+      const [share] = await db
+        .select()
+        .from(routineShare)
+        .where(and(eq(routineShare.routineId, input.routineId), isNull(routineShare.revokedAt)))
+        .limit(1)
+      if (!share) return null
+
+      const workouts = await db
+        .select({
+          id: guestWorkout.id,
+          status: guestWorkout.status,
+          startedAt: guestWorkout.startedAt,
+          completedAt: guestWorkout.completedAt,
+          content: guestWorkout.content,
+          claimedByName: user.name,
+        })
+        .from(guestWorkout)
+        .leftJoin(user, eq(guestWorkout.claimedBy, user.id))
+        .where(eq(guestWorkout.shareId, share.id))
+        .orderBy(desc(guestWorkout.startedAt))
+
+      const workoutIds = workouts.map((w) => w.id)
+      const setCounts = workoutIds.length
+        ? await db
+            .select({ guestWorkoutId: guestSetRecord.guestWorkoutId, n: count() })
+            .from(guestSetRecord)
+            .where(inArray(guestSetRecord.guestWorkoutId, workoutIds))
+            .groupBy(guestSetRecord.guestWorkoutId)
+        : []
+      const doneByWorkout = new Map(setCounts.map((c) => [c.guestWorkoutId, c.n]))
+
+      return {
+        code: share.code,
+        createdAt: share.createdAt,
+        routineName: r.name,
+        workouts: workouts.map((w) => ({
+          id: w.id,
+          status: w.status,
+          startedAt: w.startedAt,
+          completedAt: w.completedAt,
+          claimedByName: w.claimedByName,
+          doneSets: doneByWorkout.get(w.id) ?? 0,
+          // Snapshot propio de este entrenamiento: si el coach editó la
+          // plantilla entre dos invitados, cada uno se compara contra el suyo.
+          totalSets: flattenContent(w.content).reduce((n, e) => n + e.sets.length, 0),
+        })),
+      }
+    }),
+
   // ── Invitado (sin cuenta) ──────────────────────────────────────────────────
 
   /** Vista previa de la rutina antes de empezar. No crea nada. */

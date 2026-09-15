@@ -87,6 +87,8 @@ Ver `docs/rutinas-compartidas.md`.
 | `share.forRoutine` | query | Enlace activo de la rutina y su resumen de uso. | Coach del equipo |
 | `share.createLink` | mutation | Generar el enlace (o devolver el vigente). Solo rutinas de entrenamiento. | Coach del equipo |
 | `share.revokeLink` | mutation | Desactivar el enlace. | Coach del equipo |
+| `share.listForTeam` | query | Enlaces activos del equipo, para mostrarlos junto a las sesiones. | Coach del equipo |
+| `share.attendance` | query | Asistencia del enlace: cada entrenamiento, quién lo hizo y su avance. | Coach del equipo |
 | `share.preview` | query | Rutina y quién la comparte, antes de empezar. | **Público** (código válido) |
 | `share.start` | mutation | Empezar el entrenamiento; devuelve el token del invitado. | **Público** (código válido) |
 | `share.workout` | query | Estado del entrenamiento del invitado. | **Público** (token) |
