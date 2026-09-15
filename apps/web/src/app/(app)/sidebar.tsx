@@ -26,9 +26,18 @@ const COACH_NAV_BASE: NavItem[] = [
   { key: "explorar",    label: "Explorar",       icon: CompassIcon,  hrefSuffix: "explorar" },
 ]
 
-// Coach con "auto-entrenamiento" activo en el equipo actual: gana un acceso
-// directo a sus propias sesiones, sin perder ninguno de sus ítems de gestión.
-const COACH_SELF_TRAINING_ITEM: NavItem = { key: "mis-rutinas", label: "Mis rutinas", icon: CalendarIcon, hrefSuffix: "mis-rutinas" }
+// Coach con "auto-entrenamiento" activo en el equipo actual: sus propias
+// sesiones se agregan como un tercer sub-ítem de "Rutinas", junto a
+// Plantillas y Sesiones, en vez de vivir como acceso aparte.
+const MIS_RUTINAS_CHILD: SubNavItem = { key: "mis-rutinas", label: "Mis rutinas", sections: ["mis-rutinas"], hrefSuffix: "mis-rutinas" }
+
+function withSelfTraining(nav: NavItem[]): NavItem[] {
+  return nav.map((item) =>
+    item.key === "rutinas" && item.children
+      ? { ...item, children: [...item.children, MIS_RUTINAS_CHILD] }
+      : item,
+  )
+}
 
 const ATHLETE_NAV: NavItem[] = [
   { key: "mis-rutinas", label: "Mis rutinas",   icon: CalendarIcon, hrefSuffix: "mis-rutinas" },
@@ -152,7 +161,7 @@ export function Sidebar() {
   const navItems = isAthlete
     ? ATHLETE_NAV
     : currentTeam?.selfAthlete
-      ? [...COACH_NAV_BASE, COACH_SELF_TRAINING_ITEM]
+      ? withSelfTraining(COACH_NAV_BASE)
       : COACH_NAV_BASE
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
