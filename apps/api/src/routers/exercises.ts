@@ -4,7 +4,9 @@ import {
   exercise,
   exerciseEquipment,
   exerciseMuscle,
+  exerciseReaction,
   exerciseSave,
+  exerciseStats,
   muscle,
   muscleGroup,
   team,
@@ -12,7 +14,7 @@ import {
   user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, eq, ilike, inArray, isNull, or } from "drizzle-orm"
+import { and, asc, desc, eq, ilike, inArray, isNull, or } from "drizzle-orm"
 import { z } from "zod"
 import OpenAI from "openai"
 import { protectedProcedure, router } from "../trpc"
@@ -137,6 +139,95 @@ async function replaceJunctions(
   }
 }
 
+// ── Interacción: stats derivadas + reacción propia ────────────────────────────
+
+const reactionValueSchema = z.enum(["positive", "negative"])
+const reactionReasonSchema = z.enum([
+  "video_roto", "video_no_corresponde", "datos_incorrectos", "duplicado", "no_me_sirve", "otro",
+])
+
+// Motivos que describen un defecto del contenido y alimentan la cola de revisión.
+// Debe coincidir con el filtro de `open_reports` en services/exercise-stats.ts.
+const DEFECT_REASONS = ["video_roto", "video_no_corresponde", "datos_incorrectos", "duplicado"] as const
+
+type WithId = { id: string }
+
+/** Adjunta el agregado público y la reacción del propio usuario a una lista de ejercicios. */
+async function attachInteraction<T extends WithId>(exercises: T[], userId: string) {
+  if (exercises.length === 0) return []
+
+  const ids = exercises.map((e) => e.id)
+  const [stats, reactions] = await Promise.all([
+    db.select().from(exerciseStats).where(inArray(exerciseStats.exerciseId, ids)),
+    db
+      .select({
+        exerciseId: exerciseReaction.exerciseId,
+        value: exerciseReaction.value,
+        reason: exerciseReaction.reason,
+      })
+      .from(exerciseReaction)
+      .where(and(eq(exerciseReaction.userId, userId), inArray(exerciseReaction.exerciseId, ids))),
+  ])
+
+  const statsById = new Map(stats.map((s) => [s.exerciseId, s]))
+  const reactionById = new Map(reactions.map((r) => [r.exerciseId, r]))
+
+  return exercises.map((ex) => {
+    const s = statsById.get(ex.id)
+    const r = reactionById.get(ex.id)
+    return {
+      ...ex,
+      // Se expone el uso agregado, nunca quién interactuó
+      stats: {
+        timesUsed: s?.sessionUses ?? 0,
+        uniqueCoaches: s?.uniqueCoaches ?? 0,
+        saves: s?.saves ?? 0,
+        positiveReactions: s?.positiveReactions ?? 0,
+        negativeReactions: s?.negativeReactions ?? 0,
+        score: s?.score ?? 0,
+        isRecommended: s?.isRecommended ?? false,
+      },
+      myReaction: r ? { value: r.value, reason: r.reason } : null,
+    }
+  })
+}
+
+/**
+ * Un usuario puede reaccionar a lo que legítimamente ve: el catálogo del sistema, lo público,
+ * lo suyo, y lo de los equipos a los que pertenece. Los atletas entran por esta última vía,
+ * que es justo donde pueden reportar que el video de la rutina que les tocó no sirve.
+ */
+async function assertCanInteract(userId: string, exerciseId: string) {
+  const [ex] = await db
+    .select({
+      id: exercise.id,
+      isPublic: exercise.isPublic,
+      ownerUserId: exercise.ownerUserId,
+      ownerTeamId: exercise.ownerTeamId,
+      deletedAt: exercise.deletedAt,
+    })
+    .from(exercise)
+    .where(eq(exercise.id, exerciseId))
+    .limit(1)
+
+  if (!ex || ex.deletedAt) throw new TRPCError({ code: "NOT_FOUND" })
+
+  if (ex.isPublic) return ex
+  if (ex.ownerUserId === userId) return ex
+  if (ex.ownerUserId === null && ex.ownerTeamId === null) return ex
+
+  if (ex.ownerTeamId !== null) {
+    const [membership] = await db
+      .select({ id: teamMember.id })
+      .from(teamMember)
+      .where(and(eq(teamMember.userId, userId), eq(teamMember.teamId, ex.ownerTeamId)))
+      .limit(1)
+    if (membership) return ex
+  }
+
+  throw new TRPCError({ code: "FORBIDDEN" })
+}
+
 // ── Router ────────────────────────────────────────────────────────────────────
 
 export const exercisesRouter = router({
@@ -180,7 +271,8 @@ export const exercisesRouter = router({
       if (!canView) throw new TRPCError({ code: "FORBIDDEN" })
 
       const [enriched] = await attachDetails([ex])
-      return enriched
+      const [withInteraction] = await attachInteraction([enriched], userId)
+      return withInteraction
     }),
 
   // List exercises visible to the user from a specific team context
@@ -587,7 +679,7 @@ Rules:
 
         const savedIds = new Set(saved.map((s) => s.exerciseId))
 
-        return enriched
+        const visible = enriched
           .filter((ex) => {
             if (ex.ownerUserId === userId) return false
             if (input?.bodyZone) {
@@ -600,6 +692,14 @@ Rules:
             return true
           })
           .map((ex) => ({ ...ex, isSaved: savedIds.has(ex.id) }))
+
+        const withInteraction = await attachInteraction(visible, userId)
+
+        // Mientras el catálogo no tenga historia todos los scores empatan y esto degrada
+        // a orden alfabético, que es exactamente el comportamiento previo.
+        return withInteraction.sort(
+          (a, b) => b.stats.score - a.stats.score || a.name.localeCompare(b.name),
+        )
       } catch (err) {
         console.error("[listPublic] ERROR:", err)
         throw err
@@ -649,5 +749,129 @@ Rules:
       await db
         .delete(exerciseSave)
         .where(and(eq(exerciseSave.userId, userId), eq(exerciseSave.exerciseId, input.exerciseId)))
+    }),
+
+  // ── Reacciones ────────────────────────────────────────────────────────────
+
+  react: protectedProcedure
+    .input(z.object({
+      exerciseId: z.string().uuid(),
+      value: reactionValueSchema,
+      reason: reactionReasonSchema.optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+      await assertCanInteract(userId, input.exerciseId)
+
+      // Sin motivo, un voto negativo no dice si falla el ejercicio o el video, que es
+      // justamente lo que este mecanismo existe para distinguir.
+      if (input.value === "negative" && !input.reason) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Indica qué está mal" })
+      }
+      const reason = input.value === "negative" ? (input.reason ?? null) : null
+
+      await db
+        .insert(exerciseReaction)
+        .values({ userId, exerciseId: input.exerciseId, value: input.value, reason })
+        .onConflictDoUpdate({
+          target: [exerciseReaction.userId, exerciseReaction.exerciseId],
+          set: { value: input.value, reason, resolvedAt: null, updatedAt: new Date() },
+        })
+    }),
+
+  unreact: protectedProcedure
+    .input(z.object({ exerciseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+      await db
+        .delete(exerciseReaction)
+        .where(and(eq(exerciseReaction.userId, userId), eq(exerciseReaction.exerciseId, input.exerciseId)))
+    }),
+
+  /** Cola de revisión: reportes de defecto abiertos sobre los ejercicios que el usuario puede corregir. */
+  listReports: protectedProcedure.query(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+
+    const coachedTeams = await db
+      .select({ teamId: teamMember.teamId })
+      .from(teamMember)
+      .where(and(eq(teamMember.userId, userId), eq(teamMember.role, "coach")))
+
+    const coachedTeamIds = coachedTeams.map((t) => t.teamId)
+
+    const rows = await db
+      .select({
+        exerciseId: exercise.id,
+        name: exercise.name,
+        youtubeVideoId: exercise.youtubeVideoId,
+        reason: exerciseReaction.reason,
+        createdAt: exerciseReaction.createdAt,
+      })
+      .from(exerciseReaction)
+      .innerJoin(exercise, eq(exercise.id, exerciseReaction.exerciseId))
+      .where(
+        and(
+          eq(exerciseReaction.value, "negative"),
+          isNull(exerciseReaction.resolvedAt),
+          inArray(exerciseReaction.reason, [...DEFECT_REASONS]),
+          isNull(exercise.deletedAt),
+          or(
+            eq(exercise.ownerUserId, userId),
+            ...(coachedTeamIds.length > 0 ? [inArray(exercise.ownerTeamId, coachedTeamIds)] : []),
+          ),
+        ),
+      )
+      .orderBy(desc(exerciseReaction.createdAt))
+
+    // Se agrupa por ejercicio: al dueño le importa qué arreglar, no quién lo reportó
+    const byExercise = new Map<string, {
+      exerciseId: string
+      name: string
+      youtubeVideoId: string | null
+      total: number
+      reasons: Record<string, number>
+      lastReportedAt: Date
+    }>()
+
+    for (const row of rows) {
+      const entry = byExercise.get(row.exerciseId) ?? {
+        exerciseId: row.exerciseId,
+        name: row.name,
+        youtubeVideoId: row.youtubeVideoId,
+        total: 0,
+        reasons: {},
+        lastReportedAt: row.createdAt,
+      }
+      entry.total += 1
+      if (row.reason) entry.reasons[row.reason] = (entry.reasons[row.reason] ?? 0) + 1
+      byExercise.set(row.exerciseId, entry)
+    }
+
+    return [...byExercise.values()].sort((a, b) => b.total - a.total)
+  }),
+
+  /** Marca como atendidos los reportes de un ejercicio — el dueño ya corrigió el video o los datos. */
+  resolveReports: protectedProcedure
+    .input(z.object({ exerciseId: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+      const [ex] = await db.select().from(exercise).where(eq(exercise.id, input.exerciseId)).limit(1)
+      if (!ex) throw new TRPCError({ code: "NOT_FOUND" })
+
+      if (ex.ownerUserId !== null) {
+        if (ex.ownerUserId !== userId) throw new TRPCError({ code: "FORBIDDEN" })
+      } else if (ex.ownerTeamId !== null) {
+        await assertCoach(userId, ex.ownerTeamId)
+      } else {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
+
+      await db
+        .update(exerciseReaction)
+        .set({ resolvedAt: new Date() })
+        .where(and(
+          eq(exerciseReaction.exerciseId, input.exerciseId),
+          isNull(exerciseReaction.resolvedAt),
+        ))
     }),
 })

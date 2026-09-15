@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm"
-import { boolean, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
+import { boolean, index, pgEnum, pgTable, primaryKey, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { team } from "./teams"
 
@@ -59,4 +59,38 @@ export const exerciseSave = pgTable(
     savedAt: timestamp("saved_at").notNull().defaultNow(),
   },
   (t) => [primaryKey({ columns: [t.userId, t.exerciseId] })],
+)
+
+// ── Retroalimentación explícita ───────────────────────────────────────────────
+
+export const exerciseReactionValueEnum = pgEnum("exercise_reaction_value", ["positive", "negative"])
+
+// El motivo separa "el ejercicio no me sirve" de "el video está roto": lo primero es opinión
+// y pesa en el score, lo segundo es un defecto que va a la cola de revisión del catálogo.
+export const exerciseReactionReasonEnum = pgEnum("exercise_reaction_reason", [
+  "video_roto",
+  "video_no_corresponde",
+  "datos_incorrectos",
+  "duplicado",
+  "no_me_sirve",
+  "otro",
+])
+
+export const exerciseReaction = pgTable(
+  "exercise_reaction",
+  {
+    userId: text("user_id").notNull().references(() => user.id, { onDelete: "cascade" }),
+    exerciseId: uuid("exercise_id").notNull().references(() => exercise.id, { onDelete: "cascade" }),
+    value: exerciseReactionValueEnum("value").notNull(),
+    reason: exerciseReactionReasonEnum("reason"),
+    // Marca el reporte como atendido por el dueño del ejercicio; null = abierto
+    resolvedAt: timestamp("resolved_at"),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    // Una fila por usuario/ejercicio: la tabla queda acotada y cada persona pesa una vez
+    primaryKey({ columns: [t.userId, t.exerciseId] }),
+    index("exercise_reaction_exercise_idx").on(t.exerciseId),
+  ],
 )

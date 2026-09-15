@@ -1,6 +1,6 @@
 "use client"
 
-import { ExerciseDetailSheet, type ExerciseDetail } from "@/components/exercise-detail-sheet"
+import { ExerciseDetailSheet } from "@/components/exercise-detail-sheet"
 import { ExerciseFinderBar, FinderEmptyResults, useExerciseFinder } from "@/components/exercise-finder"
 import { YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import {
   BookmarkIcon,
   FlameIcon,
+  SparklesIcon,
   UserIcon,
   ZapIcon,
 } from "lucide-react"
@@ -56,12 +57,14 @@ type PublicExercise = {
   authorName: string | null
   muscles: { muscleId: string; muscleName: string; role: string; muscleGroupId: string; muscleGroupName: string; bodyZone: "upper" | "lower" | "core" }[]
   equipment: { equipmentId: string; equipmentName: string }[]
+  stats: { timesUsed: number; isRecommended: boolean }
+  myReaction: { value: "positive" | "negative"; reason: string | null } | null
 }
 
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ExplorarPage() {
-  const [selected, setSelected] = useState<(ExerciseDetail & { isSaved: boolean }) | null>(null)
+  const [selected, setSelected] = useState<PublicExercise | null>(null)
 
   // Se trae el catálogo público completo y se filtra en el cliente con el mismo buscador de "Mis ejercicios"
   const { data, isLoading, refetch } = trpc.exercises.listPublic.useQuery({})
@@ -70,6 +73,8 @@ export default function ExplorarPage() {
 
   const saveMutation = trpc.exercises.saveExercise.useMutation({ onSuccess: () => refetch() })
   const unsaveMutation = trpc.exercises.unsaveExercise.useMutation({ onSuccess: () => refetch() })
+  const reactMutation = trpc.exercises.react.useMutation({ onSuccess: () => refetch() })
+  const unreactMutation = trpc.exercises.unreact.useMutation({ onSuccess: () => refetch() })
 
   function toggleSave(exerciseId: string, isSaved: boolean) {
     if (isSaved) unsaveMutation.mutate({ exerciseId })
@@ -128,6 +133,14 @@ export default function ExplorarPage() {
           isSaved={selected.isSaved}
           onToggleSave={() => toggleSave(selected.id, selected.isSaved)}
           isMutating={isMutating}
+          feedback={{
+            reaction: selected.myReaction,
+            timesUsed: selected.stats.timesUsed,
+            isRecommended: selected.stats.isRecommended,
+            onReact: (value, reason) => reactMutation.mutate({ exerciseId: selected.id, value, reason }),
+            onUnreact: () => unreactMutation.mutate({ exerciseId: selected.id }),
+            isPending: reactMutation.isPending || unreactMutation.isPending,
+          }}
         />
       )}
     </div>
@@ -166,9 +179,11 @@ function ExploreCard({ exercise: ex, onOpen, onToggleSave, isMutating }: {
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p className="text-sm font-medium leading-snug">{ex.name}</p>
-              {ex.authorName && (
+              {(ex.authorName || ex.stats.timesUsed > 0) && (
                 <p className="text-[10px] text-muted-foreground/70 flex items-center gap-0.5 mt-0.5">
-                  <UserIcon className="w-2.5 h-2.5 shrink-0" />{ex.authorName}
+                  {ex.authorName && <><UserIcon className="w-2.5 h-2.5 shrink-0" />{ex.authorName}</>}
+                  {ex.authorName && ex.stats.timesUsed > 0 && <span className="mx-1">·</span>}
+                  {ex.stats.timesUsed > 0 && <span>{ex.stats.timesUsed} usos</span>}
                 </p>
               )}
               {ex.description && <p className="text-xs text-muted-foreground truncate mt-0.5">{ex.description}</p>}
@@ -186,8 +201,13 @@ function ExploreCard({ exercise: ex, onOpen, onToggleSave, isMutating }: {
             </button>
           </div>
 
-          {(primaryMuscles.length > 0 || ex.difficulty || ex.movementPatterns.length > 0 || ex.suitableFor) && (
+          {(primaryMuscles.length > 0 || ex.difficulty || ex.movementPatterns.length > 0 || ex.suitableFor || ex.stats.isRecommended) && (
             <div className="flex flex-wrap gap-1 mt-2">
+              {ex.stats.isRecommended && (
+                <span className="text-[10px] px-1.5 py-0.5 rounded-full border border-primary/30 bg-primary/10 text-primary font-medium flex items-center gap-0.5">
+                  <SparklesIcon className="w-2.5 h-2.5" /> Recomendado
+                </span>
+              )}
               {zoneConf && <span className={cn("text-[10px] px-1.5 py-0.5 rounded-full border font-medium", zoneConf.pill)}>{zoneConf.label}</span>}
               {primaryMuscles.slice(0, 2).map((m) => (
                 <span key={m.muscleId} className="text-[10px] px-1.5 py-0.5 rounded-full border border-border bg-muted/30 text-muted-foreground">{m.muscleName}</span>

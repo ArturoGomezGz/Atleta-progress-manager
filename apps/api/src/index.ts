@@ -1,11 +1,31 @@
 import cors from "@fastify/cors"
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify"
 import { fromNodeHeaders } from "better-auth/node"
-import Fastify from "fastify"
+import Fastify, { type FastifyBaseLogger } from "fastify"
 import { runMigrations } from "./migrate"
 import { auth } from "./auth"
 import { appRouter } from "./routers"
+import { refreshExerciseStats } from "./services/exercise-stats"
 import { createContext } from "./trpc"
+
+// Recalcular dentro del proceso evita un servicio cron aparte en Railway, que costaría
+// más que la funcionalidad completa. El agregado es idempotente: si un arranque se lo
+// salta, el siguiente ciclo lo corrige.
+const STATS_REFRESH_MINUTES = Number(process.env.EXERCISE_STATS_REFRESH_MINUTES ?? 60)
+
+function scheduleExerciseStats(log: FastifyBaseLogger) {
+  const run = async () => {
+    try {
+      const { rows, durationMs } = await refreshExerciseStats()
+      log.info({ rows, durationMs }, "exercise_stats recalculado")
+    } catch (err) {
+      // Es una caché de ranking: que falle degrada el orden, no el producto
+      log.error(err, "Falló el recálculo de exercise_stats")
+    }
+  }
+  void run()
+  setInterval(run, STATS_REFRESH_MINUTES * 60_000)
+}
 
 async function main() {
   console.log("🚀 Iniciando API...")
@@ -56,6 +76,8 @@ async function main() {
 
   const port = Number(process.env.PORT ?? 3001)
   await app.listen({ port, host: "0.0.0.0" })
+
+  scheduleExerciseStats(app.log)
 }
 
 main().catch((err) => {

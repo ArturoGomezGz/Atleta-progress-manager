@@ -2,7 +2,18 @@
 
 import { YouTubePlayer } from "@/components/youtube-player"
 import { cn } from "@/lib/utils"
-import { BookmarkIcon, DumbbellIcon, FlameIcon, UserIcon, XIcon, ZapIcon } from "lucide-react"
+import {
+  BookmarkIcon,
+  CheckIcon,
+  DumbbellIcon,
+  FlameIcon,
+  SparklesIcon,
+  ThumbsDownIcon,
+  ThumbsUpIcon,
+  UserIcon,
+  XIcon,
+  ZapIcon,
+} from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -29,7 +40,29 @@ export type ExerciseDetail = {
   equipment: { equipmentId: string; equipmentName: string }[]
 }
 
+export type ReactionReason =
+  | "video_roto" | "video_no_corresponde" | "datos_incorrectos"
+  | "duplicado" | "no_me_sirve" | "otro"
+
+export type ExerciseFeedback = {
+  reaction: { value: "positive" | "negative"; reason: string | null } | null
+  timesUsed: number
+  isRecommended: boolean
+  onReact: (value: "positive" | "negative", reason?: ReactionReason) => void
+  onUnreact: () => void
+  isPending?: boolean
+}
+
 // ── Config ────────────────────────────────────────────────────────────────────
+
+export const REACTION_REASONS: { value: ReactionReason; label: string }[] = [
+  { value: "video_roto",           label: "El video no carga" },
+  { value: "video_no_corresponde", label: "El video no es de este ejercicio" },
+  { value: "datos_incorrectos",    label: "Los datos están mal" },
+  { value: "duplicado",            label: "Está duplicado" },
+  { value: "no_me_sirve",          label: "No me sirve" },
+  { value: "otro",                 label: "Otro motivo" },
+]
 
 const DIFFICULTY_CONFIG = {
   beginner:     { label: "Principiante", pill: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
@@ -65,12 +98,15 @@ export function ExerciseDetailSheet({
   isSaved,
   onToggleSave,
   isMutating = false,
+  // Opcional: omitir para ocultar el bloque de retroalimentación
+  feedback,
 }: {
   exercise: ExerciseDetail
   onClose: () => void
   isSaved?: boolean
   onToggleSave?: () => void
   isMutating?: boolean
+  feedback?: ExerciseFeedback
 }) {
   const [visible, setVisible] = useState(false)
   const closing = useRef(false)
@@ -181,6 +217,11 @@ export function ExerciseDetailSheet({
 
             {/* Pills */}
             <div className="flex flex-wrap gap-1.5">
+              {feedback?.isRecommended && (
+                <span className="text-xs px-2.5 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary font-medium flex items-center gap-1">
+                  <SparklesIcon className="w-3 h-3" /> Recomendado
+                </span>
+              )}
               {zoneConf && (
                 <span className={cn("text-xs px-2.5 py-1 rounded-full border font-medium", zoneConf.pill)}>{zoneConf.label}</span>
               )}
@@ -268,9 +309,109 @@ export function ExerciseDetailSheet({
               </section>
             )}
 
+            {feedback && <FeedbackSection feedback={feedback} />}
+
           </div>
         </div>
       </div>
     </>
+  )
+}
+
+// ── Feedback ──────────────────────────────────────────────────────────────────
+
+function FeedbackSection({ feedback }: { feedback: ExerciseFeedback }) {
+  const [pickingReason, setPickingReason] = useState(false)
+  const { reaction, timesUsed, onReact, onUnreact, isPending } = feedback
+
+  const isPositive = reaction?.value === "positive"
+  const isNegative = reaction?.value === "negative"
+  const reasonLabel = REACTION_REASONS.find((r) => r.value === reaction?.reason)?.label
+
+  function togglePositive() {
+    setPickingReason(false)
+    if (isPositive) onUnreact()
+    else onReact("positive")
+  }
+
+  function toggleNegative() {
+    if (isNegative) {
+      setPickingReason(false)
+      onUnreact()
+      return
+    }
+    // Un voto negativo sin motivo no distingue si falla el ejercicio o el video
+    setPickingReason((v) => !v)
+  }
+
+  return (
+    <section className="space-y-3 border-t border-border pt-5">
+      <div className="flex items-baseline justify-between gap-2">
+        <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          ¿Te sirvió este ejercicio?
+        </h3>
+        {timesUsed > 0 && (
+          <span className="text-[11px] text-muted-foreground/70 shrink-0">
+            {timesUsed === 1 ? "usado 1 vez" : `usado ${timesUsed} veces`}
+          </span>
+        )}
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={togglePositive}
+          disabled={isPending}
+          aria-pressed={isPositive}
+          className={cn(
+            "flex-1 min-h-[44px] flex items-center justify-center gap-2 rounded-xl border text-sm cursor-pointer transition-colors disabled:opacity-50",
+            isPositive
+              ? "border-primary/30 bg-primary/10 text-primary font-medium"
+              : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/20",
+          )}
+        >
+          <ThumbsUpIcon className={cn("w-4 h-4", isPositive && "fill-current")} />
+          Me sirve
+        </button>
+        <button
+          onClick={toggleNegative}
+          disabled={isPending}
+          aria-pressed={isNegative}
+          className={cn(
+            "flex-1 min-h-[44px] flex items-center justify-center gap-2 rounded-xl border text-sm cursor-pointer transition-colors disabled:opacity-50",
+            isNegative
+              ? "border-red-500/30 bg-red-500/10 text-red-600 font-medium"
+              : "border-border text-muted-foreground hover:text-foreground hover:bg-muted/20",
+          )}
+        >
+          <ThumbsDownIcon className={cn("w-4 h-4", isNegative && "fill-current")} />
+          Reportar
+        </button>
+      </div>
+
+      {isNegative && !pickingReason && (
+        <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+          <CheckIcon className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+          Reportado{reasonLabel ? `: ${reasonLabel.toLowerCase()}` : ""}. Gracias.
+        </p>
+      )}
+
+      {pickingReason && (
+        <div className="space-y-1.5">
+          <p className="text-xs text-muted-foreground">¿Qué está mal?</p>
+          <div className="flex flex-col gap-1">
+            {REACTION_REASONS.map((r) => (
+              <button
+                key={r.value}
+                onClick={() => { onReact("negative", r.value); setPickingReason(false) }}
+                disabled={isPending}
+                className="text-left text-sm min-h-[44px] px-3 rounded-lg border border-border text-muted-foreground hover:text-foreground hover:bg-muted/20 cursor-pointer transition-colors disabled:opacity-50"
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </section>
   )
 }

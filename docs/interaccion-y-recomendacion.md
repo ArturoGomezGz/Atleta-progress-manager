@@ -1,8 +1,11 @@
 # Interacción y recomendación de ejercicios
 
-> **Estado:** Plan pre-implementación. Documento de decisión — requiere elegir nivel antes de escribir código.
+> **Estado:** Niveles 0 y 1 implementados. Niveles 2 y 3 siguen siendo plan.
 > **Rama:** `feat/interaccion-ejercicios` (sale de `testing`).
 > **Cierra:** la decisión pendiente de `is_platform_recommended` en [`ejercicios-schema.md`](./ejercicios-schema.md) §12.
+>
+> **Decisiones tomadas:** reacción **binaria con motivo** (no estrellas) y **todos los usuarios
+> reaccionan**, atletas incluidos. Ver §10 para lo que quedó construido.
 
 ---
 
@@ -174,6 +177,8 @@ El objetivo declarado incluye la calidad de los videos. Un video roto no debe hu
 ### 5.5 El peso del coach ≠ el peso del atleta
 Un coach agregando a una rutina es señal de **curación**. Un atleta completando series es señal de **ejecución**. Son cosas distintas y deben pesar distinto en la fórmula.
 
+> **Resuelto sin ponderar por rol.** Como reaccionan todos, la separación sale sola de la fuente de cada señal: `unique_coaches` solo puede venir de rutinas, y solo los coaches arman rutinas, así que ya es una señal exclusivamente de curación. Las reacciones son la voz de todos y pesan igual para cada persona. No hace falta mirar el rol de quien reacciona — que además es por equipo, y un mismo usuario puede ser coach en uno y atleta en otro.
+
 ### 5.6 Fuga entre inquilinos
 Hoy todos los ejercicios públicos son de una sola cuenta de sistema (`coach@atleta.com`), así que el riesgo es bajo. Pero en cuanto los coaches publiquen los suyos, **exponer conteos de uso revela actividad de otros equipos**. Regla: el score global se calcula y se muestra **solo para `is_public = true`**. Las estadísticas de ejercicios de equipo, si se hacen, se calculan dentro del equipo.
 
@@ -278,12 +283,38 @@ Ambas son aditivas: ninguna toca tablas existentes, así que la migración puede
 
 ---
 
-## 9. Decisiones pendientes
+## 9. Lo que quedó implementado (fases 1 y 2)
 
-- [ ] **Nivel a implementar** — la recomendación es 0 + 1; confirmar o corregir.
-- [ ] **Forma de la reacción** — binario + motivo (recomendado) vs. estrellas 1-5.
-- [ ] **¿Los atletas reaccionan o solo los coaches?** Afecta volumen y el peso de §5.5.
-- [ ] **Umbrales de `is_platform_recommended`** — valores concretos de `m`, mínimo de coaches únicos y umbral de calidad. Requiere mirar la distribución real una vez que corra la fase 1.
+| Pieza | Archivo |
+|---|---|
+| Tablas `exercise_reaction` y `exercise_stats` | `packages/db/src/schema/exercises.ts`, `packages/db/src/schema/exercise-stats.ts` |
+| Migración aditiva | `packages/db/src/migrations/0003_clumsy_maddog.sql` |
+| Agregación y score | `apps/api/src/services/exercise-stats.ts` |
+| Recálculo periódico en proceso | `apps/api/src/index.ts` |
+| `react` / `unreact` / `listReports` / `resolveReports` | `apps/api/src/routers/exercises.ts` |
+| Botones de reacción, motivo y badge | `apps/web/src/components/exercise-detail-sheet.tsx`, `apps/web/src/app/(app)/teams/[teamId]/explorar/page.tsx` |
+
+Frecuencia del recálculo: `EXERCISE_STATS_REFRESH_MINUTES` (60 por defecto).
+
+### Separación defecto / opinión
+
+Los motivos se parten en dos grupos con efectos distintos, que es lo que hace accionable el control de calidad:
+
+- **Defecto** (`video_roto`, `video_no_corresponde`, `datos_incorrectos`, `duplicado`) → cuenta como `open_reports`, aparece en `listReports` y **bloquea la recomendación** mientras no se resuelva. Es un bug con dueño.
+- **Opinión** (`no_me_sirve`, `otro`) → solo pesa en el score. Nadie tiene que arreglar nada.
+
+### Una nota sobre el costo, medida y no estimada
+
+La primera versión de la agregación tardaba **~900 ms sobre 4 ejercicios**. El plan mostró por qué: dos `jsonb_array_elements` anidados sobre `routine.content` hacen que el planificador estime 100×100 filas por rutina —4.6 millones en total— y dimensione el `Sort` del `COUNT(DISTINCT)` para esa fantasía. Reescrito con `jsonb_path_query_array` para aplanar ambos niveles antes de expandir, baja a **27 ms sobre los 642 ejercicios reales del catálogo**. La conclusión de §4 se sostiene, pero por poco: el nivel 0 es gratis solo si la consulta está escrita con cuidado.
+
+---
+
+## 10. Decisiones pendientes
+
+- [x] ~~**Nivel a implementar**~~ — 0 + 1.
+- [x] ~~**Forma de la reacción**~~ — binaria con motivo.
+- [x] ~~**¿Los atletas reaccionan o solo los coaches?**~~ — todos; ver §5.5.
+- [ ] **Umbrales del score** — hoy `m=20`, `MIN_COACHES=3`, `SCORE_THRESHOLD=0.6`, pesos 0.45/0.25/0.30, todos como constantes en `services/exercise-stats.ts`. Son una primera postura razonada, no medida: hay que mirar la distribución real de scores con datos de producción y ajustarlos.
 - [ ] **Ventana de 180 días** — validar contra la estacionalidad real del uso.
 - [ ] **Visibilidad de las estadísticas** — ¿el conteo de usos es público, solo para el dueño, o solo interno?
 - [ ] **Cola de reportes** — ¿quién la atiende? Hoy el catálogo público es de una sola cuenta de sistema.
