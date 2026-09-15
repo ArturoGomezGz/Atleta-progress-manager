@@ -703,16 +703,33 @@ function RepsStepper({ value, onChange }: { value: number; onChange: (v: number)
   )
 }
 
+type CountdownPhase = "idle" | "prepare" | "running" | "paused" | "finished"
+
 function TimeCountdown({ seconds }: { seconds: number }) {
+  const [phase, setPhase] = useState<CountdownPhase>("idle")
+  const [prepareLeft, setPrepareLeft] = useState(3)
   const [left, setLeft] = useState(seconds)
-  const [running, setRunning] = useState(false)
 
   useEffect(() => {
-    if (!running) return
+    if (phase !== "prepare") return
+    vibrate(60)
+    if (prepareLeft <= 1) {
+      const id = setTimeout(() => {
+        setPhase("running")
+        vibrate(120)
+      }, 1000)
+      return () => clearTimeout(id)
+    }
+    const id = setTimeout(() => setPrepareLeft((prev) => prev - 1), 1000)
+    return () => clearTimeout(id)
+  }, [phase, prepareLeft])
+
+  useEffect(() => {
+    if (phase !== "running") return
     const id = setInterval(() => {
       setLeft((prev) => {
         if (prev <= 1) {
-          setRunning(false)
+          setPhase("finished")
           vibrate([300, 150, 300])
           return 0
         }
@@ -720,32 +737,79 @@ function TimeCountdown({ seconds }: { seconds: number }) {
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [running])
+  }, [phase])
 
-  const finished = left === 0
+  function handleStart() {
+    setPrepareLeft(3)
+    setPhase("prepare")
+  }
+
+  function handleTogglePause() {
+    setPhase((p) => (p === "running" ? "paused" : "running"))
+  }
+
+  function handleReset() {
+    setPhase("idle")
+    setPrepareLeft(3)
+    setLeft(seconds)
+  }
+
+  const isPreparing = phase === "prepare"
+  const isRunning = phase === "running" || phase === "paused"
+  const finished = phase === "finished"
+  const started = phase !== "idle"
 
   return (
     <div className="space-y-3">
-      <p>
-        <span className={cn("block text-7xl font-bold leading-none tabular-nums", finished && "text-emerald-500")}>
-          {Math.floor(left / 60) > 0 ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}` : left}
+      <div
+        className={cn(
+          "rounded-2xl py-5 transition-colors duration-700",
+          isPreparing && "bg-destructive/10",
+          isRunning && "bg-emerald-500/10",
+          finished && "bg-destructive/10",
+        )}
+      >
+        <span
+          className={cn(
+            "block text-7xl font-bold leading-none tabular-nums transition-colors duration-500",
+            isPreparing && "text-destructive",
+            isRunning && "text-emerald-500",
+            finished && "text-destructive",
+          )}
+        >
+          {isPreparing
+            ? prepareLeft
+            : Math.floor(left / 60) > 0
+              ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`
+              : left}
         </span>
-        <span className="block text-2xl mt-1">{finished ? "¡Tiempo!" : "segundos"}</span>
-      </p>
+        <span className="block text-2xl mt-1">
+          {isPreparing ? "prepárate…" : finished ? "¡Tiempo!" : "segundos"}
+        </span>
+      </div>
       <div className="flex justify-center gap-3">
-        {!finished && (
+        {phase === "idle" && (
           <button
             type="button"
-            onClick={() => setRunning((v) => !v)}
+            onClick={handleStart}
             className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-secondary text-lg font-semibold cursor-pointer"
           >
-            {running ? <><PauseIcon className="w-5 h-5" /> Pausar</> : <><PlayIcon className="w-5 h-5" /> {left === seconds ? "Empezar a contar" : "Seguir"}</>}
+            <PlayIcon className="w-5 h-5" /> Empezar a contar
           </button>
         )}
-        {left !== seconds && (
+        {isRunning && (
           <button
             type="button"
-            onClick={() => { setRunning(false); setLeft(seconds) }}
+            onClick={handleTogglePause}
+            className="inline-flex items-center gap-2 px-6 py-3.5 rounded-xl bg-secondary text-lg font-semibold cursor-pointer"
+          >
+            {phase === "running" ? <><PauseIcon className="w-5 h-5" /> Pausar</> : <><PlayIcon className="w-5 h-5" /> Seguir</>}
+          </button>
+        )}
+        {started && (
+          <button
+            type="button"
+            onClick={handleReset}
             className="inline-flex items-center gap-2 px-5 py-3.5 rounded-xl border border-border text-lg cursor-pointer"
           >
             <RotateCcwIcon className="w-5 h-5" /> Reiniciar
