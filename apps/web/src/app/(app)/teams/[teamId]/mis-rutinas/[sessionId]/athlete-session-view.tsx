@@ -398,6 +398,24 @@ function ActiveExecution({
   const autoContinueRef = useRef(autoContinue)
   autoContinueRef.current = autoContinue
 
+  // Al abrir la vista de progreso metemos una entrada de historial propia, así el
+  // gesto de "regresar" del navegador/celular cierra esa vista en vez de sacar
+  // al atleta de la rutina hacia "Mis rutinas".
+  useEffect(() => {
+    function onPopState() { setShowOverview(false) }
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [])
+
+  function openOverview() {
+    window.history.pushState({ atletaOverview: true }, "")
+    setShowOverview(true)
+  }
+
+  function closeOverview() {
+    window.history.back()
+  }
+
   function startRest(seconds: number) {
     if (restRef.current) clearInterval(restRef.current)
     setRest({ left: seconds, total: seconds, overtime: null })
@@ -445,6 +463,7 @@ function ActiveExecution({
         onSkip={skipRest}
         autoContinue={autoContinue}
         onToggleAutoContinue={setAutoContinue}
+        onShowOverview={openOverview}
       />
     )
   }
@@ -453,7 +472,7 @@ function ActiveExecution({
     return (
       <div className="max-w-xl mx-auto px-4 sm:px-6 py-5 space-y-5 pb-32">
         <button
-          onClick={() => setShowOverview(false)}
+          onClick={closeOverview}
           className="inline-flex items-center gap-2 px-3 py-2.5 -ml-3 rounded-xl text-base text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer"
         >
           <ArrowLeftIcon className="w-5 h-5" /> Volver al ejercicio
@@ -494,7 +513,7 @@ function ActiveExecution({
       doneSetsGlobal={done}
       defaultWeight={calcWeight(curTarget.targetPercent, rmLbs)}
       backHref={backHref}
-      onShowOverview={() => setShowOverview(true)}
+      onShowOverview={openOverview}
       onComplete={(isLastSet) => {
         onUpdate()
         vibrate(60)
@@ -563,7 +582,7 @@ function SetExecution({
       </div>
 
       {/* ── Contenido ── */}
-      <div className="flex-1 w-full max-w-xl mx-auto px-4 py-5 space-y-5">
+      <div className="flex-1 w-full max-w-xl mx-auto px-4 pt-5 pb-40 space-y-5">
         <div className="space-y-1">
           {exercise.blockName && (
             <p className="text-base text-primary font-medium flex items-center gap-1.5">
@@ -654,26 +673,51 @@ function SetExecution({
 
       {showNotes && exercise.notes && <NotesModal notes={exercise.notes} onClose={() => setShowNotes(false)} />}
 
-      {/* ── Acciones fijas ── */}
-      <div className="sticky bottom-0 shrink-0 border-t border-border bg-background/95 backdrop-blur-sm">
-        <div className="max-w-xl mx-auto px-4 py-3 space-y-2">
-          <button
-            onClick={handleComplete}
-            disabled={recordSet.isPending}
-            className="w-full flex items-center justify-center gap-3 min-h-16 rounded-2xl bg-primary text-primary-foreground font-bold text-xl cursor-pointer active:scale-[0.98] transition-transform disabled:opacity-50"
-          >
-            {recordSet.isPending ? "Guardando…" : (<><CheckIcon className="w-7 h-7" strokeWidth={3} /> Terminé esta serie</>)}
-          </button>
-          {recordSet.isError && (
-            <p className="text-base text-destructive text-center">No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.</p>
+      <ExecutionFooter
+        primaryLabel={recordSet.isPending ? "Guardando…" : "Terminé esta serie"}
+        primaryIcon={<CheckIcon className="w-7 h-7" strokeWidth={3} />}
+        onPrimary={handleComplete}
+        primaryPending={recordSet.isPending}
+        primaryError={recordSet.isError ? "No se pudo guardar. Revisa tu conexión e inténtalo de nuevo." : undefined}
+        onShowOverview={onShowOverview}
+      />
+    </div>
+  )
+}
+
+// ─── Pie de página fijo (nunca se mueve ni desaparece al hacer scroll) ─────────
+
+function ExecutionFooter({
+  primaryLabel, primaryIcon, onPrimary, primaryPending, primaryError, primaryVariant = "primary", onShowOverview,
+}: {
+  primaryLabel: string
+  primaryIcon: React.ReactNode
+  onPrimary: () => void
+  primaryPending?: boolean
+  primaryError?: string
+  primaryVariant?: "primary" | "destructive"
+  onShowOverview: () => void
+}) {
+  return (
+    <div className="fixed bottom-0 left-0 right-0 lg:left-56 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
+      <div className="max-w-xl mx-auto px-4 py-3 space-y-2">
+        <button
+          onClick={onPrimary}
+          disabled={primaryPending}
+          className={cn(
+            "w-full flex items-center justify-center gap-3 min-h-16 rounded-2xl font-bold text-xl cursor-pointer active:scale-[0.98] transition-transform disabled:opacity-50",
+            primaryVariant === "destructive" ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground",
           )}
-          <button
-            onClick={onShowOverview}
-            className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer"
-          >
-            <ListIcon className="w-5 h-5" /> Ver toda la rutina
-          </button>
-        </div>
+        >
+          {primaryIcon} {primaryLabel}
+        </button>
+        {primaryError && <p className="text-base text-destructive text-center">{primaryError}</p>}
+        <button
+          onClick={onShowOverview}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer"
+        >
+          <ListIcon className="w-5 h-5" /> Ver toda la rutina
+        </button>
       </div>
     </div>
   )
@@ -826,7 +870,7 @@ function formatClock(totalSeconds: number): string {
   return totalSeconds >= 60 ? `${Math.floor(totalSeconds / 60)}:${String(totalSeconds % 60).padStart(2, "0")}` : String(totalSeconds)
 }
 
-function RestTimer({ seconds, totalSeconds, overtime, upcoming, onSkip, autoContinue, onToggleAutoContinue }: {
+function RestTimer({ seconds, totalSeconds, overtime, upcoming, onSkip, autoContinue, onToggleAutoContinue, onShowOverview }: {
   seconds: number
   totalSeconds: number
   overtime: number | null
@@ -834,13 +878,14 @@ function RestTimer({ seconds, totalSeconds, overtime, upcoming, onSkip, autoCont
   onSkip: () => void
   autoContinue: boolean
   onToggleAutoContinue: (v: boolean) => void
+  onShowOverview: () => void
 }) {
   const isOvertime = overtime !== null
   const pct = totalSeconds > 0 ? (seconds / totalSeconds) * 100 : 0
   const circumference = 2 * Math.PI * 54
 
   return (
-    <div className="flex flex-col min-h-[calc(100dvh-3.5rem)] lg:min-h-screen items-center justify-center gap-8 px-6 py-8 text-center">
+    <div className="flex flex-col min-h-[calc(100dvh-3.5rem)] lg:min-h-screen items-center justify-center gap-8 px-6 pt-8 pb-40 text-center">
       <div className="space-y-2">
         <p className="text-3xl font-bold">{isOvertime ? "¡Descanso terminado!" : "¡Bien hecho! Descansa"}</p>
         <p className="text-lg text-muted-foreground">
@@ -885,15 +930,13 @@ function RestTimer({ seconds, totalSeconds, overtime, upcoming, onSkip, autoCont
         Continuar automáticamente
       </label>
 
-      <button
-        onClick={onSkip}
-        className={cn(
-          "w-full max-w-sm min-h-16 rounded-2xl text-xl font-bold cursor-pointer active:scale-[0.98]",
-          isOvertime ? "bg-destructive text-destructive-foreground" : "bg-primary text-primary-foreground",
-        )}
-      >
-        {isOvertime ? "Siguiente" : "Ya descansé, continuar"}
-      </button>
+      <ExecutionFooter
+        primaryLabel={isOvertime ? "Siguiente" : "Ya descansé, continuar"}
+        primaryIcon={<PlayIcon className="w-6 h-6 fill-current" />}
+        onPrimary={onSkip}
+        primaryVariant={isOvertime ? "destructive" : "primary"}
+        onShowOverview={onShowOverview}
+      />
     </div>
   )
 }
