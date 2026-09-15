@@ -106,10 +106,14 @@ export default function MisRutinasPage() {
         </Section>
       )}
 
-      <Section title="Para hacer">
-        {scheduled.length > 0 ? (
-          scheduled.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)
-        ) : (
+      {scheduled.length > 0 && (
+        <Section title="Para hacer">
+          {scheduled.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+        </Section>
+      )}
+
+      {scheduled.length === 0 && active.length === 0 && (
+        <Section title="Para hacer">
           <div className="flex flex-col items-center justify-center py-16 gap-4 text-center border border-dashed border-border rounded-2xl px-6">
             <DumbbellIcon className="w-12 h-12 text-muted-foreground/50" />
             <p className="text-lg">No tienes rutinas pendientes.</p>
@@ -120,8 +124,8 @@ export default function MisRutinasPage() {
               <CompassIcon className="w-5 h-5" /> Puedes explorar ejercicios
             </Link>
           </div>
-        )}
-      </Section>
+        </Section>
+      )}
 
       {past.length > 0 && (
         <Section title="Terminadas">
