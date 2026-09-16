@@ -63,7 +63,6 @@ export type WorkoutAlternative = {
   youtubeVideoId: string | null
   youtubeTitle: string | null
   videoOrientation: "horizontal" | "vertical"
-  notes: string | null
 }
 
 export type WorkoutExercise = {
@@ -227,69 +226,40 @@ function NotesModal({ notes, onClose }: { notes: string; onClose: () => void }) 
   )
 }
 
-/** Hoja de confirmación para cambiar a la alternativa más sencilla de un ejercicio. */
-function AlternativeModal({
-  alternative, originalName, onConfirm, onClose,
+/**
+ * Interruptor de dos posiciones entre el ejercicio planeado y su alternativa más
+ * sencilla. No es un modal de confirmación: el atleta puede tocar cualquiera de
+ * los dos lados las veces que quiera para ver el video de cada uno (el resto de
+ * la pantalla cambia con él) y quedarse con el que pueda hacer.
+ */
+function AlternativeSwitch({
+  originalName, alternativeName, active, onChange, size = "base",
 }: {
-  alternative: WorkoutAlternative
   originalName: string
-  onConfirm: () => void
-  onClose: () => void
+  alternativeName: string
+  active: boolean
+  onChange: (active: boolean) => void
+  size?: "base" | "sm"
 }) {
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") onClose() }
-    document.addEventListener("keydown", onKey)
-    return () => document.removeEventListener("keydown", onKey)
-  }, [onClose])
+  const optionCls = (selected: boolean) =>
+    cn(
+      "flex-1 min-w-0 truncate px-3 rounded-full font-medium transition-colors cursor-pointer",
+      size === "sm" ? "py-1.5 text-sm" : "py-2 text-base",
+      selected ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+    )
 
   return (
     <div
-      className="fixed inset-0 z-50 bg-black/60 flex items-end sm:items-center justify-center p-4"
-      role="dialog"
-      aria-modal="true"
-      aria-label={`Cambiar a ${alternative.exerciseName}`}
-      onClick={onClose}
+      role="group"
+      aria-label="Elegir qué versión del ejercicio hacer"
+      className="inline-flex items-center max-w-full gap-1 rounded-full border border-border bg-muted/30 p-1"
     >
-      <div
-        className="w-full max-w-sm rounded-2xl bg-card border border-border p-5 space-y-4"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-lg font-semibold">¿Muy difícil?</p>
-          <button onClick={onClose} className="shrink-0 p-1.5 rounded-lg hover:bg-muted/60 cursor-pointer" aria-label="Cerrar">
-            <XIcon className="w-5 h-5" />
-          </button>
-        </div>
-
-        {alternative.youtubeVideoId ? (
-          <YouTubePlayer
-            videoId={alternative.youtubeVideoId}
-            title={alternative.exerciseName}
-            orientation={alternative.videoOrientation}
-            compact
-          />
-        ) : null}
-
-        <div className="space-y-1">
-          <p className="text-base font-semibold">{alternative.exerciseName}</p>
-          {alternative.notes && <p className="text-base text-muted-foreground">{alternative.notes}</p>}
-        </div>
-
-        <div className="space-y-2">
-          <button
-            onClick={onConfirm}
-            className="w-full flex items-center justify-center gap-2 min-h-14 rounded-xl bg-primary text-primary-foreground font-bold text-base cursor-pointer active:scale-[0.98] transition-transform"
-          >
-            Cambiar a {alternative.exerciseName}
-          </button>
-          <button
-            onClick={onClose}
-            className="w-full py-3 rounded-xl text-base font-medium text-muted-foreground hover:bg-muted/40 cursor-pointer"
-          >
-            Seguir con {originalName}
-          </button>
-        </div>
-      </div>
+      <button type="button" onClick={() => onChange(false)} className={optionCls(!active)}>
+        {originalName}
+      </button>
+      <button type="button" onClick={() => onChange(true)} className={optionCls(active)}>
+        {alternativeName}
+      </button>
     </div>
   )
 }
@@ -561,10 +531,11 @@ export function WorkoutRunner({
   const autoContinueRef = useRef(autoContinue)
   autoContinueRef.current = autoContinue
 
-  // Ejercicios (por sessionExerciseId) en los que el atleta cambió a la alternativa.
-  // Una vez que cambia, se queda ahí para las siguientes series de ese mismo ejercicio
-  // hasta que decida volver. Si ya hay series guardadas con la alternativa (se recargó
-  // la página a medio entrenamiento), arranca ya cambiado.
+  // Ejercicios (por sessionExerciseId) en los que el atleta tiene activa la
+  // alternativa. Es un interruptor libre: puede ir y venir entre las dos
+  // versiones las veces que quiera antes de registrar la serie. Si ya hay
+  // series guardadas con la alternativa (se recargó la página a medio
+  // entrenamiento), arranca mostrando esa misma.
   const [switchedExercises, setSwitchedExercises] = useState<Set<string>>(() => {
     const initial = new Set<string>()
     for (const ex of progress.exercises) {
@@ -572,7 +543,6 @@ export function WorkoutRunner({
     }
     return initial
   })
-  const [alternativePrompt, setAlternativePrompt] = useState<WorkoutExercise | null>(null)
 
   function isAlternativeActive(exerciseId: string) {
     return switchedExercises.has(exerciseId)
@@ -586,15 +556,6 @@ export function WorkoutRunner({
       return next
     })
   }
-
-  const alternativeModal = alternativePrompt?.alternative ? (
-    <AlternativeModal
-      alternative={alternativePrompt.alternative}
-      originalName={alternativePrompt.exerciseName}
-      onConfirm={() => { setAlternativeActive(alternativePrompt.id, true); setAlternativePrompt(null) }}
-      onClose={() => setAlternativePrompt(null)}
-    />
-  ) : null
 
   // Al abrir la vista de progreso metemos una entrada de historial propia, así el
   // gesto de "regresar" del navegador/celular cierra esa vista en vez de sacar
@@ -684,28 +645,25 @@ export function WorkoutRunner({
 
   if (rest) {
     return (
-      <>
-        <RestTimer
-          seconds={rest.left}
-          totalSeconds={rest.total}
-          overtime={rest.overtime}
-          upcoming={
-            position.exercise.roundNumber
-              ? `${position.exercise.exerciseName} · ronda ${position.exercise.roundNumber} de ${position.exercise.rounds}`
-              : `${position.exercise.exerciseName} · serie ${position.target.setNumber} de ${position.exercise.targets.length}`
-          }
-          onSkip={skipRest}
-          autoContinue={autoContinue}
-          onToggleAutoContinue={setAutoContinue}
-          onShowOverview={openOverview}
-          withSidebar={withSidebar}
-          alternative={position.exercise.alternative}
-          alternativeActive={isAlternativeActive(position.exercise.id)}
-          onRequestAlternative={() => setAlternativePrompt(position.exercise)}
-          onRevertToOriginal={() => setAlternativeActive(position.exercise.id, false)}
-        />
-        {alternativeModal}
-      </>
+      <RestTimer
+        seconds={rest.left}
+        totalSeconds={rest.total}
+        overtime={rest.overtime}
+        upcoming={
+          position.exercise.roundNumber
+            ? `${position.exercise.exerciseName} · ronda ${position.exercise.roundNumber} de ${position.exercise.rounds}`
+            : `${position.exercise.exerciseName} · serie ${position.target.setNumber} de ${position.exercise.targets.length}`
+        }
+        onSkip={skipRest}
+        autoContinue={autoContinue}
+        onToggleAutoContinue={setAutoContinue}
+        onShowOverview={openOverview}
+        withSidebar={withSidebar}
+        upcomingExerciseName={position.exercise.exerciseName}
+        alternative={position.exercise.alternative}
+        alternativeActive={isAlternativeActive(position.exercise.id)}
+        onToggleAlternative={(active) => setAlternativeActive(position.exercise.id, active)}
+      />
     )
   }
 
@@ -713,30 +671,26 @@ export function WorkoutRunner({
   const rmLbs = rms[curEx.exerciseId] ?? null
 
   return (
-    <>
-      <SetExecution
-        key={curTarget.id}
-        exercise={curEx}
-        target={curTarget}
-        exerciseIdx={exerciseIdx}
-        totalExercises={progress.exercises.length}
-        totalSetsGlobal={total}
-        doneSetsGlobal={done}
-        defaultWeight={calcWeight(curTarget.targetPercent, rmLbs)}
-        exit={exit}
-        onShowOverview={openOverview}
-        onRecordSet={onRecordSet}
-        onRecorded={(isLastSet) => {
-          vibrate(60)
-          if (!isLastSet) startRest(curEx.restSeconds ?? DEFAULT_REST_SECONDS)
-        }}
-        withSidebar={withSidebar}
-        alternativeActive={isAlternativeActive(curEx.id)}
-        onRequestAlternative={() => setAlternativePrompt(curEx)}
-        onRevertToOriginal={() => setAlternativeActive(curEx.id, false)}
-      />
-      {alternativeModal}
-    </>
+    <SetExecution
+      key={curTarget.id}
+      exercise={curEx}
+      target={curTarget}
+      exerciseIdx={exerciseIdx}
+      totalExercises={progress.exercises.length}
+      totalSetsGlobal={total}
+      doneSetsGlobal={done}
+      defaultWeight={calcWeight(curTarget.targetPercent, rmLbs)}
+      exit={exit}
+      onShowOverview={openOverview}
+      onRecordSet={onRecordSet}
+      onRecorded={(isLastSet) => {
+        vibrate(60)
+        if (!isLastSet) startRest(curEx.restSeconds ?? DEFAULT_REST_SECONDS)
+      }}
+      withSidebar={withSidebar}
+      alternativeActive={isAlternativeActive(curEx.id)}
+      onToggleAlternative={(active) => setAlternativeActive(curEx.id, active)}
+    />
   )
 }
 
@@ -745,7 +699,7 @@ export function WorkoutRunner({
 function SetExecution({
   exercise, target, exerciseIdx, totalExercises, totalSetsGlobal, doneSetsGlobal,
   defaultWeight, exit, onRecordSet, onRecorded, onShowOverview, withSidebar,
-  alternativeActive, onRequestAlternative, onRevertToOriginal,
+  alternativeActive, onToggleAlternative,
 }: {
   exercise: WorkoutExercise
   target: WorkoutTarget
@@ -759,12 +713,10 @@ function SetExecution({
   onRecorded: (isLastSet: boolean) => void
   onShowOverview: () => void
   withSidebar: boolean
-  /** Si el atleta ya cambió a la alternativa de este ejercicio. */
+  /** Si el atleta está viendo la alternativa de este ejercicio ahora mismo. */
   alternativeActive: boolean
-  /** Abre la hoja de confirmación para cambiar a la alternativa. */
-  onRequestAlternative: () => void
-  /** Vuelve al ejercicio planeado, sin confirmación (ya lo conoce). */
-  onRevertToOriginal: () => void
+  /** Alterna libremente entre el ejercicio planeado y su alternativa. */
+  onToggleAlternative: (active: boolean) => void
 }) {
   const isTime = isTimeTarget(target)
   const freeReps = !isTime && target.targetReps == null
@@ -782,14 +734,14 @@ function SetExecution({
   const progressPct = totalSetsGlobal > 0 ? Math.round((doneSetsGlobal / totalSetsGlobal) * 100) : 0
   const tempoText = exercise.tempo ? explainTempo(exercise.tempo) : null
 
-  // Mientras el atleta esté en la alternativa, la pantalla muestra su nombre/video/nota
-  // en vez de los del ejercicio planeado. Series, tempo y descanso no cambian: se heredan.
+  // Mientras el atleta esté viendo la alternativa, la pantalla muestra su nombre y
+  // video en vez de los del ejercicio planeado. Series, tempo, descanso e
+  // indicaciones no cambian: se heredan del ejercicio planeado.
   const alternative = exercise.alternative
   const showingAlternative = alternativeActive && !!alternative
   const displayName = showingAlternative ? alternative!.exerciseName : exercise.exerciseName
   const displayVideoId = showingAlternative ? alternative!.youtubeVideoId : exercise.youtubeVideoId
   const displayOrientation = showingAlternative ? alternative!.videoOrientation : exercise.videoOrientation
-  const displayNotes = showingAlternative ? (alternative!.notes ?? exercise.notes) : exercise.notes
 
   async function handleComplete() {
     if (saving) return
@@ -844,7 +796,7 @@ function SetExecution({
               </span>
             )}
             <h1 className="text-3xl font-bold leading-tight">{displayName}</h1>
-            {displayNotes && (
+            {exercise.notes && (
               <button
                 type="button"
                 onClick={() => setShowNotes(true)}
@@ -858,24 +810,12 @@ function SetExecution({
           </div>
 
           {alternative && (
-            showingAlternative ? (
-              <button
-                type="button"
-                onClick={onRevertToOriginal}
-                className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-2 cursor-pointer"
-              >
-                Volver a {exercise.exerciseName}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={onRequestAlternative}
-                className="flex items-center gap-1.5 text-sm text-primary font-medium cursor-pointer"
-              >
-                <ArrowLeftRightIcon className="w-4 h-4 shrink-0" />
-                ¿Muy difícil? <span className="underline underline-offset-2">Cambia a {alternative.exerciseName}</span>
-              </button>
-            )
+            <AlternativeSwitch
+              originalName={exercise.exerciseName}
+              alternativeName={alternative.exerciseName}
+              active={showingAlternative}
+              onChange={onToggleAlternative}
+            />
           )}
         </div>
 
@@ -956,7 +896,7 @@ function SetExecution({
         )}
       </div>
 
-      {showNotes && displayNotes && <NotesModal notes={displayNotes} onClose={() => setShowNotes(false)} />}
+      {showNotes && exercise.notes && <NotesModal notes={exercise.notes} onClose={() => setShowNotes(false)} />}
 
       <ExecutionFooter
         primaryLabel={saving ? "Guardando…" : "Terminé esta serie"}
@@ -1167,7 +1107,7 @@ function formatClock(totalSeconds: number): string {
 
 function RestTimer({
   seconds, totalSeconds, overtime, upcoming, onSkip, autoContinue, onToggleAutoContinue, onShowOverview, withSidebar,
-  alternative, alternativeActive, onRequestAlternative, onRevertToOriginal,
+  upcomingExerciseName, alternative, alternativeActive, onToggleAlternative,
 }: {
   seconds: number
   totalSeconds: number
@@ -1178,11 +1118,12 @@ function RestTimer({
   onToggleAutoContinue: (v: boolean) => void
   onShowOverview: () => void
   withSidebar: boolean
+  /** Nombre del ejercicio que sigue después de este descanso (sin el resto del texto de `upcoming`). */
+  upcomingExerciseName: string
   /** Alternativa del ejercicio que sigue después de este descanso, si tiene una. */
   alternative: WorkoutAlternative | null
   alternativeActive: boolean
-  onRequestAlternative: () => void
-  onRevertToOriginal: () => void
+  onToggleAlternative: (active: boolean) => void
 }) {
   const isOvertime = overtime !== null
   const pct = totalSeconds > 0 ? (seconds / totalSeconds) * 100 : 0
@@ -1224,24 +1165,13 @@ function RestTimer({
           <strong>{upcoming}</strong>
         </p>
         {alternative && (
-          alternativeActive ? (
-            <button
-              type="button"
-              onClick={onRevertToOriginal}
-              className="text-base text-muted-foreground hover:text-foreground underline underline-offset-2 cursor-pointer"
-            >
-              Volver al ejercicio original
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={onRequestAlternative}
-              className="flex items-center gap-1.5 text-base text-primary font-medium cursor-pointer"
-            >
-              <ArrowLeftRightIcon className="w-4 h-4 shrink-0" />
-              ¿Muy difícil? <span className="underline underline-offset-2">Cambia a {alternative.exerciseName}</span>
-            </button>
-          )
+          <AlternativeSwitch
+            originalName={upcomingExerciseName}
+            alternativeName={alternative.exerciseName}
+            active={alternativeActive}
+            onChange={onToggleAlternative}
+            size="sm"
+          />
         )}
       </div>
 

@@ -120,7 +120,6 @@ async function buildProgress(options: {
           youtubeVideoId: altInfo.youtubeVideoId,
           youtubeTitle: altInfo.youtubeTitle,
           videoOrientation: altInfo.videoOrientation,
-          notes: ex.alternative?.notes ?? null,
         } : null,
         targets: targetsForExercise(ex.sets).map((t) => ({
           ...t,

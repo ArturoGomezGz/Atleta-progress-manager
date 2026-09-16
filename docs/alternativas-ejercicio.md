@@ -56,8 +56,6 @@ alcance de esta iteración.
 ```ts
 export type RoutineExerciseAlternative = {
   exerciseId: string
-  /** Nota del entrenador específica de la alternativa ("apóyate en la pared"). */
-  notes?: string
 }
 
 export type RoutineExerciseContent = {
@@ -78,6 +76,11 @@ Al ser un campo opcional dentro del `jsonb` de `routine.content`, **no hay
 migración** para esta parte: las rutinas existentes simplemente no lo traen.
 Vale igual para un ejercicio suelto y para uno dentro de un circuito, porque
 ambos son `RoutineExerciseContent`.
+
+La primera versión traía además una nota de texto propia de la alternativa
+("apóyate en la pared si pierdes el equilibrio"). Se quitó tras probar la
+plantilla: ocupaba espacio en el editor sin agregar nada que la nota general
+del ejercicio (`RoutineExerciseContent.notes`) no cubriera ya.
 
 El snapshot ya está resuelto: `trainingSession.content` y `guestWorkout.content`
 guardan el `RoutineContent` completo al arrancar, así que la alternativa viaja
@@ -175,8 +178,7 @@ objetivo e indicaciones, y que ya está oculto en rutinas de evaluación) se sum
 Alternativa más sencilla                      [ Elegir ejercicio… ]
 
   ┌──────────────────────────────────────────────┐
-  │ [▶] Lagartijas con rodillas            [ × ] │
-  │ Nota para la alternativa (opcional)          │
+  │ [▶] Lagartijas con rodillas             [ × ]│
   └──────────────────────────────────────────────┘
 ```
 
@@ -192,13 +194,20 @@ propia alternativa.
 ## Interfaz — atleta
 
 El usuario planteó dos caminos: un mensaje discreto, o deslizar la pantalla.
+La primera versión implementó un botón discreto que abría una hoja de
+confirmación ("¿Muy difícil? Cambia a X" → modal con video y nota → "Cambiar a
+este" / "Seguir con el original"). Al probarlo, la corrección fue: no debe
+haber confirmación. El atleta necesita poder **ver ambos ejercicios y decidir
+cuál puede hacer**, no comprometerse a uno tras un solo tap.
 
-**Decidido: botón discreto, no swipe.** Con una sola alternativa, el gesto de
-deslizar no tiene nada que lo anuncie (el atleta no sabe que existe), compite
-con el scroll vertical de la pantalla de la serie, y no deja lugar donde poner
-el nombre de a qué va a cambiar. El swipe se gana su lugar cuando haya varias
-alternativas y el atleta las esté explorando; con una, un botón que dice
-exactamente qué pasa es más claro y mucho más barato.
+**Decidido: un interruptor de dos posiciones (`AlternativeSwitch`), no un modal
+de confirmación ni swipe.** Es un control con las dos opciones visibles a la
+vez — el ejercicio planeado y su alternativa, uno al lado del otro — donde
+tocar cualquiera de los dos lados cambia al instante qué video y nombre
+muestra el resto de la pantalla. El atleta puede ir y venir las veces que
+quiera antes de hacer la serie; no hay paso de "confirmar" porque no hace
+falta: alternar ya es ver el resultado. Lo que queda grabado es cualquiera de
+los dos lados esté activo en el momento de tocar "Terminé esta serie".
 
 ### Durante la serie — `SetExecution`
 
@@ -207,23 +216,22 @@ Debajo del nombre del ejercicio, junto al botón de indicaciones que ya existe:
 ```
 Lagartijas                                    (i)
 
-   ¿Muy difícil?  Cambia a Lagartijas con rodillas  →
+┌──────────────────────────────────────────────────┐
+│  Lagartijas   │   Lagartijas con rodillas          │
+└──────────────────────────────────────────────────┘
+     (activo)
 ```
 
-Al tocarlo se abre una hoja pequeña — mismo patrón que `VideoModal` y
-`NotesModal` del runner — con el nombre, el video y la nota de la alternativa, y
-dos botones: **Cambiar a este** / **Seguir con lagartijas**.
-
-Ya cambiado, el encabezado muestra el nombre de la alternativa con una etiqueta
-`Alternativa` y un enlace **Volver a Lagartijas**. Cambiar de ejercicio nunca
-descarta las series ya hechas.
+Tocar el lado no activo cambia al instante el nombre, el video y el título de
+toda la pantalla a esa versión — series, tempo, descanso e indicaciones no se
+mueven, se heredan del ejercicio planeado sin importar cuál lado esté activo.
+Cambiar de lado nunca descarta las series ya hechas.
 
 ### Durante el descanso — `RestTimer`
 
 El momento en que el atleta sabe que no va a poder con la siguiente serie es
-justo el descanso posterior a la que le costó. Conviene ofrecer el cambio ahí
-también, en la línea que ya anuncia el ejercicio que viene. Es el mismo
-componente de hoja, así que sale casi gratis.
+justo el descanso posterior a la que le costó. El mismo interruptor aparece
+ahí, en la línea que ya anuncia el ejercicio que viene, en tamaño reducido.
 
 ### Antes de empezar y en la vista de progreso
 
@@ -270,4 +278,4 @@ genera con `pnpm --filter @atleta/db generate`. Nunca SQL a mano.
 | **Progreso de la alternativa** | Récord propio, en principio — pero hoy no hay PR de rutinas de entrenamiento que atribuir (ver hallazgo arriba); queda como criterio para cuando exista |
 | **Visibilidad para el entrenador** | Entra en esta iteración, como etiqueta en el detalle de la sesión |
 | **¿Puede volver al ejercicio original a media rutina?** | Sí — por eso el dato se guarda por serie y no por ejercicio |
-| **Cómo cambia el atleta** | Botón discreto, no deslizar |
+| **Cómo cambia el atleta** | Interruptor de dos posiciones (`AlternativeSwitch`), no deslizar ni un modal de confirmación — ve ambos y alterna libremente |

@@ -982,10 +982,8 @@ function ExerciseCard({
                 </label>
                 {meta.alternative ? (
                   <AlternativeCard
-                    alternative={meta.alternative}
                     info={infoFor(meta.alternative.exerciseId)}
                     onPreview={onPreview}
-                    onNotesChange={(notes) => setMeta((m) => (m.alternative ? { ...m, alternative: { ...m.alternative, notes } } : m))}
                     onRemove={() => setMeta((m) => ({ ...m, alternative: null }))}
                   />
                 ) : (
@@ -1018,16 +1016,14 @@ function ExerciseCard({
 // ─── Alternativa (versión más sencilla) ────────────────────────────────────────
 
 function AlternativeCard({
-  alternative, info, onPreview, onNotesChange, onRemove,
+  info, onPreview, onRemove,
 }: {
-  alternative: RoutineExerciseAlternative
   info: ExerciseInfo
   onPreview: (info: ExerciseInfo) => void
-  onNotesChange: (notes: string) => void
   onRemove: () => void
 }) {
   return (
-    <div className="flex items-start gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5">
+    <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5">
       {info.youtubeVideoId ? (
         <button type="button" onClick={() => onPreview(info)} className="shrink-0 rounded-md overflow-hidden cursor-pointer" aria-label={`Ver video de ${info.name}`}>
           <YouTubeThumb videoId={info.youtubeVideoId} alt={info.name} className="w-16 aspect-video" />
@@ -1035,16 +1031,7 @@ function AlternativeCard({
       ) : (
         <div className="w-16 aspect-video shrink-0 rounded-md bg-muted/40" />
       )}
-      <div className="flex-1 min-w-0 space-y-1.5">
-        <p className="text-xs font-medium truncate">{info.name}</p>
-        <textarea
-          rows={1}
-          placeholder="Nota para la alternativa (opcional)"
-          value={alternative.notes ?? ""}
-          onChange={(e) => onNotesChange(e.target.value)}
-          className="w-full bg-background border border-border rounded-lg px-2.5 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground resize-none"
-        />
-      </div>
+      <p className="flex-1 min-w-0 text-xs font-medium truncate">{info.name}</p>
       <button
         type="button"
         onClick={onRemove}
