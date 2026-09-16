@@ -466,7 +466,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
                       </svg>
                     )}
                   </div>
-                  <span className="text-sm flex-1">{a.userName}</span>
+                  <span className="text-sm flex-1">{a.userName}{a.selfAthlete && " (Tú)"}</span>
                 </button>
               )
             })}
