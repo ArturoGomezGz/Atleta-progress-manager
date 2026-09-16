@@ -163,9 +163,6 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
               <Link href={`/teams/${teamId}/plantillas/${r.id}`} className="flex-1 flex items-center gap-3 px-4 py-3.5 min-w-0">
                 <Icon className={cn("w-4 h-4 shrink-0", cfg.text)} />
                 <span className="font-medium text-sm flex-1 truncate">{sc(r.name)}</span>
-                <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0", cfg.bg, cfg.text, cfg.border)}>
-                  {cfg.label}
-                </span>
                 <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
                   {new Date(r.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
                 </span>
