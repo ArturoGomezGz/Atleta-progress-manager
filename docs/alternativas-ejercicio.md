@@ -1,7 +1,8 @@
 # Alternativas de ejercicio
 
 > **Estado: en planeación.** Este documento es el plan de la feature, no su
-> descripción final. Las decisiones marcadas con 🔶 siguen abiertas.
+> descripción final. La decisión marcada con 🔶 sigue abierta; las demás ya
+> están tomadas.
 
 El entrenador puede asignarle a un ejercicio de la rutina **una alternativa más
 sencilla**. Si durante el entrenamiento el atleta no puede con el ejercicio
@@ -109,7 +110,7 @@ en la vida real. La interfaz puede presentarlo como «una vez que cambias, sigue
 con la alternativa» (estado de la pantalla) aunque la verdad almacenada sea por
 serie.
 
-### 3. Atribución del progreso 🔶
+### 3. Atribución del progreso
 
 `sessions.complete` calcula el RM estimado agrupando por
 `sessionExercise.exerciseId`. Con la columna nueva pasa a agrupar por:
@@ -118,8 +119,8 @@ serie.
 COALESCE(setRecord.performedExerciseId, sessionExercise.exerciseId)
 ```
 
-Es decir: **las series de lagartijas con rodillas construyen el récord de
-lagartijas con rodillas, no el de lagartijas.** Inflar el PR del ejercicio duro
+**Decidido:** las series de lagartijas con rodillas construyen el récord de
+lagartijas con rodillas, no el de lagartijas. Inflar el PR del ejercicio duro
 con series del fácil rompe la métrica central del producto (% del PR), y
 descartarlas del todo le esconde al atleta un progreso que sí existe.
 
@@ -189,11 +190,11 @@ propia alternativa.
 
 ---
 
-## Interfaz — atleta 🔶
+## Interfaz — atleta
 
 El usuario planteó dos caminos: un mensaje discreto, o deslizar la pantalla.
 
-**Propuesta: botón discreto, no swipe.** Con una sola alternativa, el gesto de
+**Propuesta (por confirmar 🔶): botón discreto, no swipe.** Con una sola alternativa, el gesto de
 deslizar no tiene nada que lo anuncie (el atleta no sabe que existe), compite
 con el scroll vertical de la pantalla de la serie, y no deja lugar donde poner
 el nombre de a qué va a cambiar. El swipe se gana su lugar cuando haya varias
@@ -232,13 +233,13 @@ para que el atleta sepa desde la vista previa que la opción existe.
 
 ---
 
-## Interfaz — qué ve el entrenador después 🔶
+## Interfaz — qué ve el entrenador después
 
 Que el atleta usara la alternativa es información de entrenamiento valiosa, y
-hoy no hay dónde mostrarla. Lo mínimo: en el detalle de la sesión
-(`sesiones/[sessionId]/session-view.tsx`), marcar con una etiqueta las series
-hechas con la alternativa. Pendiente decidir si entra en esta iteración o en la
-siguiente.
+hoy no hay dónde mostrarla. **Entra en esta iteración:** en el detalle de la
+sesión (`sesiones/[sessionId]/session-view.tsx`), las series hechas con la
+alternativa llevan una etiqueta junto al nombre del ejercicio. El dato ya está
+en `set_record`, así que es solo pintarlo.
 
 ---
 
@@ -256,18 +257,18 @@ Cada paso deja el repo funcionando; los pasos 1–2 no cambian nada visible.
 | 6 | El atleta cambia de ejercicio en el runner (hoja + estado + vistas previas) | `apps/web/src/components/workout-runner.tsx` |
 | 7 | Atribución del RM por ejercicio realmente hecho | `sessions.complete` |
 | 8 | Mismo recorrido para el invitado | `apps/api/src/routers/share.ts` |
-| 9 | El entrenador ve qué series se hicieron con la alternativa 🔶 | `sesiones/[sessionId]/session-view.tsx` |
+| 9 | El entrenador ve qué series se hicieron con la alternativa | `sesiones/[sessionId]/session-view.tsx` |
 
 El paso 2 sigue el flujo de `docs/migraciones.md`: se modifica el schema y se
 genera con `pnpm --filter @atleta/db generate`. Nunca SQL a mano.
 
 ---
 
-## Decisiones abiertas 🔶
+## Decisiones
 
-1. **Progreso de la alternativa** — ¿récord propio (propuesta), cuenta como el
-   ejercicio original, o no cuenta para PR?
-2. **Cómo cambia el atleta** — botón discreto (propuesta) o deslizar.
-3. **¿Puede volver al ejercicio original a media rutina?** La propuesta dice que
-   sí, y por eso el dato se guarda por serie.
-4. **Visibilidad para el entrenador** — ¿entra en esta iteración?
+| Decisión | Resuelto |
+|---|---|
+| **Progreso de la alternativa** | Récord propio — la alternativa construye su propio PR |
+| **Visibilidad para el entrenador** | Entra en esta iteración, como etiqueta en el detalle de la sesión |
+| **¿Puede volver al ejercicio original a media rutina?** | Sí — por eso el dato se guarda por serie y no por ejercicio |
+| **Cómo cambia el atleta** 🔶 | Propuesta: botón discreto en vez de deslizar. Por confirmar |
