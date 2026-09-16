@@ -8,11 +8,25 @@ import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import type { RoutineContent, RoutineExerciseContent, RoutineItemBlock, RoutineItemExercise, RoutineSet } from "@atleta/db/schema"
 import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+  type PointerSensorOptions,
+} from "@dnd-kit/core"
+import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
+import { CSS } from "@dnd-kit/utilities"
+import {
   ArrowDownIcon,
   ArrowUpIcon,
   ChevronLeftIcon,
   ClockIcon,
   CopyIcon,
+  GripVerticalIcon,
   InfoIcon,
   MinusIcon,
   PauseIcon,
@@ -24,6 +38,7 @@ import {
   XIcon,
 } from "lucide-react"
 import Link from "next/link"
+import type { PointerEvent as ReactPointerEvent, ReactNode } from "react"
 import { use, useCallback, useEffect, useRef, useState } from "react"
 
 const DEFAULT_SUGGESTED_REST_SECONDS = 60
@@ -92,6 +107,134 @@ const reps = (count: number, value: number): RoutineSet[] =>
 
 function cloneExercise<T extends RoutineExerciseContent>(ex: T): T {
   return { ...ex, id: uuid(), sets: ex.sets.map((s) => ({ ...s })) }
+}
+
+// ─── Arrastrar y soltar (reordenar manteniendo presionado) ────────────────────
+
+const ROOT_CONTAINER_ID = "root-container"
+const blockDropId = (blockId: string) => `block-drop-${blockId}`
+
+/**
+ * Deja que el arrastre se active manteniendo presionado cualquier punto de la tarjeta,
+ * incluyendo sus botones: un toque corto sigue disparando su click normal (el arrastre
+ * solo se activa tras el `delay` de la sensor), y uno largo lo convierte en drag. Solo
+ * los campos de texto (input/textarea/select) quedan excluidos, porque ahí mantener
+ * presionado sirve para ubicar el cursor o seleccionar texto, no para arrastrar.
+ */
+class DragHandlePointerSensor extends PointerSensor {
+  static activators = [
+    {
+      eventName: "onPointerDown" as const,
+      handler: ({ nativeEvent: event }: ReactPointerEvent, { onActivation }: PointerSensorOptions) => {
+        if (!event.isPrimary || event.button !== 0) return false
+        let el = event.target as HTMLElement | null
+        while (el) {
+          if (["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)) return false
+          el = el.parentElement
+        }
+        onActivation?.({ event })
+        return true
+      },
+    },
+  ]
+}
+
+type ItemLoc = { where: "root"; index: number } | { where: "block"; blockId: string; index: number }
+
+function locateItem(items: Array<RoutineItemExercise | RoutineItemBlock>, id: string): ItemLoc | null {
+  const sorted = [...items].sort((a, b) => a.order - b.order)
+  const rootIdx = sorted.findIndex((i) => i.id === id)
+  if (rootIdx !== -1) return { where: "root", index: rootIdx }
+  for (const it of sorted) {
+    if (it.type === "block") {
+      const exs = [...it.exercises].sort((a, b) => a.order - b.order)
+      const exIdx = exs.findIndex((e) => e.id === id)
+      if (exIdx !== -1) return { where: "block", blockId: it.id, index: exIdx }
+    }
+  }
+  return null
+}
+
+/**
+ * Mueve el ejercicio o circuito arrastrado a su nueva posición. Un ejercicio puede
+ * moverse entre la raíz y cualquier circuito (o entre circuitos); un circuito solo
+ * puede reordenarse dentro de la raíz, nunca anidarse dentro de otro.
+ */
+function moveDraggedItem(content: RoutineContent, activeId: string, overId: string): RoutineContent {
+  if (activeId === overId) return content
+  const items = [...content.items].sort((a, b) => a.order - b.order)
+  const activeLoc = locateItem(items, activeId)
+  if (!activeLoc) return content
+
+  const rootItems = [...items]
+  const blockExercises = new Map<string, RoutineExerciseContent[]>(
+    rootItems
+      .filter((i): i is RoutineItemBlock => i.type === "block")
+      .map((b) => [b.id, [...b.exercises].sort((a, b2) => a.order - b2.order)]),
+  )
+
+  if (activeLoc.where === "root" && rootItems[activeLoc.index].type === "block") {
+    const toIdx = rootItems.findIndex((i) => i.id === overId)
+    if (toIdx === -1) return content // no se puede soltar un circuito dentro de otro circuito
+    return { ...content, items: renumber(arrayMove(rootItems, activeLoc.index, toIdx)) }
+  }
+
+  // Reordenar un ejercicio dentro de su mismo contenedor (raíz o mismo circuito): un simple
+  // arrayMove sobre los índices originales. Insertarlo "a mano" tras quitarlo desplazaría el
+  // índice de destino y dejaría el orden sin cambios cuando se suelta justo después de su vecino.
+  if (activeLoc.where === "root") {
+    const toIdx = rootItems.findIndex((i) => i.id === overId)
+    if (toIdx !== -1) return { ...content, items: renumber(arrayMove(rootItems, activeLoc.index, toIdx)) }
+  } else {
+    const exs = blockExercises.get(activeLoc.blockId)
+    const toIdx = exs?.findIndex((e) => e.id === overId) ?? -1
+    if (exs && toIdx !== -1) {
+      blockExercises.set(activeLoc.blockId, arrayMove(exs, activeLoc.index, toIdx))
+      const newItems = rootItems.map((i) => (i.type === "block" ? { ...i, exercises: renumber(blockExercises.get(i.id) ?? i.exercises) } : i))
+      return { ...content, items: renumber(newItems) }
+    }
+  }
+
+  let activeExercise: RoutineExerciseContent | null = null
+  if (activeLoc.where === "root") {
+    const removed = rootItems.splice(activeLoc.index, 1)[0]
+    if (removed.type !== "exercise") return content
+    const { type: _type, ...bare } = removed
+    activeExercise = bare
+  } else {
+    const exs = blockExercises.get(activeLoc.blockId)
+    if (!exs) return content
+    const [removed] = exs.splice(activeLoc.index, 1)
+    activeExercise = removed
+  }
+  if (!activeExercise) return content
+
+  if (overId === ROOT_CONTAINER_ID) {
+    rootItems.push({ type: "exercise", ...activeExercise })
+  } else if (overId.startsWith("block-drop-")) {
+    const exs = blockExercises.get(overId.slice("block-drop-".length))
+    if (!exs) return content
+    exs.push(activeExercise)
+  } else {
+    const overRootIdx = rootItems.findIndex((i) => i.id === overId)
+    if (overRootIdx !== -1) {
+      rootItems.splice(overRootIdx, 0, { type: "exercise", ...activeExercise })
+    } else {
+      let placed = false
+      for (const exs of blockExercises.values()) {
+        const idx = exs.findIndex((e) => e.id === overId)
+        if (idx !== -1) {
+          exs.splice(idx, 0, activeExercise)
+          placed = true
+          break
+        }
+      }
+      if (!placed) return content
+    }
+  }
+
+  const newItems = rootItems.map((i) => (i.type === "block" ? { ...i, exercises: renumber(blockExercises.get(i.id) ?? i.exercises) } : i))
+  return { ...content, items: renumber(newItems) }
 }
 
 /** Autocompleta el descanso del último ejercicio de una lista de ejercicios (plana o dentro de un circuito) cuando aún no tiene uno, para que separe del que se está por agregar. */
@@ -216,6 +359,27 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     })
   }
 
+  // Arrastrar y soltar: mantener presionado un ejercicio o circuito lo activa como
+  // arrastrable, para reordenarlo o meterlo/sacarlo de un circuito con el dedo.
+  const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const dndSensors = useSensors(useSensor(DragHandlePointerSensor, { activationConstraint: { delay: 250, tolerance: 8 } }))
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDragId(String(event.active.id))
+  }
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveDragId(null)
+    const { active, over } = event
+    if (!over) return
+    const activeId = String(active.id)
+    const overId = String(over.id)
+    if (activeId === overId) return
+    mutate((c) => moveDraggedItem(c, activeId, overId))
+  }
+  function handleDragCancel() {
+    setActiveDragId(null)
+  }
+
   function duplicateItem(id: string) {
     mutate((c) => {
       const items = [...c.items].sort((a, b) => a.order - b.order)
@@ -328,57 +492,68 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       )}
 
       {/* Items */}
-      <div className="space-y-3">
-        {sorted.map((item, idx) => {
-          const moveProps = {
-            onMoveUp: idx > 0 ? () => moveItem(item.id, -1) : undefined,
-            onMoveDown: idx < sorted.length - 1 ? () => moveItem(item.id, 1) : undefined,
-            onDuplicate: isEvaluation ? undefined : () => duplicateItem(item.id),
-            onRemove: () => removeItem(item.id),
-          }
-          return item.type === "exercise" ? (
-            <div key={item.id}>
-              <ExerciseCard
-                item={item}
-                label={String(idx + 1)}
-                isEvaluation={isEvaluation}
-                info={infoFor(item.exerciseId)}
-                onPreview={setPreview}
-                onUpdate={(patch) => updateItem(item.id, patch)}
-                {...moveProps}
-              />
-              {!isEvaluation && (
-                <RestRow
-                  seconds={item.restSeconds}
-                  onAdd={() => updateItem(item.id, { restSeconds: suggestedRest })}
-                  onChange={(n) => { updateItem(item.id, { restSeconds: n }); setSuggestedRest(n) }}
-                  onClear={() => updateItem(item.id, { restSeconds: undefined })}
-                />
-              )}
-            </div>
-          ) : (
-            <BlockCard
-              key={item.id}
-              item={item}
-              label={String(idx + 1)}
-              infoFor={infoFor}
-              catalog={catalog ?? []}
-              onPreview={setPreview}
-              onUpdate={(patch) => updateItem(item.id, patch)}
-              suggestedRest={suggestedRest}
-              onSuggestedRestChange={setSuggestedRest}
-              {...moveProps}
-            />
-          )
-        })}
+      <DndContext sensors={dndSensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+        <RootDropZone>
+          <SortableContext items={sorted.map((i) => i.id)} strategy={verticalListSortingStrategy}>
+            {sorted.map((item, idx) => {
+              const moveProps = {
+                onMoveUp: idx > 0 ? () => moveItem(item.id, -1) : undefined,
+                onMoveDown: idx < sorted.length - 1 ? () => moveItem(item.id, 1) : undefined,
+                onDuplicate: isEvaluation ? undefined : () => duplicateItem(item.id),
+                onRemove: () => removeItem(item.id),
+              }
+              return (
+                <SortableItem key={item.id} id={item.id}>
+                  {item.type === "exercise" ? (
+                    <div>
+                      <ExerciseCard
+                        item={item}
+                        label={String(idx + 1)}
+                        isEvaluation={isEvaluation}
+                        info={infoFor(item.exerciseId)}
+                        onPreview={setPreview}
+                        onUpdate={(patch) => updateItem(item.id, patch)}
+                        {...moveProps}
+                      />
+                      {!isEvaluation && (
+                        <RestRow
+                          seconds={item.restSeconds}
+                          onAdd={() => updateItem(item.id, { restSeconds: suggestedRest })}
+                          onChange={(n) => { updateItem(item.id, { restSeconds: n }); setSuggestedRest(n) }}
+                          onClear={() => updateItem(item.id, { restSeconds: undefined })}
+                        />
+                      )}
+                    </div>
+                  ) : (
+                    <BlockCard
+                      item={item}
+                      label={String(idx + 1)}
+                      infoFor={infoFor}
+                      catalog={catalog ?? []}
+                      onPreview={setPreview}
+                      onUpdate={(patch) => updateItem(item.id, patch)}
+                      suggestedRest={suggestedRest}
+                      onSuggestedRestChange={setSuggestedRest}
+                      {...moveProps}
+                    />
+                  )}
+                </SortableItem>
+              )
+            })}
+          </SortableContext>
 
-        {content.items.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl gap-2 text-center px-6">
-            <p className="text-sm font-medium">Esta plantilla está vacía</p>
-            <p className="text-xs text-muted-foreground">Agrega ejercicios desde el catálogo. Cada uno trae su video de YouTube.</p>
-          </div>
-        )}
-      </div>
+          {content.items.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl gap-2 text-center px-6">
+              <p className="text-sm font-medium">Esta plantilla está vacía</p>
+              <p className="text-xs text-muted-foreground">Agrega ejercicios desde el catálogo. Cada uno trae su video de YouTube.</p>
+            </div>
+          )}
+        </RootDropZone>
+
+        <DragOverlay>
+          {activeDragId ? <DragPreview id={activeDragId} content={content} infoFor={infoFor} /> : null}
+        </DragOverlay>
+      </DndContext>
 
       {/* Add */}
       <div className="space-y-2">
@@ -453,6 +628,62 @@ function AddExerciseRow({ exercises, onAdd, placeholder }: { exercises: PickerEx
   )
 }
 
+// ─── Drag and drop ─────────────────────────────────────────────────────────────
+
+/** Envuelve un ejercicio o circuito para que, al mantenerlo presionado, se pueda arrastrar. */
+function SortableItem({ id, children }: { id: string; children: ReactNode }) {
+  // Sin `attributes` (role/tabIndex de accesibilidad): no hay sensor de teclado, y aplicarlos
+  // volvería focalizable con Tab el contenedor entero, que ya tiene botones e inputs reales dentro.
+  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  return (
+    <div
+      ref={setNodeRef}
+      data-sortable-id={id}
+      style={{ transform: CSS.Transform.toString(transform), transition }}
+      className={cn("touch-manipulation", isDragging && "opacity-30")}
+      {...listeners}
+    >
+      {children}
+    </div>
+  )
+}
+
+/** Zona soltable de la lista raíz: permite soltar un ejercicio fuera de un circuito, incluso si la lista está vacía. */
+function RootDropZone({ children }: { children: ReactNode }) {
+  const { setNodeRef } = useDroppable({ id: ROOT_CONTAINER_ID })
+  return (
+    <div ref={setNodeRef} data-root-dropzone className="space-y-3">
+      {children}
+    </div>
+  )
+}
+
+function DragPreview({ id, content, infoFor }: { id: string; content: RoutineContent; infoFor: (id: string) => ExerciseInfo }) {
+  const items = [...content.items].sort((a, b) => a.order - b.order)
+  const rootItem = items.find((i) => i.id === id)
+  if (rootItem) {
+    return rootItem.type === "exercise"
+      ? <DragPreviewCard label={infoFor(rootItem.exerciseId).name} />
+      : <DragPreviewCard label={rootItem.name || "Circuito"} icon />
+  }
+  for (const it of items) {
+    if (it.type === "block") {
+      const ex = it.exercises.find((e) => e.id === id)
+      if (ex) return <DragPreviewCard label={infoFor(ex.exerciseId).name} />
+    }
+  }
+  return null
+}
+
+function DragPreviewCard({ label, icon }: { label: string; icon?: boolean }) {
+  return (
+    <div className="flex items-center gap-2 px-4 py-3 rounded-xl border-2 border-primary bg-card shadow-xl text-sm font-semibold cursor-grabbing">
+      {icon && <RepeatIcon className="w-4 h-4 text-primary shrink-0" />}
+      <span className="truncate">{label}</span>
+    </div>
+  )
+}
+
 // ─── Item toolbar (mover / duplicar / eliminar) ───────────────────────────────
 
 function ItemActions({ onMoveUp, onMoveDown, onDuplicate, onRemove }: {
@@ -464,6 +695,7 @@ function ItemActions({ onMoveUp, onMoveDown, onDuplicate, onRemove }: {
   const btn = "p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-25 disabled:pointer-events-none transition-colors cursor-pointer"
   return (
     <div className="flex items-center shrink-0">
+      <GripVerticalIcon className="w-3.5 h-3.5 text-muted-foreground/30 shrink-0 mr-0.5" aria-hidden />
       <button type="button" onClick={onMoveUp} disabled={!onMoveUp} className={btn} aria-label="Subir"><ArrowUpIcon className="w-3.5 h-3.5" /></button>
       <button type="button" onClick={onMoveDown} disabled={!onMoveDown} className={btn} aria-label="Bajar"><ArrowDownIcon className="w-3.5 h-3.5" /></button>
       {onDuplicate && (
@@ -774,6 +1006,7 @@ function BlockCard({
 }) {
   const exercises = [...item.exercises].sort((a, b) => a.order - b.order)
   const setExercises = (list: RoutineExerciseContent[]) => onUpdate({ exercises: renumber(list) })
+  const { setNodeRef: setBlockDropRef } = useDroppable({ id: blockDropId(item.id) })
 
   function move(idx: number, dir: -1 | 1) {
     const list = [...exercises]
@@ -836,36 +1069,40 @@ function BlockCard({
         <span className="text-muted-foreground shrink-0">seg</span>
       </div>
 
-      <div className="p-3 space-y-2">
+      <div ref={setBlockDropRef} data-block-dropzone={item.id} className="p-3 space-y-2">
         {exercises.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-3">Agrega al menos un ejercicio a este circuito.</p>
+          <p className="text-xs text-muted-foreground text-center py-3">Agrega al menos un ejercicio a este circuito, o arrastra uno aquí.</p>
         )}
-        {exercises.map((ex, i) => (
-          <div key={ex.id}>
-            <ExerciseCard
-              nested
-              item={ex}
-              label={`${label}.${i + 1}`}
-              isEvaluation={false}
-              info={infoFor(ex.exerciseId)}
-              onPreview={onPreview}
-              onUpdate={(patch) => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, ...patch } : e)))}
-              onMoveUp={i > 0 ? () => move(i, -1) : undefined}
-              onMoveDown={i < exercises.length - 1 ? () => move(i, 1) : undefined}
-              onRemove={() => setExercises(exercises.filter((e) => e.id !== ex.id))}
-            />
-            <RestRow
-              seconds={ex.restSeconds}
-              label={i === exercises.length - 1 ? "Descanso al terminar el circuito" : "Descanso"}
-              onAdd={() => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: suggestedRest } : e)))}
-              onChange={(n) => {
-                setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: n } : e)))
-                onSuggestedRestChange(n)
-              }}
-              onClear={() => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: undefined } : e)))}
-            />
-          </div>
-        ))}
+        <SortableContext items={exercises.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+          {exercises.map((ex, i) => (
+            <SortableItem key={ex.id} id={ex.id}>
+              <div>
+                <ExerciseCard
+                  nested
+                  item={ex}
+                  label={`${label}.${i + 1}`}
+                  isEvaluation={false}
+                  info={infoFor(ex.exerciseId)}
+                  onPreview={onPreview}
+                  onUpdate={(patch) => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, ...patch } : e)))}
+                  onMoveUp={i > 0 ? () => move(i, -1) : undefined}
+                  onMoveDown={i < exercises.length - 1 ? () => move(i, 1) : undefined}
+                  onRemove={() => setExercises(exercises.filter((e) => e.id !== ex.id))}
+                />
+                <RestRow
+                  seconds={ex.restSeconds}
+                  label={i === exercises.length - 1 ? "Descanso al terminar el circuito" : "Descanso"}
+                  onAdd={() => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: suggestedRest } : e)))}
+                  onChange={(n) => {
+                    setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: n } : e)))
+                    onSuggestedRestChange(n)
+                  }}
+                  onClear={() => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: undefined } : e)))}
+                />
+              </div>
+            </SortableItem>
+          ))}
+        </SortableContext>
         <AddExerciseRow
           exercises={catalog}
           placeholder="Agregar ejercicio al circuito…"
