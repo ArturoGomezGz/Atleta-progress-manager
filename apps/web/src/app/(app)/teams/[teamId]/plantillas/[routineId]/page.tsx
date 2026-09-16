@@ -16,7 +16,6 @@ import {
   useSensors,
   type DragEndEvent,
   type DragStartEvent,
-  type PointerSensorOptions,
 } from "@dnd-kit/core"
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
@@ -38,8 +37,8 @@ import {
   XIcon,
 } from "lucide-react"
 import Link from "next/link"
-import type { PointerEvent as ReactPointerEvent, ReactNode } from "react"
-import { use, useCallback, useEffect, useRef, useState } from "react"
+import type { ReactNode } from "react"
+import { createContext, use, useCallback, useContext, useEffect, useRef, useState } from "react"
 
 const DEFAULT_SUGGESTED_REST_SECONDS = 60
 
@@ -113,31 +112,6 @@ function cloneExercise<T extends RoutineExerciseContent>(ex: T): T {
 
 const ROOT_CONTAINER_ID = "root-container"
 const blockDropId = (blockId: string) => `block-drop-${blockId}`
-
-/**
- * Deja que el arrastre se active manteniendo presionado cualquier punto de la tarjeta,
- * incluyendo sus botones: un toque corto sigue disparando su click normal (el arrastre
- * solo se activa tras el `delay` de la sensor), y uno largo lo convierte en drag. Solo
- * los campos de texto (input/textarea/select) quedan excluidos, porque ahí mantener
- * presionado sirve para ubicar el cursor o seleccionar texto, no para arrastrar.
- */
-class DragHandlePointerSensor extends PointerSensor {
-  static activators = [
-    {
-      eventName: "onPointerDown" as const,
-      handler: ({ nativeEvent: event }: ReactPointerEvent, { onActivation }: PointerSensorOptions) => {
-        if (!event.isPrimary || event.button !== 0) return false
-        let el = event.target as HTMLElement | null
-        while (el) {
-          if (["INPUT", "TEXTAREA", "SELECT"].includes(el.tagName)) return false
-          el = el.parentElement
-        }
-        onActivation?.({ event })
-        return true
-      },
-    },
-  ]
-}
 
 type ItemLoc = { where: "root"; index: number } | { where: "block"; blockId: string; index: number }
 
@@ -362,7 +336,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   // Arrastrar y soltar: mantener presionado un ejercicio o circuito lo activa como
   // arrastrable, para reordenarlo o meterlo/sacarlo de un circuito con el dedo.
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
-  const dndSensors = useSensors(useSensor(DragHandlePointerSensor, { activationConstraint: { delay: 250, tolerance: 8 } }))
+  const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { delay: 250, tolerance: 8 } }))
 
   function handleDragStart(event: DragStartEvent) {
     setActiveDragId(String(event.active.id))
@@ -631,22 +605,51 @@ function AddExerciseRow({ exercises, onAdd, placeholder }: { exercises: PickerEx
 }
 
 // ─── Drag and drop ─────────────────────────────────────────────────────────────
+//
+// El arrastre se activa solo desde el ícono de agarre (`DragHandle`), no desde
+// cualquier punto de la tarjeta: en móvil, `touch-action: none` es necesario para
+// que el gesto de mantener presionado no compita con el scroll nativo de la página,
+// pero aplicarlo a toda la tarjeta bloquearía poder hacer scroll tocándola. Con un
+// handle chico y dedicado, el resto de la tarjeta conserva el scroll normal.
 
-/** Envuelve un ejercicio o circuito para que, al mantenerlo presionado, se pueda arrastrar. */
+type SortableHandle = {
+  attributes: ReturnType<typeof useSortable>["attributes"]
+  listeners: ReturnType<typeof useSortable>["listeners"]
+  setActivatorNodeRef: ReturnType<typeof useSortable>["setActivatorNodeRef"]
+}
+const SortableItemContext = createContext<SortableHandle | null>(null)
+
+/** Envuelve un ejercicio o circuito y expone su agarre de arrastre a los hijos vía contexto. */
 function SortableItem({ id, children }: { id: string; children: ReactNode }) {
-  // Sin `attributes` (role/tabIndex de accesibilidad): no hay sensor de teclado, y aplicarlos
-  // volvería focalizable con Tab el contenedor entero, que ya tiene botones e inputs reales dentro.
-  const { listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id })
+  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } = useSortable({ id })
   return (
-    <div
-      ref={setNodeRef}
-      data-sortable-id={id}
-      style={{ transform: CSS.Transform.toString(transform), transition }}
-      className={cn("touch-manipulation", isDragging && "opacity-30")}
-      {...listeners}
+    <SortableItemContext.Provider value={{ attributes, listeners, setActivatorNodeRef }}>
+      <div
+        ref={setNodeRef}
+        data-sortable-id={id}
+        style={{ transform: CSS.Transform.toString(transform), transition }}
+        className={cn(isDragging && "opacity-30")}
+      >
+        {children}
+      </div>
+    </SortableItemContext.Provider>
+  )
+}
+
+/** Ícono de agarre: mantenerlo presionado activa el arrastre del ejercicio o circuito que lo contiene. */
+function DragHandle() {
+  const handle = useContext(SortableItemContext)
+  return (
+    <button
+      type="button"
+      ref={handle?.setActivatorNodeRef}
+      {...handle?.attributes}
+      {...handle?.listeners}
+      className="p-1.5 -ml-0.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/60 cursor-grab active:cursor-grabbing touch-none shrink-0"
+      aria-label="Arrastrar para reordenar"
     >
-      {children}
-    </div>
+      <GripVerticalIcon className="w-3.5 h-3.5" />
+    </button>
   )
 }
 
@@ -697,7 +700,7 @@ function ItemActions({ onMoveUp, onMoveDown, onDuplicate, onRemove }: {
   const btn = "p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-25 disabled:pointer-events-none transition-colors cursor-pointer"
   return (
     <div className="flex items-center shrink-0">
-      <GripVerticalIcon className="w-3.5 h-3.5 text-muted-foreground/30 shrink-0 mr-0.5" aria-hidden />
+      <DragHandle />
       <button type="button" onClick={onMoveUp} disabled={!onMoveUp} className={btn} aria-label="Subir"><ArrowUpIcon className="w-3.5 h-3.5" /></button>
       <button type="button" onClick={onMoveDown} disabled={!onMoveDown} className={btn} aria-label="Bajar"><ArrowDownIcon className="w-3.5 h-3.5" /></button>
       {onDuplicate && (
