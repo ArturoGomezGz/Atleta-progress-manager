@@ -290,12 +290,21 @@ export const sessionsRouter = router({
         .where(eq(sessionExercise.sessionId, input.id))
         .orderBy(asc(sessionExercise.order))
 
-      // Metadata desde el snapshot JSON (descanso, circuito, ronda) por posición
+      // Metadata desde el snapshot JSON (descanso, circuito, ronda, alternativa) por posición
       const flat = flattenContent(session.content)
       const metaFor = (order: number, exerciseId: string) => {
         const m = flat[order]
         return m && m.exerciseId === exerciseId ? m : null
       }
+
+      // Solo el nombre: aquí basta para la etiqueta de la serie, no hace falta el video.
+      const alternativeExerciseIds = [...new Set(flat.map((f) => f.alternative?.exerciseId).filter((id): id is string => !!id))]
+      const alternativeNameById = alternativeExerciseIds.length
+        ? new Map(
+            (await db.select({ id: exercise.id, name: exercise.name }).from(exercise).where(inArray(exercise.id, alternativeExerciseIds)))
+              .map((e) => [e.id, e.name]),
+          )
+        : new Map<string, string>()
 
       const exercisesWithTargets = await Promise.all(
         exercises.map(async (ex) => {
@@ -310,6 +319,7 @@ export const sessionsRouter = router({
             blockName: meta?.blockName ?? null,
             rounds: meta?.rounds ?? 1,
             roundNumber: meta?.roundNumber ?? null,
+            alternativeExerciseName: meta?.alternative ? alternativeNameById.get(meta.alternative.exerciseId) ?? null : null,
             targets,
           }
         }),
