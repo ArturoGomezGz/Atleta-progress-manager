@@ -282,20 +282,22 @@ function ExerciseOverviewCard({
 
 type PreviewItem =
   | { kind: "exercise"; exercise: WorkoutExercise }
-  | { kind: "circuit"; blockId: string; blockName: string; rounds: number; exercises: WorkoutExercise[] }
+  | { kind: "circuit"; blockId: string; blockName: string; rounds: number; exercises: WorkoutExercise[]; allExercises: WorkoutExercise[] }
 
 /**
  * Agrupa las rondas de un mismo circuito en una sola entrada. `flattenContent`
  * expande cada circuito ronda por ronda (A, B, A, B, …) para que el ejecutor
- * sepa el orden exacto; para la vista previa eso solo repite el mismo bloque
- * varias veces, así que aquí nos quedamos con los ejercicios de la primera
- * ronda y mostramos cuántas veces se repite en vez de listarlos todos.
+ * sepa el orden exacto; para la vista previa (y para "ver toda la rutina" ya
+ * empezada) eso solo repite el mismo bloque varias veces, así que aquí nos
+ * quedamos con los ejercicios de la primera ronda para mostrarlos y guardamos
+ * todas las rondas en `allExercises` para calcular progreso.
  */
 function groupForPreview(exercises: WorkoutExercise[]): PreviewItem[] {
   const items: PreviewItem[] = []
   for (const ex of exercises) {
     const prev = items[items.length - 1]
     if (ex.blockId && prev?.kind === "circuit" && prev.blockId === ex.blockId) {
+      prev.allExercises.push(ex)
       if (ex.roundNumber === 1) prev.exercises.push(ex)
       continue
     }
@@ -306,6 +308,7 @@ function groupForPreview(exercises: WorkoutExercise[]): PreviewItem[] {
         blockName: ex.blockName ?? "Circuito",
         rounds: ex.rounds,
         exercises: ex.roundNumber === 1 ? [ex] : [],
+        allExercises: [ex],
       })
       continue
     }
@@ -315,48 +318,81 @@ function groupForPreview(exercises: WorkoutExercise[]): PreviewItem[] {
 }
 
 function CircuitOverviewCard({
-  blockName, rounds, exercises, onWatch,
+  blockName, rounds, exercises, allExercises, onWatch, current,
 }: {
   blockName: string
   rounds: number
   exercises: WorkoutExercise[]
+  /** Todas las rondas del bloque; si se omite, la tarjeta no muestra progreso (vista previa). */
+  allExercises?: WorkoutExercise[]
   onWatch: (exercise: WorkoutExercise) => void
+  /** Ejercicio activo de la sesión en curso, para resaltar el bloque y la ronda vigente. */
+  current?: WorkoutExercise
 }) {
+  const active = current && allExercises?.some((ex) => ex.id === current.id) ? current : null
+  const totalTargets = allExercises?.reduce((s, ex) => s + ex.targets.length, 0) ?? 0
+  const totalDone = allExercises?.reduce((s, ex) => s + doneFor(ex), 0) ?? 0
+  const isDone = totalTargets > 0 && totalDone >= totalTargets
+
   return (
-    <div className="rounded-2xl border border-border bg-card overflow-hidden">
+    <div className={cn(
+      "rounded-2xl border bg-card overflow-hidden",
+      active ? "border-primary ring-2 ring-primary/30" : "border-border",
+    )}>
       <div className="flex items-center justify-between gap-2 px-4 py-3 bg-primary/5 border-b border-border">
         <p className="font-semibold flex items-center gap-2">
           <RepeatIcon className="w-4 h-4 text-primary" /> {blockName}
         </p>
-        <span className="text-sm font-medium text-primary bg-primary/10 rounded-full px-2.5 py-1">
-          × {rounds} {rounds === 1 ? "ronda" : "rondas"}
-        </span>
+        {isDone ? (
+          <span className="text-sm font-medium text-emerald-500 bg-emerald-500/10 rounded-full px-2.5 py-1 flex items-center gap-1">
+            <CheckCircleIcon className="w-4 h-4" /> Completado
+          </span>
+        ) : active?.roundNumber ? (
+          <span className="text-sm font-medium text-primary bg-primary/10 rounded-full px-2.5 py-1">
+            Ronda {active.roundNumber} de {rounds}
+          </span>
+        ) : (
+          <span className="text-sm font-medium text-primary bg-primary/10 rounded-full px-2.5 py-1">
+            × {rounds} {rounds === 1 ? "ronda" : "rondas"}
+          </span>
+        )}
       </div>
       <div className="divide-y divide-border">
-        {exercises.map((ex) => (
-          <div key={ex.id} className="flex gap-3 p-3">
-            {ex.youtubeVideoId ? (
-              <button
-                onClick={() => onWatch(ex)}
-                className="shrink-0 cursor-pointer rounded-xl overflow-hidden"
-                aria-label={`Ver video de ${ex.exerciseName}`}
-              >
-                <YouTubeThumb videoId={ex.youtubeVideoId} alt={ex.exerciseName} showPlay className="w-24 sm:w-32 aspect-video" />
-              </button>
-            ) : (
-              <div className="shrink-0 w-24 sm:w-32 aspect-video rounded-xl bg-muted" />
-            )}
-            <div className="flex-1 min-w-0 space-y-1 py-0.5">
-              <p className="text-base font-semibold leading-snug">{ex.exerciseName}</p>
-              <p className="text-base">{summarizeTargets(ex.targets)}</p>
-              {ex.notes && (
-                <p className="text-sm text-muted-foreground flex gap-1.5">
-                  <MessageSquareIcon className="w-4 h-4 mt-0.5 shrink-0" /> {ex.notes}
-                </p>
+        {exercises.map((ex) => {
+          const roundEntries = allExercises?.filter((e) => e.exerciseId === ex.exerciseId) ?? []
+          const done = roundEntries.reduce((s, e) => s + doneFor(e), 0)
+          const total = roundEntries.reduce((s, e) => s + e.targets.length, 0)
+          return (
+            <div key={ex.id} className={cn("flex gap-3 p-3", active?.exerciseId === ex.exerciseId && "bg-primary/5")}>
+              {ex.youtubeVideoId ? (
+                <button
+                  onClick={() => onWatch(ex)}
+                  className="shrink-0 cursor-pointer rounded-xl overflow-hidden"
+                  aria-label={`Ver video de ${ex.exerciseName}`}
+                >
+                  <YouTubeThumb videoId={ex.youtubeVideoId} alt={ex.exerciseName} showPlay className="w-24 sm:w-32 aspect-video" />
+                </button>
+              ) : (
+                <div className="shrink-0 w-24 sm:w-32 aspect-video rounded-xl bg-muted" />
               )}
+              <div className="flex-1 min-w-0 space-y-1 py-0.5">
+                <p className="text-base font-semibold leading-snug">{ex.exerciseName}</p>
+                <p className="text-base">{summarizeTargets(ex.targets)}</p>
+                {ex.notes && (
+                  <p className="text-sm text-muted-foreground flex gap-1.5">
+                    <MessageSquareIcon className="w-4 h-4 mt-0.5 shrink-0" /> {ex.notes}
+                  </p>
+                )}
+                {done > 0 && (
+                  <p className={cn("text-sm font-medium flex items-center gap-1.5", done >= total ? "text-emerald-500" : "text-primary")}>
+                    <CheckCircleIcon className="w-4 h-4" />
+                    {done >= total ? "Terminado" : `${done} de ${total} series hechas`}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
-        ))}
+          )
+        })}
       </div>
     </div>
   )
@@ -411,6 +447,7 @@ export function RoutinePreview({
               blockName={g.blockName}
               rounds={g.rounds}
               exercises={g.exercises}
+              allExercises={g.allExercises}
               onWatch={setVideo}
             />
           ) : (
@@ -538,15 +575,27 @@ export function WorkoutRunner({
           <p className="text-base text-muted-foreground mt-1">{done} de {total} series hechas</p>
         </div>
         <div className="space-y-3">
-          {progress.exercises.map((ex, i) => (
-            <ExerciseOverviewCard
-              key={ex.id}
-              exercise={ex}
-              index={i}
-              onWatch={() => setVideo(ex)}
-              highlight={i === position.exerciseIdx ? "current" : doneFor(ex) >= ex.targets.length ? "done" : undefined}
-            />
-          ))}
+          {groupForPreview(progress.exercises).map((g, i) =>
+            g.kind === "circuit" ? (
+              <CircuitOverviewCard
+                key={g.blockId}
+                blockName={g.blockName}
+                rounds={g.rounds}
+                exercises={g.exercises}
+                allExercises={g.allExercises}
+                current={position.exercise}
+                onWatch={setVideo}
+              />
+            ) : (
+              <ExerciseOverviewCard
+                key={g.exercise.id}
+                exercise={g.exercise}
+                index={i}
+                onWatch={() => setVideo(g.exercise)}
+                highlight={g.exercise.id === position.exercise.id ? "current" : doneFor(g.exercise) >= g.exercise.targets.length ? "done" : undefined}
+              />
+            ),
+          )}
         </div>
         {video && <VideoModal exercise={video} onClose={() => setVideo(null)} />}
       </div>
