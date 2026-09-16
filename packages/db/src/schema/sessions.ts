@@ -103,6 +103,9 @@ export const setRecord = pgTable("set_record", {
   reps: integer("reps").notNull(),
   weightLbs: numeric("weight_lbs", { precision: 6, scale: 2 }).notNull().default("0"),
   status: setStatusEnum("status").notNull().default("valid"),
+  // Ejercicio realmente ejecutado cuando el atleta cambió a la alternativa más sencilla.
+  // NULL = hizo el ejercicio planeado en session_exercise.
+  performedExerciseId: uuid("performed_exercise_id").references(() => exercise.id, { onDelete: "set null" }),
   recordedBy: text("recorded_by")
     .notNull()
     .references(() => user.id),
