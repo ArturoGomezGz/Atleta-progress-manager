@@ -170,7 +170,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
                   {new Date(r.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
                 </span>
               </Link>
-              <div className="flex items-center gap-1 pr-3 opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="flex items-center gap-1 pr-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => duplicateRoutine.mutate({ id: r.id })}
                   disabled={duplicateRoutine.isPending}
