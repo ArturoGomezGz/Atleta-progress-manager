@@ -63,9 +63,11 @@ type Props = {
   value: string
   onChange: (id: string) => void
   placeholder?: string
+  /** Título de la hoja y su aria-label. Por defecto "Agregar ejercicio". */
+  title?: string
 }
 
-export function ExercisePicker({ exercises, value, onChange, placeholder = "Seleccionar ejercicio..." }: Props) {
+export function ExercisePicker({ exercises, value, onChange, placeholder = "Seleccionar ejercicio...", title }: Props) {
   const [open, setOpen] = useState(false)
   const selected = exercises.find((e) => e.id === value)
 
@@ -108,6 +110,7 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
           value={value}
           onSelect={handleSelect}
           onClose={() => setOpen(false)}
+          title={title}
         />
       )}
     </>
@@ -116,11 +119,12 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
 
 // ─── Sheet: buscador + filtros + tarjetas, siempre a pantalla completa ─────────
 
-function ExercisePickerSheet({ exercises, value, onSelect, onClose }: {
+function ExercisePickerSheet({ exercises, value, onSelect, onClose, title = "Agregar ejercicio" }: {
   exercises: PickerExercise[]
   value: string
   onSelect: (id: string) => void
   onClose: () => void
+  title?: string
 }) {
   const [visible, setVisible] = useState(false)
   const closing = useRef(false)
@@ -166,7 +170,7 @@ function ExercisePickerSheet({ exercises, value, onSelect, onClose }: {
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Agregar ejercicio"
+        aria-label={title}
         className={cn(
           "fixed z-50 bg-background flex flex-col",
           // Móvil: hoja desde abajo, casi toda la pantalla
@@ -184,7 +188,7 @@ function ExercisePickerSheet({ exercises, value, onSelect, onClose }: {
 
         {/* Header */}
         <div className="flex items-center gap-2 px-5 py-3 border-b border-border shrink-0">
-          <p className="flex-1 text-base font-semibold">Agregar ejercicio</p>
+          <p className="flex-1 text-base font-semibold">{title}</p>
           <button
             type="button"
             onClick={close}

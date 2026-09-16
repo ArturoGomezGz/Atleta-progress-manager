@@ -111,25 +111,25 @@ serie.
 
 ### 3. Atribución del progreso
 
-`sessions.complete` calcula el RM estimado agrupando por
-`sessionExercise.exerciseId`. Con la columna nueva pasa a agrupar por:
+**Decidido:** si algún día una serie de lagartijas con rodillas alimentara un
+récord, sería el récord de lagartijas con rodillas, no el de lagartijas.
+Inflar el PR del ejercicio duro con series del fácil rompería la métrica
+central del producto (% del PR), y descartarlas del todo le escondería al
+atleta un progreso que sí existe.
 
-```ts
-COALESCE(setRecord.performedExerciseId, sessionExercise.exerciseId)
-```
+**Hallazgo al implementar — corrige lo escrito arriba:** el cálculo de PR
+(`athlete_exercise_rm`, rama "Evaluación: calcular PRs" de `sessions.complete`)
+**solo corre para rutinas de categoría `evaluation`.** Las rutinas de
+`training` —donde vive esta feature— nunca generan entradas de PR: ni antes de
+esta feature ni con ella. El bloque `ExerciseCard` que ofrece la alternativa ya
+está oculto en evaluación (`{!isEvaluation && …}`), así que un `set_record` con
+`performed_exercise_id` no nulo nunca puede llegar a esa rama de cálculo.
 
-**Decidido:** las series de lagartijas con rodillas construyen el récord de
-lagartijas con rodillas, no el de lagartijas. Inflar el PR del ejercicio duro
-con series del fácil rompe la métrica central del producto (% del PR), y
-descartarlas del todo le esconde al atleta un progreso que sí existe.
-
-Consecuencia visible: un atleta que use mucho la alternativa va a ver un
-ejercicio nuevo en su vista de progreso. Es correcto, pero conviene que el
-entrenador lo entienda.
-
-Puntos que tocan la misma consulta y hay que revisar juntos:
-`sessions.complete` (cálculo de RM), `share.claim` (al reclamar un entrenamiento
-de invitado) y cualquier reporte que agrupe series por ejercicio.
+**Consecuencia para esta iteración:** no hay ninguna consulta de RM que
+modificar. El campo `performed_exercise_id` queda escrito y disponible para
+cuando el entrenamiento sí alimente el progreso — hoy ese dato solo se lee de
+vuelta en el detalle de la sesión (ver «Interfaz — qué ve el entrenador
+después»), no en ningún cálculo de PR.
 
 ---
 
@@ -152,7 +152,7 @@ sessions.myProgress  → WorkoutExercise.alternative { exerciseId, name, video�
 sessions.recordSet({ performedExerciseId })  → set_record.performed_exercise_id
         │
         ▼
-sessions.complete  → athlete_exercise_rm del ejercicio REALMENTE hecho
+sesiones/[sessionId] (coach)  → etiqueta "Alternativa" en la serie
 ```
 
 Para el invitado el recorrido es el mismo hasta `share.recordSet`, que hoy
@@ -254,7 +254,7 @@ Cada paso deja el repo funcionando; los pasos 1–2 no cambian nada visible.
 | 4 | `myProgress` resuelve el catálogo de la alternativa (nombre, video) y lo expone en `WorkoutExercise` | `apps/api/src/routers/sessions.ts` |
 | 5 | `recordSet` acepta y guarda `performedExerciseId` | `apps/api/src/routers/sessions.ts` |
 | 6 | El atleta cambia de ejercicio en el runner (hoja + estado + vistas previas) | `apps/web/src/components/workout-runner.tsx` |
-| 7 | Atribución del RM por ejercicio realmente hecho | `sessions.complete` |
+| 7 | ~~Atribución del RM~~ — no aplica: `sessions.complete` solo calcula PR en evaluación, y ahí no hay alternativas | — |
 | 8 | Mismo recorrido para el invitado | `apps/api/src/routers/share.ts` |
 | 9 | El entrenador ve qué series se hicieron con la alternativa | `sesiones/[sessionId]/session-view.tsx` |
 
@@ -267,7 +267,7 @@ genera con `pnpm --filter @atleta/db generate`. Nunca SQL a mano.
 
 | Decisión | Resuelto |
 |---|---|
-| **Progreso de la alternativa** | Récord propio — la alternativa construye su propio PR |
+| **Progreso de la alternativa** | Récord propio, en principio — pero hoy no hay PR de rutinas de entrenamiento que atribuir (ver hallazgo arriba); queda como criterio para cuando exista |
 | **Visibilidad para el entrenador** | Entra en esta iteración, como etiqueta en el detalle de la sesión |
 | **¿Puede volver al ejercicio original a media rutina?** | Sí — por eso el dato se guarda por serie y no por ejercicio |
 | **Cómo cambia el atleta** | Botón discreto, no deslizar |
