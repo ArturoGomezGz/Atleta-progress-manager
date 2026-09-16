@@ -20,8 +20,6 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
-  ArrowDownIcon,
-  ArrowUpIcon,
   ChevronLeftIcon,
   ClockIcon,
   CopyIcon,
@@ -322,17 +320,6 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     })
   }
 
-  function moveItem(id: string, dir: -1 | 1) {
-    mutate((c) => {
-      const items = [...c.items].sort((a, b) => a.order - b.order)
-      const idx = items.findIndex((i) => i.id === id)
-      const target = idx + dir
-      if (idx < 0 || target < 0 || target >= items.length) return c
-      ;[items[idx], items[target]] = [items[target], items[idx]]
-      return { ...c, items: renumber(items) }
-    })
-  }
-
   // Arrastrar y soltar: mantener presionado un ejercicio o circuito lo activa como
   // arrastrable, para reordenarlo o meterlo/sacarlo de un circuito con el dedo.
   const [activeDragId, setActiveDragId] = useState<string | null>(null)
@@ -471,8 +458,6 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           <SortableContext items={sorted.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             {sorted.map((item, idx) => {
               const moveProps = {
-                onMoveUp: idx > 0 ? () => moveItem(item.id, -1) : undefined,
-                onMoveDown: idx < sorted.length - 1 ? () => moveItem(item.id, 1) : undefined,
                 onDuplicate: isEvaluation ? undefined : () => duplicateItem(item.id),
                 onRemove: () => removeItem(item.id),
               }
@@ -634,7 +619,11 @@ function SortableItem({ id, children }: { id: string; children: ReactNode }) {
   )
 }
 
-/** Ícono de agarre: mantenerlo presionado activa el arrastre del ejercicio o circuito que lo contiene. */
+/**
+ * Ícono de agarre en la esquina superior derecha de la tarjeta: mantenerlo presionado
+ * activa el arrastre del ejercicio o circuito que lo contiene. El contenedor de la
+ * tarjeta debe tener `position: relative` para que esta posición absoluta se ancle a él.
+ */
 function DragHandle() {
   const handle = useContext(SortableItemContext)
   return (
@@ -643,10 +632,10 @@ function DragHandle() {
       ref={handle?.setActivatorNodeRef}
       {...handle?.attributes}
       {...handle?.listeners}
-      className="p-1.5 -ml-0.5 rounded-lg text-muted-foreground/40 hover:text-muted-foreground hover:bg-muted/60 cursor-grab active:cursor-grabbing touch-none shrink-0"
+      className="absolute top-1.5 right-1.5 z-10 p-2 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/60 cursor-grab active:cursor-grabbing touch-none shrink-0"
       aria-label="Arrastrar para reordenar"
     >
-      <GripVerticalIcon className="w-3.5 h-3.5" />
+      <GripVerticalIcon className="w-[18px] h-[18px]" />
     </button>
   )
 }
@@ -687,20 +676,16 @@ function DragPreviewCard({ label, icon }: { label: string; icon?: boolean }) {
   )
 }
 
-// ─── Item toolbar (mover / duplicar / eliminar) ───────────────────────────────
+// ─── Item toolbar (duplicar / eliminar) ────────────────────────────────────────
+// Reordenar es tarea del ícono de agarre (`DragHandle`) en la esquina de la tarjeta.
 
-function ItemActions({ onMoveUp, onMoveDown, onDuplicate, onRemove }: {
-  onMoveUp?: () => void
-  onMoveDown?: () => void
+function ItemActions({ onDuplicate, onRemove }: {
   onDuplicate?: () => void
   onRemove: () => void
 }) {
   const btn = "p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-25 disabled:pointer-events-none transition-colors cursor-pointer"
   return (
     <div className="flex items-center shrink-0">
-      <DragHandle />
-      <button type="button" onClick={onMoveUp} disabled={!onMoveUp} className={btn} aria-label="Subir"><ArrowUpIcon className="w-3.5 h-3.5" /></button>
-      <button type="button" onClick={onMoveDown} disabled={!onMoveDown} className={btn} aria-label="Bajar"><ArrowDownIcon className="w-3.5 h-3.5" /></button>
       {onDuplicate && (
         <button type="button" onClick={onDuplicate} className={btn} aria-label="Duplicar"><CopyIcon className="w-3.5 h-3.5" /></button>
       )}
@@ -760,7 +745,7 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
 // ─── Exercise card ────────────────────────────────────────────────────────────
 
 function ExerciseCard({
-  item, label, isEvaluation, info, onUpdate, onPreview, onMoveUp, onMoveDown, onDuplicate, onRemove, nested = false,
+  item, label, isEvaluation, info, onUpdate, onPreview, onDuplicate, onRemove, nested = false,
 }: {
   item: RoutineExerciseContent
   label: string
@@ -768,8 +753,6 @@ function ExerciseCard({
   info: ExerciseInfo
   onUpdate: (patch: Partial<RoutineExerciseContent>) => void
   onPreview: (info: ExerciseInfo) => void
-  onMoveUp?: () => void
-  onMoveDown?: () => void
   onDuplicate?: () => void
   onRemove: () => void
   nested?: boolean
@@ -826,8 +809,9 @@ function ExerciseCard({
   const inputCls = "w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
 
   return (
-    <div className={cn("border border-border rounded-xl overflow-hidden", nested ? "bg-background" : "bg-card/60")}>
-      <div className="flex flex-wrap items-center gap-3 px-3 py-2.5 bg-muted/10">
+    <div className={cn("relative border border-border rounded-xl overflow-hidden", nested ? "bg-background" : "bg-card/60")}>
+      <DragHandle />
+      <div className="flex flex-wrap items-center gap-3 pl-3 pr-11 py-2.5 bg-muted/10">
         <span className="w-6 h-6 rounded-full bg-primary/15 border border-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
           {label}
         </span>
@@ -851,7 +835,7 @@ function ExerciseCard({
           >
             {expanded ? "Cerrar" : "Editar"}
           </button>
-          <ItemActions onMoveUp={onMoveUp} onMoveDown={onMoveDown} onDuplicate={onDuplicate} onRemove={onRemove} />
+          <ItemActions onDuplicate={onDuplicate} onRemove={onRemove} />
         </div>
       </div>
 
@@ -991,7 +975,7 @@ function ExerciseCard({
 // ─── Block (circuito) card ────────────────────────────────────────────────────
 
 function BlockCard({
-  item, label, infoFor, catalog, onUpdate, onPreview, onMoveUp, onMoveDown, onDuplicate, onRemove,
+  item, label, infoFor, catalog, onUpdate, onPreview, onDuplicate, onRemove,
   suggestedRest, onSuggestedRestChange,
 }: {
   item: RoutineItemBlock
@@ -1000,8 +984,6 @@ function BlockCard({
   catalog: PickerExercise[]
   onUpdate: (patch: Partial<RoutineItemBlock>) => void
   onPreview: (info: ExerciseInfo) => void
-  onMoveUp?: () => void
-  onMoveDown?: () => void
   onDuplicate?: () => void
   onRemove: () => void
   suggestedRest: number
@@ -1011,17 +993,10 @@ function BlockCard({
   const setExercises = (list: RoutineExerciseContent[]) => onUpdate({ exercises: renumber(list) })
   const { setNodeRef: setBlockDropRef } = useDroppable({ id: blockDropId(item.id) })
 
-  function move(idx: number, dir: -1 | 1) {
-    const list = [...exercises]
-    const target = idx + dir
-    if (target < 0 || target >= list.length) return
-    ;[list[idx], list[target]] = [list[target], list[idx]]
-    setExercises(list)
-  }
-
   return (
-    <div className="border-2 border-primary/30 rounded-xl overflow-hidden bg-primary/5">
-      <div className="flex flex-wrap items-center gap-2 px-3 py-2.5 bg-primary/10">
+    <div className="relative border-2 border-primary/30 rounded-xl overflow-hidden bg-primary/5">
+      <DragHandle />
+      <div className="flex flex-wrap items-center gap-2 pl-3 pr-11 py-2.5 bg-primary/10">
         <span className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
           {label}
         </span>
@@ -1053,7 +1028,7 @@ function BlockCard({
             <PlusIcon className="w-3 h-3" />
           </button>
         </div>
-        <ItemActions onMoveUp={onMoveUp} onMoveDown={onMoveDown} onDuplicate={onDuplicate} onRemove={onRemove} />
+        <ItemActions onDuplicate={onDuplicate} onRemove={onRemove} />
       </div>
 
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/15 text-xs">
@@ -1088,8 +1063,6 @@ function BlockCard({
                   info={infoFor(ex.exerciseId)}
                   onPreview={onPreview}
                   onUpdate={(patch) => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, ...patch } : e)))}
-                  onMoveUp={i > 0 ? () => move(i, -1) : undefined}
-                  onMoveDown={i < exercises.length - 1 ? () => move(i, 1) : undefined}
                   onRemove={() => setExercises(exercises.filter((e) => e.id !== ex.id))}
                 />
                 <RestRow
