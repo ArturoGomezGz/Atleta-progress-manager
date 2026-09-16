@@ -21,7 +21,6 @@ export type RoutineSet = {
 /** Versión más sencilla de un ejercicio a la que el atleta puede cambiar durante la rutina. */
 export type RoutineExerciseAlternative = {
   exerciseId: string
-  notes?: string // indicación propia de la alternativa, distinta de la del ejercicio principal
 }
 
 export type RoutineExerciseContent = {

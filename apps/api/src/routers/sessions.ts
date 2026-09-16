@@ -158,7 +158,6 @@ export const sessionsRouter = router({
               youtubeVideoId: altInfo.youtubeVideoId,
               youtubeTitle: altInfo.youtubeTitle,
               videoOrientation: altInfo.videoOrientation,
-              notes: meta?.alternative?.notes ?? null,
             } : null,
             targets: targets.filter((t) => t.sessionExerciseId === ex.id),
             sets: mySets.filter((s) => s.sessionExerciseId === ex.id),
