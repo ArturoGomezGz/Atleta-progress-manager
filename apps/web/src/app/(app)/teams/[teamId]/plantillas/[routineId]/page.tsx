@@ -22,7 +22,6 @@ import { CSS } from "@dnd-kit/utilities"
 import {
   ChevronLeftIcon,
   ClockIcon,
-  CopyIcon,
   GripVerticalIcon,
   InfoIcon,
   MinusIcon,
@@ -101,10 +100,6 @@ const uuid = () => crypto.randomUUID()
 const renumber = <T extends { order: number }>(items: T[]) => items.map((it, i) => ({ ...it, order: i }))
 const reps = (count: number, value: number): RoutineSet[] =>
   Array.from({ length: count }, (_, i) => ({ setNumber: i + 1, setType: "reps", targetReps: value }))
-
-function cloneExercise<T extends RoutineExerciseContent>(ex: T): T {
-  return { ...ex, id: uuid(), sets: ex.sets.map((s) => ({ ...s })) }
-}
 
 // ─── Arrastrar y soltar (reordenar manteniendo presionado) ────────────────────
 
@@ -341,20 +336,6 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     setActiveDragId(null)
   }
 
-  function duplicateItem(id: string) {
-    mutate((c) => {
-      const items = [...c.items].sort((a, b) => a.order - b.order)
-      const idx = items.findIndex((i) => i.id === id)
-      if (idx < 0) return c
-      const original = items[idx]
-      const copy = original.type === "exercise"
-        ? cloneExercise(original)
-        : { ...original, id: uuid(), exercises: original.exercises.map(cloneExercise) }
-      items.splice(idx + 1, 0, copy)
-      return { ...c, items: renumber(items) }
-    })
-  }
-
   function removeItem(id: string) {
     mutate((c) => ({ ...c, items: renumber([...c.items].sort((a, b) => a.order - b.order).filter((i) => i.id !== id)) }))
   }
@@ -408,7 +389,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
         />
         <div className="flex items-center justify-between gap-3 mt-1">
           <p className="text-xs text-muted-foreground">
-            {sorted.length} {sorted.length === 1 ? "bloque" : "bloques"} · toca <strong>Editar</strong> para cambiar series, descanso y notas
+            {sorted.length} {sorted.length === 1 ? "bloque" : "bloques"} · toca un ejercicio para cambiar series, descanso y notas
           </p>
           {isCoach && !isEvaluation && content.items.length > 0 && (
             <ShareRoutineButton routineId={routineId} routineName={routineData.name} />
@@ -458,7 +439,6 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           <SortableContext items={sorted.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             {sorted.map((item, idx) => {
               const moveProps = {
-                onDuplicate: isEvaluation ? undefined : () => duplicateItem(item.id),
                 onRemove: () => removeItem(item.id),
               }
               return (
@@ -678,24 +658,6 @@ function DragPreviewCard({ label, icon }: { label: string; icon?: boolean }) {
   )
 }
 
-// ─── Item toolbar (duplicar / eliminar) ────────────────────────────────────────
-// Reordenar es tarea del ícono de agarre (`DragHandle`) en la esquina de la tarjeta.
-
-function ItemActions({ onDuplicate, onRemove }: {
-  onDuplicate?: () => void
-  onRemove: () => void
-}) {
-  const btn = "p-1.5 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 disabled:opacity-25 disabled:pointer-events-none transition-colors cursor-pointer"
-  return (
-    <div className="flex items-center shrink-0">
-      {onDuplicate && (
-        <button type="button" onClick={onDuplicate} className={btn} aria-label="Duplicar"><CopyIcon className="w-3.5 h-3.5" /></button>
-      )}
-      <button type="button" onClick={onRemove} className={cn(btn, "hover:text-destructive")} aria-label="Eliminar"><Trash2Icon className="w-3.5 h-3.5" /></button>
-    </div>
-  )
-}
-
 // ─── Descanso entre ejercicios ────────────────────────────────────────────────
 // Fila compacta (no es un ítem numerado) que representa el descanso que el atleta
 // hará después de este ejercicio y antes del siguiente. Vive sobre el campo
@@ -747,7 +709,7 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
 // ─── Exercise card ────────────────────────────────────────────────────────────
 
 function ExerciseCard({
-  item, label, isEvaluation, info, infoFor, catalog, onUpdate, onPreview, onDuplicate, onRemove, nested = false,
+  item, label, isEvaluation, info, infoFor, catalog, onUpdate, onPreview, onRemove, nested = false,
 }: {
   item: RoutineExerciseContent
   label: string
@@ -757,7 +719,6 @@ function ExerciseCard({
   catalog: PickerExercise[]
   onUpdate: (patch: Partial<RoutineExerciseContent>) => void
   onPreview: (info: ExerciseInfo) => void
-  onDuplicate?: () => void
   onRemove: () => void
   nested?: boolean
 }) {
@@ -836,22 +797,15 @@ function ExerciseCard({
             {item.alternative ? " · con alternativa" : ""}
           </p>
         </button>
-        <div className="flex items-center gap-1.5 ml-auto shrink-0">
-          <button
-            onClick={openEditor}
-            className="shrink-0 text-xs px-2.5 py-1 rounded-lg border border-border hover:bg-muted/60 text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-          >
-            {expanded ? "Cerrar" : "Editar"}
-          </button>
-          <ItemActions onDuplicate={onDuplicate} onRemove={onRemove} />
-        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="ml-auto shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted/60 transition-colors cursor-pointer"
+          aria-label="Eliminar"
+        >
+          <Trash2Icon className="w-3.5 h-3.5" />
+        </button>
       </div>
-
-      {!expanded && item.sets.length > 0 && item.sets.length <= 6 && (
-        <div className="divide-y divide-border">
-          {item.sets.map((s) => <SetPreviewRow key={s.setNumber} set={s} />)}
-        </div>
-      )}
 
       {expanded && (
         <div className="border-t border-border">
@@ -1034,7 +988,7 @@ function AlternativeCard({
 // ─── Block (circuito) card ────────────────────────────────────────────────────
 
 function BlockCard({
-  item, label, infoFor, catalog, onUpdate, onPreview, onDuplicate, onRemove,
+  item, label, infoFor, catalog, onUpdate, onPreview, onRemove,
   suggestedRest, onSuggestedRestChange,
 }: {
   item: RoutineItemBlock
@@ -1043,7 +997,6 @@ function BlockCard({
   catalog: PickerExercise[]
   onUpdate: (patch: Partial<RoutineItemBlock>) => void
   onPreview: (info: ExerciseInfo) => void
-  onDuplicate?: () => void
   onRemove: () => void
   suggestedRest: number
   onSuggestedRestChange: (seconds: number) => void
@@ -1087,7 +1040,14 @@ function BlockCard({
             <PlusIcon className="w-3 h-3" />
           </button>
         </div>
-        <ItemActions onDuplicate={onDuplicate} onRemove={onRemove} />
+        <button
+          type="button"
+          onClick={onRemove}
+          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted/60 transition-colors cursor-pointer"
+          aria-label="Eliminar"
+        >
+          <Trash2Icon className="w-3.5 h-3.5" />
+        </button>
       </div>
 
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/15 text-xs">
@@ -1155,33 +1115,6 @@ function BlockCard({
           </p>
         )}
       </div>
-    </div>
-  )
-}
-
-// ─── Set preview row ──────────────────────────────────────────────────────────
-
-function SetPreviewRow({ set }: { set: RoutineSet }) {
-  const isTime = set.setType === "time"
-  const effort = isTime
-    ? set.targetDurationSeconds != null ? `${set.targetDurationSeconds}s` : "tiempo libre"
-    : set.targetReps != null ? `${set.targetReps} reps` : "reps libre"
-
-  const load = (() => {
-    if (set.loadType === "percent_rm" && set.loadValue) return `${set.loadValue}% RM`
-    if (set.loadType === "fixed_kg"  && set.loadValue) return `${set.loadValue} lbs`
-    if (set.loadType === "rpe"       && set.loadValue) return `RPE ${set.loadValue}`
-    return null
-  })()
-
-  return (
-    <div className="flex items-center gap-4 px-4 py-1.5 text-xs text-muted-foreground">
-      <span className="w-14 font-medium text-foreground shrink-0">Serie {set.setNumber}</span>
-      <span className="flex items-center gap-1">
-        {isTime && <ClockIcon className="w-3 h-3" />}
-        {effort}
-      </span>
-      {load && <span className="text-primary/80">{load}</span>}
     </div>
   )
 }
