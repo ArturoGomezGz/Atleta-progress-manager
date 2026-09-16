@@ -66,12 +66,15 @@ async function buildProgress(options: {
   workoutId: string
   status: string
   startedAt: Date
-  sets: Array<{ id: string; exerciseOrder: number; setNumber: number; reps: number; weightLbs: string }>
+  sets: Array<{ id: string; exerciseId: string; exerciseOrder: number; setNumber: number; reps: number; weightLbs: string }>
 }) {
   const flat = flattenContent(options.content)
   const exerciseIds = [...new Set(flat.map((f) => f.exerciseId))]
+  // Alternativas del snapshot: se resuelven junto al catálogo principal, con el mismo select.
+  const alternativeIds = flat.map((f) => f.alternative?.exerciseId).filter((id): id is string => !!id)
+  const allIds = [...new Set([...exerciseIds, ...alternativeIds])]
 
-  const catalog = exerciseIds.length
+  const catalog = allIds.length
     ? await db
         .select({
           id: exercise.id,
@@ -82,7 +85,7 @@ async function buildProgress(options: {
           videoOrientation: exercise.videoOrientation,
         })
         .from(exercise)
-        .where(inArray(exercise.id, exerciseIds))
+        .where(inArray(exercise.id, allIds))
     : []
   const infoById = new Map(catalog.map((e) => [e.id, e]))
 
@@ -93,6 +96,7 @@ async function buildProgress(options: {
     routineName: options.routineName,
     exercises: flat.map((ex, order) => {
       const info = infoById.get(ex.exerciseId)
+      const altInfo = ex.alternative ? infoById.get(ex.alternative.exerciseId) : undefined
       return {
         id: exerciseKey(order),
         exerciseId: ex.exerciseId,
@@ -109,6 +113,14 @@ async function buildProgress(options: {
         blockName: ex.blockName,
         rounds: ex.rounds,
         roundNumber: ex.roundNumber,
+        alternative: altInfo ? {
+          exerciseId: altInfo.id,
+          exerciseName: altInfo.name,
+          description: altInfo.description,
+          youtubeVideoId: altInfo.youtubeVideoId,
+          youtubeTitle: altInfo.youtubeTitle,
+          videoOrientation: altInfo.videoOrientation,
+        } : null,
         targets: targetsForExercise(ex.sets).map((t) => ({
           ...t,
           id: targetKey(order, t.setNumber),
@@ -124,6 +136,9 @@ async function buildProgress(options: {
             reps: s.reps,
             weightLbs: s.weightLbs,
             status: "valid" as const,
+            // guest_set_record no tiene columna propia: si el ejercicio grabado no es
+            // el planeado, es porque el invitado cambió a la alternativa.
+            performedExerciseId: s.exerciseId !== ex.exerciseId ? s.exerciseId : null,
           })),
       }
     }),
@@ -486,6 +501,8 @@ export const shareRouter = router({
       setNumber: z.number().int().min(1),
       reps: z.number().int().min(0).max(1000),
       weightLbs: z.string().default("0"),
+      // Ejercicio realmente ejecutado si el invitado cambió a la alternativa. null = el planeado.
+      performedExerciseId: z.string().uuid().nullable().default(null),
     }))
     .mutation(async ({ input }) => {
       const workout = await loadWorkout(input.token)
@@ -500,6 +517,13 @@ export const shareRouter = router({
       if (!planned || input.setNumber > planned.sets.length) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Esa serie no existe en la rutina" })
       }
+
+      if (input.performedExerciseId && input.performedExerciseId !== planned.alternative?.exerciseId) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Esa alternativa no está definida para este ejercicio" })
+      }
+      // guest_set_record no tiene columna propia para el ejercicio realmente hecho:
+      // el id que se guarda como exerciseId ya representa esa elección.
+      const performedExerciseId = input.performedExerciseId ?? planned.exerciseId
 
       const weightLbs = Number(input.weightLbs)
       if (!Number.isFinite(weightLbs) || weightLbs < 0 || weightLbs > 9999) {
@@ -522,7 +546,7 @@ export const shareRouter = router({
       if (existing) {
         await db
           .update(guestSetRecord)
-          .set({ reps: input.reps, weightLbs: weightLbs.toFixed(2) })
+          .set({ reps: input.reps, weightLbs: weightLbs.toFixed(2), exerciseId: performedExerciseId })
           .where(eq(guestSetRecord.id, existing.id))
         return { id: existing.id }
       }
@@ -531,7 +555,7 @@ export const shareRouter = router({
         .insert(guestSetRecord)
         .values({
           guestWorkoutId: workout.id,
-          exerciseId: planned.exerciseId,
+          exerciseId: performedExerciseId,
           exerciseOrder: input.exerciseOrder,
           setNumber: input.setNumber,
           reps: input.reps,
@@ -686,6 +710,9 @@ export const shareRouter = router({
               weightLbs: s.weightLbs,
               recordedBy: ctx.session.user.id,
               recordedAt: s.recordedAt,
+              // guest_set_record.exerciseId guarda el ejercicio realmente hecho; si no
+              // coincide con el planeado en el snapshot, fue la alternativa.
+              performedExerciseId: s.exerciseId !== flat[s.exerciseOrder]?.exerciseId ? s.exerciseId : null,
             })),
           )
         }

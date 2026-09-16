@@ -18,6 +18,11 @@ export type RoutineSet = {
   loadValue?: number
 }
 
+/** Versión más sencilla de un ejercicio a la que el atleta puede cambiar durante la rutina. */
+export type RoutineExerciseAlternative = {
+  exerciseId: string
+}
+
 export type RoutineExerciseContent = {
   id: string              // UUID estable — referenciado por athleteSetCompletion.routineExerciseId
   exerciseId: string
@@ -27,6 +32,7 @@ export type RoutineExerciseContent = {
   goal?: ExerciseGoal
   notes?: string
   sets: RoutineSet[]
+  alternative?: RoutineExerciseAlternative
 }
 
 export type RoutineItemExercise = { type: "exercise" } & RoutineExerciseContent

@@ -68,7 +68,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
         progress={typed}
         rms={rms ?? {}}
         exit={{ href: back.href, label: "Salir" }}
-        onRecordSet={async ({ exercise, target, reps, weightLbs }) => {
+        onRecordSet={async ({ exercise, target, reps, weightLbs, performedExerciseId }) => {
           await recordSet.mutateAsync({
             sessionId,
             athleteId: userId,
@@ -77,6 +77,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
             setNumber: target.setNumber,
             reps,
             weightLbs,
+            performedExerciseId,
           })
           // Sin await: el descanso arranca en cuanto la serie queda guardada
           refetch()

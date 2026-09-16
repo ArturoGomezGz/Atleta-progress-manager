@@ -6,7 +6,7 @@ import { ShareRoutineButton } from "@/components/share-routine"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import type { RoutineContent, RoutineExerciseContent, RoutineItemBlock, RoutineItemExercise, RoutineSet } from "@atleta/db/schema"
+import type { RoutineContent, RoutineExerciseAlternative, RoutineExerciseContent, RoutineItemBlock, RoutineItemExercise, RoutineSet } from "@atleta/db/schema"
 import {
   ArrowDownIcon,
   ArrowUpIcon,
@@ -343,6 +343,8 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
                 label={String(idx + 1)}
                 isEvaluation={isEvaluation}
                 info={infoFor(item.exerciseId)}
+                infoFor={infoFor}
+                catalog={catalog ?? []}
                 onPreview={setPreview}
                 onUpdate={(patch) => updateItem(item.id, patch)}
                 {...moveProps}
@@ -525,12 +527,14 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
 // ─── Exercise card ────────────────────────────────────────────────────────────
 
 function ExerciseCard({
-  item, label, isEvaluation, info, onUpdate, onPreview, onMoveUp, onMoveDown, onDuplicate, onRemove, nested = false,
+  item, label, isEvaluation, info, infoFor, catalog, onUpdate, onPreview, onMoveUp, onMoveDown, onDuplicate, onRemove, nested = false,
 }: {
   item: RoutineExerciseContent
   label: string
   isEvaluation: boolean
   info: ExerciseInfo
+  infoFor: (id: string) => ExerciseInfo
+  catalog: PickerExercise[]
   onUpdate: (patch: Partial<RoutineExerciseContent>) => void
   onPreview: (info: ExerciseInfo) => void
   onMoveUp?: () => void
@@ -541,7 +545,9 @@ function ExerciseCard({
 }) {
   const [expanded, setExpanded]   = useState(false)
   const [drafts, setDrafts]       = useState<DraftSet[]>(() => item.sets.map(draftFromSet))
-  const [meta, setMeta]           = useState({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
+  const [meta, setMeta]           = useState<{ tempo: string; goal: string; notes: string; alternative: RoutineExerciseAlternative | null }>(
+    { tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "", alternative: item.alternative ?? null },
+  )
   const [quick, setQuick]         = useState({ count: String(item.sets.length || 3), value: "" })
   const [tempoInfo, setTempoInfo] = useState(false)
   const tempoRef                  = useRef<HTMLDivElement>(null)
@@ -561,7 +567,7 @@ function ExerciseCard({
 
   function openEditor() {
     setDrafts(item.sets.map(draftFromSet))
-    setMeta({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
+    setMeta({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "", alternative: item.alternative ?? null })
     setExpanded((v) => !v)
   }
 
@@ -583,6 +589,7 @@ function ExerciseCard({
         tempo: meta.tempo || undefined,
         goal:  (meta.goal as RoutineExerciseContent["goal"]) || undefined,
         notes: meta.notes || undefined,
+        alternative: meta.alternative ?? undefined,
       }),
     })
     setExpanded(false)
@@ -607,6 +614,7 @@ function ExerciseCard({
             {setsSummary(item.sets)}
             {item.restSeconds ? ` · descanso ${item.restSeconds}s` : ""}
             {item.notes ? " · con notas" : ""}
+            {item.alternative ? " · con alternativa" : ""}
           </p>
         </button>
         <div className="flex items-center gap-1.5 ml-auto shrink-0">
@@ -736,6 +744,26 @@ function ExerciseCard({
                   className={cn(inputCls, "py-2 resize-none")}
                 />
               </div>
+              <div className="space-y-1">
+                <label className="text-xs text-muted-foreground">
+                  Alternativa más sencilla (el atleta puede cambiar a ella si no puede con este ejercicio)
+                </label>
+                {meta.alternative ? (
+                  <AlternativeCard
+                    info={infoFor(meta.alternative.exerciseId)}
+                    onPreview={onPreview}
+                    onRemove={() => setMeta((m) => ({ ...m, alternative: null }))}
+                  />
+                ) : (
+                  <ExercisePicker
+                    exercises={catalog.filter((e) => e.id !== item.exerciseId)}
+                    value=""
+                    onChange={(exerciseId) => setMeta((m) => ({ ...m, alternative: { exerciseId } }))}
+                    placeholder="Elegir ejercicio más sencillo…"
+                    title="Elegir alternativa"
+                  />
+                )}
+              </div>
             </div>
           )}
 
@@ -749,6 +777,37 @@ function ExerciseCard({
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+// ─── Alternativa (versión más sencilla) ────────────────────────────────────────
+
+function AlternativeCard({
+  info, onPreview, onRemove,
+}: {
+  info: ExerciseInfo
+  onPreview: (info: ExerciseInfo) => void
+  onRemove: () => void
+}) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-lg border border-border bg-background px-3 py-2.5">
+      {info.youtubeVideoId ? (
+        <button type="button" onClick={() => onPreview(info)} className="shrink-0 rounded-md overflow-hidden cursor-pointer" aria-label={`Ver video de ${info.name}`}>
+          <YouTubeThumb videoId={info.youtubeVideoId} alt={info.name} className="w-16 aspect-video" />
+        </button>
+      ) : (
+        <div className="w-16 aspect-video shrink-0 rounded-md bg-muted/40" />
+      )}
+      <p className="flex-1 min-w-0 text-xs font-medium truncate">{info.name}</p>
+      <button
+        type="button"
+        onClick={onRemove}
+        className="shrink-0 p-1.5 text-muted-foreground hover:text-destructive transition-colors cursor-pointer"
+        aria-label="Quitar alternativa"
+      >
+        <XIcon className="w-3.5 h-3.5" />
+      </button>
     </div>
   )
 }
@@ -848,6 +907,8 @@ function BlockCard({
               label={`${label}.${i + 1}`}
               isEvaluation={false}
               info={infoFor(ex.exerciseId)}
+              infoFor={infoFor}
+              catalog={catalog}
               onPreview={onPreview}
               onUpdate={(patch) => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, ...patch } : e)))}
               onMoveUp={i > 0 ? () => move(i, -1) : undefined}

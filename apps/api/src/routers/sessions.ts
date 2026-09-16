@@ -97,12 +97,29 @@ export const sessionsRouter = router({
         return { id: session.id, status: session.status, startedAt: session.startedAt, routineName: r?.name ?? null, exercises: [] as never[] }
       }
 
-      // Metadata desde el snapshot JSON (tempo, descanso, notas, circuito) por posición
+      // Metadata desde el snapshot JSON (tempo, descanso, notas, circuito, alternativa) por posición
       const flat = flattenContent(session.content)
       const metaFor = (order: number, exerciseId: string) => {
         const m = flat[order]
         return m && m.exerciseId === exerciseId ? m : null
       }
+
+      // Catálogo (nombre, video) de las alternativas referenciadas en el snapshot
+      const alternativeExerciseIds = [...new Set(flat.map((f) => f.alternative?.exerciseId).filter((id): id is string => !!id))]
+      const alternativeCatalog = alternativeExerciseIds.length
+        ? await db
+            .select({
+              id: exercise.id,
+              name: exercise.name,
+              description: exercise.description,
+              youtubeVideoId: exercise.youtubeVideoId,
+              youtubeTitle: exercise.youtubeTitle,
+              videoOrientation: exercise.videoOrientation,
+            })
+            .from(exercise)
+            .where(inArray(exercise.id, alternativeExerciseIds))
+        : []
+      const altInfoById = new Map(alternativeCatalog.map((e) => [e.id, e]))
 
       const exerciseIds = exercises.map((e) => e.id)
       const [targets, mySets] = await Promise.all([
@@ -124,6 +141,7 @@ export const sessionsRouter = router({
         routineName: r?.name ?? null,
         exercises: exercises.map((ex) => {
           const meta = metaFor(ex.order, ex.exerciseId)
+          const altInfo = meta?.alternative ? altInfoById.get(meta.alternative.exerciseId) : undefined
           return {
             ...ex,
             tempo: meta?.tempo ?? null,
@@ -133,6 +151,14 @@ export const sessionsRouter = router({
             blockName: meta?.blockName ?? null,
             rounds: meta?.rounds ?? 1,
             roundNumber: meta?.roundNumber ?? null,
+            alternative: altInfo ? {
+              exerciseId: altInfo.id,
+              exerciseName: altInfo.name,
+              description: altInfo.description,
+              youtubeVideoId: altInfo.youtubeVideoId,
+              youtubeTitle: altInfo.youtubeTitle,
+              videoOrientation: altInfo.videoOrientation,
+            } : null,
             targets: targets.filter((t) => t.sessionExerciseId === ex.id),
             sets: mySets.filter((s) => s.sessionExerciseId === ex.id),
           }
@@ -263,12 +289,21 @@ export const sessionsRouter = router({
         .where(eq(sessionExercise.sessionId, input.id))
         .orderBy(asc(sessionExercise.order))
 
-      // Metadata desde el snapshot JSON (descanso, circuito, ronda) por posición
+      // Metadata desde el snapshot JSON (descanso, circuito, ronda, alternativa) por posición
       const flat = flattenContent(session.content)
       const metaFor = (order: number, exerciseId: string) => {
         const m = flat[order]
         return m && m.exerciseId === exerciseId ? m : null
       }
+
+      // Solo el nombre: aquí basta para la etiqueta de la serie, no hace falta el video.
+      const alternativeExerciseIds = [...new Set(flat.map((f) => f.alternative?.exerciseId).filter((id): id is string => !!id))]
+      const alternativeNameById = alternativeExerciseIds.length
+        ? new Map(
+            (await db.select({ id: exercise.id, name: exercise.name }).from(exercise).where(inArray(exercise.id, alternativeExerciseIds)))
+              .map((e) => [e.id, e.name]),
+          )
+        : new Map<string, string>()
 
       const exercisesWithTargets = await Promise.all(
         exercises.map(async (ex) => {
@@ -283,6 +318,7 @@ export const sessionsRouter = router({
             blockName: meta?.blockName ?? null,
             rounds: meta?.rounds ?? 1,
             roundNumber: meta?.roundNumber ?? null,
+            alternativeExerciseName: meta?.alternative ? alternativeNameById.get(meta.alternative.exerciseId) ?? null : null,
             targets,
           }
         }),
@@ -379,12 +415,28 @@ export const sessionsRouter = router({
       reps: z.number().int().min(0),
       weightLbs: z.string().default("0"),
       status: z.enum(["valid", "invalid"]).default("valid"),
+      // Ejercicio realmente ejecutado si el atleta cambió a la alternativa. null = hizo el planeado.
+      performedExerciseId: z.string().uuid().nullable().default(null),
     }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       if (session.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está activa" })
+
+      if (input.performedExerciseId) {
+        const [se] = await db
+          .select({ exerciseId: sessionExercise.exerciseId, order: sessionExercise.order })
+          .from(sessionExercise)
+          .where(and(eq(sessionExercise.id, input.sessionExerciseId), eq(sessionExercise.sessionId, input.sessionId)))
+          .limit(1)
+        if (!se) throw new TRPCError({ code: "NOT_FOUND" })
+        const meta = flattenContent(session.content)[se.order]
+        const validAlternativeId = meta && meta.exerciseId === se.exerciseId ? meta.alternative?.exerciseId : undefined
+        if (input.performedExerciseId !== validAlternativeId) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Esa alternativa no está definida para este ejercicio" })
+        }
+      }
 
       // Coach puede registrar para cualquier atleta; atleta solo para sí mismo.
       // Si el coach registra para sí mismo (auto-entrenamiento), cuenta como atleta.
@@ -415,6 +467,7 @@ export const sessionsRouter = router({
           reps: input.reps,
           weightLbs: input.weightLbs,
           status: input.status,
+          performedExerciseId: input.performedExerciseId,
           recordedBy: ctx.session.user.id,
         })
         .returning()

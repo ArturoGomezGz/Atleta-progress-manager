@@ -280,9 +280,20 @@ type Exercise = {
   blockName: string | null
   rounds: number
   roundNumber: number | null
+  /** Nombre de la alternativa más sencilla definida para este ejercicio, si tiene una. */
+  alternativeExerciseName: string | null
   targets: SessionSetTarget[]
 }
-type SetRecord = { id: string; setNumber: number; sessionSetTargetId: string | null; reps: number; weightLbs: string; status: "valid" | "invalid" }
+type SetRecord = {
+  id: string
+  setNumber: number
+  sessionSetTargetId: string | null
+  reps: number
+  weightLbs: string
+  status: "valid" | "invalid"
+  /** Si el atleta cambió a la alternativa para esta serie. */
+  performedExerciseId: string | null
+}
 
 // ─── Athlete exercises ────────────────────────────────────────────────────────
 
@@ -399,12 +410,13 @@ function ExerciseCard({ sessionId, athleteId, exercise, sets, isActive, canRecor
             <TargetSetRow key={target.id} sessionId={sessionId} athleteId={athleteId}
               sessionExerciseId={exercise.id} target={target} recorded={recorded}
               isActive={isActive} canRecord={canRecord} isNext={isNext} isPending={isPending}
-              rmLbs={rmLbs} onUpdate={onUpdate} />
+              rmLbs={rmLbs} onUpdate={onUpdate} alternativeExerciseName={exercise.alternativeExerciseName} />
           )
         })}
 
         {sets.filter((s) => s.sessionSetTargetId === null).map((set) => (
-          <SetRow key={set.id} set={set} isActive={isActive} canRecord={canRecord} onUpdate={onUpdate} />
+          <SetRow key={set.id} set={set} isActive={isActive} canRecord={canRecord} onUpdate={onUpdate}
+            alternativeExerciseName={exercise.alternativeExerciseName} />
         ))}
 
         {isActive && canRecord && (
@@ -464,8 +476,8 @@ function EditSetFields({ setId, defaultReps, defaultWeight, onSave, onCancel }:
 
 // ─── Target set row ───────────────────────────────────────────────────────────
 
-function TargetSetRow({ sessionId, athleteId, sessionExerciseId, target, recorded, isActive, canRecord, isNext, isPending, rmLbs, onUpdate }:
-  { sessionId: string; athleteId: string; sessionExerciseId: string; target: SessionSetTarget; recorded: SetRecord | null; isActive: boolean; canRecord: boolean; isNext: boolean; isPending: boolean; rmLbs: string | null; onUpdate: () => void }) {
+function TargetSetRow({ sessionId, athleteId, sessionExerciseId, target, recorded, isActive, canRecord, isNext, isPending, rmLbs, onUpdate, alternativeExerciseName }:
+  { sessionId: string; athleteId: string; sessionExerciseId: string; target: SessionSetTarget; recorded: SetRecord | null; isActive: boolean; canRecord: boolean; isNext: boolean; isPending: boolean; rmLbs: string | null; onUpdate: () => void; alternativeExerciseName: string | null }) {
   const [editing, setEditing] = useState(false)
   const repsLabel = target.targetReps != null ? `${target.targetReps} reps` : "libre"
   const pctLabel  = target.targetPercent != null ? `${target.targetPercent}% RM` : null
@@ -495,6 +507,7 @@ function TargetSetRow({ sessionId, athleteId, sessionExerciseId, target, recorde
         <CheckIcon className="w-4 h-4 text-primary shrink-0" />
         <span className="text-xs text-muted-foreground w-12 shrink-0">Serie {target.setNumber}</span>
         <span className="text-sm flex-1 font-medium">{recorded.reps} reps · {recorded.weightLbs} lbs</span>
+        {recorded.performedExerciseId && <AlternativeTag name={alternativeExerciseName} />}
         {isActive && canRecord && <SetActions set={recorded} onEdit={() => setEditing(true)} onUpdate={onUpdate} />}
       </div>
     )
@@ -529,7 +542,8 @@ function TargetSetRow({ sessionId, athleteId, sessionExerciseId, target, recorde
 
 // ─── Set row (extra) ──────────────────────────────────────────────────────────
 
-function SetRow({ set, isActive, canRecord, onUpdate }: { set: SetRecord; isActive: boolean; canRecord: boolean; onUpdate: () => void }) {
+function SetRow({ set, isActive, canRecord, onUpdate, alternativeExerciseName }:
+  { set: SetRecord; isActive: boolean; canRecord: boolean; onUpdate: () => void; alternativeExerciseName: string | null }) {
   const [editing, setEditing] = useState(false)
 
   if (editing) {
@@ -554,8 +568,21 @@ function SetRow({ set, isActive, canRecord, onUpdate }: { set: SetRecord; isActi
       <CheckIcon className="w-4 h-4 text-primary/60 shrink-0" />
       <span className="text-xs text-muted-foreground w-12 shrink-0">Serie {set.setNumber}</span>
       <span className="text-sm flex-1 font-medium">{set.reps} reps · {set.weightLbs} lbs</span>
+      {set.performedExerciseId && <AlternativeTag name={alternativeExerciseName} />}
       {isActive && canRecord && <SetActions set={set} onEdit={() => setEditing(true)} onUpdate={onUpdate} />}
     </div>
+  )
+}
+
+/** Etiqueta que marca una serie hecha con la alternativa más sencilla en vez del ejercicio planeado. */
+function AlternativeTag({ name }: { name: string | null }) {
+  return (
+    <span
+      className="shrink-0 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-primary/15 text-primary"
+      title={name ? `Hecho con la alternativa: ${name}` : "Hecho con la alternativa"}
+    >
+      Alternativa
+    </span>
   )
 }
 

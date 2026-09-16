@@ -149,13 +149,14 @@ export function GuestWorkoutView({ code }: { code: string }) {
     <WorkoutRunner
       progress={progress}
       withSidebar={false}
-      onRecordSet={async ({ exercise, target, reps, weightLbs }) => {
+      onRecordSet={async ({ exercise, target, reps, weightLbs, performedExerciseId }) => {
         await recordSet.mutateAsync({
           token: token!,
           exerciseOrder: exercise.order,
           setNumber: target.setNumber,
           reps,
           weightLbs,
+          performedExerciseId,
         })
         // Sin await: el descanso arranca en cuanto la serie queda guardada
         workout.refetch()

@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils"
 import { describeTarget, explainTempo, formatDuration, isTimeTarget, summarizeTargets } from "@/lib/workout-text"
 import {
   ArrowLeftIcon,
+  ArrowLeftRightIcon,
   CalendarIcon,
   CheckCircleIcon,
   CheckIcon,
@@ -50,6 +51,18 @@ export type WorkoutSet = {
   reps: number
   weightLbs: string
   status: "valid" | "invalid"
+  /** Ejercicio realmente hecho si el atleta cambió a la alternativa. null = hizo el planeado. */
+  performedExerciseId: string | null
+}
+
+/** Versión más sencilla a la que el atleta puede cambiar mientras entrena este ejercicio. */
+export type WorkoutAlternative = {
+  exerciseId: string
+  exerciseName: string
+  description: string | null
+  youtubeVideoId: string | null
+  youtubeTitle: string | null
+  videoOrientation: "horizontal" | "vertical"
 }
 
 export type WorkoutExercise = {
@@ -68,6 +81,7 @@ export type WorkoutExercise = {
   blockName: string | null
   rounds: number
   roundNumber: number | null
+  alternative: WorkoutAlternative | null
   targets: WorkoutTarget[]
   sets: WorkoutSet[]
 }
@@ -86,6 +100,8 @@ export type RecordSetInput = {
   target: WorkoutTarget
   reps: number
   weightLbs: string
+  /** Ejercicio realmente hecho: el de la alternativa si el atleta cambió, o null si hizo el planeado. */
+  performedExerciseId: string | null
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
@@ -210,6 +226,44 @@ function NotesModal({ notes, onClose }: { notes: string; onClose: () => void }) 
   )
 }
 
+/**
+ * Interruptor de dos posiciones entre el ejercicio planeado y su alternativa más
+ * sencilla. No es un modal de confirmación: el atleta puede tocar cualquiera de
+ * los dos lados las veces que quiera para ver el video de cada uno (el resto de
+ * la pantalla cambia con él) y quedarse con el que pueda hacer.
+ */
+function AlternativeSwitch({
+  originalName, alternativeName, active, onChange, size = "base",
+}: {
+  originalName: string
+  alternativeName: string
+  active: boolean
+  onChange: (active: boolean) => void
+  size?: "base" | "sm"
+}) {
+  const optionCls = (selected: boolean) =>
+    cn(
+      "flex-1 min-w-0 truncate px-3 rounded-full font-medium transition-colors cursor-pointer",
+      size === "sm" ? "py-1.5 text-sm" : "py-2 text-base",
+      selected ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
+    )
+
+  return (
+    <div
+      role="group"
+      aria-label="Elegir qué versión del ejercicio hacer"
+      className="inline-flex items-center max-w-full gap-1 rounded-full border border-border bg-muted/30 p-1"
+    >
+      <button type="button" onClick={() => onChange(false)} className={optionCls(!active)}>
+        {originalName}
+      </button>
+      <button type="button" onClick={() => onChange(true)} className={optionCls(active)}>
+        {alternativeName}
+      </button>
+    </div>
+  )
+}
+
 function ExerciseOverviewCard({
   exercise, index, onWatch, highlight,
 }: {
@@ -244,6 +298,11 @@ function ExerciseOverviewCard({
             <p className="text-sm text-primary flex items-center gap-1">
               <RepeatIcon className="w-4 h-4" /> {exercise.blockName}
               {exercise.roundNumber && ` · ronda ${exercise.roundNumber} de ${exercise.rounds}`}
+            </p>
+          )}
+          {exercise.alternative && (
+            <p className="text-sm text-muted-foreground flex items-center gap-1">
+              <ArrowLeftRightIcon className="w-4 h-4 shrink-0" /> Alternativa: {exercise.alternative.exerciseName}
             </p>
           )}
         </div>
@@ -352,6 +411,11 @@ function CircuitOverviewCard({
               {ex.notes && (
                 <p className="text-sm text-muted-foreground flex gap-1.5">
                   <MessageSquareIcon className="w-4 h-4 mt-0.5 shrink-0" /> {ex.notes}
+                </p>
+              )}
+              {ex.alternative && (
+                <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+                  <ArrowLeftRightIcon className="w-4 h-4 shrink-0" /> Alternativa: {ex.alternative.exerciseName}
                 </p>
               )}
             </div>
@@ -467,6 +531,32 @@ export function WorkoutRunner({
   const autoContinueRef = useRef(autoContinue)
   autoContinueRef.current = autoContinue
 
+  // Ejercicios (por sessionExerciseId) en los que el atleta tiene activa la
+  // alternativa. Es un interruptor libre: puede ir y venir entre las dos
+  // versiones las veces que quiera antes de registrar la serie. Si ya hay
+  // series guardadas con la alternativa (se recargó la página a medio
+  // entrenamiento), arranca mostrando esa misma.
+  const [switchedExercises, setSwitchedExercises] = useState<Set<string>>(() => {
+    const initial = new Set<string>()
+    for (const ex of progress.exercises) {
+      if (ex.sets.some((s) => s.performedExerciseId != null)) initial.add(ex.id)
+    }
+    return initial
+  })
+
+  function isAlternativeActive(exerciseId: string) {
+    return switchedExercises.has(exerciseId)
+  }
+
+  function setAlternativeActive(exerciseId: string, active: boolean) {
+    setSwitchedExercises((prev) => {
+      const next = new Set(prev)
+      if (active) next.add(exerciseId)
+      else next.delete(exerciseId)
+      return next
+    })
+  }
+
   // Al abrir la vista de progreso metemos una entrada de historial propia, así el
   // gesto de "regresar" del navegador/celular cierra esa vista en vez de sacar
   // al atleta de la rutina.
@@ -569,6 +659,10 @@ export function WorkoutRunner({
         onToggleAutoContinue={setAutoContinue}
         onShowOverview={openOverview}
         withSidebar={withSidebar}
+        upcomingExerciseName={position.exercise.exerciseName}
+        alternative={position.exercise.alternative}
+        alternativeActive={isAlternativeActive(position.exercise.id)}
+        onToggleAlternative={(active) => setAlternativeActive(position.exercise.id, active)}
       />
     )
   }
@@ -594,6 +688,8 @@ export function WorkoutRunner({
         if (!isLastSet) startRest(curEx.restSeconds ?? DEFAULT_REST_SECONDS)
       }}
       withSidebar={withSidebar}
+      alternativeActive={isAlternativeActive(curEx.id)}
+      onToggleAlternative={(active) => setAlternativeActive(curEx.id, active)}
     />
   )
 }
@@ -603,6 +699,7 @@ export function WorkoutRunner({
 function SetExecution({
   exercise, target, exerciseIdx, totalExercises, totalSetsGlobal, doneSetsGlobal,
   defaultWeight, exit, onRecordSet, onRecorded, onShowOverview, withSidebar,
+  alternativeActive, onToggleAlternative,
 }: {
   exercise: WorkoutExercise
   target: WorkoutTarget
@@ -616,6 +713,10 @@ function SetExecution({
   onRecorded: (isLastSet: boolean) => void
   onShowOverview: () => void
   withSidebar: boolean
+  /** Si el atleta está viendo la alternativa de este ejercicio ahora mismo. */
+  alternativeActive: boolean
+  /** Alterna libremente entre el ejercicio planeado y su alternativa. */
+  onToggleAlternative: (active: boolean) => void
 }) {
   const isTime = isTimeTarget(target)
   const freeReps = !isTime && target.targetReps == null
@@ -633,6 +734,15 @@ function SetExecution({
   const progressPct = totalSetsGlobal > 0 ? Math.round((doneSetsGlobal / totalSetsGlobal) * 100) : 0
   const tempoText = exercise.tempo ? explainTempo(exercise.tempo) : null
 
+  // Mientras el atleta esté viendo la alternativa, la pantalla muestra su nombre y
+  // video en vez de los del ejercicio planeado. Series, tempo, descanso e
+  // indicaciones no cambian: se heredan del ejercicio planeado.
+  const alternative = exercise.alternative
+  const showingAlternative = alternativeActive && !!alternative
+  const displayName = showingAlternative ? alternative!.exerciseName : exercise.exerciseName
+  const displayVideoId = showingAlternative ? alternative!.youtubeVideoId : exercise.youtubeVideoId
+  const displayOrientation = showingAlternative ? alternative!.videoOrientation : exercise.videoOrientation
+
   async function handleComplete() {
     if (saving) return
     setSaving(true)
@@ -643,6 +753,7 @@ function SetExecution({
         target,
         reps: isTime ? 0 : target.targetReps ?? reps,
         weightLbs: defaultWeight || "0",
+        performedExerciseId: showingAlternative ? alternative!.exerciseId : null,
       })
       onRecorded(doneSetsGlobal + 1 >= totalSetsGlobal)
     } catch {
@@ -679,7 +790,12 @@ function SetExecution({
             </p>
           )}
           <div className="flex items-center gap-2">
-            <h1 className="text-3xl font-bold leading-tight">{exercise.exerciseName}</h1>
+            {showingAlternative && (
+              <span className="shrink-0 text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-primary/15 text-primary">
+                Alternativa
+              </span>
+            )}
+            <h1 className="text-3xl font-bold leading-tight">{displayName}</h1>
             {exercise.notes && (
               <button
                 type="button"
@@ -692,13 +808,22 @@ function SetExecution({
               </button>
             )}
           </div>
+
+          {alternative && (
+            <AlternativeSwitch
+              originalName={exercise.exerciseName}
+              alternativeName={alternative.exerciseName}
+              active={showingAlternative}
+              onChange={onToggleAlternative}
+            />
+          )}
         </div>
 
-        {exercise.youtubeVideoId ? (
+        {displayVideoId ? (
           <YouTubePlayer
-            videoId={exercise.youtubeVideoId}
-            title={exercise.exerciseName}
-            orientation={exercise.videoOrientation}
+            videoId={displayVideoId}
+            title={displayName}
+            orientation={displayOrientation}
             large
             compact
           />
@@ -982,6 +1107,7 @@ function formatClock(totalSeconds: number): string {
 
 function RestTimer({
   seconds, totalSeconds, overtime, upcoming, onSkip, autoContinue, onToggleAutoContinue, onShowOverview, withSidebar,
+  upcomingExerciseName, alternative, alternativeActive, onToggleAlternative,
 }: {
   seconds: number
   totalSeconds: number
@@ -992,6 +1118,12 @@ function RestTimer({
   onToggleAutoContinue: (v: boolean) => void
   onShowOverview: () => void
   withSidebar: boolean
+  /** Nombre del ejercicio que sigue después de este descanso (sin el resto del texto de `upcoming`). */
+  upcomingExerciseName: string
+  /** Alternativa del ejercicio que sigue después de este descanso, si tiene una. */
+  alternative: WorkoutAlternative | null
+  alternativeActive: boolean
+  onToggleAlternative: (active: boolean) => void
 }) {
   const isOvertime = overtime !== null
   const pct = totalSeconds > 0 ? (seconds / totalSeconds) * 100 : 0
@@ -1027,9 +1159,20 @@ function RestTimer({
         </div>
       </div>
 
-      <div className="rounded-2xl bg-muted/40 px-5 py-3 text-lg">
-        <span className="text-muted-foreground">Lo siguiente: </span>
-        <strong>{upcoming}</strong>
+      <div className="rounded-2xl bg-muted/40 px-5 py-3 text-lg space-y-2">
+        <p>
+          <span className="text-muted-foreground">Lo siguiente: </span>
+          <strong>{upcoming}</strong>
+        </p>
+        {alternative && (
+          <AlternativeSwitch
+            originalName={upcomingExerciseName}
+            alternativeName={alternative.exerciseName}
+            active={alternativeActive}
+            onChange={onToggleAlternative}
+            size="sm"
+          />
+        )}
       </div>
 
       <label className="flex items-center gap-2 text-base text-muted-foreground cursor-pointer">
@@ -1146,6 +1289,11 @@ export function WorkoutSummary({
                         {target && isTimeTarget(target) ? describeTarget(target) : `${s.reps} repeticiones`}
                       </span>
                       {Number(s.weightLbs) > 0 && <span className="text-muted-foreground">{s.weightLbs} lbs</span>}
+                      {s.performedExerciseId && ex.alternative && (
+                        <span className="ml-auto shrink-0 text-[10px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded bg-primary/15 text-primary">
+                          Alternativa
+                        </span>
+                      )}
                     </div>
                   )
                 })}
