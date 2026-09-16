@@ -1,8 +1,7 @@
 # Alternativas de ejercicio
 
-> **Estado: en planeación.** Este documento es el plan de la feature, no su
-> descripción final. La decisión marcada con 🔶 sigue abierta; las demás ya
-> están tomadas.
+> **Estado: en desarrollo.** Todas las decisiones de diseño están tomadas;
+> este documento describe lo que se está construyendo.
 
 El entrenador puede asignarle a un ejercicio de la rutina **una alternativa más
 sencilla**. Si durante el entrenamiento el atleta no puede con el ejercicio
@@ -194,7 +193,7 @@ propia alternativa.
 
 El usuario planteó dos caminos: un mensaje discreto, o deslizar la pantalla.
 
-**Propuesta (por confirmar 🔶): botón discreto, no swipe.** Con una sola alternativa, el gesto de
+**Decidido: botón discreto, no swipe.** Con una sola alternativa, el gesto de
 deslizar no tiene nada que lo anuncie (el atleta no sabe que existe), compite
 con el scroll vertical de la pantalla de la serie, y no deja lugar donde poner
 el nombre de a qué va a cambiar. El swipe se gana su lugar cuando haya varias
@@ -271,4 +270,4 @@ genera con `pnpm --filter @atleta/db generate`. Nunca SQL a mano.
 | **Progreso de la alternativa** | Récord propio — la alternativa construye su propio PR |
 | **Visibilidad para el entrenador** | Entra en esta iteración, como etiqueta en el detalle de la sesión |
 | **¿Puede volver al ejercicio original a media rutina?** | Sí — por eso el dato se guarda por serie y no por ejercicio |
-| **Cómo cambia el atleta** 🔶 | Propuesta: botón discreto en vez de deslizar. Por confirmar |
+| **Cómo cambia el atleta** | Botón discreto, no deslizar |

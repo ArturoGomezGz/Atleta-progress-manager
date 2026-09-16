@@ -1,0 +1,2 @@
+ALTER TABLE "set_record" ADD COLUMN "performed_exercise_id" uuid;--> statement-breakpoint
+ALTER TABLE "set_record" ADD CONSTRAINT "set_record_performed_exercise_id_exercise_id_fk" FOREIGN KEY ("performed_exercise_id") REFERENCES "public"."exercise"("id") ON DELETE set null ON UPDATE no action;
