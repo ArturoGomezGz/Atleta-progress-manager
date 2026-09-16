@@ -3,7 +3,7 @@
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
-import { PlusIcon, SearchIcon, Trash2Icon } from "lucide-react"
+import { CopyIcon, PlusIcon, SearchIcon, Trash2Icon } from "lucide-react"
 import Link from "next/link"
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -29,6 +29,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
     onSuccess: (r) => { setCreating(false); setNewName(""); router.push(`/teams/${teamId}/plantillas/${r.id}`) },
   })
   const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetch(); setDeleting(null) } })
+  const duplicateRoutine = trpc.routines.duplicate.useMutation({ onSuccess: () => refetch() })
 
   const filtered = (routines ?? []).filter((r) => {
     if (filter !== "all" && r.category !== filter) return false
@@ -170,6 +171,14 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
                 </span>
               </Link>
               <div className="flex items-center gap-1 pr-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button
+                  onClick={() => duplicateRoutine.mutate({ id: r.id })}
+                  disabled={duplicateRoutine.isPending}
+                  title="Duplicar plantilla"
+                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer disabled:opacity-50"
+                >
+                  <CopyIcon className="w-3.5 h-3.5" />
+                </button>
                 <button
                   onClick={() => setDeleting({ id: r.id, name: r.name })}
                   className="p-1.5 text-muted-foreground hover:text-destructive rounded-lg cursor-pointer"

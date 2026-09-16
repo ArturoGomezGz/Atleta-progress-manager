@@ -59,6 +59,23 @@ function extractExerciseIds(content: RoutineContent): string[] {
   )
 }
 
+// Clona el contenido de una rutina generando nuevos ids para cada item/ejercicio,
+// ya que RoutineExerciseContent.id es referenciado por athleteSetCompletion.routineExerciseId.
+function cloneRoutineContent(content: RoutineContent): RoutineContent {
+  return {
+    ...content,
+    items: content.items.map((item) =>
+      item.type === "exercise"
+        ? { ...item, id: crypto.randomUUID(), sets: item.sets.map((s) => ({ ...s })) }
+        : {
+            ...item,
+            id: crypto.randomUUID(),
+            exercises: item.exercises.map((e) => ({ ...e, id: crypto.randomUUID(), sets: e.sets.map((s) => ({ ...s })) })),
+          },
+    ),
+  }
+}
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export const routinesRouter = router({
@@ -75,6 +92,26 @@ export const routinesRouter = router({
         .values({ ...input, createdBy: ctx.session.user.id, content: { v: 1, items: [] } })
         .returning()
       return r
+    }),
+
+  duplicate: protectedProcedure
+    .input(z.object({ id: z.string().uuid(), name: z.string().min(1).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
+      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, r.teamId)
+
+      const [copy] = await db
+        .insert(routine)
+        .values({
+          name: input.name ?? `${r.name} (copia)`,
+          teamId: r.teamId,
+          createdBy: ctx.session.user.id,
+          category: r.category,
+          content: cloneRoutineContent(r.content),
+        })
+        .returning()
+      return copy
     }),
 
   list: protectedProcedure
