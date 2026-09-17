@@ -599,11 +599,7 @@ function SortableItem({ id, children }: { id: string; children: ReactNode }) {
   )
 }
 
-/**
- * Ícono de agarre en la esquina superior derecha de la tarjeta: mantenerlo presionado
- * activa el arrastre del ejercicio o circuito que lo contiene. El contenedor de la
- * tarjeta debe tener `position: relative` para que esta posición absoluta se ancle a él.
- */
+/** Ícono de agarre: mantenerlo presionado activa el arrastre del ejercicio o circuito que lo contiene. */
 function DragHandle() {
   const handle = useContext(SortableItemContext)
   return (
@@ -612,11 +608,32 @@ function DragHandle() {
       ref={handle?.setActivatorNodeRef}
       {...handle?.attributes}
       {...handle?.listeners}
-      className="absolute top-1.5 right-1.5 z-10 p-2 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/60 cursor-grab active:cursor-grabbing touch-none shrink-0"
+      className="p-2 rounded-lg text-muted-foreground/50 hover:text-muted-foreground hover:bg-muted/60 cursor-grab active:cursor-grabbing touch-none shrink-0"
       aria-label="Arrastrar para reordenar"
     >
       <GripVerticalIcon className="w-[18px] h-[18px]" />
     </button>
+  )
+}
+
+/**
+ * Agarre de arrastre y botón de eliminar apilados en la esquina superior derecha de la
+ * tarjeta, para no ocupar ancho en el encabezado (donde antes dejaban una fila casi
+ * vacía al envolver). El contenedor de la tarjeta debe tener `position: relative`.
+ */
+function CardCornerActions({ onRemove }: { onRemove: () => void }) {
+  return (
+    <div className="absolute top-1.5 right-1.5 z-10 flex flex-col items-center gap-1">
+      <DragHandle />
+      <button
+        type="button"
+        onClick={onRemove}
+        className="p-2 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-muted/60 transition-colors cursor-pointer"
+        aria-label="Eliminar"
+      >
+        <Trash2Icon className="w-[18px] h-[18px]" />
+      </button>
+    </div>
   )
 }
 
@@ -673,29 +690,29 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
       <button
         type="button"
         onClick={onAdd}
-        className="flex items-center gap-1.5 ml-9 pl-1 text-[11px] text-muted-foreground/60 hover:text-primary transition-colors cursor-pointer"
+        className="flex items-center gap-1.5 ml-9 mt-1 pl-1 text-[11px] text-muted-foreground/60 hover:text-primary transition-colors cursor-pointer"
       >
         <PlusIcon className="w-3 h-3" /> Agregar descanso
       </button>
     )
   }
   return (
-    <div className="flex items-center gap-1.5 ml-9 px-2 py-1 text-[11px] text-muted-foreground">
+    <div className="flex items-center gap-1.5 w-fit max-w-[calc(100%-2.25rem)] ml-9 mt-1.5 px-2.5 py-1.5 rounded-lg border border-primary/30 bg-primary/10 text-[11px] text-primary">
       <PauseIcon className="w-3 h-3 shrink-0" />
-      <span className="shrink-0">{label}</span>
+      <span className="shrink-0 font-medium">{label}</span>
       <input
         type="number"
         min={0}
         value={seconds}
         onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
-        className="w-14 bg-background border border-border rounded-md px-1.5 py-0.5 text-[11px] focus:outline-none focus:ring-1 focus:ring-primary"
+        className="w-14 bg-background border border-primary/30 rounded-md px-1.5 py-0.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
         aria-label="Segundos de descanso"
       />
       <span className="shrink-0">seg</span>
       <button
         type="button"
         onClick={onClear}
-        className="ml-1 p-0.5 text-muted-foreground/60 hover:text-destructive transition-colors cursor-pointer"
+        className="ml-1 p-0.5 text-primary/60 hover:text-destructive transition-colors cursor-pointer"
         aria-label="Quitar descanso"
       >
         <XIcon className="w-3 h-3" />
@@ -771,8 +788,8 @@ function ExerciseCard({
 
   return (
     <div className={cn("relative border border-border rounded-xl overflow-hidden", nested ? "bg-background" : "bg-card/60")}>
-      <DragHandle />
-      <div className="flex flex-wrap items-center gap-3 pl-3 pr-11 py-2.5 bg-muted/10">
+      <CardCornerActions onRemove={onRemove} />
+      <div className="flex flex-wrap items-center gap-3 pl-3 pr-14 py-2.5 min-h-[84px] bg-muted/10">
         <span className="w-6 h-6 rounded-full bg-primary/15 border border-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
           {label}
         </span>
@@ -788,14 +805,6 @@ function ExerciseCard({
             {item.restSeconds ? ` · descanso ${item.restSeconds}s` : ""}
             {item.notes ? " · con notas" : ""}
           </p>
-        </button>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="ml-auto shrink-0 p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted/60 transition-colors cursor-pointer"
-          aria-label="Eliminar"
-        >
-          <Trash2Icon className="w-3.5 h-3.5" />
         </button>
       </div>
 
@@ -948,8 +957,8 @@ function BlockCard({
 
   return (
     <div className="relative border-2 border-primary/30 rounded-xl overflow-hidden bg-primary/5">
-      <DragHandle />
-      <div className="flex flex-wrap items-center gap-2 pl-3 pr-11 py-2.5 bg-primary/10">
+      <CardCornerActions onRemove={onRemove} />
+      <div className="flex flex-wrap items-center gap-2 pl-3 pr-14 py-2.5 min-h-[84px] bg-primary/10">
         <span className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
           {label}
         </span>
@@ -981,14 +990,6 @@ function BlockCard({
             <PlusIcon className="w-3 h-3" />
           </button>
         </div>
-        <button
-          type="button"
-          onClick={onRemove}
-          className="p-1.5 rounded-lg text-muted-foreground hover:text-destructive hover:bg-muted/60 transition-colors cursor-pointer"
-          aria-label="Eliminar"
-        >
-          <Trash2Icon className="w-3.5 h-3.5" />
-        </button>
       </div>
 
       <div className="flex items-center gap-1.5 px-3 py-2 border-b border-primary/15 text-xs">
