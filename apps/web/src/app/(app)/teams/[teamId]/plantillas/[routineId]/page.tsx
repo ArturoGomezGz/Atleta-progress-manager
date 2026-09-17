@@ -444,16 +444,18 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
               return (
                 <SortableItem key={item.id} id={item.id}>
                   {item.type === "exercise" ? (
-                    <div>
-                      <ExerciseCard
-                        item={item}
-                        label={String(idx + 1)}
-                        isEvaluation={isEvaluation}
-                        info={infoFor(item.exerciseId)}
-                        onPreview={setPreview}
-                        onUpdate={(patch) => updateItem(item.id, patch)}
-                        {...moveProps}
-                      />
+                    <div className="relative">
+                      <div className="relative z-10">
+                        <ExerciseCard
+                          item={item}
+                          label={String(idx + 1)}
+                          isEvaluation={isEvaluation}
+                          info={infoFor(item.exerciseId)}
+                          onPreview={setPreview}
+                          onUpdate={(patch) => updateItem(item.id, patch)}
+                          {...moveProps}
+                        />
+                      </div>
                       {!isEvaluation && (
                         <RestRow
                           seconds={item.restSeconds}
@@ -697,7 +699,7 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
     )
   }
   return (
-    <div className="flex items-center gap-1.5 w-fit max-w-[calc(100%-2.25rem)] ml-9 mt-1.5 px-2.5 py-1.5 rounded-lg border border-primary/30 bg-primary/10 text-[11px] text-primary">
+    <div className="relative z-0 flex items-center gap-1.5 w-fit max-w-[calc(100%-2.25rem)] ml-9 -mt-2.5 pt-2.5 px-2.5 pb-1.5 rounded-b-lg border border-t-0 border-primary/30 bg-primary/10 text-[11px] text-primary">
       <PauseIcon className="w-3 h-3 shrink-0" />
       <span className="shrink-0 font-medium">{label}</span>
       <input
@@ -1015,17 +1017,19 @@ function BlockCard({
         <SortableContext items={exercises.map((e) => e.id)} strategy={verticalListSortingStrategy}>
           {exercises.map((ex, i) => (
             <SortableItem key={ex.id} id={ex.id}>
-              <div>
-                <ExerciseCard
-                  nested
-                  item={ex}
-                  label={`${label}.${i + 1}`}
-                  isEvaluation={false}
-                  info={infoFor(ex.exerciseId)}
-                  onPreview={onPreview}
-                  onUpdate={(patch) => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, ...patch } : e)))}
-                  onRemove={() => setExercises(exercises.filter((e) => e.id !== ex.id))}
-                />
+              <div className="relative">
+                <div className="relative z-10">
+                  <ExerciseCard
+                    nested
+                    item={ex}
+                    label={`${label}.${i + 1}`}
+                    isEvaluation={false}
+                    info={infoFor(ex.exerciseId)}
+                    onPreview={onPreview}
+                    onUpdate={(patch) => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, ...patch } : e)))}
+                    onRemove={() => setExercises(exercises.filter((e) => e.id !== ex.id))}
+                  />
+                </div>
                 <RestRow
                   seconds={ex.restSeconds}
                   label={i === exercises.length - 1 ? "Descanso al terminar el circuito" : "Descanso"}
