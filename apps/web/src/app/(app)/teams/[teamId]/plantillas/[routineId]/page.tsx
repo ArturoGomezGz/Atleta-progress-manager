@@ -446,6 +446,8 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
                   {item.type === "exercise" ? (
                     <div className="relative">
                       <div className="relative z-10">
+                        {/* Respaldo opaco: la tarjeta es translúcida (bg-card/60) y sin esto se transparentaría el descanso que se esconde detrás. */}
+                        <div className="absolute inset-0 rounded-xl bg-card pointer-events-none" aria-hidden="true" />
                         <ExerciseCard
                           item={item}
                           label={String(idx + 1)}
