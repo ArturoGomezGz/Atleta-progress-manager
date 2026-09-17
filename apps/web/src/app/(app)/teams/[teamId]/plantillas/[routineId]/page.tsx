@@ -443,16 +443,18 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-16">
-      {/* Header: en esta vista la única salida es este botón, que es donde se decide
-          qué hacer con los cambios. */}
-      <div>
+      {/* Cabecera fija: ocupa el espacio que dejó el topbar de la app en modo enfocado.
+          La única salida de la vista es este botón, que es donde se decide qué hacer
+          con los cambios. */}
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 -mt-6 sm:-mt-8 mb-2 px-4 sm:px-6 py-2 bg-background/95 backdrop-blur-sm border-b border-border flex items-center gap-2">
         <button
           type="button"
           onClick={requestExit}
-          className="flex items-center gap-1.5 -ml-1 px-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer mb-1"
+          aria-label="Salir"
+          className="shrink-0 flex items-center gap-1 -ml-2 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
         >
-          <ChevronLeftIcon className="w-4 h-4" />
-          Salir
+          <ChevronLeftIcon className="w-5 h-5" />
+          <span className="text-sm">Salir</span>
         </button>
         <input
           value={name}
@@ -463,7 +465,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
             if (trimmed.toLowerCase() !== routineData.name) renameRoutine.mutate({ id: routineId, name: trimmed.toLowerCase() })
           }}
           onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
-          className="text-2xl font-bold tracking-wider uppercase bg-transparent outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary/60 transition-colors w-full min-h-[44px] cursor-text"
+          className="flex-1 min-w-0 text-base font-bold tracking-wide uppercase bg-transparent outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary/60 transition-colors truncate cursor-text"
           style={{ fontFamily: "var(--font-barlow-condensed)" }}
           aria-label="Nombre de la plantilla"
         />
