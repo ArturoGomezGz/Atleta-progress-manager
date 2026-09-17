@@ -21,8 +21,12 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
+  AlertTriangleIcon,
+  CheckIcon,
   ChevronLeftIcon,
+  ChevronUpIcon,
   ClockIcon,
+  Loader2Icon,
   GripVerticalIcon,
   InfoIcon,
   MinusIcon,
@@ -266,6 +270,11 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   const [dirty, setDirty]               = useState(false)
   const [name, setName]                 = useState("")
   const [preview, setPreview]           = useState<ExerciseInfo | null>(null)
+  // Solo un ejercicio abierto en modo edición a la vez: abrir otro cierra el anterior.
+  const [openExerciseId, setOpenExerciseId] = useState<string | null>(null)
+  const toggleExercise = useCallback((id: string) => {
+    setOpenExerciseId((prev) => (prev === id ? null : id))
+  }, [])
   // Último valor de descanso usado por el entrenador: sugiere ese mismo valor para el próximo descanso que se autocomplete.
   const [suggestedRest, setSuggestedRest] = useState(DEFAULT_SUGGESTED_REST_SECONDS)
 
@@ -408,7 +417,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   )
 
   return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-32">
+    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-16">
       {/* Header */}
       <div>
         <Link
@@ -431,10 +440,34 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           style={{ fontFamily: "var(--font-barlow-condensed)" }}
           aria-label="Nombre de la plantilla"
         />
-        <div className="flex items-center justify-between gap-3 mt-1">
-          <p className="text-xs text-muted-foreground">
-            {sorted.length} {sorted.length === 1 ? "bloque" : "bloques"} · toca un ejercicio para cambiar series, descanso y notas
-          </p>
+      </div>
+
+      {/* Barra de estado: se queda pegada arriba al hacer scroll, así el indicador de
+          guardado siempre está a la mano sin tener que aparecer y desaparecer. */}
+      <div className="sticky top-14 lg:top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-background/95 backdrop-blur-sm flex items-center justify-between gap-2">
+        <p className="text-xs text-muted-foreground truncate min-w-0">
+          {sorted.length} {sorted.length === 1 ? "bloque" : "bloques"} · toca un ejercicio para editarlo
+        </p>
+        <div className="flex items-center gap-2 shrink-0">
+          {dirty && !updateContent.isPending && (
+            <button
+              type="button"
+              onClick={() => { setLocalContent(null); setDirty(false); setAiResult(null) }}
+              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              Descartar
+            </button>
+          )}
+          <SaveIndicator
+            state={updateContent.isError ? "error" : dirty ? "dirty" : "clean"}
+            blockedReason={
+              dirty && emptyBlocks > 0
+                ? (emptyBlocks === 1 ? "1 circuito vacío" : `${emptyBlocks} circuitos vacíos`)
+                : null
+            }
+            pending={updateContent.isPending}
+            onSave={handleSave}
+          />
           {isCoach && !isEvaluation && content.items.length > 0 && (
             <ShareRoutineButton routineId={routineId} routineName={routineData.name} />
           )}
@@ -499,6 +532,8 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
                           info={infoFor(item.exerciseId)}
                           onPreview={setPreview}
                           onUpdate={(patch) => updateItem(item.id, patch)}
+                          expanded={openExerciseId === item.id}
+                          onToggle={() => toggleExercise(item.id)}
                           {...moveProps}
                         />
                       </div>
@@ -522,6 +557,8 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
                       suggestedRest={suggestedRest}
                       onSuggestedRestChange={setSuggestedRest}
                       isDropTarget={activeDragId != null && overContainerId === item.id}
+                      openExerciseId={openExerciseId}
+                      onToggleExercise={toggleExercise}
                       {...moveProps}
                     />
                   )}
@@ -558,32 +595,6 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           </button>
         )}
       </div>
-
-      {/* Save bar */}
-      {dirty && (
-        <div className="fixed bottom-0 left-0 right-0 lg:left-56 z-30 border-t border-border bg-background/95 backdrop-blur-sm">
-          <div className="max-w-2xl mx-auto px-4 sm:px-6 py-3 flex items-center gap-3">
-            <p className="flex-1 text-xs text-muted-foreground">
-              {emptyBlocks > 0
-                ? <span className="text-destructive">Hay {emptyBlocks === 1 ? "un circuito vacío" : `${emptyBlocks} circuitos vacíos`}: agrega ejercicios o elimínalos.</span>
-                : "Tienes cambios sin guardar"}
-            </p>
-            <button
-              onClick={() => { setLocalContent(null); setDirty(false); setAiResult(null) }}
-              className="text-sm px-3 py-2 rounded-xl border border-border text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              Descartar
-            </button>
-            <button
-              onClick={handleSave}
-              disabled={updateContent.isPending || emptyBlocks > 0}
-              className="text-sm bg-primary text-primary-foreground px-4 py-2 rounded-xl font-medium disabled:opacity-50 hover:bg-primary/90 transition-colors cursor-pointer"
-            >
-              {updateContent.isPending ? "Guardando…" : "Guardar cambios"}
-            </button>
-          </div>
-        </div>
-      )}
 
       {preview?.youtubeVideoId && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
@@ -770,10 +781,68 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
   )
 }
 
+// ─── Indicador de guardado ────────────────────────────────────────────────────
+// Ancla fija en la cabecera: siempre está, y cambia de estado en vez de aparecer y
+// desaparecer. Cuando hay cambios pendientes es un botón que guarda.
+
+function SaveIndicator({ state, blockedReason, pending, onSave }: {
+  state: "clean" | "dirty" | "error"
+  /** Si no es null, no se puede guardar todavía (p. ej. circuitos vacíos). */
+  blockedReason: string | null
+  pending: boolean
+  onSave: () => void
+}) {
+  const base = "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border text-[11px] font-medium shrink-0 transition-colors"
+
+  if (pending) {
+    return (
+      <span role="status" aria-live="polite" className={cn(base, "border-border bg-muted/40 text-muted-foreground")}>
+        <Loader2Icon className="w-3.5 h-3.5 animate-spin" /> Guardando…
+      </span>
+    )
+  }
+
+  if (blockedReason) {
+    return (
+      <span role="status" aria-live="polite" className={cn(base, "border-destructive/40 bg-destructive/10 text-destructive")}>
+        <AlertTriangleIcon className="w-3.5 h-3.5" /> {blockedReason}
+      </span>
+    )
+  }
+
+  if (state === "error") {
+    return (
+      <button type="button" onClick={onSave} className={cn(base, "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 cursor-pointer")}>
+        <AlertTriangleIcon className="w-3.5 h-3.5" /> No se guardó · Reintentar
+      </button>
+    )
+  }
+
+  if (state === "dirty") {
+    return (
+      <button
+        type="button"
+        onClick={onSave}
+        className={cn(base, "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 cursor-pointer")}
+      >
+        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
+        Guardar cambios
+      </button>
+    )
+  }
+
+  return (
+    <span role="status" aria-live="polite" className={cn(base, "border-transparent bg-muted/40 text-muted-foreground")}>
+      <CheckIcon className="w-3.5 h-3.5" /> Guardado
+    </span>
+  )
+}
+
 // ─── Exercise card ────────────────────────────────────────────────────────────
 
 function ExerciseCard({
   item, label, isEvaluation, info, onUpdate, onPreview, onRemove, nested = false,
+  expanded, onToggle,
 }: {
   item: RoutineExerciseContent
   label: string
@@ -783,55 +852,59 @@ function ExerciseCard({
   onPreview: (info: ExerciseInfo) => void
   onRemove: () => void
   nested?: boolean
+  /** Lo controla el padre: solo un ejercicio puede estar abierto a la vez. */
+  expanded: boolean
+  onToggle: () => void
 }) {
-  const [expanded, setExpanded]   = useState(false)
   const [drafts, setDrafts]       = useState<DraftSet[]>(() => item.sets.map(draftFromSet))
   const [meta, setMeta]           = useState({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
   const [quick, setQuick]         = useState({ count: String(item.sets.length || 3), value: "" })
   const [tempoInfo, setTempoInfo] = useState(false)
-  const tempoRef                  = useRef<HTMLDivElement>(null)
 
-  useEffect(() => {
-    if (!tempoInfo) return
-    function handleClick(e: Event) {
-      if (tempoRef.current && !tempoRef.current.contains(e.target as Node)) setTempoInfo(false)
+  function toggleEditor() {
+    // Al abrir, parte de lo que hay guardado; al cerrar no hay nada que descartar
+    // porque cada cambio ya se fue aplicando al borrador de la plantilla.
+    if (!expanded) {
+      setDrafts(item.sets.map(draftFromSet))
+      setMeta({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
+      setQuick({ count: String(item.sets.length || 3), value: "" })
     }
-    document.addEventListener("mousedown", handleClick)
-    document.addEventListener("touchstart", handleClick)
-    return () => {
-      document.removeEventListener("mousedown", handleClick)
-      document.removeEventListener("touchstart", handleClick)
-    }
-  }, [tempoInfo])
+    onToggle()
+  }
 
-  function openEditor() {
-    setDrafts(item.sets.map(draftFromSet))
-    setMeta({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
-    setExpanded((v) => !v)
+  // Sin botón "Aplicar": cada edición viaja de inmediato al borrador en memoria de la
+  // plantilla, y el guardado real queda en el indicador global de la cabecera.
+  function push(nextDrafts: DraftSet[], nextMeta: typeof meta) {
+    onUpdate({
+      sets: nextDrafts.map(draftToSet),
+      ...(isEvaluation ? {} : {
+        tempo: nextMeta.tempo || undefined,
+        goal:  (nextMeta.goal as RoutineExerciseContent["goal"]) || undefined,
+        notes: nextMeta.notes || undefined,
+      }),
+    })
+  }
+
+  function changeDrafts(next: DraftSet[]) {
+    setDrafts(next)
+    push(next, meta)
+  }
+
+  function changeMeta(next: typeof meta) {
+    setMeta(next)
+    push(drafts, next)
   }
 
   function applyQuick() {
     const count = Math.max(1, Math.min(20, Number(quick.count) || 1))
     const base = drafts[0] ?? defaultDraft(1)
     const value = quick.value.trim()
-    setDrafts(Array.from({ length: count }, (_, i) => ({
+    changeDrafts(Array.from({ length: count }, (_, i) => ({
       ...base,
       setNumber: i + 1,
       ...(value !== "" ? (base.setType === "time" ? { targetDurationSeconds: value } : { targetReps: value }) : {}),
     })))
   }
-
-  const handleSave = useCallback(() => {
-    onUpdate({
-      sets: drafts.map(draftToSet),
-      ...(isEvaluation ? {} : {
-        tempo: meta.tempo || undefined,
-        goal:  (meta.goal as RoutineExerciseContent["goal"]) || undefined,
-        notes: meta.notes || undefined,
-      }),
-    })
-    setExpanded(false)
-  }, [drafts, meta, isEvaluation, onUpdate])
 
   const inputCls = "w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
 
@@ -847,7 +920,13 @@ function ExerciseCard({
             <YouTubeThumb videoId={info.youtubeVideoId} alt={info.name} showPlay className="w-20 aspect-video" />
           </button>
         ) : null}
-        <button type="button" onClick={openEditor} className="flex-1 min-w-[140px] text-left cursor-pointer">
+        <button
+          type="button"
+          onClick={toggleEditor}
+          aria-expanded={expanded}
+          aria-controls={`editor-${item.id}`}
+          className="flex-1 min-w-[140px] text-left cursor-pointer"
+        >
           <p className="font-semibold text-sm truncate">{info.name}</p>
           <p className="text-xs text-muted-foreground truncate">
             {setsSummary(item.sets)}
@@ -857,8 +936,18 @@ function ExerciseCard({
         </button>
       </div>
 
-      {expanded && (
-        <div className="border-t border-border">
+      {/* Cortina: grid-rows 0fr → 1fr anima la altura sin medirla con JS. El contenido
+          sigue montado (si no, no habría nada que animar al cerrar), así que cuando está
+          cerrado se marca inerte para que no reciba foco ni lectores de pantalla. */}
+      <div
+        id={`editor-${item.id}`}
+        className={cn(
+          "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+          expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
+        )}
+      >
+        <div className="overflow-hidden" inert={!expanded}>
+          <div className="border-t border-border">
           {/* Series rápidas */}
           {!isEvaluation && (
             <div className="flex flex-wrap items-center gap-2 px-4 py-3 bg-primary/5 border-b border-border">
@@ -897,8 +986,8 @@ function ExerciseCard({
                 key={i}
                 set={s}
                 isEvaluation={isEvaluation}
-                onUpdate={(patch) => setDrafts((prev) => prev.map((d, j) => j === i ? { ...d, ...patch } : d))}
-                onRemove={() => setDrafts((prev) => prev.filter((_, j) => j !== i).map((d, j) => ({ ...d, setNumber: j + 1 })))}
+                onUpdate={(patch) => changeDrafts(drafts.map((d, j) => j === i ? { ...d, ...patch } : d))}
+                onRemove={() => changeDrafts(drafts.filter((_, j) => j !== i).map((d, j) => ({ ...d, setNumber: j + 1 })))}
                 canRemove={drafts.length > 1}
               />
             ))}
@@ -906,7 +995,7 @@ function ExerciseCard({
 
           <div className="px-4 py-2 border-t border-border">
             <button
-              onClick={() => setDrafts((prev) => [...prev, defaultDraft(prev.length + 1, prev[prev.length - 1])])}
+              onClick={() => changeDrafts([...drafts, defaultDraft(drafts.length + 1, drafts[drafts.length - 1])])}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
             >
               <PlusIcon className="w-3.5 h-3.5" />
@@ -920,34 +1009,32 @@ function ExerciseCard({
               <div className="space-y-1 max-w-[calc(50%-0.375rem)]">
                 <div className="flex items-center gap-1">
                   <label className="text-xs text-muted-foreground">Ritmo (tempo)</label>
-                  <div ref={tempoRef} className="relative group">
-                    <button
-                      type="button"
-                      onClick={() => setTempoInfo((v) => !v)}
-                      className="text-muted-foreground/40 hover:text-muted-foreground transition-colors cursor-pointer"
-                    >
-                      <InfoIcon className="w-3 h-3" />
-                    </button>
-                    <div className={cn(
-                      "absolute left-0 top-5 z-50 w-48 transition-opacity duration-150",
-                      "pointer-events-none opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto",
-                      tempoInfo && "opacity-100 pointer-events-auto",
-                    )}>
-                      <div className="text-[11px] text-muted-foreground bg-card border border-border rounded-lg px-2.5 py-2 leading-relaxed shadow-lg">
-                        <p className="font-semibold text-foreground mb-1">Ejemplo: 3-1-2-0</p>
-                        <p>El atleta verá: “Baja en 3 s, pausa 1 s, sube en 2 s, pausa 0 s”.</p>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Va en el flujo (no flotante): la cortina recorta lo que se salga de
+                      la tarjeta, y así la ayuda también se alcanza con teclado. */}
+                  <button
+                    type="button"
+                    onClick={() => setTempoInfo((v) => !v)}
+                    aria-expanded={tempoInfo}
+                    aria-label="Qué es el ritmo (tempo)"
+                    className="p-1 -m-1 text-muted-foreground/60 hover:text-foreground transition-colors cursor-pointer"
+                  >
+                    <InfoIcon className="w-3 h-3" />
+                  </button>
                 </div>
-                <input type="text" placeholder="3-1-2-0" value={meta.tempo} onChange={(e) => setMeta((m) => ({ ...m, tempo: e.target.value }))} className={inputCls} />
+                {tempoInfo && (
+                  <div className="text-[11px] text-muted-foreground bg-card border border-border rounded-lg px-2.5 py-2 leading-relaxed">
+                    <p className="font-semibold text-foreground mb-1">Ejemplo: 3-1-2-0</p>
+                    <p>El atleta verá: “Baja en 3 s, pausa 1 s, sube en 2 s, pausa 0 s”.</p>
+                  </div>
+                )}
+                <input type="text" placeholder="3-1-2-0" value={meta.tempo} onChange={(e) => changeMeta({ ...meta, tempo: e.target.value })} className={inputCls} />
               </div>
               <p className="text-[11px] text-muted-foreground">
                 El descanso se edita en la fila “Descanso” debajo de este ejercicio, no aquí.
               </p>
               <div className="space-y-1">
                 <label className="text-xs text-muted-foreground">Objetivo</label>
-                <select value={meta.goal} onChange={(e) => setMeta((m) => ({ ...m, goal: e.target.value }))} className={cn(inputCls, "cursor-pointer")}>
+                <select value={meta.goal} onChange={(e) => changeMeta({ ...meta, goal: e.target.value })} className={cn(inputCls, "cursor-pointer")}>
                   <option value="">Sin objetivo</option>
                   <option value="strength">Fuerza</option>
                   <option value="hypertrophy">Hipertrofia</option>
@@ -963,23 +1050,25 @@ function ExerciseCard({
                   rows={2}
                   placeholder="Ej.: apóyate en la pared si pierdes el equilibrio"
                   value={meta.notes}
-                  onChange={(e) => setMeta((m) => ({ ...m, notes: e.target.value }))}
+                  onChange={(e) => changeMeta({ ...meta, notes: e.target.value })}
                   className={cn(inputCls, "py-2 resize-none")}
                 />
               </div>
             </div>
           )}
 
-          <div className="flex items-center justify-end gap-2 px-4 py-2.5 border-t border-border bg-muted/10">
-            <button onClick={() => setExpanded(false)} className="text-xs px-3 py-1.5 rounded-lg border border-border cursor-pointer">
-              Cancelar
-            </button>
-            <button onClick={handleSave} className="text-xs bg-primary text-primary-foreground px-3.5 py-1.5 rounded-lg font-medium cursor-pointer hover:bg-primary/90 transition-colors">
-              Aplicar
+          <div className="px-4 py-2.5 border-t border-border bg-muted/10">
+            <button
+              type="button"
+              onClick={toggleEditor}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+            >
+              <ChevronUpIcon className="w-3.5 h-3.5" /> Listo
             </button>
           </div>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
@@ -989,6 +1078,7 @@ function ExerciseCard({
 function BlockCard({
   item, label, infoFor, catalog, onUpdate, onPreview, onRemove,
   suggestedRest, onSuggestedRestChange, isDropTarget = false,
+  openExerciseId, onToggleExercise,
 }: {
   item: RoutineItemBlock
   label: string
@@ -1001,6 +1091,8 @@ function BlockCard({
   onSuggestedRestChange: (seconds: number) => void
   /** Un ejercicio se está arrastrando sobre este circuito ahora mismo (entrando o reordenando adentro). */
   isDropTarget?: boolean
+  openExerciseId: string | null
+  onToggleExercise: (id: string) => void
 }) {
   const exercises = [...item.exercises].sort((a, b) => a.order - b.order)
   const setExercises = (list: RoutineExerciseContent[]) => onUpdate({ exercises: renumber(list) })
@@ -1082,6 +1174,8 @@ function BlockCard({
                     onPreview={onPreview}
                     onUpdate={(patch) => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, ...patch } : e)))}
                     onRemove={() => setExercises(exercises.filter((e) => e.id !== ex.id))}
+                    expanded={openExerciseId === ex.id}
+                    onToggle={() => onToggleExercise(ex.id)}
                   />
                 </div>
                 <RestRow
