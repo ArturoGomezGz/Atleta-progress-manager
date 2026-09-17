@@ -15,6 +15,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from "@dnd-kit/core"
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
@@ -120,6 +121,15 @@ function locateItem(items: Array<RoutineItemExercise | RoutineItemBlock>, id: st
     }
   }
   return null
+}
+
+/** A qué contenedor pertenece (o apunta) un id: la raíz, o el circuito dueño del ejercicio/zona. */
+function containerIdOf(items: Array<RoutineItemExercise | RoutineItemBlock>, id: string): string | null {
+  if (id === ROOT_CONTAINER_ID) return ROOT_CONTAINER_ID
+  if (id.startsWith("block-drop-")) return id.slice("block-drop-".length)
+  const loc = locateItem(items, id)
+  if (!loc) return null
+  return loc.where === "root" ? ROOT_CONTAINER_ID : loc.blockId
 }
 
 /**
@@ -317,14 +327,42 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
   // Arrastrar y soltar: mantener presionado un ejercicio o circuito lo activa como
   // arrastrable, para reordenarlo o meterlo/sacarlo de un circuito con el dedo.
-  const [activeDragId, setActiveDragId] = useState<string | null>(null)
+  const [activeDragId, setActiveDragId]   = useState<string | null>(null)
+  const [overContainerId, setOverContainerId] = useState<string | null>(null)
   const dndSensors = useSensors(useSensor(PointerSensor, { activationConstraint: { delay: 250, tolerance: 8 } }))
+  // Snapshot de antes de arrastrar: el preview en vivo (ver abajo) ya mueve el
+  // ejercicio entre contenedores mientras se arrastra, así que si se cancela hay
+  // que restaurar el contenido (y si estaba "limpio", que siga estándolo).
+  const dragSnapshotRef = useRef<{ content: RoutineContent; dirty: boolean } | null>(null)
 
   function handleDragStart(event: DragStartEvent) {
     setActiveDragId(String(event.active.id))
+    dragSnapshotRef.current = { content, dirty }
+  }
+  // Mueve el ejercicio en vivo apenas cruza a otro contenedor (raíz ↔ circuito, o
+  // entre circuitos), para que se vea entrar/salir mientras se arrastra en vez de
+  // solo al soltar. El reordenamiento dentro de un mismo contenedor ya lo anima
+  // dnd-kit por su cuenta (transform + transition de cada item), así que aquí no
+  // se toca nada si el contenedor no cambió.
+  function handleDragOver(event: DragOverEvent) {
+    const { active, over } = event
+    if (!over) { setOverContainerId(null); return }
+    const activeId = String(active.id)
+    const overId = String(over.id)
+    const items = [...content.items].sort((a, b) => a.order - b.order)
+    const activeContainer = containerIdOf(items, activeId)
+    const overContainer   = containerIdOf(items, overId)
+    setOverContainerId(overContainer)
+    if (!activeContainer || !overContainer || activeContainer === overContainer) return
+    const next = moveDraggedItem(content, activeId, overId)
+    if (next === content) return
+    setLocalContent(next)
+    setDirty(true)
   }
   function handleDragEnd(event: DragEndEvent) {
     setActiveDragId(null)
+    setOverContainerId(null)
+    dragSnapshotRef.current = null
     const { active, over } = event
     if (!over) return
     const activeId = String(active.id)
@@ -334,6 +372,12 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   }
   function handleDragCancel() {
     setActiveDragId(null)
+    setOverContainerId(null)
+    if (dragSnapshotRef.current) {
+      setLocalContent(dragSnapshotRef.current.content)
+      setDirty(dragSnapshotRef.current.dirty)
+    }
+    dragSnapshotRef.current = null
   }
 
   function removeItem(id: string) {
@@ -434,7 +478,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       )}
 
       {/* Items */}
-      <DndContext sensors={dndSensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
+      <DndContext sensors={dndSensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
         <RootDropZone>
           <SortableContext items={sorted.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             {sorted.map((item, idx) => {
@@ -477,6 +521,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
                       onUpdate={(patch) => updateItem(item.id, patch)}
                       suggestedRest={suggestedRest}
                       onSuggestedRestChange={setSuggestedRest}
+                      isDropTarget={activeDragId != null && overContainerId === item.id}
                       {...moveProps}
                     />
                   )}
@@ -943,7 +988,7 @@ function ExerciseCard({
 
 function BlockCard({
   item, label, infoFor, catalog, onUpdate, onPreview, onRemove,
-  suggestedRest, onSuggestedRestChange,
+  suggestedRest, onSuggestedRestChange, isDropTarget = false,
 }: {
   item: RoutineItemBlock
   label: string
@@ -954,13 +999,20 @@ function BlockCard({
   onRemove: () => void
   suggestedRest: number
   onSuggestedRestChange: (seconds: number) => void
+  /** Un ejercicio se está arrastrando sobre este circuito ahora mismo (entrando o reordenando adentro). */
+  isDropTarget?: boolean
 }) {
   const exercises = [...item.exercises].sort((a, b) => a.order - b.order)
   const setExercises = (list: RoutineExerciseContent[]) => onUpdate({ exercises: renumber(list) })
   const { setNodeRef: setBlockDropRef } = useDroppable({ id: blockDropId(item.id) })
 
   return (
-    <div className="relative border-2 border-primary/30 rounded-xl overflow-hidden bg-primary/5">
+    <div
+      className={cn(
+        "relative border-2 border-primary/30 rounded-xl overflow-hidden bg-primary/5 transition-transform duration-150 ease-out",
+        isDropTarget && "scale-[1.015] border-primary/60 shadow-lg shadow-primary/10",
+      )}
+    >
       <CardCornerActions onRemove={onRemove} />
       <div className="flex flex-wrap items-center gap-2 pl-3 pr-14 py-2.5 min-h-[84px] bg-primary/10">
         <span className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
