@@ -746,7 +746,7 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
     )
   }
   return (
-    <div className="relative z-0 flex flex-wrap items-center gap-x-1.5 gap-y-1 w-fit max-w-[calc(100%-2.25rem)] ml-9 -mt-2.5 pt-2.5 px-2.5 pb-1.5 rounded-b-lg border border-t-0 border-primary/30 bg-primary/10 text-[11px] text-primary">
+    <div className="relative z-0 flex items-center gap-1.5 w-fit max-w-[calc(100%-2.25rem)] ml-9 -mt-2.5 pt-2.5 px-2.5 pb-1.5 rounded-b-lg border border-t-0 border-primary/30 bg-primary/10 text-[11px] text-primary">
       <PauseIcon className="w-3 h-3 shrink-0" />
       <span className="shrink-0 font-medium">{label}</span>
       <input
@@ -754,14 +754,14 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
         min={0}
         value={seconds}
         onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
-        className="w-14 shrink-0 bg-background border border-primary/30 rounded-md px-1.5 py-0.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        className="w-14 bg-background border border-primary/30 rounded-md px-1.5 py-0.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
         aria-label="Segundos de descanso"
       />
       <span className="shrink-0">seg</span>
       <button
         type="button"
         onClick={onClear}
-        className="shrink-0 ml-1 p-0.5 text-primary/60 hover:text-destructive transition-colors cursor-pointer"
+        className="ml-1 p-0.5 text-primary/60 hover:text-destructive transition-colors cursor-pointer"
         aria-label="Quitar descanso"
       >
         <XIcon className="w-3 h-3" />
@@ -1086,7 +1086,6 @@ function BlockCard({
                 </div>
                 <RestRow
                   seconds={ex.restSeconds}
-                  label={i === exercises.length - 1 ? "Descanso al terminar el circuito" : "Descanso"}
                   onAdd={() => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: suggestedRest } : e)))}
                   onChange={(n) => {
                     setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: n } : e)))
