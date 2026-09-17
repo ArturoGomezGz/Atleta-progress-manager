@@ -2,8 +2,8 @@
 
 import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
-import { ShareRoutineButton } from "@/components/share-routine"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
+import { useFullscreenWhileMounted } from "@/lib/fullscreen-mode"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import type { RoutineContent, RoutineExerciseContent, RoutineItemBlock, RoutineItemExercise, RoutineSet } from "@atleta/db/schema"
@@ -21,12 +21,9 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
-  AlertTriangleIcon,
-  CheckIcon,
   ChevronLeftIcon,
   ChevronUpIcon,
   ClockIcon,
-  Loader2Icon,
   GripVerticalIcon,
   InfoIcon,
   MinusIcon,
@@ -38,7 +35,7 @@ import {
   Trash2Icon,
   XIcon,
 } from "lucide-react"
-import Link from "next/link"
+import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import { createContext, use, useCallback, useContext, useEffect, useRef, useState } from "react"
 
@@ -246,13 +243,16 @@ function applyAutoRestOnLastItem(items: Array<RoutineItemExercise | RoutineItemB
 export default function RoutinePage({ params }: { params: Promise<{ teamId: string; routineId: string }> }) {
   const { teamId, routineId } = use(params)
 
+  const router = useRouter()
+  // Modo enfocado, igual que cuando el atleta entrena: sin sidebar ni hamburguesa, la
+  // única salida es el botón "Salir" de la cabecera.
+  useFullscreenWhileMounted(true)
+
   const { data: routineData, refetch } = trpc.routines.get.useQuery({ id: routineId })
   const { data: catalog }              = trpc.exercises.list.useQuery({ teamId })
   const updateContent                  = trpc.routines.updateContent.useMutation({ onSuccess: () => refetch() })
   const renameRoutine                  = trpc.routines.rename.useMutation({ onSuccess: () => refetch() })
   const { data: aiAvailable }          = trpc.routines.aiAvailable.useQuery({ teamId })
-  const { data: teams }                = trpc.teams.list.useQuery()
-  const isCoach                        = teams?.find((t) => t.team.id === teamId)?.role === "coach"
   const utils                          = trpc.useUtils()
 
   const [aiOpen, setAiOpen]     = useState(false)
@@ -270,6 +270,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   const [dirty, setDirty]               = useState(false)
   const [name, setName]                 = useState("")
   const [preview, setPreview]           = useState<ExerciseInfo | null>(null)
+  const [confirmExit, setConfirmExit]   = useState(false)
   // Solo un ejercicio abierto en modo edición a la vez: abrir otro cierra el anterior.
   const [openExerciseId, setOpenExerciseId] = useState<string | null>(null)
   const toggleExercise = useCallback((id: string) => {
@@ -279,6 +280,15 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   const [suggestedRest, setSuggestedRest] = useState(DEFAULT_SUGGESTED_REST_SECONDS)
 
   useEffect(() => { if (routineData) setName(routineData.name) }, [routineData])
+
+  // Cerrar o recargar la pestaña se escapa del botón "Salir": ahí solo queda el aviso
+  // nativo del navegador.
+  useEffect(() => {
+    if (!dirty) return
+    function warn(e: BeforeUnloadEvent) { e.preventDefault() }
+    window.addEventListener("beforeunload", warn)
+    return () => window.removeEventListener("beforeunload", warn)
+  }, [dirty])
 
   const content: RoutineContent = localContent ?? routineData?.content ?? { v: 1, items: [] }
 
@@ -296,11 +306,26 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
   const emptyBlocks = content.items.filter((i) => i.type === "block" && i.exercises.length === 0).length
 
-  function handleSave() {
-    if (emptyBlocks > 0) return
+  // Salida única de la vista: si hay cambios, se pregunta qué hacer con ellos.
+  const backHref = `/teams/${teamId}/plantillas`
+
+  function requestExit() {
+    if (dirty) { setConfirmExit(true); return }
+    router.push(backHref)
+  }
+
+  function saveAndExit() {
     updateContent.mutate({ id: routineId, content }, {
-      onSuccess: () => { setLocalContent(null); setDirty(false) },
+      onSuccess: () => { setLocalContent(null); setDirty(false); router.push(backHref) },
     })
+  }
+
+  function exitWithoutSaving() {
+    setLocalContent(null)
+    setDirty(false)
+    setAiResult(null)
+    setConfirmExit(false)
+    router.push(backHref)
   }
 
   const isEvaluation = routineData?.category === "evaluation"
@@ -418,15 +443,17 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-16">
-      {/* Header */}
+      {/* Header: en esta vista la única salida es este botón, que es donde se decide
+          qué hacer con los cambios. */}
       <div>
-        <Link
-          href={`/teams/${teamId}/plantillas`}
-          className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-2"
+        <button
+          type="button"
+          onClick={requestExit}
+          className="flex items-center gap-1.5 -ml-1 px-1 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors cursor-pointer mb-1"
         >
-          <ChevronLeftIcon className="w-3.5 h-3.5" />
-          Plantillas
-        </Link>
+          <ChevronLeftIcon className="w-4 h-4" />
+          Salir
+        </button>
         <input
           value={name}
           onChange={(e) => setName(e.target.value)}
@@ -442,43 +469,12 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
         />
       </div>
 
-      {/* Barra de estado: se queda pegada arriba al hacer scroll, así el indicador de
-          guardado siempre está a la mano sin tener que aparecer y desaparecer. */}
-      <div className="sticky top-14 lg:top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-2 bg-background/95 backdrop-blur-sm flex items-center justify-between gap-2">
-        <p className="text-xs text-muted-foreground truncate min-w-0">
-          {sorted.length} {sorted.length === 1 ? "bloque" : "bloques"} · toca un ejercicio para editarlo
-        </p>
-        <div className="flex items-center gap-2 shrink-0">
-          {dirty && !updateContent.isPending && (
-            <button
-              type="button"
-              onClick={() => { setLocalContent(null); setDirty(false); setAiResult(null) }}
-              className="text-[11px] text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
-            >
-              Descartar
-            </button>
-          )}
-          <SaveIndicator
-            state={updateContent.isError ? "error" : dirty ? "dirty" : "clean"}
-            blockedReason={
-              dirty && emptyBlocks > 0
-                ? (emptyBlocks === 1 ? "1 circuito vacío" : `${emptyBlocks} circuitos vacíos`)
-                : null
-            }
-            pending={updateContent.isPending}
-            onSave={handleSave}
-          />
-          {isCoach && !isEvaluation && content.items.length > 0 && (
-            <ShareRoutineButton routineId={routineId} routineName={routineData.name} />
-          )}
-        </div>
-      </div>
-
-      {/* IA (experimental, solo equipos habilitados) */}
-      {aiAvailable && !isEvaluation && (aiOpen ? (
+      {/* IA (experimental): solo tiene sentido para arrancar una rutina vacía, así que
+          en cuanto hay al menos un ejercicio deja de ofrecerse. */}
+      {aiAvailable && !isEvaluation && content.items.length === 0 && (aiOpen ? (
         <AiRoutineGenerator
           teamId={teamId}
-          replacesContent={content.items.length > 0}
+          replacesContent={false}
           onGenerated={applyAiResult}
           onClose={() => setAiOpen(false)}
         />
@@ -506,7 +502,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
               Ejercicios nuevos añadidos al catálogo del equipo, sin video: {aiResult.createdExercises.map((e) => e.name).join(", ")}. Revísalos en Mis ejercicios.
             </p>
           )}
-          <p className="text-[11px] text-muted-foreground pl-6">Es una propuesta: ajústala y pulsa <strong>Guardar cambios</strong> para conservarla.</p>
+          <p className="text-[11px] text-muted-foreground pl-6">Es una propuesta: ajústala a tu gusto y, al salir, elige <strong>Guardar</strong> para conservarla.</p>
         </div>
       )}
 
@@ -595,6 +591,52 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           </button>
         )}
       </div>
+
+      {confirmExit && (
+        <div
+          className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
+          onClick={() => setConfirmExit(false)}
+        >
+          <div
+            className="w-full max-w-sm rounded-2xl border border-border bg-card p-5 space-y-4 shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="confirm-exit-title"
+          >
+            <div className="space-y-1">
+              <p id="confirm-exit-title" className="text-base font-semibold">¿Guardar los cambios?</p>
+              {emptyBlocks > 0 && (
+                <p className="text-xs text-destructive">
+                  {emptyBlocks === 1 ? "Hay un circuito vacío" : `Hay ${emptyBlocks} circuitos vacíos`}: agrega
+                  ejercicios o elimínalos para poder guardar.
+                </p>
+              )}
+              {updateContent.isError && (
+                <p className="text-xs text-destructive">No se pudo guardar. Inténtalo de nuevo.</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={exitWithoutSaving}
+                disabled={updateContent.isPending}
+                className="flex-1 py-2.5 rounded-xl border border-border text-sm text-muted-foreground hover:text-foreground disabled:opacity-50 cursor-pointer transition-colors"
+              >
+                No guardar
+              </button>
+              <button
+                type="button"
+                onClick={saveAndExit}
+                disabled={updateContent.isPending || emptyBlocks > 0}
+                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 hover:bg-primary/90 cursor-pointer transition-colors"
+              >
+                {updateContent.isPending ? "Guardando…" : "Guardar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {preview?.youtubeVideoId && (
         <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
@@ -778,63 +820,6 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
         <XIcon className="w-3 h-3" />
       </button>
     </div>
-  )
-}
-
-// ─── Indicador de guardado ────────────────────────────────────────────────────
-// Ancla fija en la cabecera: siempre está, y cambia de estado en vez de aparecer y
-// desaparecer. Cuando hay cambios pendientes es un botón que guarda.
-
-function SaveIndicator({ state, blockedReason, pending, onSave }: {
-  state: "clean" | "dirty" | "error"
-  /** Si no es null, no se puede guardar todavía (p. ej. circuitos vacíos). */
-  blockedReason: string | null
-  pending: boolean
-  onSave: () => void
-}) {
-  const base = "inline-flex items-center gap-1.5 h-8 px-2.5 rounded-full border text-[11px] font-medium shrink-0 transition-colors"
-
-  if (pending) {
-    return (
-      <span role="status" aria-live="polite" className={cn(base, "border-border bg-muted/40 text-muted-foreground")}>
-        <Loader2Icon className="w-3.5 h-3.5 animate-spin" /> Guardando…
-      </span>
-    )
-  }
-
-  if (blockedReason) {
-    return (
-      <span role="status" aria-live="polite" className={cn(base, "border-destructive/40 bg-destructive/10 text-destructive")}>
-        <AlertTriangleIcon className="w-3.5 h-3.5" /> {blockedReason}
-      </span>
-    )
-  }
-
-  if (state === "error") {
-    return (
-      <button type="button" onClick={onSave} className={cn(base, "border-destructive/40 bg-destructive/10 text-destructive hover:bg-destructive/20 cursor-pointer")}>
-        <AlertTriangleIcon className="w-3.5 h-3.5" /> No se guardó · Reintentar
-      </button>
-    )
-  }
-
-  if (state === "dirty") {
-    return (
-      <button
-        type="button"
-        onClick={onSave}
-        className={cn(base, "border-amber-500/40 bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 cursor-pointer")}
-      >
-        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse motion-reduce:animate-none" />
-        Guardar cambios
-      </button>
-    )
-  }
-
-  return (
-    <span role="status" aria-live="polite" className={cn(base, "border-transparent bg-muted/40 text-muted-foreground")}>
-      <CheckIcon className="w-3.5 h-3.5" /> Guardado
-    </span>
   )
 }
 
