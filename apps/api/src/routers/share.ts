@@ -584,8 +584,9 @@ export const shareRouter = router({
       return db.transaction(async (tx) => {
         const target = await resolveClaimTeam(tx, userId, ctx.session.user.name, share.teamId)
 
-        // Ya la tiene pendiente o en curso por este mismo enlace: no duplicamos,
-        // solo la volvemos a mostrar.
+        // Solo reutilizamos una sesión que siga pendiente. Una que ya empezó no
+        // cuenta: quien pide "empezar más tarde" espera ver la rutina pendiente,
+        // no que la petición se la coma la que dejó a medias.
         const [existing] = await tx
           .select({ id: trainingSession.id })
           .from(athleteSession)
@@ -593,7 +594,7 @@ export const shareRouter = router({
           .where(
             and(
               eq(athleteSession.athleteId, userId),
-              inArray(athleteSession.status, ["scheduled", "active"]),
+              eq(athleteSession.status, "scheduled"),
               eq(trainingSession.routineId, share.routineId),
               eq(trainingSession.teamId, target.teamId),
             ),
