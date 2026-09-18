@@ -4,7 +4,7 @@ import { ExerciseFinderBar, FinderEmptyResults, useExerciseFinder, type FinderEx
 import { YouTubeThumb } from "@/components/youtube-player"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, XIcon } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
 
 // Selector de ejercicios para armar una plantilla. Antes era un dropdown angosto
@@ -63,9 +63,11 @@ type Props = {
   value: string
   onChange: (id: string) => void
   placeholder?: string
+  /** Reemplaza el botón por defecto (útil para un trigger con otro aspecto, como una tarjeta placeholder). Recibe la función que abre la hoja. */
+  trigger?: (open: () => void) => ReactNode
 }
 
-export function ExercisePicker({ exercises, value, onChange, placeholder = "Seleccionar ejercicio..." }: Props) {
+export function ExercisePicker({ exercises, value, onChange, placeholder = "Seleccionar ejercicio...", trigger }: Props) {
   const [open, setOpen] = useState(false)
   const selected = exercises.find((e) => e.id === value)
 
@@ -76,31 +78,33 @@ export function ExercisePicker({ exercises, value, onChange, placeholder = "Sele
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(
-          "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border text-sm transition-all duration-200 cursor-pointer",
-          selected ? "border-primary/30 bg-background hover:border-primary/50" : "border-border bg-background hover:border-muted-foreground/40",
-        )}
-      >
-        <span className="flex items-center gap-2 min-w-0">
-          {selected ? (
-            <>
-              <span className="font-medium text-foreground truncate">{selected.name}</span>
-              <span
-                className="shrink-0 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded"
-                style={{ color: "hsl(var(--primary))", background: "hsl(var(--primary) / 0.12)" }}
-              >
-                {CATEGORY_LABELS[selected.category]}
-              </span>
-            </>
-          ) : (
-            <span className="text-muted-foreground">{placeholder}</span>
+      {trigger ? trigger(() => setOpen(true)) : (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={cn(
+            "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg border text-sm transition-all duration-200 cursor-pointer",
+            selected ? "border-primary/30 bg-background hover:border-primary/50" : "border-border bg-background hover:border-muted-foreground/40",
           )}
-        </span>
-        <ChevronDownIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
-      </button>
+        >
+          <span className="flex items-center gap-2 min-w-0">
+            {selected ? (
+              <>
+                <span className="font-medium text-foreground truncate">{selected.name}</span>
+                <span
+                  className="shrink-0 text-[9px] font-bold uppercase tracking-widest px-1.5 py-0.5 rounded"
+                  style={{ color: "hsl(var(--primary))", background: "hsl(var(--primary) / 0.12)" }}
+                >
+                  {CATEGORY_LABELS[selected.category]}
+                </span>
+              </>
+            ) : (
+              <span className="text-muted-foreground">{placeholder}</span>
+            )}
+          </span>
+          <ChevronDownIcon className="w-4 h-4 shrink-0 text-muted-foreground" />
+        </button>
+      )}
 
       {open && (
         <ExercisePickerSheet

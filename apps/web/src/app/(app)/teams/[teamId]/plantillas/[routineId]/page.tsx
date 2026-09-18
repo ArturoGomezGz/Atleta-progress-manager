@@ -21,6 +21,7 @@ import {
 import { SortableContext, arrayMove, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable"
 import { CSS } from "@dnd-kit/utilities"
 import {
+  ChevronDownIcon,
   ChevronLeftIcon,
   ChevronUpIcon,
   ClockIcon,
@@ -511,6 +512,9 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       {/* Items */}
       <DndContext sensors={dndSensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
         <RootDropZone>
+          {/* Solo tiene sentido marcar "por dónde empieza" cuando ya hay algo que recorrer;
+              de paso, le da aire a la parte de arriba en vez de arrancar pegado al primer ejercicio. */}
+          {sorted.length > 0 && <RoutineStartMarker />}
           <SortableContext items={sorted.map((i) => i.id)} strategy={verticalListSortingStrategy}>
             {sorted.map((item, idx) => {
               const moveProps = {
@@ -579,19 +583,13 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       </DndContext>
 
       {/* Add */}
-      <div className="space-y-2">
+      <div className="flex flex-wrap items-stretch gap-3">
         {available.length > 0 && (
-          <AddExerciseRow exercises={available} onAdd={addExercise} placeholder="Agregar ejercicio…" />
+          <div className="flex-1 min-w-[220px]">
+            <AddExerciseRow exercises={available} onAdd={addExercise} placeholder="Agregar ejercicio…" />
+          </div>
         )}
-        {!isEvaluation && (
-          <button
-            type="button"
-            onClick={addBlock}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg border border-dashed border-primary/40 text-sm text-primary hover:bg-primary/5 cursor-pointer transition-colors"
-          >
-            <RepeatIcon className="w-4 h-4" /> Agregar circuito (varios ejercicios con vueltas)
-          </button>
-        )}
+        {!isEvaluation && <AddCircuitPlaceholder onClick={addBlock} />}
       </div>
 
       {confirmExit && (
@@ -658,6 +656,11 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 }
 
 // ─── Add exercise row ─────────────────────────────────────────────────────────
+//
+// En vez de un botón de texto, el trigger es una tarjeta "fantasma" con el mismo
+// tamaño y forma que un ExerciseCard cerrado: una simulación de la tarjeta que se
+// va a crear, con borde punteado que parpadea para que se lea como un espacio
+// vacío a llenar y no como un ejercicio más de la lista.
 
 function AddExerciseRow({ exercises, onAdd, placeholder }: { exercises: PickerExercise[]; onAdd: (id: string) => void; placeholder: string }) {
   const [value, setValue] = useState("")
@@ -667,7 +670,50 @@ function AddExerciseRow({ exercises, onAdd, placeholder }: { exercises: PickerEx
       value={value}
       onChange={(id) => { onAdd(id); setValue("") }}
       placeholder={placeholder}
+      trigger={(open) => <AddExercisePlaceholder onClick={open} label={placeholder} />}
     />
+  )
+}
+
+function AddExercisePlaceholder({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      className="w-full h-full min-h-[84px] flex items-center justify-center gap-2.5 rounded-xl border-2 border-dashed bg-muted/5 text-muted-foreground hover:text-primary hover:bg-primary/5 transition-colors cursor-pointer animate-border-pulse"
+    >
+      <span className="w-7 h-7 rounded-full border-2 border-current/40 flex items-center justify-center shrink-0">
+        <PlusIcon className="w-4 h-4" />
+      </span>
+      <span className="text-sm font-medium">Agregar ejercicio</span>
+    </button>
+  )
+}
+
+/** Igual espíritu que el placeholder de ejercicio, pero como un cuadrado chico: un
+    circuito no es "un ejercicio más" así que no debe simularse como una tarjeta grande. */
+function AddCircuitPlaceholder({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label="Agregar circuito (varios ejercicios con vueltas)"
+      className="w-24 min-h-[84px] shrink-0 flex flex-col items-center justify-center gap-1.5 rounded-xl border-2 border-dashed bg-primary/5 text-primary hover:bg-primary/10 transition-colors cursor-pointer animate-border-pulse"
+    >
+      <RepeatIcon className="w-4 h-4" />
+      <span className="text-[11px] font-medium leading-tight text-center px-1">Agregar circuito</span>
+    </button>
+  )
+}
+
+/** Marca visualmente dónde arranca la rutina y que el orden va de arriba hacia abajo. */
+function RoutineStartMarker() {
+  return (
+    <div className="flex flex-col items-center gap-1 py-1 text-muted-foreground/50">
+      <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Inicio de la rutina</span>
+      <ChevronDownIcon className="w-4 h-4" />
+    </div>
   )
 }
 
