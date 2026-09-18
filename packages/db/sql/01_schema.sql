@@ -3,7 +3,7 @@
 -- Generado por packages/db/scripts/build-sql.ts — no editar a mano.
 -- Idempotente: seguro de re-ejecutar.
 -- ═══════════════════════════════════════════════════════════════════════════
--- Incluye las migraciones: 0000_youtube_baseline
+-- Incluye las migraciones: 0000_youtube_baseline, 0001_happy_blockbuster, 0002_flat_mongu, 0003_big_wendell_vaughn
 -- La API también corre el migrador de Drizzle al arrancar; como aquí se registra el hash,
 -- no intentará volver a crear las tablas.
 
@@ -307,5 +307,90 @@ BEGIN
   EXECUTE $stmt$CREATE UNIQUE INDEX "exercise_name_user_unique" ON "exercise" USING btree ("name","owner_user_id") WHERE "owner_user_id" IS NOT NULL$stmt$;
   EXECUTE $stmt$CREATE UNIQUE INDEX "exercise_name_team_unique" ON "exercise" USING btree ("name","owner_team_id") WHERE "owner_team_id" IS NOT NULL$stmt$;
   INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('c98616675d4be33c01de7b48258700961d579b5142e40cb57f1178149c0108c6', 1789240808304);
+END
+$migration$;
+
+-- Migración 0001_happy_blockbuster
+DO $migration$
+BEGIN
+  IF EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE hash = '4dd0917bb419e1636ed19c9d659a53fbfc0ea04125a1c3ae3844424793c0fd10') THEN
+    RAISE NOTICE 'Migración 0001_happy_blockbuster ya aplicada, se omite';
+    RETURN;
+  END IF;
+  EXECUTE $stmt$ALTER TABLE "user_preferences" ADD COLUMN "rest_auto_continue" boolean DEFAULT true NOT NULL$stmt$;
+  INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('4dd0917bb419e1636ed19c9d659a53fbfc0ea04125a1c3ae3844424793c0fd10', 1789417995465);
+END
+$migration$;
+
+-- Migración 0002_flat_mongu
+DO $migration$
+BEGIN
+  IF EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE hash = 'fa6aa76c11cbeee93f22e9f03b01c14a5c0dad4127bc64c00d360c4b0bda005f') THEN
+    RAISE NOTICE 'Migración 0002_flat_mongu ya aplicada, se omite';
+    RETURN;
+  END IF;
+  EXECUTE $stmt$ALTER TABLE "team_member" ADD COLUMN "self_athlete" boolean DEFAULT false NOT NULL$stmt$;
+  INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('fa6aa76c11cbeee93f22e9f03b01c14a5c0dad4127bc64c00d360c4b0bda005f', 1789435184618);
+END
+$migration$;
+
+-- Migración 0003_big_wendell_vaughn
+DO $migration$
+BEGIN
+  IF EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE hash = '49447fc82f00d83939bcadf0a4538a70e0bf9a6b26f7ea73de73b728ecb0f64e') THEN
+    RAISE NOTICE 'Migración 0003_big_wendell_vaughn ya aplicada, se omite';
+    RETURN;
+  END IF;
+  EXECUTE $stmt$CREATE TYPE "public"."guest_workout_status" AS ENUM('active', 'completed', 'claimed')$stmt$;
+  EXECUTE $stmt$CREATE TABLE "guest_set_record" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"guest_workout_id" uuid NOT NULL,
+	"exercise_id" uuid NOT NULL,
+	"exercise_order" integer NOT NULL,
+	"set_number" integer NOT NULL,
+	"reps" integer NOT NULL,
+	"weight_lbs" numeric(6, 2) DEFAULT '0' NOT NULL,
+	"recorded_at" timestamp with time zone DEFAULT now() NOT NULL
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "guest_workout" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"share_id" uuid NOT NULL,
+	"routine_id" uuid,
+	"team_id" uuid NOT NULL,
+	"token" text NOT NULL,
+	"routine_name" text NOT NULL,
+	"content" jsonb NOT NULL,
+	"status" "guest_workout_status" DEFAULT 'active' NOT NULL,
+	"started_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"completed_at" timestamp with time zone,
+	"claimed_by" text,
+	"claimed_at" timestamp with time zone,
+	"claimed_session_id" uuid,
+	CONSTRAINT "guest_workout_token_unique" UNIQUE("token")
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "routine_share" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"routine_id" uuid NOT NULL,
+	"team_id" uuid NOT NULL,
+	"code" text NOT NULL,
+	"created_by" text NOT NULL,
+	"revoked_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "routine_share_code_unique" UNIQUE("code")
+)$stmt$;
+  EXECUTE $stmt$ALTER TABLE "guest_set_record" ADD CONSTRAINT "guest_set_record_guest_workout_id_guest_workout_id_fk" FOREIGN KEY ("guest_workout_id") REFERENCES "public"."guest_workout"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "guest_set_record" ADD CONSTRAINT "guest_set_record_exercise_id_exercise_id_fk" FOREIGN KEY ("exercise_id") REFERENCES "public"."exercise"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "guest_workout" ADD CONSTRAINT "guest_workout_share_id_routine_share_id_fk" FOREIGN KEY ("share_id") REFERENCES "public"."routine_share"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "guest_workout" ADD CONSTRAINT "guest_workout_routine_id_routine_id_fk" FOREIGN KEY ("routine_id") REFERENCES "public"."routine"("id") ON DELETE set null ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "guest_workout" ADD CONSTRAINT "guest_workout_team_id_team_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."team"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "guest_workout" ADD CONSTRAINT "guest_workout_claimed_by_user_id_fk" FOREIGN KEY ("claimed_by") REFERENCES "public"."user"("id") ON DELETE set null ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "guest_workout" ADD CONSTRAINT "guest_workout_claimed_session_id_training_session_id_fk" FOREIGN KEY ("claimed_session_id") REFERENCES "public"."training_session"("id") ON DELETE set null ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "routine_share" ADD CONSTRAINT "routine_share_routine_id_routine_id_fk" FOREIGN KEY ("routine_id") REFERENCES "public"."routine"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "routine_share" ADD CONSTRAINT "routine_share_team_id_team_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."team"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "routine_share" ADD CONSTRAINT "routine_share_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$CREATE INDEX "guest_set_record_workout_idx" ON "guest_set_record" USING btree ("guest_workout_id")$stmt$;
+  EXECUTE $stmt$CREATE INDEX "guest_workout_share_idx" ON "guest_workout" USING btree ("share_id")$stmt$;
+  EXECUTE $stmt$CREATE INDEX "routine_share_routine_idx" ON "routine_share" USING btree ("routine_id")$stmt$;
+  INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('49447fc82f00d83939bcadf0a4538a70e0bf9a6b26f7ea73de73b728ecb0f64e', 1789449083879);
 END
 $migration$;

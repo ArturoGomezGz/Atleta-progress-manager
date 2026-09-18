@@ -98,10 +98,14 @@ for f in packages/db/sql/0*.sql; do psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f "
 | `arturogomezgz04@gmail.com` | `admin` | Coach (arma rutinas con los ejercicios públicos) |
 | `tester@gmail.com` | `12345678` | Atleta |
 | `abuela@gmail.com` | `12345678` | Atleta (perfil de pruebas de accesibilidad) |
+| `nuevo.coach@atleta.com` | `12345678` | Coach — para probar la bienvenida a usuarios nuevos |
+| `nuevo.atleta@atleta.com` | `12345678` | Atleta — para probar la bienvenida a usuarios nuevos |
 
 > Si la base se sembró antes con otra cuenta como dueña de los ejercicios (el coach o `calixpert@gmail.com`), `04_exercises.sql` los transfiere a `coach@atleta.com` conservando sus IDs. Si existe la cuenta `calixpert@gmail.com`, `03_accounts.sql` la renombra a `coach@atleta.com`.
 
 > Si una base anterior tenía la cuenta `chinita@gmail.com`, `03_accounts.sql` la renombra a `tester@gmail.com`.
+
+> **`nuevo.coach@atleta.com` / `nuevo.atleta@atleta.com`:** `03_accounts.sql` corre en cada arranque de la API cuando `SEED_DEMO_DATA=true`, y para estas dos cuentas además borra su fila de `user_preferences` cada vez. Así siempre quedan como si nunca hubieran entrado a la app — sirven para ver la bienvenida a usuarios nuevos (ver `docs/onboarding-bienvenida.md`) las veces que haga falta en un PR environment, sin tener que registrar una cuenta nueva cada vez. No las uses para probar nada que dependa de preferencias persistentes.
 
 Alternativa sin consola SQL: con `SEED_DEMO_DATA=true` la API ejecuta el migrador de Drizzle + los scripts 02–04 al arrancar.
 

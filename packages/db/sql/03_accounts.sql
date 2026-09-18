@@ -67,4 +67,36 @@ INSERT INTO "team_member" ("team_id", "user_id", "role")
   SELECT '09ec5433-f03f-5a98-aad6-6d57e97e4d18', u."id", 'athlete' FROM "user" u
   WHERE u."email" = 'abuela@gmail.com'
     AND NOT EXISTS (SELECT 1 FROM "team_member" tm WHERE tm."team_id" = '09ec5433-f03f-5a98-aad6-6d57e97e4d18' AND tm."user_id" = u."id");
+
+-- Coach Nuevo <nuevo.coach@atleta.com> · contraseña: 12345678 · rol: coach
+INSERT INTO "user" ("id", "name", "email", "email_verified", "created_at", "updated_at")
+  VALUES ('be133407-26b9-523f-a281-f4b42543f20f', 'Coach Nuevo', 'nuevo.coach@atleta.com', true, now(), now())
+  ON CONFLICT ("email") DO UPDATE SET "name" = EXCLUDED."name", "email_verified" = true, "updated_at" = now();
+DELETE FROM "account" WHERE "provider_id" = 'credential'
+  AND "user_id" = (SELECT "id" FROM "user" WHERE "email" = 'nuevo.coach@atleta.com');
+INSERT INTO "account" ("id", "account_id", "provider_id", "user_id", "password", "created_at", "updated_at")
+  SELECT '028f45f6-ce27-5c5b-ad6c-073e47509c58', u."id", 'credential', u."id", '86ba2140bf8574685f33a5b95ff41866:a1da487bf55f5646bf48446da47ba9d7e0187fd6072cde084a3395ab27b33a4c3f4eb50384cea52c0211bce532c85c5a81f462c84290947e4c20c5ef8af13077', now(), now()
+  FROM "user" u WHERE u."email" = 'nuevo.coach@atleta.com';
+INSERT INTO "team_member" ("team_id", "user_id", "role")
+  SELECT '09ec5433-f03f-5a98-aad6-6d57e97e4d18', u."id", 'coach' FROM "user" u
+  WHERE u."email" = 'nuevo.coach@atleta.com'
+    AND NOT EXISTS (SELECT 1 FROM "team_member" tm WHERE tm."team_id" = '09ec5433-f03f-5a98-aad6-6d57e97e4d18' AND tm."user_id" = u."id");
+-- Se reinicia en cada seed: esta cuenta siempre arranca como si nunca hubiera entrado a la app
+DELETE FROM "user_preferences" WHERE "user_id" = (SELECT "id" FROM "user" WHERE "email" = 'nuevo.coach@atleta.com');
+
+-- Atleta Nuevo <nuevo.atleta@atleta.com> · contraseña: 12345678 · rol: athlete
+INSERT INTO "user" ("id", "name", "email", "email_verified", "created_at", "updated_at")
+  VALUES ('beecb7f6-ddbd-5aa0-ab37-217ee0be1c5c', 'Atleta Nuevo', 'nuevo.atleta@atleta.com', true, now(), now())
+  ON CONFLICT ("email") DO UPDATE SET "name" = EXCLUDED."name", "email_verified" = true, "updated_at" = now();
+DELETE FROM "account" WHERE "provider_id" = 'credential'
+  AND "user_id" = (SELECT "id" FROM "user" WHERE "email" = 'nuevo.atleta@atleta.com');
+INSERT INTO "account" ("id", "account_id", "provider_id", "user_id", "password", "created_at", "updated_at")
+  SELECT '8b7857d6-c3e2-5e1f-a6ff-1a0403ceb607', u."id", 'credential', u."id", 'd26e6fb6f88f335f905143bcc3b5094d:5913aa7144918749b2c934fe3e7adc85b5ff6efc7cd0620637c28f7d417217eb2dffed7e0da45e7a658629663f6c59f918e7b2f83d71fe0858c8bc9a62dba12f', now(), now()
+  FROM "user" u WHERE u."email" = 'nuevo.atleta@atleta.com';
+INSERT INTO "team_member" ("team_id", "user_id", "role")
+  SELECT '09ec5433-f03f-5a98-aad6-6d57e97e4d18', u."id", 'athlete' FROM "user" u
+  WHERE u."email" = 'nuevo.atleta@atleta.com'
+    AND NOT EXISTS (SELECT 1 FROM "team_member" tm WHERE tm."team_id" = '09ec5433-f03f-5a98-aad6-6d57e97e4d18' AND tm."user_id" = u."id");
+-- Se reinicia en cada seed: esta cuenta siempre arranca como si nunca hubiera entrado a la app
+DELETE FROM "user_preferences" WHERE "user_id" = (SELECT "id" FROM "user" WHERE "email" = 'nuevo.atleta@atleta.com');
 COMMIT;

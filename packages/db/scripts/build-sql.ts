@@ -139,7 +139,16 @@ function buildCatalogs(): string {
 
 export const TEAM = { id: stableUuid("team:neo"), name: "Neo", maxAthletes: 50, maxCoaches: 10 }
 
-type SeedAccount = { email: string; name: string; password: string; role: "coach" | "athlete" | null }
+type SeedAccount = {
+  email: string
+  name: string
+  password: string
+  role: "coach" | "athlete" | null
+  // El seed corre en cada arranque de la API (SEED_DEMO_DATA=true), así que estas cuentas
+  // vuelven a "no ha visto la bienvenida" cada vez — sirven para probar el onboarding de
+  // usuarios nuevos repetidamente en un PR environment sin tener que registrar una cuenta.
+  resetOnboarding?: boolean
+}
 
 export const ACCOUNTS: SeedAccount[] = [
   // Cuenta del sistema: publica el catálogo oficial de ejercicios. No pertenece a ningún equipo,
@@ -148,6 +157,9 @@ export const ACCOUNTS: SeedAccount[] = [
   { email: "arturogomezgz04@gmail.com", name: "Arturo Gómez",  password: "admin",    role: "coach" },
   { email: "tester@gmail.com",          name: "Tester",        password: "12345678", role: "athlete" },
   { email: "abuela@gmail.com",          name: "Rosa Martínez", password: "12345678", role: "athlete" },
+  // Cuentas dedicadas a probar la bienvenida a usuarios nuevos (ver docs/onboarding-bienvenida.md).
+  { email: "nuevo.coach@atleta.com",  name: "Coach Nuevo",  password: "12345678", role: "coach",   resetOnboarding: true },
+  { email: "nuevo.atleta@atleta.com", name: "Atleta Nuevo", password: "12345678", role: "athlete", resetOnboarding: true },
 ]
 
 export const EXERCISE_OWNER_EMAIL = "coach@atleta.com"
@@ -186,7 +198,9 @@ INSERT INTO "account" ("id", "account_id", "provider_id", "user_id", "password",
 INSERT INTO "team_member" ("team_id", "user_id", "role")
   SELECT '${TEAM.id}', u."id", '${a.role}' FROM "user" u
   WHERE u."email" = ${q(a.email)}
-    AND NOT EXISTS (SELECT 1 FROM "team_member" tm WHERE tm."team_id" = '${TEAM.id}' AND tm."user_id" = u."id");` : ""}`)
+    AND NOT EXISTS (SELECT 1 FROM "team_member" tm WHERE tm."team_id" = '${TEAM.id}' AND tm."user_id" = u."id");` : ""}${a.resetOnboarding ? `
+-- Se reinicia en cada seed: esta cuenta siempre arranca como si nunca hubiera entrado a la app
+DELETE FROM "user_preferences" WHERE "user_id" = (SELECT "id" FROM "user" WHERE "email" = ${q(a.email)});` : ""}`)
   }
 
   return header("03 · Cuentas de prueba y equipo Neo", `BEGIN;\n${lines.join("\n")}\nCOMMIT;`)
