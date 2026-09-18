@@ -26,6 +26,15 @@
   --radius-lg: var(--radius);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
   --font-heading: var(--font-barlow-condensed), var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --animate-border-pulse: border-pulse 2s ease-in-out infinite;
+}
+
+/* Parpadeo de borde para tarjetas "fantasma" (placeholders de agregar ejercicio/circuito):
+   solo el color del borde late, así el ícono y el texto de adentro no pierden legibilidad
+   como pasaría con animate-pulse (que anima la opacidad de todo el elemento). */
+@keyframes border-pulse {
+  0%, 100% { border-color: hsl(var(--muted-foreground) / 0.25); }
+  50%      { border-color: hsl(var(--primary) / 0.55); }
 }
 
 @layer base {

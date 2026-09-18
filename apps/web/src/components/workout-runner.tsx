@@ -8,6 +8,7 @@
 // final, para que el invitado reciba la invitación a crear su cuenta.
 
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
+import { useFullscreenWhileMounted } from "@/lib/fullscreen-mode"
 import { cn } from "@/lib/utils"
 import { describeTarget, explainTempo, formatDuration, isTimeTarget, summarizeTargets } from "@/lib/workout-text"
 import {
@@ -494,6 +495,10 @@ export function WorkoutRunner({
   exit?: { href: string; label: string }
   withSidebar?: boolean
 }) {
+  // Mientras se está entrenando, la pantalla debe ocupar todo el espacio: sin sidebar
+  // ni topbar de la app, así la única salida es el propio botón de salir (`exit`).
+  useFullscreenWhileMounted(true)
+
   const [rest, setRest] = useState<{ left: number; total: number; overtime: number | null } | null>(null)
   const [showOverview, setShowOverview] = useState(false)
   const [video, setVideo] = useState<WorkoutExercise | null>(null)

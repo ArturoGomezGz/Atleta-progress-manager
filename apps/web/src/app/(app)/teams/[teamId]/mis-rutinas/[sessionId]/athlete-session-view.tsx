@@ -68,6 +68,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
         progress={typed}
         rms={rms ?? {}}
         exit={{ href: back.href, label: "Salir" }}
+        withSidebar={false}
         onRecordSet={async ({ exercise, target, reps, weightLbs }) => {
           await recordSet.mutateAsync({
             sessionId,
