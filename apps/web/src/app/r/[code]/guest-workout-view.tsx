@@ -50,8 +50,12 @@ export function GuestWorkoutView({ code }: { code: string }) {
   // "Empezar más tarde": si ya tiene cuenta, la rutina queda pendiente en "Mis
   // rutinas" sin necesidad de entrenarla como invitado; si no, primero inicia
   // sesión y desde ahí puede volver a decidir.
+  const utils = trpc.useUtils()
   const savePending = trpc.share.saveAsPending.useMutation({
-    onSuccess: ({ teamId }) => router.push(`/teams/${teamId}/mis-rutinas`),
+    onSuccess: async ({ teamId }) => {
+      await utils.sessions.myList.invalidate({ teamId })
+      router.push(`/teams/${teamId}/mis-rutinas`)
+    },
   })
   function startLater() {
     if (!authSession) {
