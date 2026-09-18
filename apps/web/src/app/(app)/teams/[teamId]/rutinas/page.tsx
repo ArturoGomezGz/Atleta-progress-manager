@@ -316,8 +316,8 @@ function SesionesContent({ teamId }: { teamId: string }) {
       )}
 
       {active.length === 0 && scheduled.length === 0 && shares.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl gap-2 text-center">
-          <p className="text-sm text-muted-foreground">
+        <div className="flex flex-col items-center justify-center py-10 px-4 border border-dashed border-border rounded-xl gap-2 text-center">
+          <p className="text-sm text-muted-foreground break-words">
             {selectedAthleteName
               ? `${selectedAthleteName} no tiene sesiones activas o programadas.`
               : "Sin sesiones activas o programadas."}
