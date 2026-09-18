@@ -1,8 +1,9 @@
 "use client"
 
 import { signOut, useSession } from "@/lib/auth"
+import { reopenOnboarding } from "@/lib/onboarding-bus"
 import { useTheme } from "@/lib/theme-provider"
-import { LogOutIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
+import { LightbulbIcon, LogOutIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
@@ -84,6 +85,14 @@ export function AccountMenu() {
                 ))}
               </div>
             </div>
+
+            <button
+              onClick={() => { reopenOnboarding(); setOpen(false) }}
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer border-b border-border"
+            >
+              <LightbulbIcon className="w-4 h-4" />
+              Cómo funciona Atleta
+            </button>
 
             <button
               onClick={handleSignOut}

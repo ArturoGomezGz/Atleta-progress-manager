@@ -13,7 +13,7 @@ export const preferencesRouter = router({
       .where(eq(userPreferences.userId, userId))
       .limit(1)
 
-    return prefs ?? { userId, restTimerEnabled: false, restTimerSeconds: 90, restAutoContinue: true }
+    return prefs ?? { userId, restTimerEnabled: false, restTimerSeconds: 90, restAutoContinue: true, onboardingSeenAt: null }
   }),
 
   update: protectedProcedure
@@ -34,4 +34,19 @@ export const preferencesRouter = router({
         .returning()
       return result
     }),
+
+  // Procedimiento propio en vez de reutilizar `update`: ese usa `onConflictDoUpdate({ set: input })`,
+  // que con un `input` sin este campo no lo tocaría en el UPDATE de la rama de conflicto.
+  markOnboardingSeen: protectedProcedure.mutation(async ({ ctx }) => {
+    const userId = ctx.session.user.id
+    const onboardingSeenAt = new Date()
+    await db
+      .insert(userPreferences)
+      .values({ userId, onboardingSeenAt })
+      .onConflictDoUpdate({
+        target: userPreferences.userId,
+        set: { onboardingSeenAt },
+      })
+    return { onboardingSeenAt }
+  }),
 })
