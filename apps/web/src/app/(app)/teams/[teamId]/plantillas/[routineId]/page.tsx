@@ -975,7 +975,7 @@ function ExerciseCard({
       <div
         id={`editor-${item.id}`}
         className={cn(
-          "grid transition-[grid-template-rows] duration-200 ease-out motion-reduce:transition-none",
+          "grid transition-[grid-template-rows] duration-[350ms] ease-out motion-reduce:transition-none",
           expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
