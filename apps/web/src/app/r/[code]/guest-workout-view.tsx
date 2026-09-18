@@ -17,9 +17,10 @@ import { trpc } from "@/lib/trpc/client"
 import { CheckCircleIcon, DumbbellIcon, LoaderCircleIcon, SparklesIcon, UserPlusIcon } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 
 export function GuestWorkoutView({ code }: { code: string }) {
+  const router = useRouter()
   const { data: authSession, isPending: sessionLoading } = useSession()
   const [token, setToken] = useState<string | null>(null)
   const [restored, setRestored] = useState(false)
@@ -31,14 +32,7 @@ export function GuestWorkoutView({ code }: { code: string }) {
     setRestored(true)
   }, [code])
 
-  // Ya tiene cuenta y no venía retomando un entrenamiento de invitado a medias:
-  // nos saltamos todo el flujo anónimo y la rutina queda pendiente en su cuenta.
-  const skipGuestFlow = restored && !sessionLoading && !!authSession && !token
-
-  const preview = trpc.share.preview.useQuery(
-    { code },
-    { enabled: restored && !token && !skipGuestFlow, retry: false },
-  )
+  const preview = trpc.share.preview.useQuery({ code }, { enabled: restored && !token, retry: false })
   const workout = trpc.share.workout.useQuery(
     { token: token ?? "" },
     { enabled: !!token, retry: false },
@@ -52,6 +46,20 @@ export function GuestWorkoutView({ code }: { code: string }) {
   })
   const recordSet = trpc.share.recordSet.useMutation()
   const complete = trpc.share.complete.useMutation()
+
+  // "Empezar más tarde": si ya tiene cuenta, la rutina queda pendiente en "Mis
+  // rutinas" sin necesidad de entrenarla como invitado; si no, primero inicia
+  // sesión y desde ahí puede volver a decidir.
+  const savePending = trpc.share.saveAsPending.useMutation({
+    onSuccess: ({ teamId }) => router.push(`/teams/${teamId}/mis-rutinas`),
+  })
+  function startLater() {
+    if (!authSession) {
+      router.push(`/login?redirect=${encodeURIComponent(`/r/${code}`)}`)
+      return
+    }
+    savePending.mutate({ code })
+  }
 
   // Solo descartamos el token si el servidor dice que ese entrenamiento ya no
   // existe. Ante un fallo de red lo conservamos: es lo único que guarda la
@@ -67,10 +75,6 @@ export function GuestWorkoutView({ code }: { code: string }) {
     clearGuestWorkout()
     setToken(null)
   }
-
-  // Los hooks de arriba quedan declarados siempre en el mismo orden; recién
-  // aquí decidimos qué pantalla mostrar, que es donde importa la rama.
-  if (skipGuestFlow) return <SaveAsPendingRedirect code={code} />
 
   if (!restored || sessionLoading || (token ? workout.isLoading : preview.isLoading)) {
     return <CenteredScreen><LoaderCircleIcon className="w-8 h-8 text-primary animate-spin" /></CenteredScreen>
@@ -104,11 +108,22 @@ export function GuestWorkoutView({ code }: { code: string }) {
         withSidebar={false}
         onStart={() => start.mutate({ code })}
         starting={start.isPending}
-        error={start.isError ? start.error.message : undefined}
+        startLabel="Empezar ahora"
+        secondaryAction={{
+          label: "Empezar más tarde",
+          onClick: startLater,
+          pending: savePending.isPending,
+        }}
+        error={
+          start.isError ? start.error.message
+          : savePending.isError ? savePending.error.message
+          : undefined
+        }
         intro={
           <>
             No necesitas cuenta para entrenar. Toca cada ejercicio para <strong>ver el video</strong> y
-            pulsa <strong>Empezar rutina</strong> cuando estés listo — al terminar podrás guardar tu progreso.
+            pulsa <strong>Empezar ahora</strong> cuando estés listo, o <strong>Empezar más tarde</strong> para
+            guardarla como pendiente y hacerla cuando quieras.
           </>
         }
       >
@@ -186,47 +201,6 @@ export function GuestWorkoutView({ code }: { code: string }) {
 
 function CenteredScreen({ children }: { children: React.ReactNode }) {
   return <div className="min-h-dvh flex items-center justify-center px-4">{children}</div>
-}
-
-/** Guarda la rutina como pendiente en la cuenta del usuario y lo lleva a verla. */
-function SaveAsPendingRedirect({ code }: { code: string }) {
-  const router = useRouter()
-  const triggered = useRef(false)
-  const savePending = trpc.share.saveAsPending.useMutation({
-    onSuccess: ({ teamId, sessionId }) => {
-      router.replace(`/teams/${teamId}/mis-rutinas/${sessionId}`)
-    },
-  })
-
-  useEffect(() => {
-    if (triggered.current) return
-    triggered.current = true
-    savePending.mutate({ code })
-    // Solo debe dispararse una vez al montar, aunque `savePending` cambie de identidad en cada render.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code])
-
-  if (savePending.isError) {
-    return (
-      <CenteredScreen>
-        <div className="border border-border rounded-2xl p-8 space-y-3 bg-card text-center max-w-sm">
-          <DumbbellIcon className="w-12 h-12 text-muted-foreground mx-auto" />
-          <p className="text-lg font-semibold">No se pudo guardar la rutina</p>
-          <p className="text-base text-muted-foreground">{savePending.error.message}</p>
-          <Link href="/dashboard" className="inline-block text-base text-primary font-medium">Ir a Atleta</Link>
-        </div>
-      </CenteredScreen>
-    )
-  }
-
-  return (
-    <CenteredScreen>
-      <div className="flex flex-col items-center gap-3 text-center">
-        <LoaderCircleIcon className="w-8 h-8 text-primary animate-spin" />
-        <p className="text-base text-muted-foreground">Guardando la rutina en tu cuenta…</p>
-      </div>
-    </CenteredScreen>
-  )
 }
 
 function SharedByHeader({

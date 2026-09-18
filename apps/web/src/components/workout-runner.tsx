@@ -401,6 +401,7 @@ function CircuitOverviewCard({
 
 export function RoutinePreview({
   progress, onStart, starting, error, back, intro, children, withSidebar = true,
+  startLabel = "Empezar rutina", secondaryAction,
 }: {
   progress: WorkoutProgress
   onStart: () => void
@@ -412,6 +413,10 @@ export function RoutinePreview({
   /** Encabezado propio (p. ej. quién comparte la rutina en un enlace de invitado). */
   children?: React.ReactNode
   withSidebar?: boolean
+  /** Texto del botón principal; por defecto "Empezar rutina". */
+  startLabel?: string
+  /** Acción alterna bajo el botón principal (p. ej. "Empezar más tarde" en un enlace de invitado). */
+  secondaryAction?: { label: string; onClick: () => void; pending?: boolean }
 }) {
   const [video, setVideo] = useState<WorkoutExercise | null>(null)
   const total = totalSets(progress.exercises)
@@ -461,15 +466,24 @@ export function RoutinePreview({
         "fixed bottom-0 left-0 right-0 px-4 py-4 bg-background/95 backdrop-blur-sm border-t border-border z-30",
         withSidebar && "lg:left-56",
       )}>
-        <div className="max-w-xl mx-auto">
+        <div className="max-w-xl mx-auto space-y-2">
           <button
             onClick={onStart}
             disabled={starting}
             className="w-full flex items-center justify-center gap-3 min-h-16 rounded-2xl bg-primary text-primary-foreground font-bold text-xl cursor-pointer disabled:opacity-50 active:scale-[0.98] transition-transform"
           >
             <PlayIcon className="w-6 h-6 fill-current" />
-            {starting ? "Preparando…" : "Empezar rutina"}
+            {starting ? "Preparando…" : startLabel}
           </button>
+          {secondaryAction && (
+            <button
+              onClick={secondaryAction.onClick}
+              disabled={secondaryAction.pending}
+              className="w-full flex items-center justify-center min-h-14 rounded-2xl border border-border text-lg font-medium cursor-pointer disabled:opacity-50"
+            >
+              {secondaryAction.pending ? "Guardando…" : secondaryAction.label}
+            </button>
+          )}
           {error && <p className="text-base text-destructive text-center mt-2">{error}</p>}
         </div>
       </div>
