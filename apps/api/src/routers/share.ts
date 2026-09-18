@@ -568,6 +568,69 @@ export const shareRouter = router({
   // ── Con cuenta ─────────────────────────────────────────────────────────────
 
   /**
+   * Un usuario con cuenta que abre el enlace no necesita pasar por el flujo de
+   * invitado: la rutina queda directamente como pendiente en "Mis rutinas",
+   * igual que si el coach se la hubiera asignado. A diferencia de `claim`, sí
+   * referenciamos la rutina aunque caiga en el equipo personal — aquí importa
+   * para que aparezca clasificada como entrenamiento pendiente, y el atleta ya
+   * vio su contenido en la vista previa del enlace.
+   */
+  saveAsPending: protectedProcedure
+    .input(z.object({ code: codeSchema }))
+    .mutation(async ({ ctx, input }) => {
+      const share = await findActiveShare(input.code)
+      const userId = ctx.session.user.id
+
+      return db.transaction(async (tx) => {
+        const target = await resolveClaimTeam(tx, userId, ctx.session.user.name, share.teamId)
+
+        // Ya la tiene pendiente o en curso por este mismo enlace: no duplicamos,
+        // solo la volvemos a mostrar.
+        const [existing] = await tx
+          .select({ id: trainingSession.id })
+          .from(athleteSession)
+          .innerJoin(trainingSession, eq(athleteSession.sessionId, trainingSession.id))
+          .where(
+            and(
+              eq(athleteSession.athleteId, userId),
+              inArray(athleteSession.status, ["scheduled", "active"]),
+              eq(trainingSession.routineId, share.routineId),
+              eq(trainingSession.teamId, target.teamId),
+            ),
+          )
+          .limit(1)
+        if (existing) return { sessionId: existing.id, teamId: target.teamId }
+
+        const flat = flattenContent(share.routineContent)
+
+        const [session] = await tx
+          .insert(trainingSession)
+          .values({
+            routineId: share.routineId,
+            teamId: target.teamId,
+            startedBy: userId,
+            status: "scheduled",
+            content: share.routineContent,
+          })
+          .returning()
+
+        for (const [order, ex] of flat.entries()) {
+          const [se] = await tx
+            .insert(sessionExercise)
+            .values({ sessionId: session.id, exerciseId: ex.exerciseId, order })
+            .returning()
+
+          const targets = targetsForExercise(ex.sets).map((t) => ({ ...t, sessionExerciseId: se.id }))
+          if (targets.length > 0) await tx.insert(sessionSetTarget).values(targets)
+        }
+
+        await tx.insert(athleteSession).values({ sessionId: session.id, athleteId: userId, status: "scheduled" })
+
+        return { sessionId: session.id, teamId: target.teamId }
+      })
+    }),
+
+  /**
    * Convierte el entrenamiento anónimo en una sesión real del usuario: ya con
    * cuenta, su primer entrenamiento aparece en su historial desde el minuto uno.
    */
