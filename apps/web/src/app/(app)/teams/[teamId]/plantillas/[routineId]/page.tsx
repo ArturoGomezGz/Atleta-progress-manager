@@ -536,8 +536,6 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
                           onUpdate={(patch) => updateItem(item.id, patch)}
                           expanded={openExerciseId === item.id}
                           onToggle={() => toggleExercise(item.id)}
-                          // Temporal: cada tarjeta más lenta que la anterior para comparar velocidades.
-                          curtainDurationMs={200 + idx * 200}
                           {...moveProps}
                         />
                       </div>
@@ -875,9 +873,14 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
 
 // ─── Exercise card ────────────────────────────────────────────────────────────
 
+// Abrir se siente bien despacio (se puede seguir la aparición del contenido); cerrar
+// más rápido porque ahí ya no hay nada nuevo que leer.
+const CURTAIN_OPEN_MS = 600
+const CURTAIN_CLOSE_MS = 400
+
 function ExerciseCard({
   item, label, isEvaluation, info, onUpdate, onPreview, onRemove, nested = false,
-  expanded, onToggle, curtainDurationMs = 350,
+  expanded, onToggle,
 }: {
   item: RoutineExerciseContent
   label: string
@@ -890,8 +893,6 @@ function ExerciseCard({
   /** Lo controla el padre: solo un ejercicio puede estar abierto a la vez. */
   expanded: boolean
   onToggle: () => void
-  /** Temporal: para comparar velocidades, cada tarjeta puede recibir su propia duración. */
-  curtainDurationMs?: number
 }) {
   const [drafts, setDrafts]       = useState<DraftSet[]>(() => item.sets.map(draftFromSet))
   const [meta, setMeta]           = useState({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
@@ -982,7 +983,7 @@ function ExerciseCard({
           "grid transition-[grid-template-rows] ease-out motion-reduce:transition-none",
           expanded ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
-        style={{ transitionDuration: `${curtainDurationMs}ms` }}
+        style={{ transitionDuration: `${expanded ? CURTAIN_OPEN_MS : CURTAIN_CLOSE_MS}ms` }}
       >
         <div className="overflow-hidden" inert={!expanded}>
           <div className="border-t border-border">
