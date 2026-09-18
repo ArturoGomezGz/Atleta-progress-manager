@@ -291,6 +291,21 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     return () => window.removeEventListener("beforeunload", warn)
   }, [dirty])
 
+  // El gesto de "atrás" (botón físico, swipe) también debe pasar por requestExit en
+  // vez de salir directo: se reserva una entrada extra en el historial que absorbe el
+  // primer "atrás" y, en su lugar, dispara la misma confirmación que el botón "Salir".
+  const requestExitRef = useRef(requestExit)
+  useEffect(() => { requestExitRef.current = requestExit })
+  useEffect(() => {
+    history.pushState(null, "", window.location.href)
+    function onPopState() {
+      history.pushState(null, "", window.location.href)
+      requestExitRef.current()
+    }
+    window.addEventListener("popstate", onPopState)
+    return () => window.removeEventListener("popstate", onPopState)
+  }, [])
+
   const content: RoutineContent = localContent ?? routineData?.content ?? { v: 1, items: [] }
 
   // Catálogo local como fuente primaria; fallback al mapa del servidor (ejercicios ya no visibles)
@@ -771,13 +786,16 @@ function DragHandle() {
  * tarjeta, para no ocupar ancho en el encabezado (donde antes dejaban una fila casi
  * vacía al envolver). El contenedor de la tarjeta debe tener `position: relative`.
  */
-function CardCornerActions({ onRemove }: { onRemove: () => void }) {
+function CardCornerActions({ onRemove, confirmMessage }: { onRemove: () => void; confirmMessage: string }) {
+  function handleRemove() {
+    if (window.confirm(confirmMessage)) onRemove()
+  }
   return (
     <div className="absolute top-1.5 right-1.5 z-10 flex flex-col items-center gap-1">
       <DragHandle />
       <button
         type="button"
-        onClick={onRemove}
+        onClick={handleRemove}
         className="p-2 rounded-lg text-muted-foreground/50 hover:text-destructive hover:bg-muted/60 transition-colors cursor-pointer"
         aria-label="Eliminar"
       >
@@ -948,7 +966,7 @@ function ExerciseCard({
 
   return (
     <div className={cn("relative border border-border rounded-xl overflow-hidden", nested ? "bg-background" : "bg-card/60")}>
-      <CardCornerActions onRemove={onRemove} />
+      <CardCornerActions onRemove={onRemove} confirmMessage={`¿Eliminar "${info.name}" de la rutina?`} />
       <div className="flex flex-wrap items-center gap-3 pl-3 pr-14 py-2.5 min-h-[84px] bg-muted/10">
         <span className="w-6 h-6 rounded-full bg-primary/15 border border-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
           {label}
@@ -1144,7 +1162,14 @@ function BlockCard({
         isDropTarget && "scale-[1.015] border-primary/60 shadow-lg shadow-primary/10",
       )}
     >
-      <CardCornerActions onRemove={onRemove} />
+      <CardCornerActions
+        onRemove={onRemove}
+        confirmMessage={
+          exercises.length > 0
+            ? `¿Eliminar el circuito "${item.name || "Circuito"}"? Se eliminarán sus ${exercises.length} ejercicio${exercises.length !== 1 ? "s" : ""}.`
+            : `¿Eliminar el circuito "${item.name || "Circuito"}"?`
+        }
+      />
       <div className="flex flex-wrap items-center gap-2 pl-3 pr-14 py-2.5 min-h-[84px] bg-primary/10">
         <span className="w-6 h-6 rounded-full bg-primary/20 border border-primary/30 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
           {label}
