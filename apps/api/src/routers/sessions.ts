@@ -142,22 +142,38 @@ export const sessionsRouter = router({
 
   list: protectedProcedure
     .input(z.object({
-      teamId:   z.string().uuid(),
-      category: z.enum(["evaluation", "training"]).optional(),
+      teamId:    z.string().uuid(),
+      category:  z.enum(["evaluation", "training"]).optional(),
+      athleteId: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
       const conditions: SQL[] = [eq(trainingSession.teamId, input.teamId)]
       if (input.category) conditions.push(eq(routine.category, input.category))
+
+      const columns = {
+        id: trainingSession.id,
+        status: trainingSession.status,
+        startedAt: trainingSession.startedAt,
+        scheduledDate: trainingSession.scheduledDate,
+        routineId: trainingSession.routineId,
+        routineName: routine.name,
+      }
+
+      // Filtrar por atleta: la sesión solo aparece si ese atleta está asignado a ella
+      if (input.athleteId) {
+        conditions.push(eq(athleteSession.athleteId, input.athleteId))
+        return db
+          .select(columns)
+          .from(trainingSession)
+          .innerJoin(routine, eq(trainingSession.routineId, routine.id))
+          .innerJoin(athleteSession, eq(athleteSession.sessionId, trainingSession.id))
+          .where(and(...conditions))
+          .orderBy(desc(trainingSession.startedAt))
+      }
+
       return db
-        .select({
-          id: trainingSession.id,
-          status: trainingSession.status,
-          startedAt: trainingSession.startedAt,
-          scheduledDate: trainingSession.scheduledDate,
-          routineId: trainingSession.routineId,
-          routineName: routine.name,
-        })
+        .select(columns)
         .from(trainingSession)
         .innerJoin(routine, eq(trainingSession.routineId, routine.id))
         .where(and(...conditions))

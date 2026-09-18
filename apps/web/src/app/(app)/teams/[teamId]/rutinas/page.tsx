@@ -2,9 +2,9 @@
 
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import { Link2Icon, PlusIcon } from "lucide-react"
+import { CheckIcon, ChevronDownIcon, Link2Icon, PlusIcon, SearchIcon, UserIcon, XIcon } from "lucide-react"
 import Link from "next/link"
-import { use, useState, Suspense } from "react"
+import { use, useEffect, useMemo, useRef, useState, Suspense } from "react"
 
 const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 
@@ -83,20 +83,173 @@ function ShareLinkCard({ teamId, share }: { teamId: string; share: ActiveShare }
   )
 }
 
+type AthleteOption = { userId: string; userName: string | null; selfAthlete: boolean }
+
+function AthleteFilter({
+  athletes,
+  value,
+  onChange,
+}: {
+  athletes: AthleteOption[]
+  value: string | null
+  onChange: (id: string | null) => void
+}) {
+  const [open, setOpen] = useState(false)
+  const [search, setSearch] = useState("")
+  const containerRef = useRef<HTMLDivElement>(null)
+
+  // Cerrar al hacer clic fuera: el panel es un popover, no un modal
+  useEffect(() => {
+    if (!open) return
+    function onPointerDown(e: MouseEvent | TouchEvent) {
+      if (!containerRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    function onKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false)
+    }
+    document.addEventListener("mousedown", onPointerDown)
+    document.addEventListener("touchstart", onPointerDown)
+    document.addEventListener("keydown", onKeyDown)
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown)
+      document.removeEventListener("touchstart", onPointerDown)
+      document.removeEventListener("keydown", onKeyDown)
+    }
+  }, [open])
+
+  useEffect(() => {
+    if (!open) setSearch("")
+  }, [open])
+
+  const selected = athletes.find((a) => a.userId === value) ?? null
+  const filtered = search
+    ? athletes.filter((a) => (a.userName ?? "").toLowerCase().includes(search.toLowerCase()))
+    : athletes
+
+  function select(id: string | null) {
+    onChange(id)
+    setOpen(false)
+  }
+
+  return (
+    <div ref={containerRef} className="relative">
+      <div className="flex items-center gap-1.5">
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          className={cn(
+            "flex items-center gap-2 px-3 py-2 text-xs rounded-lg border transition-colors cursor-pointer font-medium max-w-[60vw]",
+            selected ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
+          )}
+        >
+          <UserIcon className="w-3.5 h-3.5 shrink-0" />
+          <span className="truncate">{selected ? (selected.userName ?? "Atleta") : "Todos los atletas"}</span>
+          <ChevronDownIcon className={cn("w-3.5 h-3.5 shrink-0 transition-transform", open && "rotate-180")} />
+        </button>
+
+        {selected && (
+          <button
+            type="button"
+            onClick={() => select(null)}
+            aria-label="Quitar filtro de atleta"
+            className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg transition-colors cursor-pointer"
+          >
+            <XIcon className="w-3.5 h-3.5" />
+          </button>
+        )}
+      </div>
+
+      {open && (
+        <div
+          role="listbox"
+          className="absolute z-30 mt-1.5 w-64 max-w-[80vw] rounded-xl border border-border bg-popover shadow-lg overflow-hidden"
+        >
+          {athletes.length > 6 && (
+            <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
+              <SearchIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+              <input
+                autoFocus
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar atleta"
+                className="w-full bg-transparent text-xs outline-none placeholder:text-muted-foreground"
+              />
+            </div>
+          )}
+
+          <div className="max-h-64 overflow-y-auto py-1">
+            <button
+              type="button"
+              role="option"
+              aria-selected={value === null}
+              onClick={() => select(null)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left hover:bg-muted/50 transition-colors cursor-pointer"
+            >
+              <CheckIcon className={cn("w-3.5 h-3.5 shrink-0", value === null ? "text-primary" : "opacity-0")} />
+              <span className="flex-1 truncate">Todos los atletas</span>
+            </button>
+
+            {filtered.map((a) => (
+              <button
+                key={a.userId}
+                type="button"
+                role="option"
+                aria-selected={value === a.userId}
+                onClick={() => select(a.userId)}
+                className="w-full flex items-center gap-2 px-3 py-2 text-xs text-left hover:bg-muted/50 transition-colors cursor-pointer"
+              >
+                <CheckIcon className={cn("w-3.5 h-3.5 shrink-0", value === a.userId ? "text-primary" : "opacity-0")} />
+                <span className="flex-1 truncate">
+                  {a.userName ?? "Atleta"}{a.selfAthlete && " (Tú)"}
+                </span>
+              </button>
+            ))}
+
+            {filtered.length === 0 && (
+              <p className="px-3 py-4 text-xs text-muted-foreground text-center">Sin atletas que coincidan.</p>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function SesionesContent({ teamId }: { teamId: string }) {
   const [histFilter, setHistFilter] = useState<"all" | "evaluation" | "training">("all")
+  const [athleteFilter, setAthleteFilter] = useState<string | null>(null)
 
   const { data: teams } = trpc.teams.list.useQuery()
   const isCoach = teams?.find((t) => t.team.id === teamId)?.role === "coach"
 
-  const { data: evalSessions }     = trpc.sessions.list.useQuery({ teamId, category: "evaluation" })
-  const { data: trainingSessions } = trpc.sessions.list.useQuery({ teamId, category: "training" })
-  // Un enlace sin revocar es, para el entrenador, una sesión abierta más
+  // El filtro por atleta es una herramienta del entrenador: un atleta ya solo se ve a sí mismo
+  const { data: members } = trpc.teams.members.useQuery({ teamId }, { enabled: !!isCoach })
+  const athletes = useMemo(
+    () => (members ?? []).filter((m) => m.role === "athlete" || m.selfAthlete),
+    [members],
+  )
+
+  // Si el atleta filtrado deja de estar en el equipo, el filtro dejaría la vista vacía sin explicación
+  useEffect(() => {
+    if (athleteFilter && members && !athletes.some((a) => a.userId === athleteFilter)) {
+      setAthleteFilter(null)
+    }
+  }, [athleteFilter, members, athletes])
+
+  const athleteId = athleteFilter ?? undefined
+  const { data: evalSessions }     = trpc.sessions.list.useQuery({ teamId, category: "evaluation", athleteId })
+  const { data: trainingSessions } = trpc.sessions.list.useQuery({ teamId, category: "training", athleteId })
+  // Un enlace sin revocar es, para el entrenador, una sesión abierta más.
+  // Un enlace no pertenece a ningún atleta, así que al filtrar por uno se oculta.
   const { data: activeShares } = trpc.share.listForTeam.useQuery(
     { teamId },
     { enabled: !!isCoach, refetchInterval: 15000 },
   )
-  const shares = activeShares ?? []
+  const shares = athleteFilter ? [] : (activeShares ?? [])
+
+  const selectedAthleteName = athletes.find((a) => a.userId === athleteFilter)?.userName ?? null
 
   const allSessions: SessionItem[] = [
     ...(evalSessions ?? []).map((s) => ({ ...s, routineCategory: "evaluation" as const })),
@@ -131,6 +284,11 @@ function SesionesContent({ teamId }: { teamId: string }) {
         )}
       </div>
 
+      {/* Filtro por atleta (solo entrenador) */}
+      {isCoach && athletes.length > 0 && (
+        <AthleteFilter athletes={athletes} value={athleteFilter} onChange={setAthleteFilter} />
+      )}
+
       {/* Active + Scheduled + Enlaces */}
       {(active.length > 0 || scheduled.length > 0 || shares.length > 0) && (
         <div className="space-y-4">
@@ -159,7 +317,11 @@ function SesionesContent({ teamId }: { teamId: string }) {
 
       {active.length === 0 && scheduled.length === 0 && shares.length === 0 && (
         <div className="flex flex-col items-center justify-center py-10 border border-dashed border-border rounded-xl gap-2 text-center">
-          <p className="text-sm text-muted-foreground">Sin sesiones activas o programadas.</p>
+          <p className="text-sm text-muted-foreground">
+            {selectedAthleteName
+              ? `${selectedAthleteName} no tiene sesiones activas o programadas.`
+              : "Sin sesiones activas o programadas."}
+          </p>
           {isCoach && (
             <Link
               href={`/teams/${teamId}/sesiones/new`}
@@ -196,7 +358,9 @@ function SesionesContent({ teamId }: { teamId: string }) {
           ))}
           {history.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-8">
-              {histFilter !== "all" ? "Sin resultados." : "Sin sesiones en el historial."}
+              {histFilter !== "all" || athleteFilter
+                ? "Sin resultados."
+                : "Sin sesiones en el historial."}
             </p>
           )}
         </div>

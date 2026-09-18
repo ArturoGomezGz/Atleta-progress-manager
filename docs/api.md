@@ -65,6 +65,7 @@ La autorización de rol (coach/atleta) se verifica dentro de cada procedimiento.
 
 | Procedimiento | Tipo | Descripción | Autorización |
 |---|---|---|---|
+| `sessions.list` | query | Sesiones del equipo. Filtros opcionales: `category` y `athleteId` (solo sesiones donde ese atleta está asignado). | Miembro del equipo |
 | `sessions.create` | mutation | Iniciar sesión: hace snapshot de la rutina y enrolla atletas. | Coach del equipo |
 | `sessions.get` | query | Sesión con ejercicios (snapshot) y atletas. | Miembro del equipo |
 | `sessions.athleteSets` | query | Todas las series de un atleta en la sesión. | Miembro del equipo |
