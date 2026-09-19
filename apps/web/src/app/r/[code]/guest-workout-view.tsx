@@ -52,9 +52,11 @@ export function GuestWorkoutView({ code }: { code: string }) {
   // sesión y desde ahí puede volver a decidir.
   const utils = trpc.useUtils()
   const savePending = trpc.share.saveAsPending.useMutation({
-    onSuccess: async ({ teamId }) => {
+    onSuccess: async ({ teamId, createdPersonalTeam }) => {
       await utils.sessions.myList.invalidate({ teamId })
-      router.push(`/teams/${teamId}/mis-rutinas`)
+      // Recién le creamos su equipo personal: en "Mis rutinas" le explicamos qué es.
+      const suffix = createdPersonalTeam ? "?bienvenida=equipo-personal" : ""
+      router.push(`/teams/${teamId}/mis-rutinas${suffix}`)
     },
   })
   function startLater() {

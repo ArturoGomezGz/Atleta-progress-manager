@@ -172,29 +172,40 @@ async function loadWorkout(token: string) {
  * esperan. Si ese equipo ya llegó a su límite de atletas, el entrenamiento no
  * se pierde: se guarda en el equipo personal del usuario (creándolo si hace
  * falta), que es exactamente lo que obtendría creando un equipo por su cuenta.
+ *
+ * `allowJoin` controla si, al no ser miembro todavía, se le puede sumar como
+ * atleta real del equipo del coach. En `claim` sí: el invitado ya entrenó, es
+ * una conversión genuina. En `saveAsPending` no: guardar un enlace para
+ * después no debería inscribirlo en el roster del coach sin que se dé cuenta;
+ * en ese caso siempre cae al equipo personal, aunque el del coach tenga cupo.
  */
 async function resolveClaimTeam(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   userId: string,
   userName: string,
   shareTeamId: string,
+  options: { allowJoin?: boolean } = {},
 ) {
+  const allowJoin = options.allowJoin ?? true
+
   const [existing] = await tx
     .select()
     .from(teamMember)
     .where(and(eq(teamMember.teamId, shareTeamId), eq(teamMember.userId, userId)))
     .limit(1)
-  if (existing) return { teamId: shareTeamId, joinedTeam: false, personal: false }
+  if (existing) return { teamId: shareTeamId, joinedTeam: false, personal: false, createdPersonalTeam: false }
 
-  const [teamData] = await tx.select().from(team).where(eq(team.id, shareTeamId)).limit(1)
-  const [{ athleteCount }] = await tx
-    .select({ athleteCount: count() })
-    .from(teamMember)
-    .where(and(eq(teamMember.teamId, shareTeamId), eq(teamMember.role, "athlete")))
+  if (allowJoin) {
+    const [teamData] = await tx.select().from(team).where(eq(team.id, shareTeamId)).limit(1)
+    const [{ athleteCount }] = await tx
+      .select({ athleteCount: count() })
+      .from(teamMember)
+      .where(and(eq(teamMember.teamId, shareTeamId), eq(teamMember.role, "athlete")))
 
-  if (teamData && athleteCount < teamData.maxAthletes) {
-    await tx.insert(teamMember).values({ teamId: shareTeamId, userId, role: "athlete" })
-    return { teamId: shareTeamId, joinedTeam: true, personal: false }
+    if (teamData && athleteCount < teamData.maxAthletes) {
+      await tx.insert(teamMember).values({ teamId: shareTeamId, userId, role: "athlete" })
+      return { teamId: shareTeamId, joinedTeam: true, personal: false, createdPersonalTeam: false }
+    }
   }
 
   // Equipo personal: reutilizamos el que ya tenga si entrena por su cuenta
@@ -203,11 +214,11 @@ async function resolveClaimTeam(
     .from(teamMember)
     .where(and(eq(teamMember.userId, userId), eq(teamMember.role, "coach"), eq(teamMember.selfAthlete, true)))
     .limit(1)
-  if (ownTeam) return { teamId: ownTeam.teamId, joinedTeam: false, personal: true }
+  if (ownTeam) return { teamId: ownTeam.teamId, joinedTeam: false, personal: true, createdPersonalTeam: false }
 
   const [newTeam] = await tx.insert(team).values({ name: `Entrenamientos de ${userName}` }).returning()
   await tx.insert(teamMember).values({ teamId: newTeam.id, userId, role: "coach", selfAthlete: true })
-  return { teamId: newTeam.id, joinedTeam: false, personal: true }
+  return { teamId: newTeam.id, joinedTeam: false, personal: true, createdPersonalTeam: true }
 }
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -582,7 +593,9 @@ export const shareRouter = router({
       const userId = ctx.session.user.id
 
       return db.transaction(async (tx) => {
-        const target = await resolveClaimTeam(tx, userId, ctx.session.user.name, share.teamId)
+        // No lo sumamos al equipo real del coach solo por guardar un enlace para
+        // después: si no es miembro ya, la rutina queda en su equipo personal.
+        const target = await resolveClaimTeam(tx, userId, ctx.session.user.name, share.teamId, { allowJoin: false })
 
         // Solo reutilizamos una sesión que siga pendiente. Una que ya empezó no
         // cuenta: quien pide "empezar más tarde" espera ver la rutina pendiente,
@@ -600,7 +613,9 @@ export const shareRouter = router({
             ),
           )
           .limit(1)
-        if (existing) return { sessionId: existing.id, teamId: target.teamId }
+        if (existing) {
+          return { sessionId: existing.id, teamId: target.teamId, createdPersonalTeam: false }
+        }
 
         const flat = flattenContent(share.routineContent)
 
@@ -627,7 +642,7 @@ export const shareRouter = router({
 
         await tx.insert(athleteSession).values({ sessionId: session.id, athleteId: userId, status: "scheduled" })
 
-        return { sessionId: session.id, teamId: target.teamId }
+        return { sessionId: session.id, teamId: target.teamId, createdPersonalTeam: target.createdPersonalTeam }
       })
     }),
 
