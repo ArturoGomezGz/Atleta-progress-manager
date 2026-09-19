@@ -25,8 +25,10 @@ pnpm db:seed                  # terminal 3 — datos de ejemplo (API debe estar 
 | Componente | Plataforma | Notas |
 |---|---|---|
 | Base de datos | Railway (PostgreSQL plugin) | Gestionado por Railway |
-| API (Fastify) | Railway | Usa el `Dockerfile` de `apps/api/` |
-| Web (Next.js) | Vercel | Deploy automático desde `apps/web/` |
+| API (Fastify) | Railway | Usa `apps/api/Dockerfile` |
+| Web (Next.js) | Railway | Usa `Dockerfile.web` (raíz del monorepo) |
+
+> Los tres servicios viven en el mismo proyecto de Railway (**Atleta**), con entornos `production`, `testing` y un entorno efímero por cada Pull Request. La sección "Deploy del Web en Vercel" más abajo queda como referencia histórica/alternativa, pero no es el despliegue actual.
 
 ---
 
@@ -138,7 +140,37 @@ railway run --service <nombre-servicio-api> pnpm db:migrate
 
 ---
 
-## Deploy del Web en Vercel
+## Deploy del Web en Railway
+
+### Primera vez
+
+1. En el mismo proyecto de Railway: **Add Service → GitHub Repo** (mismo repo que la API)
+2. En **Settings → Build**:
+   - **Root Directory**: `/` (raíz del monorepo)
+   - **Dockerfile Path**: `Dockerfile.web`
+3. En **Settings → Variables**, agregar:
+
+| Variable | Valor |
+|---|---|
+| `NEXT_PUBLIC_API_URL` | URL pública de la API en Railway |
+| `PORT` | `3000` |
+
+4. Railway genera un dominio `*.up.railway.app` automáticamente (o se puede añadir un dominio propio).
+
+### Flujo de actualizaciones
+
+```
+git push origin master
+  └── Railway detecta el push → rebuild automático de api + web (Dockerfiles watch apps/web, apps/api, packages/db)
+```
+
+Railway también crea un entorno efímero por cada Pull Request (mismos servicios, base de datos y dominios propios), útil para previews sin tocar `testing`/`production`.
+
+---
+
+## Alternativa histórica: Deploy del Web en Vercel
+
+> Esta sección se mantiene como referencia, pero el despliegue actual del Web es en Railway (ver arriba).
 
 ### Primera vez
 
@@ -165,11 +197,11 @@ Ir a **Settings → Environment Variables** y agregar:
 ### Código
 
 ```
-git push origin main
-  │
-  ├── Railway detecta el push → rebuild automático de la API
-  └── Vercel detecta el push  → rebuild automático del Web
+git push origin master
+  └── Railway detecta el push → rebuild automático de api + web
 ```
+
+> Histórico: si el Web se despliega en Vercel (alternativa de arriba), Vercel también detecta el push y hace rebuild del Web por su cuenta.
 
 ### Cambios de schema (migraciones)
 
@@ -248,16 +280,16 @@ Para solicitar verificación: Google Cloud Console → OAuth consent screen → 
 
 ### Infraestructura
 - [ ] PostgreSQL creado en Railway y `DATABASE_URL` copiada
-- [ ] Servicio API creado en Railway apuntando al `Dockerfile`
+- [ ] Servicio API creado en Railway apuntando a `apps/api/Dockerfile`
 - [ ] Migraciones aplicadas en la BD de producción (`railway run pnpm db:migrate`)
-- [ ] Servicio Web creado en Vercel apuntando a `apps/web`
+- [ ] Servicio Web creado en Railway apuntando a `Dockerfile.web`
 
 ### Variables de entorno
 - [ ] `DATABASE_URL` en Railway (API)
 - [ ] `BETTER_AUTH_SECRET` en Railway (API) — string aleatorio distinto al de testing
 - [ ] `BETTER_AUTH_URL` en Railway (API) — URL del **web** de producción
 - [ ] `WEB_URL` en Railway (API) — URL del web de producción
-- [ ] `NEXT_PUBLIC_API_URL` en Vercel (Web) — URL de la API en Railway
+- [ ] `NEXT_PUBLIC_API_URL` en Railway (Web) — URL de la API en Railway
 - [ ] `ANTHROPIC_API_KEY` en Railway (API)
 
 ### Resend
