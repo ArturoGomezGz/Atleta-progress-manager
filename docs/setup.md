@@ -6,6 +6,8 @@
 - pnpm (`corepack enable pnpm`)
 - Docker Desktop
 
+> **¿Solo quieres ver la app funcionando?** `pnpm install && pnpm dev:mock` levanta web + API con una base en memoria y datos de prueba, sin Docker ni `.env`. Ver [mock-server.md](./mock-server.md).
+
 ## Primera vez
 
 ### 1. Levantar la base de datos

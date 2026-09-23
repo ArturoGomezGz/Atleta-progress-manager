@@ -1,0 +1,33 @@
+# Entorno mock en un solo contenedor: web (Next.js) + API real sobre PGlite en memoria,
+# con datos de prueba sembrados al arrancar. Sin PostgreSQL ni variables obligatorias.
+# Pensado para previews rápidas (p. ej. un servicio de Railway); ver docs/mock-server.md.
+#
+#   docker build -f Dockerfile.mock -t atleta-mock .
+#   docker run -p 3000:3000 atleta-mock      → http://localhost:3000
+FROM node:22-alpine
+RUN corepack enable pnpm
+
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY packages/db/package.json ./packages/db/
+COPY apps/api/package.json ./apps/api/
+COPY apps/web/package.json ./apps/web/
+
+RUN pnpm install --frozen-lockfile
+
+COPY packages/db ./packages/db
+COPY apps/api ./apps/api
+COPY apps/web ./apps/web
+COPY scripts/mock ./scripts/mock
+
+# La web proxea /trpc y /api/auth a la API mock dentro del mismo contenedor
+ENV NEXT_PUBLIC_API_URL=http://127.0.0.1:3001
+RUN pnpm --filter @atleta/web build
+
+ENV NODE_ENV=production
+EXPOSE 3000
+
+# PORT (lo define Railway) es el de la web; la API mock queda interna en 3001.
+# La URL pública sale de PUBLIC_URL o, en Railway, de RAILWAY_PUBLIC_DOMAIN.
+CMD ["node", "scripts/mock/run.mjs", "start"]

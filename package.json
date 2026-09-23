@@ -4,6 +4,8 @@
   "scripts": {
     "dev:web": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api dev",
+    "dev:mock": "node scripts/mock/run.mjs dev",
+    "mock:api": "pnpm --filter @atleta/api mock",
     "db:generate": "pnpm --filter db generate",
     "db:migrate": "pnpm --filter db migrate",
     "db:seed": "pnpm --filter db seed",

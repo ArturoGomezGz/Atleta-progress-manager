@@ -6,7 +6,8 @@
     "./schema": "./src/schema/index.ts",
     "./client": "./src/client.ts",
     "./migrate": "./src/run-migrations.ts",
-    "./youtube": "./src/lib/youtube.ts"
+    "./youtube": "./src/lib/youtube.ts",
+    "./body-zones": "./src/lib/body-zones.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
@@ -20,6 +21,7 @@
     "postgres": "^3.4.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "dotenv": "^17.4.2",
     "drizzle-kit": "^0.30.0",
     "tsx": "^4.19.0",
