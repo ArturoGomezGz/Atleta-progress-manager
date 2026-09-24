@@ -88,7 +88,7 @@ export function YouTubePlayer({
       className={cn(
         "relative bg-black overflow-hidden mx-auto",
         isVertical
-          ? cn("aspect-[9/16] max-w-full rounded-2xl", compact ? "h-[min(48dvh,440px)]" : "h-[min(70dvh,640px)]")
+          ? cn("aspect-[9/16] max-w-full rounded-2xl", compact ? "h-[min(36dvh,320px)]" : "h-[min(64dvh,600px)]")
           : "aspect-video w-full rounded-2xl",
         className,
       )}

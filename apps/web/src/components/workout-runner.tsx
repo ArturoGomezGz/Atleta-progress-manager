@@ -722,7 +722,7 @@ function SetExecution({
       </div>
 
       {/* ── Contenido ── */}
-      <div className="flex-1 w-full max-w-xl mx-auto px-4 pt-5 pb-40 space-y-5">
+      <div className="flex-1 w-full max-w-xl mx-auto px-4 pt-5 pb-44 space-y-5">
         <div className="space-y-1">
           {exercise.blockName && (
             <p className="text-base text-primary font-medium flex items-center gap-1.5">

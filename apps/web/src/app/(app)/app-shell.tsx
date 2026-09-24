@@ -13,7 +13,7 @@ import { Sidebar } from "./sidebar"
 export function AppShell({ children }: { children: React.ReactNode }) {
   const { fullscreen } = useFullscreenMode()
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="flex h-dvh overflow-hidden">
       {!fullscreen && <Sidebar />}
       <main className={cn("flex-1 overflow-y-auto", !fullscreen && "pt-14 lg:pt-0")}>
         {children}
