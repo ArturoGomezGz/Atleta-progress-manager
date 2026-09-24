@@ -91,6 +91,9 @@ jobs:
           name: quality-agents-reports
           path: .quality-reports/
           if-no-files-found: ignore
+          # El directorio de reportes empieza con punto: sin esto, upload-artifact
+          # lo trata como oculto y no sube nada aunque los archivos existan.
+          include-hidden-files: true
 
       - name: Enforce strict mode
         if: always()
