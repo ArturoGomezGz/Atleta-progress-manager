@@ -162,8 +162,10 @@ function ExercisePickerSheet({ exercises, value, onSelect, onClose }: {
         aria-label="Agregar ejercicio"
         className={cn(
           "fixed z-50 bg-background flex flex-col",
-          // Móvil: hoja desde abajo, casi toda la pantalla
-          "bottom-0 left-0 right-0 rounded-t-2xl max-h-[92dvh]",
+          // Móvil: hoja desde abajo, casi toda la pantalla. Altura fija (no max-h): con pocos
+          // resultados (filtros muy acotados) la hoja no debe encogerse ni "bajar" su borde
+          // superior, sino dejar el sobrante como espacio en blanco debajo de la lista.
+          "bottom-0 left-0 right-0 rounded-t-2xl h-[92dvh]",
           // Desktop: panel lateral, no depende de dónde esté el botón que lo abrió
           "md:bottom-0 md:top-0 md:left-auto md:right-0 md:w-[520px] md:rounded-none md:rounded-l-2xl md:max-h-full md:h-full",
           "transition-transform duration-250 ease-out",
