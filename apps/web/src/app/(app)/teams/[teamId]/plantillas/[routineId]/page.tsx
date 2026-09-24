@@ -296,12 +296,16 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   // El gesto de "atrás" (botón físico, swipe) también debe pasar por requestExit en
   // vez de salir directo: se reserva una entrada extra en el historial que absorbe el
   // primer "atrás" y, en su lugar, dispara la misma confirmación que el botón "Salir".
+  // La entrada lleva una marca propia: hojas anidadas (agregar ejercicio, filtros)
+  // reservan su propia entrada encima y la conservan al hacer push, así que un "atrás"
+  // que solo cierra una de esas hojas no debe disparar esta confirmación.
   const requestExitRef = useRef(requestExit)
   useEffect(() => { requestExitRef.current = requestExit })
   useEffect(() => {
-    history.pushState(null, "", window.location.href)
-    function onPopState() {
-      history.pushState(null, "", window.location.href)
+    history.pushState({ ...window.history.state, routineEditor: true }, "", window.location.href)
+    function onPopState(e: PopStateEvent) {
+      if (e.state?.routineEditor) return
+      history.pushState({ ...window.history.state, routineEditor: true }, "", window.location.href)
       requestExitRef.current()
     }
     window.addEventListener("popstate", onPopState)

@@ -296,8 +296,10 @@ function FilterSheet({ finder, onClose }: { finder: ExerciseFinderState; onClose
     requestAnimationFrame(() => setVisible(true))
     window.history.pushState({ ...window.history.state, exerciseFilters: true }, "")
 
-    function onPopState() {
-      if (closing.current) return
+    // Si esta hoja no es la que se acaba de cerrar (su propia marca sigue presente en
+    // el estado actual), el "atrás" era de una capa por debajo y no toca esta hoja.
+    function onPopState(e: PopStateEvent) {
+      if (closing.current || e.state?.exerciseFilters) return
       closing.current = true
       setVisible(false)
       setTimeout(() => onCloseRef.current(), 250)
