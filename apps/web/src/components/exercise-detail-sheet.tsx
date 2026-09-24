@@ -71,8 +71,11 @@ export function ExerciseDetailSheet({
     requestAnimationFrame(() => setVisible(true))
     window.history.pushState({ ...window.history.state, exerciseDetail: true }, "")
 
-    function onPopState() {
-      if (closing.current) return
+    // Igual que en el selector de ejercicios y el panel de filtros: si esta marca
+    // sigue presente tras el "atrás", lo que se cerró fue una capa por debajo (no esta
+    // ficha), así que no hay que cerrarla también.
+    function onPopState(e: PopStateEvent) {
+      if (closing.current || e.state?.exerciseDetail) return
       closing.current = true
       setVisible(false)
       setTimeout(() => onCloseRef.current(), 300)

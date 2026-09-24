@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { deriveBodyZone } from "@/lib/body-zones"
 import { CheckIcon, SearchIcon, SlidersHorizontalIcon, XIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
+import { createPortal } from "react-dom"
 
 // Buscador de ejercicios compartido por "Mis ejercicios" y "Explorar":
 // barra de texto siempre visible + botón "Filtros" que abre un panel con Movimiento, Nivel y Equipo.
@@ -296,8 +297,10 @@ function FilterSheet({ finder, onClose }: { finder: ExerciseFinderState; onClose
     requestAnimationFrame(() => setVisible(true))
     window.history.pushState({ ...window.history.state, exerciseFilters: true }, "")
 
-    function onPopState() {
-      if (closing.current) return
+    // Si esta hoja no es la que se acaba de cerrar (su propia marca sigue presente en
+    // el estado actual), el "atrás" era de una capa por debajo y no toca esta hoja.
+    function onPopState(e: PopStateEvent) {
+      if (closing.current || e.state?.exerciseFilters) return
       closing.current = true
       setVisible(false)
       setTimeout(() => onCloseRef.current(), 250)
@@ -317,7 +320,13 @@ function FilterSheet({ finder, onClose }: { finder: ExerciseFinderState; onClose
     return options.length >= 2 || options.some((o) => o.selected)
   })
 
-  return (
+  if (typeof document === "undefined") return null
+
+  // Portal al body: si este panel quedara anidado dentro del wrapper animado del picker
+  // de ejercicios (que tiene su propio transform + overflow-y-auto), ese ancestro pasaría
+  // a ser el containing block de este "fixed" y el overflow lo recortaría, dejando un hueco
+  // abajo por el que se ven las tarjetas de ejercicios detrás. Portalear evita ese anidado.
+  return createPortal(
     <>
       <div
         onClick={close}
@@ -404,7 +413,8 @@ function FilterSheet({ finder, onClose }: { finder: ExerciseFinderState; onClose
           </button>
         </div>
       </div>
-    </>
+    </>,
+    document.body,
   )
 }
 
