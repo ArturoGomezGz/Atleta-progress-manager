@@ -1026,7 +1026,6 @@ function YoutubeField({ form, set }: { form: FormState; set: (patch: Partial<For
             videoId={form.youtubeVideoId}
             title={form.youtubeTitle ?? form.name}
             orientation={form.videoOrientation}
-            compact
           />
           {status.kind === "ok" && (
             <p className="text-xs flex items-start gap-1.5">

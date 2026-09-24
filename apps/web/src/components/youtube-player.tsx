@@ -55,7 +55,9 @@ export function YouTubeThumb({
 /**
  * Reproductor de YouTube pensado para móvil:
  * - Muestra la miniatura hasta que el usuario toca (no carga el iframe antes).
- * - Caja 16:9 para videos normales y 9:16 para Shorts.
+ * - Caja fija 16:9, igual para videos normales y para Shorts verticales: el
+ *   propio reproductor de YouTube hace pillarbox del video vertical dentro de
+ *   esa caja, así el layout nunca cambia de alto ni provoca scroll extra.
  * - Los controles (pantalla completa, etc.) los da el propio reproductor de YouTube.
  */
 export function YouTubePlayer({
@@ -64,7 +66,6 @@ export function YouTubePlayer({
   orientation = "horizontal",
   autoStart = false,
   large = false,
-  compact = false,
   className,
 }: {
   videoId: string
@@ -73,26 +74,14 @@ export function YouTubePlayer({
   autoStart?: boolean
   /** Botón de reproducir más grande (vista del atleta) */
   large?: boolean
-  /** Limita la altura de los videos verticales para que quepan junto a otro contenido */
-  compact?: boolean
   className?: string
 }) {
   const [started, setStarted] = useState(autoStart)
 
   useEffect(() => { setStarted(autoStart) }, [videoId, autoStart])
 
-  const isVertical = orientation === "vertical"
-
   return (
-    <div
-      className={cn(
-        "relative bg-black overflow-hidden mx-auto",
-        isVertical
-          ? cn("aspect-[9/16] max-w-full rounded-2xl", compact ? "h-[min(36dvh,320px)]" : "h-[min(64dvh,600px)]")
-          : "aspect-video w-full rounded-2xl",
-        className,
-      )}
-    >
+    <div className={cn("relative bg-black overflow-hidden mx-auto aspect-video w-full rounded-2xl", className)}>
       {started ? (
         <iframe
           src={youtubeEmbedUrl(videoId, { autoplay: true })}
@@ -108,7 +97,7 @@ export function YouTubePlayer({
           className="group absolute inset-0 w-full h-full cursor-pointer"
           aria-label={`Reproducir video: ${title}`}
         >
-          <YouTubeThumb videoId={videoId} alt={title} className="absolute inset-0" />
+          <YouTubeThumb videoId={videoId} alt={title} orientation={orientation} className="absolute inset-0" />
           <span className="absolute inset-0 bg-black/25 group-hover:bg-black/10 transition-colors" />
           <span className="absolute inset-0 flex flex-col items-center justify-center gap-2">
             <span className={cn(

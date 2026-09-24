@@ -754,7 +754,6 @@ function SetExecution({
             title={exercise.exerciseName}
             orientation={exercise.videoOrientation}
             large
-            compact
           />
         ) : (
           <p className="text-base text-muted-foreground border border-dashed border-border rounded-2xl p-4">
