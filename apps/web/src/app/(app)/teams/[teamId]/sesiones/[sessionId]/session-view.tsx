@@ -388,7 +388,6 @@ function ExerciseCard({ sessionId, athleteId, exercise, sets, isActive, canRecor
             title={exercise.exerciseName}
             orientation={exercise.videoOrientation}
             autoStart
-            compact
           />
         </div>
       )}
