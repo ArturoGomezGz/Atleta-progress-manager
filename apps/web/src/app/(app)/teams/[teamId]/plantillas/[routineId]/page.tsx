@@ -667,7 +667,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       )}
 
       {preview?.youtubeVideoId && (
-        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setPreview(null)}>
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-start justify-center overflow-y-auto p-4" onClick={() => setPreview(null)}>
           <div className="w-full max-w-2xl space-y-3" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between text-white">
               <p className="font-semibold truncate">{preview.name}</p>

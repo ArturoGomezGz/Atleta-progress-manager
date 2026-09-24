@@ -1,6 +1,6 @@
 "use client"
 
-import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
+import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
 import type { ZoneProfile } from "@/lib/body-zones"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -39,34 +39,45 @@ function SessionCard({ teamId, session }: { teamId: string; session: Session }) 
     session.status === "active"    ? { label: "Continuar",  icon: PlayIcon,        tone: "bg-primary text-primary-foreground" } :
     session.status === "scheduled" ? { label: "Empezar",    icon: PlayIcon,        tone: "bg-primary text-primary-foreground" } :
     session.status === "completed" ? { label: "Ver resumen", icon: CheckCircleIcon, tone: "bg-muted text-foreground" } :
-                                     { label: "Cancelada",  icon: null,            tone: "bg-muted text-muted-foreground" }
+                                     { label: "Cancelada",  icon: XIcon,           tone: "" }
   const Icon = action.icon
 
   const content = (
     <>
-      <ZoneStripe profile={session.zoneProfile} className="w-1.5 -my-1" />
-      <div className="flex-1 min-w-0 space-y-1">
-        <p className="text-lg font-semibold leading-snug">{sc(session.routineName ?? "Rutina")}</p>
-        <p className="text-base text-muted-foreground flex items-center gap-1.5">
-          <CalendarIcon className="w-4 h-4 shrink-0" />
-          {dateLabel(session)}
-        </p>
-        <ZoneLegend profile={session.zoneProfile} className="text-xs" />
+      <ZoneBar profile={session.zoneProfile} className="h-1 rounded-none" />
+      <div className="p-4 sm:p-5">
+        <div className="space-y-1">
+          <p className="text-lg font-semibold leading-snug">{sc(session.routineName ?? "Rutina")}</p>
+          <p className="text-base text-muted-foreground flex items-center gap-1.5">
+            <CalendarIcon className="w-4 h-4 shrink-0" />
+            {dateLabel(session)}
+          </p>
+          <ZoneLegend profile={session.zoneProfile} className="text-xs pt-1" />
+        </div>
+        <div className="flex justify-end mt-3 pt-3 border-t border-border">
+          {isCancelled ? (
+            <span className="inline-flex items-center gap-2 text-base text-muted-foreground">
+              <Icon className="w-4 h-4" />
+              {action.label}
+            </span>
+          ) : (
+            <span className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-base font-semibold", action.tone)}>
+              <Icon className="w-5 h-5" />
+              {action.label}
+              <ChevronRightIcon className="w-4 h-4 -mr-1 opacity-70" />
+            </span>
+          )}
+        </div>
       </div>
-      <span className={cn("shrink-0 inline-flex items-center gap-2 px-4 py-3 rounded-xl text-base font-semibold", action.tone)}>
-        {Icon && <Icon className="w-5 h-5" />}
-        {action.label}
-        {!isCancelled && <ChevronRightIcon className="w-4 h-4 -mr-1 opacity-70" />}
-      </span>
     </>
   )
 
-  const cardClass = "flex items-center gap-4 p-4 sm:p-5 border border-border rounded-2xl bg-card"
+  const cardClass = "border border-border rounded-2xl bg-card overflow-hidden"
 
   if (isCancelled) return <div className={cn(cardClass, "opacity-60")}>{content}</div>
 
   return (
-    <Link href={`/teams/${teamId}/mis-rutinas/${session.id}`} className={cn(cardClass, "hover:border-primary/50 active:scale-[0.99] transition-all")}>
+    <Link href={`/teams/${teamId}/mis-rutinas/${session.id}`} className={cn(cardClass, "block hover:border-primary/50 active:scale-[0.99] transition-all")}>
       {content}
     </Link>
   )
