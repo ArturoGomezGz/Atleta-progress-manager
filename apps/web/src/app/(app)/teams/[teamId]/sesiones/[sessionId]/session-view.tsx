@@ -1,6 +1,7 @@
 "use client"
 
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
+import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
@@ -70,6 +71,8 @@ export function SessionView({ sessionId }: Props) {
               ? new Date(session.scheduledDate + "T12:00:00").toLocaleDateString("es", { dateStyle: "medium" })
               : new Date(session.startedAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}
           </p>
+          <ZoneBar profile={session.zoneProfile} className="mt-1.5 max-w-60" />
+          <ZoneLegend profile={session.zoneProfile} className="mt-1" />
         </div>
 
         <span className={cn("text-[10px] font-semibold px-2 py-0.5 rounded-full border shrink-0 flex items-center gap-1.5", statusCfg.badge)}>

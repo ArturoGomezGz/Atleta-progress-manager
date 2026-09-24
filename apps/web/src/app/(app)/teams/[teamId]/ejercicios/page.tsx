@@ -5,6 +5,7 @@ import { ExerciseFinderBar, FinderEmptyResults, useExerciseFinder } from "@/comp
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
+import { deriveBodyZone, ZONE_CONFIG } from "@/lib/body-zones"
 import { isShortsUrl, parseYoutubeId, youtubeWatchUrl } from "@atleta/db/youtube"
 import {
   AlertTriangleIcon,
@@ -30,13 +31,6 @@ import { useParams } from "next/navigation"
 import { useEffect, useRef, useState } from "react"
 
 // ── Config ────────────────────────────────────────────────────────────────────
-
-const ZONE_CONFIG = {
-  upper:     { bar: "bg-teal-500",   label: "Superior",  pill: "bg-teal-500/10 text-teal-600 border-teal-500/20" },
-  lower:     { bar: "bg-red-500",    label: "Inferior",  pill: "bg-red-500/10 text-red-600 border-red-500/20" },
-  core:      { bar: "bg-amber-500",  label: "Core",      pill: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
-  full_body: { bar: "bg-violet-500", label: "Full body", pill: "bg-violet-500/10 text-violet-600 border-violet-500/20" },
-} as const
 
 const DIFFICULTY_CONFIG = {
   beginner:     { label: "Principiante", pill: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
@@ -103,13 +97,6 @@ const EMPTY_FORM: FormState = {
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-
-function deriveBodyZone(muscles: { bodyZone: "upper" | "lower" | "core"; role: string }[]) {
-  const zones = new Set(muscles.filter((m) => m.role === "primary").map((m) => m.bodyZone))
-  if (zones.size === 0) return null
-  if (zones.size === 1) return [...zones][0] as "upper" | "lower" | "core"
-  return "full_body" as const
-}
 
 // ── Page ─────────────────────────────────────────────────────────────────────
 

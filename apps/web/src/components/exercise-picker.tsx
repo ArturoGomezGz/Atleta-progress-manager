@@ -3,6 +3,7 @@
 import { ExerciseFinderBar, FinderEmptyResults, useExerciseFinder, type FinderExercise } from "@/components/exercise-finder"
 import { YouTubeThumb } from "@/components/youtube-player"
 import { cn } from "@/lib/utils"
+import { deriveBodyZone, ZONE_CONFIG } from "@/lib/body-zones"
 import { ChevronDownIcon, XIcon } from "lucide-react"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { createPortal } from "react-dom"
@@ -33,13 +34,6 @@ const CATEGORY_LABELS: Record<PickerExercise["category"], string> = {
 // Propios primero (equipo y personales), luego guardados, para encontrarlos rápido.
 const CATEGORY_ORDER: PickerExercise["category"][] = ["team", "mine", "saved", "system", "public"]
 
-const ZONE_CONFIG = {
-  upper:     { bar: "bg-teal-500",   pill: "bg-teal-500/10 text-teal-600 border-teal-500/20",   label: "Superior" },
-  lower:     { bar: "bg-red-500",    pill: "bg-red-500/10 text-red-600 border-red-500/20",       label: "Inferior" },
-  core:      { bar: "bg-amber-500",  pill: "bg-amber-500/10 text-amber-600 border-amber-500/20", label: "Core" },
-  full_body: { bar: "bg-violet-500", pill: "bg-violet-500/10 text-violet-600 border-violet-500/20", label: "Full body" },
-} as const
-
 const DIFFICULTY_CONFIG = {
   beginner:     { label: "Principiante", pill: "bg-emerald-500/10 text-emerald-600 border-emerald-500/20" },
   intermediate: { label: "Intermedio",   pill: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
@@ -49,13 +43,6 @@ const DIFFICULTY_CONFIG = {
 const PATTERN_LABELS: Record<string, string> = {
   push: "Empuje", pull: "Jalón", squat: "Sentadilla", hinge: "Bisagra",
   carry: "Cargada", rotation: "Rotación", isometric: "Isométrico", mobility: "Movilidad", core: "Core",
-}
-
-function deriveBodyZone(muscles: PickerExercise["muscles"]) {
-  const zones = new Set(muscles.filter((m) => m.role === "primary").map((m) => m.bodyZone))
-  if (zones.size === 0) return null
-  if (zones.size === 1) return [...zones][0] as "upper" | "lower" | "core"
-  return "full_body" as const
 }
 
 type Props = {

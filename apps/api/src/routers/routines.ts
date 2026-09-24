@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server"
 import { and, eq, inArray } from "drizzle-orm"
 import { z } from "zod"
 import { aiRoutineInputSchema, generateRoutineWithAI } from "../services/ai-routines"
+import { exerciseZones, zoneProfiles } from "../services/body-zones"
 import { canUseAiRoutines } from "../services/feature-access"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
@@ -123,7 +124,9 @@ export const routinesRouter = router({
       await assertMember(ctx.session.user.id, input.teamId)
       const conditions = [eq(routine.teamId, input.teamId)]
       if (input.category) conditions.push(eq(routine.category, input.category))
-      return db.select().from(routine).where(and(...conditions))
+      const rows = await db.select().from(routine).where(and(...conditions))
+      const profiles = await zoneProfiles(rows.map((r) => r.content))
+      return rows.map((r, i) => ({ ...r, zoneProfile: profiles[i] }))
     }),
 
   get: protectedProcedure
@@ -147,8 +150,9 @@ export const routinesRouter = router({
             .where(inArray(exercise.id, exerciseIds))
         : []
 
+      const zones = await exerciseZones(exerciseIds)
       const nameById = Object.fromEntries(exercises.map((e) => [e.id, e.name ?? "Ejercicio eliminado"]))
-      const exerciseInfo = Object.fromEntries(exercises.map((e) => [e.id, e]))
+      const exerciseInfo = Object.fromEntries(exercises.map((e) => [e.id, { ...e, zone: zones.get(e.id) ?? null }]))
       return { ...r, exerciseNames: nameById, exerciseInfo }
     }),
 
