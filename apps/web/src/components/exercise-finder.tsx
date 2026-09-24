@@ -1,6 +1,7 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { deriveBodyZone } from "@/lib/body-zones"
 import { CheckIcon, SearchIcon, SlidersHorizontalIcon, XIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
@@ -73,13 +74,6 @@ const SEARCH_SYNONYMS: Record<string, string[]> = {
 
 function normalizeText(s: string) {
   return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[-_]/g, " ")
-}
-
-function deriveBodyZone(muscles: FinderExercise["muscles"]) {
-  const zones = new Set(muscles.filter((m) => m.role === "primary").map((m) => m.bodyZone))
-  if (zones.size === 0) return null
-  if (zones.size === 1) return [...zones][0]
-  return "full_body" as const
 }
 
 function isNoEquipment(ex: FinderExercise) {

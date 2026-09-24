@@ -2,6 +2,7 @@
 
 import { YouTubePlayer } from "@/components/youtube-player"
 import { cn } from "@/lib/utils"
+import { deriveBodyZone, ZONE_CONFIG } from "@/lib/body-zones"
 import { BookmarkIcon, DumbbellIcon, FlameIcon, UserIcon, XIcon, ZapIcon } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 
@@ -37,23 +38,9 @@ const DIFFICULTY_CONFIG = {
   advanced:     { label: "Avanzado",     pill: "bg-red-500/10 text-red-600 border-red-500/20" },
 } as const
 
-const ZONE_CONFIG = {
-  upper:     { bar: "bg-teal-500",   label: "Superior",  pill: "bg-teal-500/10 text-teal-600 border-teal-500/20" },
-  lower:     { bar: "bg-red-500",    label: "Inferior",  pill: "bg-red-500/10 text-red-600 border-red-500/20" },
-  core:      { bar: "bg-amber-500",  label: "Core",      pill: "bg-amber-500/10 text-amber-600 border-amber-500/20" },
-  full_body: { bar: "bg-violet-500", label: "Full body", pill: "bg-violet-500/10 text-violet-600 border-violet-500/20" },
-} as const
-
 const PATTERN_LABELS: Record<string, string> = {
   push: "Empuje", pull: "Jalón", squat: "Sentadilla", hinge: "Bisagra",
   carry: "Cargada", rotation: "Rotación", isometric: "Isométrico", mobility: "Movilidad", core: "Core",
-}
-
-function deriveBodyZone(muscles: ExerciseDetail["muscles"]) {
-  const zones = new Set(muscles.filter((m) => m.role === "primary").map((m) => m.bodyZone))
-  if (zones.size === 0) return null
-  if (zones.size === 1) return [...zones][0] as "upper" | "lower" | "core"
-  return "full_body" as const
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────

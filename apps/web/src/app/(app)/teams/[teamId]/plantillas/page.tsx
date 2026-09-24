@@ -1,5 +1,6 @@
 "use client"
 
+import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
@@ -160,9 +161,13 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
 
           return (
             <div key={r.id} className="group flex items-center border border-border rounded-xl hover:border-primary/20 bg-card/60 transition-colors">
-              <Link href={`/teams/${teamId}/plantillas/${r.id}`} className="flex-1 flex items-center gap-3 px-4 py-3.5 min-w-0">
+              <ZoneStripe profile={r.zoneProfile} className="ml-2 my-2.5" />
+              <Link href={`/teams/${teamId}/plantillas/${r.id}`} className="flex-1 flex items-center gap-3 pl-3 pr-4 py-3.5 min-w-0">
                 <Icon className={cn("w-4 h-4 shrink-0", cfg.text)} />
-                <span className="font-medium text-sm flex-1 truncate">{sc(r.name)}</span>
+                <span className="flex-1 min-w-0">
+                  <span className="block font-medium text-sm truncate">{sc(r.name)}</span>
+                  <ZoneLegend profile={r.zoneProfile} className="mt-0.5" />
+                </span>
                 <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
                   {new Date(r.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
                 </span>

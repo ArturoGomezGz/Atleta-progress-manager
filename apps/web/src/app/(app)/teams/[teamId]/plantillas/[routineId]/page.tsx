@@ -3,6 +3,8 @@
 import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
+import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
+import { deriveBodyZone, ZONE_CONFIG, zoneProfileFromContent, type BodyZone } from "@/lib/body-zones"
 import { useFullscreenWhileMounted } from "@/lib/fullscreen-mode"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -56,7 +58,7 @@ type DraftSet = {
   loadValue: string
 }
 
-type ExerciseInfo = { name: string; youtubeVideoId: string | null; videoOrientation: "horizontal" | "vertical" }
+type ExerciseInfo = { name: string; youtubeVideoId: string | null; videoOrientation: "horizontal" | "vertical"; zone: BodyZone | null }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -310,10 +312,12 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
   // Catálogo local como fuente primaria; fallback al mapa del servidor (ejercicios ya no visibles)
   const info: Record<string, ExerciseInfo> = {
-    ...Object.fromEntries(Object.entries(routineData?.exerciseInfo ?? {}).map(([id, e]) => [id, { name: e.name, youtubeVideoId: e.youtubeVideoId, videoOrientation: e.videoOrientation }])),
-    ...Object.fromEntries((catalog ?? []).map((e) => [e.id, { name: e.name, youtubeVideoId: e.youtubeVideoId, videoOrientation: e.videoOrientation }])),
+    ...Object.fromEntries(Object.entries(routineData?.exerciseInfo ?? {}).map(([id, e]) => [id, { name: e.name, youtubeVideoId: e.youtubeVideoId, videoOrientation: e.videoOrientation, zone: e.zone }])),
+    ...Object.fromEntries((catalog ?? []).map((e) => [e.id, { name: e.name, youtubeVideoId: e.youtubeVideoId, videoOrientation: e.videoOrientation, zone: deriveBodyZone(e.muscles) }])),
   }
-  const infoFor = (id: string): ExerciseInfo => info[id] ?? { name: "…", youtubeVideoId: null, videoOrientation: "horizontal" }
+  const infoFor = (id: string): ExerciseInfo => info[id] ?? { name: "…", youtubeVideoId: null, videoOrientation: "horizontal", zone: null }
+  // Se recalcula con cada cambio sin guardar: el entrenador ve cómo se reparte la rutina mientras la arma
+  const zoneProfile = zoneProfileFromContent(content, (id) => info[id]?.zone)
 
   function mutate(fn: (c: RoutineContent) => RoutineContent) {
     setLocalContent((prev) => fn(prev ?? routineData?.content ?? { v: 1, items: [] }))
@@ -462,29 +466,38 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       {/* Cabecera fija: ocupa el espacio que dejó el topbar de la app en modo enfocado.
           La única salida de la vista es este botón, que es donde se decide qué hacer
           con los cambios. */}
-      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 -mt-6 sm:-mt-8 mb-2 px-4 sm:px-6 py-2 bg-background/95 backdrop-blur-sm border-b border-border flex items-center gap-2">
-        <button
-          type="button"
-          onClick={requestExit}
-          aria-label="Salir"
-          className="shrink-0 flex items-center gap-1 -ml-2 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
-        >
-          <ChevronLeftIcon className="w-5 h-5" />
-          <span className="text-sm">Salir</span>
-        </button>
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          onBlur={() => {
-            const trimmed = name.trim()
-            if (!trimmed) { setName(routineData.name); return }
-            if (trimmed.toLowerCase() !== routineData.name) renameRoutine.mutate({ id: routineId, name: trimmed.toLowerCase() })
-          }}
-          onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
-          className="flex-1 min-w-0 text-base font-bold tracking-wide uppercase bg-transparent outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary/60 transition-colors truncate cursor-text"
-          style={{ fontFamily: "var(--font-barlow-condensed)" }}
-          aria-label="Nombre de la plantilla"
-        />
+      <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 -mt-6 sm:-mt-8 mb-2 px-4 sm:px-6 py-2 bg-background/95 backdrop-blur-sm border-b border-border">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={requestExit}
+            aria-label="Salir"
+            className="shrink-0 flex items-center gap-1 -ml-2 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+          >
+            <ChevronLeftIcon className="w-5 h-5" />
+            <span className="text-sm">Salir</span>
+          </button>
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            onBlur={() => {
+              const trimmed = name.trim()
+              if (!trimmed) { setName(routineData.name); return }
+              if (trimmed.toLowerCase() !== routineData.name) renameRoutine.mutate({ id: routineId, name: trimmed.toLowerCase() })
+            }}
+            onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
+            className="flex-1 min-w-0 text-base font-bold tracking-wide uppercase bg-transparent outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary/60 transition-colors truncate cursor-text"
+            style={{ fontFamily: "var(--font-barlow-condensed)" }}
+            aria-label="Nombre de la plantilla"
+          />
+        </div>
+        {/* Reparto de la rutina por zona corporal, siempre visible mientras se arma */}
+        {zoneProfile.totalSets > 0 && (
+          <div className="pt-1 pb-0.5">
+            <ZoneBar profile={zoneProfile} className="h-1" />
+            <ZoneLegend profile={zoneProfile} className="mt-1 text-[10px]" />
+          </div>
+        )}
       </div>
 
       {/* IA (experimental): solo tiene sentido para arrancar una rutina vacía, así que
@@ -966,6 +979,13 @@ function ExerciseCard({
 
   return (
     <div className={cn("relative border border-border rounded-xl overflow-hidden", nested ? "bg-background" : "bg-card/60")}>
+      {info.zone && (
+        <div
+          className={cn("absolute left-0 inset-y-0 w-1", ZONE_CONFIG[info.zone].bar)}
+          title={ZONE_CONFIG[info.zone].label}
+          aria-hidden="true"
+        />
+      )}
       <CardCornerActions onRemove={onRemove} confirmMessage={`¿Eliminar "${info.name}" de la rutina?`} />
       <div className="flex flex-wrap items-center gap-3 pl-3 pr-14 py-2.5 min-h-[84px] bg-muted/10">
         <span className="w-6 h-6 rounded-full bg-primary/15 border border-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
@@ -985,6 +1005,7 @@ function ExerciseCard({
         >
           <p className="font-semibold text-sm truncate">{info.name}</p>
           <p className="text-xs text-muted-foreground truncate">
+            {info.zone && <span className={cn("font-medium", ZONE_CONFIG[info.zone].text)}>{ZONE_CONFIG[info.zone].label} · </span>}
             {setsSummary(item.sets)}
             {item.restSeconds ? ` · descanso ${item.restSeconds}s` : ""}
             {item.notes ? " · con notas" : ""}

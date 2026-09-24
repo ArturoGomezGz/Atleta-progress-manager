@@ -1,5 +1,7 @@
 "use client"
 
+import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
+import type { ZoneProfile } from "@/lib/body-zones"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { CalendarIcon, CheckCircleIcon, ChevronRightIcon, CompassIcon, DumbbellIcon, PlayIcon } from "lucide-react"
@@ -13,6 +15,7 @@ type Session = {
   scheduledDate: string | null
   status: string
   routineCategory: string | null
+  zoneProfile?: ZoneProfile
 }
 
 const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -40,12 +43,14 @@ function SessionCard({ teamId, session }: { teamId: string; session: Session }) 
 
   const content = (
     <>
+      <ZoneStripe profile={session.zoneProfile} className="w-1.5 -my-1" />
       <div className="flex-1 min-w-0 space-y-1">
         <p className="text-lg font-semibold leading-snug">{sc(session.routineName ?? "Rutina")}</p>
         <p className="text-base text-muted-foreground flex items-center gap-1.5">
           <CalendarIcon className="w-4 h-4 shrink-0" />
           {dateLabel(session)}
         </p>
+        <ZoneLegend profile={session.zoneProfile} className="text-xs" />
       </div>
       <span className={cn("shrink-0 inline-flex items-center gap-2 px-4 py-3 rounded-xl text-base font-semibold", action.tone)}>
         {Icon && <Icon className="w-5 h-5" />}
