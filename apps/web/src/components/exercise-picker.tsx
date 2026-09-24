@@ -126,8 +126,10 @@ function ExercisePickerSheet({ exercises, value, onSelect, onClose }: {
     requestAnimationFrame(() => setVisible(true))
     window.history.pushState({ ...window.history.state, exercisePicker: true }, "")
 
-    function onPopState() {
-      if (closing.current) return
+    // Una hoja anidada (p. ej. filtros) conserva esta marca al hacer su propio push,
+    // así que un "atrás" que solo la cierra a ella no debe cerrar también esta hoja.
+    function onPopState(e: PopStateEvent) {
+      if (closing.current || e.state?.exercisePicker) return
       closing.current = true
       setVisible(false)
       setTimeout(() => onCloseRef.current(), 250)
