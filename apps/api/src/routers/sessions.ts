@@ -15,6 +15,8 @@ import {
 import { TRPCError } from "@trpc/server"
 import { and, asc, desc, eq, gt, gte, inArray, lte, or, SQL } from "drizzle-orm"
 import { z } from "zod"
+import { zoneProfileFromContent } from "@atleta/db/body-zones"
+import { exerciseZones, withZoneProfiles } from "../services/body-zones"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { flattenContent, targetsForExercise } from "../services/routine-content"
 import { protectedProcedure, router } from "../trpc"
@@ -44,6 +46,7 @@ export const sessionsRouter = router({
           routineId: trainingSession.routineId,
           routineCategory: routine.category,
           athleteSessionStatus: athleteSession.status,
+          content: trainingSession.content,
         })
         .from(athleteSession)
         .innerJoin(trainingSession, eq(athleteSession.sessionId, trainingSession.id))
@@ -51,7 +54,7 @@ export const sessionsRouter = router({
         .where(and(eq(trainingSession.teamId, input.teamId), eq(athleteSession.athleteId, athleteId)))
         .orderBy(desc(trainingSession.startedAt))
 
-      return rows.map((row) => ({
+      return (await withZoneProfiles(rows)).map((row) => ({
         ...row,
         // Si la sesión entera fue cancelada por el coach, tiene precedencia sobre el estado individual
         status: row.status === "cancelled" ? "cancelled" as const : row.athleteSessionStatus,
@@ -158,26 +161,27 @@ export const sessionsRouter = router({
         scheduledDate: trainingSession.scheduledDate,
         routineId: trainingSession.routineId,
         routineName: routine.name,
+        content: trainingSession.content,
       }
 
       // Filtrar por atleta: la sesión solo aparece si ese atleta está asignado a ella
       if (input.athleteId) {
         conditions.push(eq(athleteSession.athleteId, input.athleteId))
-        return db
+        return withZoneProfiles(await db
           .select(columns)
           .from(trainingSession)
           .innerJoin(routine, eq(trainingSession.routineId, routine.id))
           .innerJoin(athleteSession, eq(athleteSession.sessionId, trainingSession.id))
           .where(and(...conditions))
-          .orderBy(desc(trainingSession.startedAt))
+          .orderBy(desc(trainingSession.startedAt)))
       }
 
-      return db
+      return withZoneProfiles(await db
         .select(columns)
         .from(trainingSession)
         .innerJoin(routine, eq(trainingSession.routineId, routine.id))
         .where(and(...conditions))
-        .orderBy(desc(trainingSession.startedAt))
+        .orderBy(desc(trainingSession.startedAt)))
     }),
 
   create: protectedProcedure
@@ -316,11 +320,19 @@ export const sessionsRouter = router({
         .innerJoin(user, eq(athleteSession.athleteId, user.id))
         .where(eq(athleteSession.sessionId, input.id))
 
+      // Ejercicios de la sesión + los del snapshot (pueden diferir si se agregaron sobre la marcha)
+      const zones = await exerciseZones([
+        ...exercises.map((e) => e.exerciseId),
+        ...flat.map((e) => e.exerciseId),
+      ])
+      const zoneProfile = zoneProfileFromContent(session.content, (id) => zones.get(id))
+
       return {
         ...session,
         routineName: r?.name ?? null,
         routineCategory: r?.category ?? null,
-        exercises: exercisesWithTargets,
+        zoneProfile,
+        exercises: exercisesWithTargets.map((ex) => ({ ...ex, zone: zones.get(ex.exerciseId) ?? null })),
         athletes,
       }
     }),

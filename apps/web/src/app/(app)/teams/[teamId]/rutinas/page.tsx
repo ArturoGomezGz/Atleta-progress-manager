@@ -1,5 +1,7 @@
 "use client"
 
+import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
+import type { ZoneProfile } from "@/lib/body-zones"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { CheckIcon, ChevronDownIcon, Link2Icon, PlusIcon, SearchIcon, UserIcon, XIcon } from "lucide-react"
@@ -22,6 +24,7 @@ type SessionItem = {
   scheduledDate: string | null
   routineName: string
   routineCategory?: string | null
+  zoneProfile?: ZoneProfile
 }
 
 function SessionCard({ teamId, session }: { teamId: string; session: SessionItem }) {
@@ -37,12 +40,14 @@ function SessionCard({ teamId, session }: { teamId: string; session: SessionItem
       href={`/teams/${teamId}/sesiones/${session.id}`}
       className="group flex items-center gap-3 p-3.5 border border-border rounded-xl hover:border-primary/30 bg-card/60 transition-all duration-200 cursor-pointer"
     >
-      <div className={cn("w-1 h-8 rounded-full shrink-0", config.dot)} />
+      {/* El estado ya lo dice la etiqueta de la derecha: el borde muestra las zonas que se trabajan */}
+      <ZoneStripe profile={session.zoneProfile} className="min-h-8" />
       <div className="flex-1 min-w-0">
         <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
           {session.routineName ? sc(session.routineName) : "—"}
         </p>
         <p className="text-xs text-muted-foreground mt-0.5">{dateLabel}</p>
+        <ZoneLegend profile={session.zoneProfile} className="mt-1" />
       </div>
       <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border shrink-0", config.badge)}>
         {config.label}

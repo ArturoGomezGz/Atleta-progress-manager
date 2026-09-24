@@ -306,16 +306,47 @@ Cada resultado es un paquete denso de señales escaneables:
 
 ---
 
-## 10. Sistema de color por zona corporal (tentativo)
+## 10. Sistema de color por zona corporal
 
-| Zona | Color | Hex tentativo | Lógica |
-|---|---|---|---|
-| Tren inferior | Rojo terracota | `#D85A30` | Cálido, pesado, anclado — músculos más grandes |
-| Tren superior | Verde azulado / Teal | `#1D9E75` | Frío, ligero, elevado — empuje y jalón |
-| Core | Ámbar dorado | `#BA7517` | Punto medio — conecta inferior y superior |
-| Full body | Púrpura | `#7F77DD` | Síntesis, integración |
+Cada zona tiene un color que se usa en toda la app: ejercicios, plantillas, sesiones y rutinas del atleta. La idea es que una rutina se entienda **por su color**, no solo por su nombre.
 
-> Estado: **tentativo**. La lógica cromática está definida; los hex exactos requieren validación con la paleta de marca final.
+| Zona | Color | Tailwind (en uso) | Hex de referencia | Lógica |
+|---|---|---|---|---|
+| Tren inferior | Rojo | `red-500` | `#D85A30` | Cálido, pesado, anclado — músculos más grandes |
+| Tren superior | Verde azulado / Teal | `teal-500` | `#1D9E75` | Frío, ligero, elevado — empuje y jalón |
+| Core | Ámbar | `amber-500` | `#BA7517` | Punto medio — conecta inferior y superior |
+| Full body | Púrpura | `violet-500` | `#7F77DD` | Síntesis, integración |
+
+La paleta vive en un solo lugar: `ZONE_CONFIG` en `apps/web/src/lib/body-zones.ts`.
+
+### Zona de un ejercicio
+
+Se deriva de sus músculos **primarios** (`deriveBodyZone` en `packages/db/src/lib/body-zones.ts`): si todos caen en la misma zona base, esa es su zona; si caen en más de una, el ejercicio es **full body**. Los músculos secundarios no cuentan. Un ejercicio sin músculos primarios no tiene zona y no cuenta para el perfil de la rutina.
+
+### Perfil de una rutina o sesión
+
+Una rutina rara vez es de una sola zona, así que se muestra **en proporción**: cada zona pesa según las **series** que suma (`zoneProfileFromContent`).
+
+- Un ejercicio suelto aporta sus series a su zona.
+- En un circuito cuentan las rondas: 3 rondas de un ejercicio con 1 serie son 3 series.
+- La zona con más series es la **dominante**: el color principal de la rutina. En un empate gana el orden inferior → superior → core → full body.
+
+Ejemplo: una rutina con 10 series de pierna y un finisher de burpees y thrusters (6 series full body) es **63 % inferior · 38 % full body**: se ve roja con una franja morada.
+
+La API devuelve el perfil ya calculado (`zoneProfile`) en `routines.list`, `sessions.list`, `sessions.myList` y `sessions.get`. El de una sesión sale de su snapshot (`training_session.content`), así que no cambia si luego se edita la plantilla. El editor de plantillas lo recalcula en vivo en el cliente, con cada cambio sin guardar.
+
+### Dónde se ve
+
+| Vista | Qué muestra |
+|---|---|
+| Plantillas, Sesiones (coach), Mis rutinas (atleta), selector de plantilla en Nueva sesión | Franja vertical en el borde de cada tarjeta, dividida en proporción, + leyenda con porcentajes |
+| Editor de plantilla | Barra horizontal fija bajo el título, en vivo; franja y etiqueta de zona en cada ejercicio |
+| Detalle de sesión (coach) | Barra + leyenda en la cabecera |
+| Catálogo de ejercicios, explorar, selector de ejercicios | Barra lateral y etiqueta de zona por ejercicio (ya existía) |
+
+Componentes: `ZoneStripe`, `ZoneBar` y `ZoneLegend` en `apps/web/src/components/zone-profile.tsx`.
+
+> Los hex de referencia son la propuesta original; la app usa los tonos de Tailwind más cercanos. Pendiente validarlos contra la paleta de marca (ver §12). Ojo: el tipo **Evaluación** también usa violeta (`lib/routine-types.ts`), igual que full body.
 
 ---
 
@@ -340,7 +371,7 @@ Cada resultado es un paquete denso de señales escaneables:
 - [ ] **Búsqueda semántica** — pgvector para v1+ (no bloquea el schema inicial, solo se agrega la columna `embedding` más adelante).
 - [ ] **`is_platform_recommended`** — definir umbrales: popularidad mínima, calificación mínima, si el admin puede dar visto bueno manual.
 - [ ] **Integración de fuentes externas** — patrón Adapter/Repository ya documentado en Notion. Fuente(s) concretas y fase pendientes de definir.
-- [ ] **Colores de zona corporal** — validar contra la paleta de marca de CMW Atleta (actualmente usa `--primary` gold/teal). Revisar conflictos con tokens existentes.
+- [ ] **Colores de zona corporal** — implementados con tonos de Tailwind (§10). Falta validarlos contra la paleta de marca de CMW Atleta y resolver el choque de violeta entre full body y el tipo Evaluación.
 - [ ] **Calificaciones** — confirmar regla de no edición. Evaluar si aplica alguna ventana de tiempo para editar antes de bloquear.
 - [ ] **Migración de datos existentes** — los ejercicios actuales (`is_public`, `owner_user_id`, `owner_team_id`) se migran a la nueva estructura. Definir valores por defecto para los campos nuevos (difficulty, movement_patterns, etc.) en registros existentes.
 

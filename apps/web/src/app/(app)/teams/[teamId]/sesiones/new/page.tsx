@@ -3,6 +3,7 @@
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
+import { ZoneStripe } from "@/components/zone-profile"
 import { ChevronLeftIcon, InfoIcon, Link2Icon, SearchIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { use, useState, Suspense, useEffect } from "react"
@@ -367,8 +368,8 @@ function NewSessionForm({ teamId }: { teamId: string }) {
                       isSelected ? "bg-card" : "bg-card/40 hover:bg-card/70",
                     )}
                   >
-                    {/* Color bar */}
-                    <div className={cn("w-0.5 h-6 rounded-full shrink-0", isSelected ? cfg.leftBar : "bg-border")} />
+                    {/* Zonas que trabaja la plantilla, en proporción a sus series */}
+                    <ZoneStripe profile={r.zoneProfile} className={cn("min-h-6", !isSelected && "opacity-60")} />
 
                     {/* Type icon */}
                     <Icon className={cn("w-3.5 h-3.5 shrink-0", cfg.text)} />

@@ -6,7 +6,8 @@
     "./schema": "./src/schema/index.ts",
     "./client": "./src/client.ts",
     "./migrate": "./src/run-migrations.ts",
-    "./youtube": "./src/lib/youtube.ts"
+    "./youtube": "./src/lib/youtube.ts",
+    "./body-zones": "./src/lib/body-zones.ts"
   },
   "scripts": {
     "generate": "drizzle-kit generate",
