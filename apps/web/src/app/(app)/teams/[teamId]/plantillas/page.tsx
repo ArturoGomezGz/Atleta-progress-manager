@@ -1,6 +1,6 @@
 "use client"
 
-import { PageTransition, type SlideDirection } from "@/components/page-transition"
+import { PageTransition, useRevealAfterEnter, type SlideDirection } from "@/components/page-transition"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import { consumeBackNavigation } from "@/lib/page-transition"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
@@ -29,6 +29,9 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
   useLayoutEffect(() => { if (consumeBackNavigation()) setDirection("back") }, [])
 
   const { data: routines, refetch } = trpc.routines.list.useQuery({ teamId })
+  // Mientras carga no hay lista que filtrar: sin esto se mostraba "Sin plantillas"
+  // (a veces en pleno deslizamiento de vuelta) y luego saltaba a la lista real.
+  const { onEntered, showContent, showSkeleton } = useRevealAfterEnter(routines !== undefined)
   const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetch(); setDeleting(null) } })
   const duplicateRoutine = trpc.routines.duplicate.useMutation({ onSuccess: () => refetch() })
 
@@ -43,7 +46,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
   }
 
   return (
-    <PageTransition direction={direction}>
+    <PageTransition direction={direction} onEntered={onEntered}>
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
@@ -90,6 +93,22 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
       </div>
 
       {/* List */}
+      {showSkeleton && (
+        // Misma fila que una plantilla real: franja de zonas, ícono del tipo y nombre.
+        <div className="space-y-2" aria-hidden="true">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="flex items-center border border-border rounded-xl bg-card/60">
+              <div className="w-1 self-stretch ml-2 my-2.5 rounded-full bg-border" />
+              <div className="flex-1 flex items-center gap-3 pl-3 pr-4 py-3.5 min-w-0">
+                <span className="w-4 h-4 rounded bg-muted/60 animate-pulse shrink-0" />
+                <span className="h-4 w-2/5 rounded bg-muted/50 animate-pulse" />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showContent && (
       <div className="space-y-2">
         {filtered.map((r) => {
           const cfg  = getRoutineTypeConfig(r.category)
@@ -155,6 +174,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
           </div>
         )}
       </div>
+      )}
     </div>
     </PageTransition>
   )

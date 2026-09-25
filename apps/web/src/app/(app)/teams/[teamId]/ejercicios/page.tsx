@@ -3,6 +3,7 @@
 import { ExerciseDetailSheet, type ExerciseDetail } from "@/components/exercise-detail-sheet"
 import { ExerciseFinderBar, FinderEmptyResults, useExerciseFinder } from "@/components/exercise-finder"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
+import { afterNextPaint } from "@/lib/after-paint"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { deriveBodyZone, ZONE_CONFIG } from "@/lib/body-zones"
@@ -394,7 +395,7 @@ function ExerciseSheet({
   }
 
   // Animate in on mount
-  useEffect(() => { requestAnimationFrame(() => setVisible(true)) }, [])
+  useEffect(() => afterNextPaint(() => setVisible(true)), [])
 
   function close() {
     setVisible(false)

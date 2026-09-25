@@ -1,6 +1,7 @@
 "use client"
 
 import { YouTubePlayer } from "@/components/youtube-player"
+import { afterNextPaint } from "@/lib/after-paint"
 import { cn } from "@/lib/utils"
 import { deriveBodyZone, ZONE_CONFIG } from "@/lib/body-zones"
 import { BookmarkIcon, DumbbellIcon, FlameIcon, UserIcon, XIcon, ZapIcon } from "lucide-react"
@@ -68,7 +69,7 @@ export function ExerciseDetailSheet({
   // así el botón "atrás" del teléfono la cierra en lugar de salir de la pantalla anterior.
   // Solo se cierra con "atrás" o con la X (no con gestos ni tocando fuera).
   useEffect(() => {
-    requestAnimationFrame(() => setVisible(true))
+    const cancelEnter = afterNextPaint(() => setVisible(true))
     window.history.pushState({ ...window.history.state, exerciseDetail: true }, "")
 
     // Igual que en el selector de ejercicios y el panel de filtros: si esta marca
@@ -81,7 +82,10 @@ export function ExerciseDetailSheet({
       setTimeout(() => onCloseRef.current(), 300)
     }
     window.addEventListener("popstate", onPopState)
-    return () => window.removeEventListener("popstate", onPopState)
+    return () => {
+      cancelEnter()
+      window.removeEventListener("popstate", onPopState)
+    }
   }, [])
 
   // La X retrocede en el historial: el mismo camino que el botón "atrás", sin entradas huérfanas

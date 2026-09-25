@@ -2,6 +2,7 @@
 
 import { ExerciseFinderBar, FinderEmptyResults, useExerciseFinder, type FinderExercise } from "@/components/exercise-finder"
 import { YouTubeThumb } from "@/components/youtube-player"
+import { afterNextPaint } from "@/lib/after-paint"
 import { cn } from "@/lib/utils"
 import { deriveBodyZone, ZONE_CONFIG } from "@/lib/body-zones"
 import { ChevronDownIcon, XIcon } from "lucide-react"
@@ -123,7 +124,7 @@ function ExercisePickerSheet({ exercises, value, onSelect, onClose }: {
 
   // Igual que la ficha de ejercicio: el botón "atrás" del teléfono cierra la hoja
   useEffect(() => {
-    requestAnimationFrame(() => setVisible(true))
+    const cancelEnter = afterNextPaint(() => setVisible(true))
     window.history.pushState({ ...window.history.state, exercisePicker: true }, "")
 
     // Una hoja anidada (p. ej. filtros) conserva esta marca al hacer su propio push,
@@ -135,7 +136,10 @@ function ExercisePickerSheet({ exercises, value, onSelect, onClose }: {
       setTimeout(() => onCloseRef.current(), 250)
     }
     window.addEventListener("popstate", onPopState)
-    return () => window.removeEventListener("popstate", onPopState)
+    return () => {
+      cancelEnter()
+      window.removeEventListener("popstate", onPopState)
+    }
   }, [])
 
   function close() {

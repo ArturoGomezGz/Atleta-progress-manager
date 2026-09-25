@@ -1,5 +1,6 @@
 "use client"
 
+import { afterNextPaint } from "@/lib/after-paint"
 import { cn } from "@/lib/utils"
 import { deriveBodyZone } from "@/lib/body-zones"
 import { CheckIcon, SearchIcon, SlidersHorizontalIcon, XIcon } from "lucide-react"
@@ -294,7 +295,7 @@ function FilterSheet({ finder, onClose }: { finder: ExerciseFinderState; onClose
 
   // Igual que la ficha de ejercicio: el botón "atrás" del teléfono cierra el panel
   useEffect(() => {
-    requestAnimationFrame(() => setVisible(true))
+    const cancelEnter = afterNextPaint(() => setVisible(true))
     window.history.pushState({ ...window.history.state, exerciseFilters: true }, "")
 
     // Si esta hoja no es la que se acaba de cerrar (su propia marca sigue presente en
@@ -306,7 +307,10 @@ function FilterSheet({ finder, onClose }: { finder: ExerciseFinderState; onClose
       setTimeout(() => onCloseRef.current(), 250)
     }
     window.addEventListener("popstate", onPopState)
-    return () => window.removeEventListener("popstate", onPopState)
+    return () => {
+      cancelEnter()
+      window.removeEventListener("popstate", onPopState)
+    }
   }, [])
 
   function close() {
