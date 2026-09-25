@@ -55,7 +55,10 @@ export function SessionView({ sessionId }: Props) {
   const activeAthleteId = selectedAthleteId ?? session.athletes.find((a) => a.status === "active")?.athleteId ?? null
 
   return (
-    <div className="flex flex-col h-[calc(100vh-57px)]">
+    // h-full = alto de <main> (que ya descuenta la barra superior y sigue a h-dvh). Con
+    // 100vh la vista medía el viewport "grande" (sin barra del navegador) y desbordaba
+    // <main>: le daba un scroll extra que el foco/teclado movía junto con la cabecera.
+    <div className="flex flex-col h-full">
       {/* ── Header ── */}
       <div className="border-b px-4 lg:px-6 py-3 flex items-center gap-3 shrink-0">
         <Link href={backHref} className="p-1.5 text-muted-foreground hover:text-foreground transition-colors rounded-lg shrink-0">
@@ -214,7 +217,9 @@ export function SessionView({ sessionId }: Props) {
           </aside>
 
           {/* Main area */}
-          <div className={cn("flex-1 overflow-y-auto p-4 lg:p-6", isActive && "pb-24 lg:pb-6")}>
+          {/* scroll-pb: al enfocar un input (y abrirse el teclado) el navegador lo
+              desplaza a la vista sin contar la barra fija de abajo; así no queda tapado. */}
+          <div className={cn("flex-1 overflow-y-auto p-4 lg:p-6", isActive && "pb-24 scroll-pb-24 lg:pb-6 lg:scroll-pb-0")}>
             {(() => {
               if (!activeAthleteId) return <p className="text-muted-foreground text-sm">Selecciona un atleta</p>
               const activeAthlete = session.athletes.find((a) => a.athleteId === activeAthleteId)

@@ -111,6 +111,22 @@
     background: hsl(217 100% 64% / 0.22);
   }
 
+  /* iOS Safari hace zoom (y desplaza la vista) al enfocar cualquier campo con
+     letra < 16px, y casi todos los inputs de la app usan text-xs/text-sm. Solo
+     en iOS (`-webkit-touch-callout` no existe en otros motores), los campos de
+     texto suben a 16px: se redefinen las variables que leen `text-xs`/`text-sm`
+     (así los tamaños mayores, como text-2xl, no se tocan) y, para los que no
+     traen clase de tamaño y heredan una letra chica, un mínimo de 1rem. */
+  @supports (-webkit-touch-callout: none) {
+    input:not([type="checkbox"], [type="radio"], [type="range"], [type="color"], [type="file"]),
+    textarea,
+    select {
+      --text-xs: 1rem;
+      --text-sm: 1rem;
+      font-size: max(1rem, 1em);
+    }
+  }
+
   /* Thin premium scrollbar */
   ::-webkit-scrollbar {
     width: 4px;

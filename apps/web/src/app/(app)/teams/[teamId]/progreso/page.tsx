@@ -46,7 +46,8 @@ function CoachProgresoView({ teamId }: { teamId: string }) {
   const activeAthleteId = selectedAthleteId ?? athletes?.[0]?.id ?? null
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-57px)] lg:h-[calc(100vh-57px)]">
+    // h-full (alto de <main>) y no 100vh: ver la vista de sesión, mismo motivo.
+    <div className="flex flex-col lg:flex-row h-full">
       <aside className="lg:w-48 lg:border-r lg:flex-col lg:overflow-y-auto lg:shrink-0 flex flex-row overflow-x-auto border-b lg:border-b-0 shrink-0">
         {athletes?.length === 0 && (
           <p className="px-4 py-3 text-xs text-muted-foreground">Sin atletas</p>
