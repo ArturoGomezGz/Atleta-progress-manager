@@ -900,7 +900,9 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
         min={0}
         value={seconds}
         onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
-        className="w-14 bg-background border border-primary/30 rounded-md px-1.5 py-0.5 text-[11px] text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+        // text-xs y no un tamaño arbitrario: la regla de globals.css que evita el zoom
+        // de iOS al enfocar solo sube a 16px los tamaños del tema (text-xs/text-sm).
+        className="w-14 bg-background border border-primary/30 rounded-md px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
         aria-label="Segundos de descanso"
       />
       <span className="shrink-0">seg</span>
