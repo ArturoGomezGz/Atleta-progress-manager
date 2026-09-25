@@ -479,6 +479,77 @@ export function RoutinePreview({
   )
 }
 
+// ─── Esqueletos de carga ───────────────────────────────────────────────────────
+//
+// Misma estructura que la pantalla real, empezando por el hueco del video/miniatura
+// de cada ejercicio, para que al llegar los datos cada cosa aparezca donde ya estaba
+// su silueta en vez de empujar todo lo de abajo.
+
+const bone = "bg-muted/50 animate-pulse"
+
+/** Silueta de RoutinePreview (y WorkoutSummary): encabezado y tarjetas de ejercicio. */
+export function RoutinePreviewSkeleton({ back = true }: { back?: boolean }) {
+  return (
+    <div className="max-w-xl mx-auto px-4 sm:px-6 py-5 space-y-6" aria-hidden="true">
+      {back && <div className="h-11 flex items-center"><div className={cn("h-5 w-32 rounded", bone)} /></div>}
+      <div className="space-y-2">
+        <div className="h-[2.375rem] flex items-center"><div className={cn("h-8 w-3/5 rounded-lg", bone)} /></div>
+        <div className="h-6 flex items-center"><div className={cn("h-4 w-1/2 rounded", bone)} /></div>
+      </div>
+      <div className="h-24 rounded-2xl border border-border bg-muted/20" />
+      <div className="space-y-3">
+        {[0, 1, 2].map((i) => (
+          <div key={i} className="rounded-2xl border border-border bg-card overflow-hidden">
+            <div className="flex gap-3 p-3">
+              <div className={cn("shrink-0 w-32 sm:w-40 aspect-video rounded-xl", bone)} />
+              <div className="flex-1 min-w-0 space-y-2 py-1">
+                <div className={cn("h-3.5 w-1/3 rounded", bone)} />
+                <div className={cn("h-5 w-4/5 rounded", bone)} />
+                <div className={cn("h-4 w-1/2 rounded", bone)} />
+              </div>
+            </div>
+            <div className="h-[3.3rem] border-t border-border flex items-center justify-center">
+              <div className={cn("h-4 w-36 rounded", bone)} />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+/** Silueta de la serie en curso (WorkoutRunner): progreso, video y objetivo de la serie. */
+export function WorkoutRunnerSkeleton({ withSidebar = true }: { withSidebar?: boolean }) {
+  return (
+    <div className={cn("flex flex-col", screenHeight(withSidebar))} aria-hidden="true">
+      <div className="shrink-0 border-b border-border bg-background">
+        <div className="h-2 bg-muted/40" />
+        <div className="max-w-xl mx-auto flex items-center justify-between gap-3 px-4 py-2">
+          <div className="h-11 flex items-center"><div className={cn("h-5 w-20 rounded", bone)} /></div>
+          <div className={cn("h-5 w-32 rounded", bone)} />
+        </div>
+      </div>
+      <div className="flex-1 w-full max-w-xl mx-auto px-4 pt-5 pb-44 space-y-5">
+        <div className="h-[2.375rem] flex items-center"><div className={cn("h-8 w-2/3 rounded-lg", bone)} /></div>
+        <div className={cn("aspect-video w-full rounded-2xl flex items-center justify-center", bone)}>
+          <div className="w-20 h-20 rounded-full bg-muted" />
+        </div>
+        <div className="rounded-2xl border-2 border-border bg-card p-5 flex flex-col items-center gap-3">
+          <div className={cn("h-6 w-32 rounded", bone)} />
+          <div className={cn("h-[4.5rem] w-20 rounded-xl", bone)} />
+          <div className={cn("h-7 w-40 rounded", bone)} />
+        </div>
+      </div>
+      <div className={cn("fixed bottom-0 left-0 right-0 z-30 border-t border-border bg-background/95", withSidebar && "lg:left-56")}>
+        <div className="max-w-xl mx-auto px-4 py-3 space-y-2">
+          <div className={cn("min-h-16 rounded-2xl", bone)} />
+          <div className="h-12" />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ─── Ejecución ─────────────────────────────────────────────────────────────────
 
 export function WorkoutRunner({

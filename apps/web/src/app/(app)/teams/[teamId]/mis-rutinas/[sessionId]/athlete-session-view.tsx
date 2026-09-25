@@ -6,16 +6,20 @@
 
 import {
   RoutinePreview,
+  RoutinePreviewSkeleton,
   WorkoutCelebration,
   WorkoutRunner,
+  WorkoutRunnerSkeleton,
   WorkoutSummary,
   type WorkoutProgress,
 } from "@/components/workout-runner"
 import { useSession } from "@/lib/auth"
+import { useFullscreenWhileMounted } from "@/lib/fullscreen-mode"
 import { trpc } from "@/lib/trpc/client"
 import { ArrowLeftIcon } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
+import { useState } from "react"
 
 export function AthleteSessionView({ sessionId }: { sessionId: string }) {
   const { teamId } = useParams<{ teamId: string }>()
@@ -26,6 +30,18 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
     { sessionId },
     { refetchInterval: (q) => q.state.data?.status === "active" ? 8000 : false },
   )
+
+  // Una rutina en curso se entrena sin sidebar/topbar. Antes eso lo pedía solo
+  // WorkoutRunner, que se monta al terminar de cargar: se veía el esqueleto con el
+  // menú puesto y, al llegar los datos, todo se corría a la izquierda. Si venimos de
+  // "Mis rutinas" su estado ya está en caché, así que el modo enfocado se aplica al
+  // entrar —antes del primer paint— y el esqueleto ya aparece en su lugar final.
+  const utils = trpc.useUtils()
+  const [listedStatus] = useState(
+    () => utils.sessions.myList.getData({ teamId })?.find((s) => s.id === sessionId)?.status,
+  )
+  const status = progress?.status ?? listedStatus
+  useFullscreenWhileMounted(status === "active")
 
   const { data: rms } = trpc.sessions.athleteRms.useQuery(
     { sessionId, athleteId: userId },
@@ -39,13 +55,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
   const back = { href: `/teams/${teamId}/mis-rutinas`, label: "Mis rutinas" }
 
   if (isLoading || !progress) {
-    return (
-      <div className="max-w-xl mx-auto px-4 py-8 space-y-4">
-        <div className="h-6 w-28 bg-muted/40 rounded animate-pulse" />
-        <div className="h-10 w-56 bg-muted/40 rounded animate-pulse" />
-        {[1, 2, 3].map((i) => <div key={i} className="h-28 bg-muted/40 rounded-2xl animate-pulse" />)}
-      </div>
-    )
+    return status === "active" ? <WorkoutRunnerSkeleton withSidebar={false} /> : <RoutinePreviewSkeleton />
   }
 
   const typed = progress as unknown as WorkoutProgress

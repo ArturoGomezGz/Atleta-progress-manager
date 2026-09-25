@@ -7,7 +7,7 @@
 // el hook queda como no-op: es seguro usarlo desde un componente compartido sin saber
 // dónde vive.
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useContext, useLayoutEffect, useState, type ReactNode } from "react"
 
 type FullscreenModeContextValue = {
   fullscreen: boolean
@@ -32,10 +32,17 @@ export function useFullscreenMode() {
   return useContext(FullscreenModeContext)
 }
 
-/** Activa el modo pantalla completa mientras el componente que lo llama está montado. */
+/**
+ * Activa el modo pantalla completa mientras el componente que lo llama está montado.
+ *
+ * Con useLayoutEffect el sidebar/topbar se quitan antes del primer paint de la
+ * pantalla: con useEffect se alcanzaba a pintar un frame con el menú todavía puesto
+ * y en el siguiente todo el contenido se corría a la izquierda (o hacia arriba en
+ * móvil), justo cuando una vista empezaba a deslizarse o aparecía su contenido.
+ */
 export function useFullscreenWhileMounted(active: boolean) {
   const { setFullscreen } = useFullscreenMode()
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!active) return
     setFullscreen(true)
     return () => setFullscreen(false)

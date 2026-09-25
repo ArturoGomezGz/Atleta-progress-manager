@@ -1,5 +1,6 @@
 "use client"
 
+import { afterNextPaint } from "@/lib/after-paint"
 import { cn } from "@/lib/utils"
 import { useCallback, useEffect, useRef, useState } from "react"
 
@@ -15,7 +16,7 @@ const SLIDE_EASING = "cubic-bezier(0.22, 1, 0.36, 1)"
  * (volver atrás). Sin dirección, no anima nada (carga directa de la vista).
  *
  * `onEntered` se llama una sola vez cuando la vista ya está en su sitio (al
- * terminar el deslizamiento, o justo al montar si no hay animación). Es el
+ * terminar el deslizamiento, o tras el primer paint si no hay animación). Es el
  * momento para enfocar un input: hacerlo antes (p. ej. con `autoFocus`) enfoca
  * un elemento que aún está fuera de pantalla, y el navegador desplaza el
  * contenedor con scroll para mostrarlo —y abre el teclado en móvil— en mitad
@@ -40,28 +41,20 @@ export function PageTransition({ direction, children, className, onEntered }: {
     onEnteredRef.current?.()
   }, [])
 
-  useEffect(() => {
-    // Un solo rAF no basta: el navegador puede fusionar el paint inicial (fuera de
-    // pantalla) con el callback en el mismo frame, y la vista "salta" en vez de
-    // deslizarse. El segundo rAF garantiza que el primer frame ya se pintó antes
-    // de pedir la posición final, así la transición sí tiene un punto de partida
-    // real del que animar.
-    let inner = 0
-    const outer = requestAnimationFrame(() => {
-      inner = requestAnimationFrame(() => setEntered(true))
-    })
-    return () => {
-      cancelAnimationFrame(outer)
-      cancelAnimationFrame(inner)
-    }
-  }, [])
+  // Pintar primero fuera de pantalla y recién entonces pedir la posición final (ver
+  // afterNextPaint: con un solo rAF la vista a veces "salta" en vez de deslizarse).
+  useEffect(() => afterNextPaint(() => setEntered(true)), [])
 
   useEffect(() => {
+    if (!entered) return
+    // Sin animación también se espera a ese primer paint: quien usa la vista puede
+    // fijar la dirección en un useLayoutEffect (p. ej. al volver atrás), y React
+    // corre los efectos del primer render —todavía con `null`— antes de aplicarla;
+    // avisar ahí daría la vista por "entrada" justo antes de que empiece a deslizarse.
     if (direction === null) {
       finish()
       return
     }
-    if (!entered) return
     // Red de seguridad por si `transitionend` no llega (pestaña en segundo plano,
     // transición cancelada, movimiento reducido…).
     const t = setTimeout(finish, SLIDE_MS + 80)
@@ -88,4 +81,22 @@ export function PageTransition({ direction, children, className, onEntered }: {
       {children}
     </div>
   )
+}
+
+/**
+ * Orden de aparición de una vista que entra animada mientras todavía carga sus datos:
+ * primero el movimiento, después (ya quieta) el esqueleto y al final el contenido real.
+ *
+ * Si los datos llegan a mitad de la animación, esperan a que termine: cambiar el
+ * contenido —y su alto— en pleno movimiento es lo que se ve como un salto. Si ya
+ * estaban al montar (caché), el contenido real entra animado desde el principio.
+ *
+ * `onEntered` se conecta a `PageTransition` (o a la animación de entrada propia).
+ */
+export function useRevealAfterEnter(ready: boolean) {
+  const [entered, setEntered] = useState(false)
+  const [readyOnMount] = useState(ready)
+  const onEntered = useCallback(() => setEntered(true), [])
+  const showContent = ready && (entered || readyOnMount)
+  return { onEntered, showContent, showSkeleton: entered && !showContent }
 }

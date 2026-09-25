@@ -1,5 +1,7 @@
 "use client"
 
+import { useRevealAfterEnter } from "@/components/page-transition"
+import { afterNextPaint } from "@/lib/after-paint"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
@@ -15,6 +17,8 @@ const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0]
 
 // ─── Template preview bottom sheet ───────────────────────────────────────────
 
+const SHEET_MS = 250 // = duration-250 de la hoja
+
 function TemplatePreviewSheet({
   routineId,
   onClose,
@@ -24,16 +28,25 @@ function TemplatePreviewSheet({
   onClose: () => void
   onSelect: (id: string) => void
 }) {
-  const { data, isLoading } = trpc.routines.get.useQuery({ id: routineId })
+  const { data: loaded, isLoading } = trpc.routines.get.useQuery({ id: routineId })
   const [visible, setVisible] = useState(false)
+  // La hoja sube, después muestra el esqueleto y recién entonces la plantilla: si los
+  // datos llegan a mitad de la subida esperan, porque la hoja crece hacia arriba con su
+  // contenido y cambiarlo en pleno movimiento hacía saltar el borde superior.
+  const { onEntered, showContent, showSkeleton } = useRevealAfterEnter(!isLoading)
+  const data = showContent ? loaded : undefined
 
+  useEffect(() => afterNextPaint(() => setVisible(true)), [])
+  // Red de seguridad por si `transitionend` no llega (pestaña en segundo plano, movimiento reducido…)
   useEffect(() => {
-    requestAnimationFrame(() => setVisible(true))
-  }, [])
+    if (!visible) return
+    const t = setTimeout(onEntered, SHEET_MS + 80)
+    return () => clearTimeout(t)
+  }, [visible, onEntered])
 
   function handleClose() {
     setVisible(false)
-    setTimeout(onClose, 250)
+    setTimeout(onClose, SHEET_MS)
   }
 
   function handleSelect() {
@@ -70,6 +83,10 @@ function TemplatePreviewSheet({
           "transition-transform duration-250 ease-out",
           visible ? "translate-y-0" : "translate-y-full",
         )}
+        onTransitionEnd={(e) => {
+          // Solo la subida de la propia hoja (las transiciones de los hijos también burbujean)
+          if (visible && e.target === e.currentTarget) onEntered()
+        }}
       >
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1">
@@ -101,15 +118,21 @@ function TemplatePreviewSheet({
 
         {/* Exercise list */}
         <div className="overflow-y-auto max-h-[45vh] px-5 py-3 space-y-1">
-          {isLoading && (
-            <div className="space-y-2 py-2">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="h-10 rounded-lg bg-muted/40 animate-pulse" />
-              ))}
+          {/* Misma fila que un ejercicio real (número, nombre, series). Durante la subida
+              ocupa su lugar sin verse, para que la hoja no cambie de alto al aparecer. */}
+          {!showContent && [0, 1, 2].map((i) => (
+            <div key={i} aria-hidden="true" className={cn("flex items-center gap-3 px-3 py-2.5", !showSkeleton && "invisible")}>
+              <span className="w-5 h-5 shrink-0 flex items-center justify-end">
+                <span className="w-2.5 h-3 rounded-sm bg-muted/60 animate-pulse" />
+              </span>
+              <span className="flex-1 h-5 flex items-center">
+                <span className="h-3.5 w-1/2 rounded bg-muted/50 animate-pulse" />
+              </span>
+              <span className="h-3 w-12 rounded bg-muted/40 animate-pulse shrink-0" />
             </div>
-          )}
+          ))}
 
-          {!isLoading && exercises.length === 0 && (
+          {showContent && exercises.length === 0 && (
             <p className="text-sm text-muted-foreground text-center py-6">Esta plantilla no tiene ejercicios aún.</p>
           )}
 

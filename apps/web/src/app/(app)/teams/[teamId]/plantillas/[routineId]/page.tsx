@@ -2,7 +2,7 @@
 
 import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
-import { PageTransition } from "@/components/page-transition"
+import { PageTransition, useRevealAfterEnter } from "@/components/page-transition"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
 import { deriveBodyZone, ZONE_CONFIG, zoneProfileFromContent, type BodyZone } from "@/lib/body-zones"
@@ -254,6 +254,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   useFullscreenWhileMounted(true)
 
   const { data: routineData, refetch } = trpc.routines.get.useQuery({ id: routineId })
+  const { onEntered, showContent, showSkeleton } = useRevealAfterEnter(routineData !== undefined)
   const { data: catalog }              = trpc.exercises.list.useQuery({ teamId })
   const updateContent                  = trpc.routines.updateContent.useMutation({ onSuccess: () => refetch() })
   const renameRoutine                  = trpc.routines.rename.useMutation({ onSuccess: () => refetch() })
@@ -460,18 +461,12 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     ? (catalog ?? []).filter((e) => !usedIds.has(e.id))
     : (catalog ?? [])
 
-  if (!routineData) return (
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
-      <div className="h-7 w-48 bg-muted/40 rounded animate-pulse mb-6" />
-      <div className="space-y-3">
-        {[1, 2, 3].map((i) => <div key={i} className="h-24 bg-muted/40 rounded-xl animate-pulse" />)}
-      </div>
-    </div>
-  )
-
   return (
     <>
-    <PageTransition direction="forward">
+    {/* La vista se desliza desde que se monta, con o sin datos: antes el esqueleto se
+        mostraba fuera de PageTransition y el deslizamiento arrancaba recién al llegar
+        la plantilla. Ahora: deslizamiento → esqueleto → ejercicios. */}
+    <PageTransition direction="forward" onEntered={onEntered}>
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-16">
       {/* Cabecera fija: ocupa el espacio que dejó el topbar de la app en modo enfocado.
           La única salida de la vista es este botón, que es donde se decide qué hacer
@@ -487,6 +482,11 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
             <ChevronLeftIcon className="w-5 h-5" />
             <span className="text-sm">Salir</span>
           </button>
+          {!showContent || !routineData ? (
+            <div className="flex-1 min-w-0 h-[25px] flex items-center" aria-hidden="true">
+              <div className="h-4 w-40 rounded bg-muted/40 animate-pulse" />
+            </div>
+          ) : (
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -500,9 +500,10 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
             style={{ fontFamily: "var(--font-barlow-condensed)" }}
             aria-label="Nombre de la plantilla"
           />
+          )}
         </div>
         {/* Reparto de la rutina por zona corporal, siempre visible mientras se arma */}
-        {zoneProfile.totalSets > 0 && (
+        {showContent && zoneProfile.totalSets > 0 && (
           <div className="pt-1 pb-0.5">
             <ZoneBar profile={zoneProfile} className="h-1" />
             <ZoneLegend profile={zoneProfile} className="mt-1 text-[10px]" />
@@ -510,6 +511,9 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
         )}
       </div>
 
+      {showSkeleton && <RoutineEditorSkeleton />}
+
+      {showContent && (<>
       {/* IA (experimental): solo tiene sentido para arrancar una rutina vacía, así que
           en cuanto hay al menos un ejercicio deja de ofrecerse. */}
       {aiAvailable && !isEvaluation && content.items.length === 0 && (aiOpen ? (
@@ -629,6 +633,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
         )}
         {!isEvaluation && <AddCircuitPlaceholder onClick={addBlock} />}
       </div>
+      </>)}
     </div>
     </PageTransition>
 
@@ -694,6 +699,32 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
         </div>
       )}
     </>
+  )
+}
+
+// ─── Esqueleto de carga ───────────────────────────────────────────────────────
+//
+// Misma forma que la lista real (marcador de inicio + ExerciseCard cerrados): número,
+// hueco de la miniatura del video y dos líneas de texto, a la misma altura (84px),
+// para que al llegar los ejercicios cada uno caiga donde ya estaba su silueta.
+
+function RoutineEditorSkeleton() {
+  return (
+    <div className="space-y-3" aria-hidden="true">
+      <RoutineStartMarker />
+      {[0, 1, 2].map((i) => (
+        <div key={i} className="border border-border rounded-xl overflow-hidden bg-card/60">
+          <div className="flex items-center gap-3 pl-3 pr-14 py-2.5 min-h-[84px] bg-muted/10">
+            <span className="w-6 h-6 rounded-full bg-muted/60 animate-pulse shrink-0" />
+            <span className="w-20 aspect-video rounded-md bg-muted/60 animate-pulse shrink-0" />
+            <span className="flex-1 min-w-[140px] space-y-1.5">
+              <span className="block h-3.5 w-2/5 rounded bg-muted/50 animate-pulse" />
+              <span className="block h-3 w-3/5 rounded bg-muted/40 animate-pulse" />
+            </span>
+          </div>
+        </div>
+      ))}
+    </div>
   )
 }
 

@@ -15,7 +15,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex h-dvh overflow-hidden">
       {!fullscreen && <Sidebar />}
-      <main className={cn("flex-1 overflow-y-auto overflow-x-hidden", !fullscreen && "pt-14 lg:pt-0")}>
+      {/* scrollbar-gutter: el hueco de la barra de scroll queda reservado siempre. Si no,
+          al cambiar un esqueleto corto por el contenido real (más alto) aparecía la barra
+          y todo lo centrado (max-w-* mx-auto) se corría unos píxeles a la izquierda. */}
+      <main className={cn("flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]", !fullscreen && "pt-14 lg:pt-0")}>
         {children}
       </main>
     </div>
