@@ -1,12 +1,14 @@
 "use client"
 
+import { PageTransition, type SlideDirection } from "@/components/page-transition"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
+import { consumeBackNavigation } from "@/lib/page-transition"
+import { getRoutineTypeConfig } from "@/lib/routine-types"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import { getRoutineTypeConfig } from "@/lib/routine-types"
 import { CopyIcon, PlusIcon, SearchIcon, Trash2Icon } from "lucide-react"
 import Link from "next/link"
-import { use, useState } from "react"
+import { use, useLayoutEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
 type Category = "evaluation" | "training"
@@ -18,17 +20,15 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
   const { teamId } = use(params)
   const router = useRouter()
 
-  const [filter, setFilter]           = useState<Filter>("all")
-  const [search, setSearch]           = useState("")
-  const [creating, setCreating]       = useState(false)
-  const [newName, setNewName]         = useState("")
-  const [newCategory, setNewCategory] = useState<Category>("training")
-  const [deleting, setDeleting]       = useState<{ id: string; name: string } | null>(null)
+  const [filter, setFilter]       = useState<Filter>("all")
+  const [search, setSearch]       = useState("")
+  const [deleting, setDeleting]   = useState<{ id: string; name: string } | null>(null)
+  // Si se vuelve desde "Nueva plantilla" o desde el editor, entra deslizándose desde la
+  // izquierda; en una carga directa no hay animación.
+  const [direction, setDirection] = useState<SlideDirection | null>(null)
+  useLayoutEffect(() => { if (consumeBackNavigation()) setDirection("back") }, [])
 
   const { data: routines, refetch } = trpc.routines.list.useQuery({ teamId })
-  const createRoutine = trpc.routines.create.useMutation({
-    onSuccess: (r) => { setCreating(false); setNewName(""); router.push(`/teams/${teamId}/plantillas/${r.id}`) },
-  })
   const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetch(); setDeleting(null) } })
   const duplicateRoutine = trpc.routines.duplicate.useMutation({ onSuccess: () => refetch() })
 
@@ -38,13 +38,12 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
     return true
   })
 
-  function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newName.trim()) return
-    createRoutine.mutate({ teamId, name: newName.trim().toLowerCase(), category: newCategory })
+  function goToCreate() {
+    router.push(`/teams/${teamId}/plantillas/nueva`)
   }
 
   return (
+    <PageTransition direction={direction}>
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between gap-4">
@@ -54,67 +53,14 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
         >
           Plantillas
         </h1>
-        {!creating && (
-          <button
-            onClick={() => setCreating(true)}
-            className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3.5 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Nueva
-          </button>
-        )}
+        <button
+          onClick={goToCreate}
+          className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3.5 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Nueva
+        </button>
       </div>
-
-      {/* Create form */}
-      {creating && (
-        <form onSubmit={handleCreate} className="border border-border rounded-xl p-4 space-y-3 bg-card/60">
-          <p className="text-sm font-semibold">Nueva plantilla</p>
-          <input
-            autoFocus
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="Nombre de la plantilla"
-            className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
-          />
-          <div className="flex gap-2">
-            {(["training", "evaluation"] as Category[]).map((cat) => {
-              const cfg = getRoutineTypeConfig(cat)
-              const Icon = cfg.icon
-              const isSelected = newCategory === cat
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setNewCategory(cat)}
-                  className={cn(
-                    "flex items-center gap-1.5 flex-1 justify-center py-2 text-xs rounded-lg border transition-colors cursor-pointer font-medium",
-                    isSelected ? cn(cfg.bg, cfg.text, cfg.border) : "border-border text-muted-foreground hover:text-foreground",
-                  )}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {cfg.label}
-                </button>
-              )
-            })}
-          </div>
-          <div className="flex gap-2 justify-end">
-            <button
-              type="button"
-              onClick={() => { setCreating(false); setNewName("") }}
-              className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
-            >
-              Cancelar
-            </button>
-            <button
-              type="submit"
-              disabled={createRoutine.isPending || !newName.trim()}
-              className="text-xs bg-primary text-primary-foreground px-4 py-1.5 rounded-lg font-medium disabled:opacity-50 cursor-pointer hover:bg-primary/90 transition-colors"
-            >
-              {createRoutine.isPending ? "Creando…" : "Crear"}
-            </button>
-          </div>
-        </form>
-      )}
 
       {/* Search + filter */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -192,14 +138,14 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
           )
         })}
 
-        {filtered.length === 0 && !creating && (
+        {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 border border-dashed border-border rounded-xl gap-3 text-center">
             <p className="text-sm text-muted-foreground">
               {search || filter !== "all" ? "Sin resultados. Prueba con otro filtro." : "Sin plantillas. Crea la primera."}
             </p>
             {!search && filter === "all" && (
               <button
-                onClick={() => setCreating(true)}
+                onClick={goToCreate}
                 className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors cursor-pointer"
               >
                 <PlusIcon className="w-4 h-4" />
@@ -210,5 +156,6 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
         )}
       </div>
     </div>
+    </PageTransition>
   )
 }

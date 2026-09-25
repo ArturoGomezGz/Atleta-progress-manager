@@ -2,10 +2,12 @@
 
 import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
+import { PageTransition } from "@/components/page-transition"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
 import { deriveBodyZone, ZONE_CONFIG, zoneProfileFromContent, type BodyZone } from "@/lib/body-zones"
 import { useFullscreenWhileMounted } from "@/lib/fullscreen-mode"
+import { markBackNavigation } from "@/lib/page-transition"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import type { RoutineContent, RoutineExerciseContent, RoutineItemBlock, RoutineItemExercise, RoutineSet } from "@atleta/db/schema"
@@ -335,12 +337,13 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
   function requestExit() {
     if (dirty) { setConfirmExit(true); return }
+    markBackNavigation()
     router.push(backHref)
   }
 
   function saveAndExit() {
     updateContent.mutate({ id: routineId, content }, {
-      onSuccess: () => { setLocalContent(null); setDirty(false); router.push(backHref) },
+      onSuccess: () => { setLocalContent(null); setDirty(false); markBackNavigation(); router.push(backHref) },
     })
   }
 
@@ -349,6 +352,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     setDirty(false)
     setAiResult(null)
     setConfirmExit(false)
+    markBackNavigation()
     router.push(backHref)
   }
 
@@ -466,6 +470,8 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   )
 
   return (
+    <>
+    <PageTransition direction="forward">
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-16">
       {/* Cabecera fija: ocupa el espacio que dejó el topbar de la app en modo enfocado.
           La única salida de la vista es este botón, que es donde se decide qué hacer
@@ -623,8 +629,12 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
         )}
         {!isEvaluation && <AddCircuitPlaceholder onClick={addBlock} />}
       </div>
+    </div>
+    </PageTransition>
 
-      {confirmExit && (
+    {/* Modales fuera del contenedor que se desliza: un ancestro con `transform` crea un
+        nuevo contenedor de posicionamiento y rompe `position: fixed`. */}
+    {confirmExit && (
         <div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
           onClick={() => setConfirmExit(false)}
@@ -683,7 +693,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           </div>
         </div>
       )}
-    </div>
+    </>
   )
 }
 
