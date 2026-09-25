@@ -172,40 +172,29 @@ async function loadWorkout(token: string) {
  * esperan. Si ese equipo ya llegó a su límite de atletas, el entrenamiento no
  * se pierde: se guarda en el equipo personal del usuario (creándolo si hace
  * falta), que es exactamente lo que obtendría creando un equipo por su cuenta.
- *
- * `allowJoin` controla si, al no ser miembro todavía, se le puede sumar como
- * atleta real del equipo del coach. En `claim` sí: el invitado ya entrenó, es
- * una conversión genuina. En `saveAsPending` no: guardar un enlace para
- * después no debería inscribirlo en el roster del coach sin que se dé cuenta;
- * en ese caso siempre cae al equipo personal, aunque el del coach tenga cupo.
  */
 async function resolveClaimTeam(
   tx: Parameters<Parameters<typeof db.transaction>[0]>[0],
   userId: string,
   userName: string,
   shareTeamId: string,
-  options: { allowJoin?: boolean } = {},
 ) {
-  const allowJoin = options.allowJoin ?? true
-
   const [existing] = await tx
     .select()
     .from(teamMember)
     .where(and(eq(teamMember.teamId, shareTeamId), eq(teamMember.userId, userId)))
     .limit(1)
-  if (existing) return { teamId: shareTeamId, joinedTeam: false, personal: false, createdPersonalTeam: false }
+  if (existing) return { teamId: shareTeamId, joinedTeam: false, personal: false }
 
-  if (allowJoin) {
-    const [teamData] = await tx.select().from(team).where(eq(team.id, shareTeamId)).limit(1)
-    const [{ athleteCount }] = await tx
-      .select({ athleteCount: count() })
-      .from(teamMember)
-      .where(and(eq(teamMember.teamId, shareTeamId), eq(teamMember.role, "athlete")))
+  const [teamData] = await tx.select().from(team).where(eq(team.id, shareTeamId)).limit(1)
+  const [{ athleteCount }] = await tx
+    .select({ athleteCount: count() })
+    .from(teamMember)
+    .where(and(eq(teamMember.teamId, shareTeamId), eq(teamMember.role, "athlete")))
 
-    if (teamData && athleteCount < teamData.maxAthletes) {
-      await tx.insert(teamMember).values({ teamId: shareTeamId, userId, role: "athlete" })
-      return { teamId: shareTeamId, joinedTeam: true, personal: false, createdPersonalTeam: false }
-    }
+  if (teamData && athleteCount < teamData.maxAthletes) {
+    await tx.insert(teamMember).values({ teamId: shareTeamId, userId, role: "athlete" })
+    return { teamId: shareTeamId, joinedTeam: true, personal: false }
   }
 
   // Equipo personal: reutilizamos el que ya tenga si entrena por su cuenta
@@ -214,11 +203,11 @@ async function resolveClaimTeam(
     .from(teamMember)
     .where(and(eq(teamMember.userId, userId), eq(teamMember.role, "coach"), eq(teamMember.selfAthlete, true)))
     .limit(1)
-  if (ownTeam) return { teamId: ownTeam.teamId, joinedTeam: false, personal: true, createdPersonalTeam: false }
+  if (ownTeam) return { teamId: ownTeam.teamId, joinedTeam: false, personal: true }
 
   const [newTeam] = await tx.insert(team).values({ name: `Entrenamientos de ${userName}` }).returning()
   await tx.insert(teamMember).values({ teamId: newTeam.id, userId, role: "coach", selfAthlete: true })
-  return { teamId: newTeam.id, joinedTeam: false, personal: true, createdPersonalTeam: true }
+  return { teamId: newTeam.id, joinedTeam: false, personal: true }
 }
 
 // ─── Router ───────────────────────────────────────────────────────────────────
@@ -577,74 +566,6 @@ export const shareRouter = router({
     }),
 
   // ── Con cuenta ─────────────────────────────────────────────────────────────
-
-  /**
-   * Un usuario con cuenta que abre el enlace no necesita pasar por el flujo de
-   * invitado: la rutina queda directamente como pendiente en "Mis rutinas",
-   * igual que si el coach se la hubiera asignado. A diferencia de `claim`, sí
-   * referenciamos la rutina aunque caiga en el equipo personal — aquí importa
-   * para que aparezca clasificada como entrenamiento pendiente, y el atleta ya
-   * vio su contenido en la vista previa del enlace.
-   */
-  saveAsPending: protectedProcedure
-    .input(z.object({ code: codeSchema }))
-    .mutation(async ({ ctx, input }) => {
-      const share = await findActiveShare(input.code)
-      const userId = ctx.session.user.id
-
-      return db.transaction(async (tx) => {
-        // No lo sumamos al equipo real del coach solo por guardar un enlace para
-        // después: si no es miembro ya, la rutina queda en su equipo personal.
-        const target = await resolveClaimTeam(tx, userId, ctx.session.user.name, share.teamId, { allowJoin: false })
-
-        // Solo reutilizamos una sesión que siga pendiente. Una que ya empezó no
-        // cuenta: quien pide "empezar más tarde" espera ver la rutina pendiente,
-        // no que la petición se la coma la que dejó a medias.
-        const [existing] = await tx
-          .select({ id: trainingSession.id })
-          .from(athleteSession)
-          .innerJoin(trainingSession, eq(athleteSession.sessionId, trainingSession.id))
-          .where(
-            and(
-              eq(athleteSession.athleteId, userId),
-              eq(athleteSession.status, "scheduled"),
-              eq(trainingSession.routineId, share.routineId),
-              eq(trainingSession.teamId, target.teamId),
-            ),
-          )
-          .limit(1)
-        if (existing) {
-          return { sessionId: existing.id, teamId: target.teamId, createdPersonalTeam: false }
-        }
-
-        const flat = flattenContent(share.routineContent)
-
-        const [session] = await tx
-          .insert(trainingSession)
-          .values({
-            routineId: share.routineId,
-            teamId: target.teamId,
-            startedBy: userId,
-            status: "scheduled",
-            content: share.routineContent,
-          })
-          .returning()
-
-        for (const [order, ex] of flat.entries()) {
-          const [se] = await tx
-            .insert(sessionExercise)
-            .values({ sessionId: session.id, exerciseId: ex.exerciseId, order })
-            .returning()
-
-          const targets = targetsForExercise(ex.sets).map((t) => ({ ...t, sessionExerciseId: se.id }))
-          if (targets.length > 0) await tx.insert(sessionSetTarget).values(targets)
-        }
-
-        await tx.insert(athleteSession).values({ sessionId: session.id, athleteId: userId, status: "scheduled" })
-
-        return { sessionId: session.id, teamId: target.teamId, createdPersonalTeam: target.createdPersonalTeam }
-      })
-    }),
 
   /**
    * Convierte el entrenamiento anónimo en una sesión real del usuario: ya con

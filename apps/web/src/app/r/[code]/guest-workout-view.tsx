@@ -16,11 +16,9 @@ import { clearGuestWorkout, readGuestWorkout, storeGuestWorkout } from "@/lib/gu
 import { trpc } from "@/lib/trpc/client"
 import { CheckCircleIcon, DumbbellIcon, LoaderCircleIcon, SparklesIcon, UserPlusIcon } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 export function GuestWorkoutView({ code }: { code: string }) {
-  const router = useRouter()
   const { data: authSession, isPending: sessionLoading } = useSession()
   const [token, setToken] = useState<string | null>(null)
   const [restored, setRestored] = useState(false)
@@ -46,26 +44,6 @@ export function GuestWorkoutView({ code }: { code: string }) {
   })
   const recordSet = trpc.share.recordSet.useMutation()
   const complete = trpc.share.complete.useMutation()
-
-  // "Empezar más tarde": si ya tiene cuenta, la rutina queda pendiente en "Mis
-  // rutinas" sin necesidad de entrenarla como invitado; si no, primero inicia
-  // sesión y desde ahí puede volver a decidir.
-  const utils = trpc.useUtils()
-  const savePending = trpc.share.saveAsPending.useMutation({
-    onSuccess: async ({ teamId, createdPersonalTeam }) => {
-      await utils.sessions.myList.invalidate({ teamId })
-      // Recién le creamos su equipo personal: en "Mis rutinas" le explicamos qué es.
-      const suffix = createdPersonalTeam ? "?bienvenida=equipo-personal" : ""
-      router.push(`/teams/${teamId}/mis-rutinas${suffix}`)
-    },
-  })
-  function startLater() {
-    if (!authSession) {
-      router.push(`/login?redirect=${encodeURIComponent(`/r/${code}`)}`)
-      return
-    }
-    savePending.mutate({ code })
-  }
 
   // Solo descartamos el token si el servidor dice que ese entrenamiento ya no
   // existe. Ante un fallo de red lo conservamos: es lo único que guarda la
@@ -114,22 +92,11 @@ export function GuestWorkoutView({ code }: { code: string }) {
         withSidebar={false}
         onStart={() => start.mutate({ code })}
         starting={start.isPending}
-        startLabel="Empezar ahora"
-        secondaryAction={{
-          label: "Empezar más tarde",
-          onClick: startLater,
-          pending: savePending.isPending,
-        }}
-        error={
-          start.isError ? start.error.message
-          : savePending.isError ? savePending.error.message
-          : undefined
-        }
+        error={start.isError ? start.error.message : undefined}
         intro={
           <>
             No necesitas cuenta para entrenar. Toca cada ejercicio para <strong>ver el video</strong> y
-            pulsa <strong>Empezar ahora</strong> cuando estés listo, o <strong>Empezar más tarde</strong> para
-            guardarla como pendiente y hacerla cuando quieras.
+            pulsa <strong>Empezar rutina</strong> cuando estés listo — al terminar podrás guardar tu progreso.
           </>
         }
       >
