@@ -5,7 +5,8 @@ import { useEffect, useState } from "react"
 
 export type SlideDirection = "forward" | "back"
 
-const SLIDE_MS = 280
+const SLIDE_MS = 320
+const SLIDE_EASING = "cubic-bezier(0.22, 1, 0.36, 1)"
 
 /**
  * Envuelve una vista de un flujo secuencial (p. ej. crear una plantilla y
@@ -21,8 +22,19 @@ export function PageTransition({ direction, children, className }: {
   const [entered, setEntered] = useState(false)
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => setEntered(true))
-    return () => cancelAnimationFrame(id)
+    // Un solo rAF no basta: el navegador puede fusionar el paint inicial (fuera de
+    // pantalla) con el callback en el mismo frame, y la vista "salta" en vez de
+    // deslizarse. El segundo rAF garantiza que el primer frame ya se pintó antes
+    // de pedir la posición final, así la transición sí tiene un punto de partida
+    // real del que animar.
+    let inner = 0
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => setEntered(true))
+    })
+    return () => {
+      cancelAnimationFrame(outer)
+      cancelAnimationFrame(inner)
+    }
   }, [])
 
   if (direction === null) return children
@@ -31,11 +43,11 @@ export function PageTransition({ direction, children, className }: {
     <div
       suppressHydrationWarning
       className={cn(
-        "transition-transform ease-out",
+        "transition-transform will-change-transform",
         entered ? "translate-x-0" : direction === "forward" ? "translate-x-full" : "-translate-x-full",
         className,
       )}
-      style={{ transitionDuration: `${SLIDE_MS}ms` }}
+      style={{ transitionDuration: `${SLIDE_MS}ms`, transitionTimingFunction: SLIDE_EASING }}
     >
       {children}
     </div>
