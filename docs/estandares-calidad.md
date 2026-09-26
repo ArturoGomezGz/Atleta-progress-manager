@@ -131,11 +131,20 @@ calidad — `ai-reports.ts` y el autofill de `exercises.ts` están en
   cambiar y por qué) entregada al desarrollador — nunca una corrección
   aplicada directamente por el agente.
 
+## Estado
+
+El agente vive como subagente en
+`.claude/agents/software-standards-agent.md`. No tiene acceso de
+`Edit`/`Write` sobre código de la app a propósito — solo puede leer, correr
+los agentes mecánicos, y entregar la propuesta como issue/comentario de
+GitHub.
+
 ## Pendiente de decidir
 
-- Mecanismo de entrega de la propuesta (¿issue de GitHub por hallazgo?
-  ¿comentario consolidado en el issue diario existente?).
-- Calendario de ejecución del agente en sí (¿mismo cron que quality-agents,
-  o desacoplado?).
-- Si vive como subagente en `.claude/agents/` o como paso adicional del
-  workflow `quality-agents.yml`.
+- Cómo se dispara en el calendario (¿un paso más en
+  `quality-agents.yml` usando la Claude Code GitHub Action, que reutilizaría
+  el cron ya existente, ¿o una programación separada dentro de Claude Code?).
+  Cualquiera de las dos requiere agregar una credencial de Anthropic/Claude
+  Code como secreto del repo — no se hizo todavía porque toca CI/CD.
+- Mecanismo de entrega definitivo (¿issue nuevo por hallazgo, o comentario
+  consolidado en un issue recurrente?).
