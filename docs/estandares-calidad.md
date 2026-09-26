@@ -133,33 +133,45 @@ calidad — `ai-reports.ts` y el autofill de `exercises.ts` están en
 
 ## Estado
 
-El agente vive como subagente en
-`.claude/agents/software-standards-agent.md`. No tiene acceso de
-`Edit`/`Write` sobre código de la app a propósito, y **tampoco entrega el
-resultado él mismo** — solo lee, corre los agentes mecánicos, y devuelve la
-propuesta como texto. Entregarla es trabajo de quien lo invoca.
+Son dos subagentes con roles separados a propósito:
 
-Se dispara con una Routine de Claude Code (no toca `quality-agents.yml`):
-corre diario a medianoche hora Ciudad de México, en una sesión nueva que:
+- **`software-standards-agent`** (`.claude/agents/software-standards-agent.md`)
+  — analiza, prioriza y escribe la propuesta. No tiene `Edit`/`Write`, y
+  tampoco entrega el resultado él mismo: solo lee, corre los agentes
+  mecánicos, y devuelve la propuesta como texto.
+- **`developer-agent`** (`.claude/agents/developer-agent.md`) — implementa
+  **un** hallazgo ya decidido a la vez, en su propia rama nueva
+  (`standards-fix/<slug>`) sobre `master`. Nunca mezcla varios hallazgos en
+  una rama, nunca mergea a `master`/`testing` él mismo, y si el fix requiere
+  una decisión que la propuesta no tomó (romper una API, elegir una
+  dependencia, una migración de schema), se detiene y lo reporta en vez de
+  adivinar.
+
+Se disparan encadenados con una Routine de Claude Code (no toca
+`quality-agents.yml`): corre diario a medianoche hora Ciudad de México, en
+una sesión nueva que:
 1. Actualiza `master` y corre `pnpm qa:agents`.
 2. Invoca a `software-standards-agent` para obtener la propuesta priorizada.
-3. La entrega: issue/comentario de GitHub si esa sesión tiene las
-   herramientas `mcp__github__*` disponibles; si no, la agrega a
-   `docs/propuestas-estandares.md` y hace commit + push a la rama
-   `standards-review` (nunca a `master`/`testing`, y nunca tocando código de
-   la app).
+3. Por cada hallazgo concreto de la propuesta, invoca a `developer-agent`
+   por separado — una rama `standards-fix/*` por hallazgo, nunca un batch.
+4. Registra el resultado (qué se implementó y en qué rama, qué se dejó
+   pendiente y por qué): issue/comentario de GitHub si esa sesión tiene
+   `mcp__github__*` disponible; si no, un resumen en
+   `docs/propuestas-estandares.md`, commit + push a la rama
+   `standards-review` (nunca a `master`/`testing`).
 
-La primera corrida de prueba confirmó que la sesión de la Routine **no
-tenía** herramientas de GitHub disponibles — por eso existe el fallback de
-archivo. `docs/propuestas-estandares.md` es la bandeja de entrada real hoy;
-la entrega por GitHub es un mejor-esfuerzo que se usará si algún día la
-Routine sí carga esos conectores.
+La primera corrida de prueba (antes de que existiera `developer-agent`)
+confirmó que la sesión de la Routine **no tenía** herramientas de GitHub
+disponibles — por eso existe el fallback de archivo para el resumen. Las
+ramas `standards-fix/*` con el código en sí se revisan directo en git,
+tengan o no PR.
 
 ## Pendiente de decidir
 
 - Si vale la pena resolver que la Routine cargue conectores de GitHub (para
-  que la entrega sea un issue en vez de un archivo), o si el archivo en
-  `standards-review` es suficiente.
-- Qué hacer con `standards-review` cuando se acumulen varias corridas: ¿se
-  abre un PR hacia `master` de vez en cuando, o se revisa directo en la
-  rama?
+  abrir PRs de cada `standards-fix/*` automáticamente en vez de solo dejar
+  la rama empujada).
+- Qué hacer con las ramas `standards-fix/*` que se van acumulando sin PR:
+  ¿revisión manual periódica, o se automatiza abrir el PR desde la próxima
+  sesión interactiva?
+- Qué hacer con `standards-review` cuando se acumulen varias corridas.
