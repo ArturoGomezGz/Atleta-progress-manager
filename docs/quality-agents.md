@@ -62,3 +62,11 @@ Al correr por `workflow_dispatch`:
 Para habilitar `strict` fuera de ejecución manual (`pull_request` y `schedule`), define la variable de repositorio:
 
 - `QUALITY_AGENTS_STRICT=true`
+
+## Agente experto en estándares (en construcción)
+
+Los reportes de estos agentes son la base para un agente experto en
+estándares de software que priorizará los hallazgos según el riesgo real
+para Atleta y le propondrá una solución al desarrollador, sin aplicarla él
+mismo. La fuente de verdad con el porqué de cada estándar vive en
+`docs/estandares-calidad.md`.
