@@ -135,16 +135,31 @@ calidad — `ai-reports.ts` y el autofill de `exercises.ts` están en
 
 El agente vive como subagente en
 `.claude/agents/software-standards-agent.md`. No tiene acceso de
-`Edit`/`Write` sobre código de la app a propósito — solo puede leer, correr
-los agentes mecánicos, y entregar la propuesta como issue/comentario de
-GitHub.
+`Edit`/`Write` sobre código de la app a propósito, y **tampoco entrega el
+resultado él mismo** — solo lee, corre los agentes mecánicos, y devuelve la
+propuesta como texto. Entregarla es trabajo de quien lo invoca.
+
+Se dispara con una Routine de Claude Code (no toca `quality-agents.yml`):
+corre diario a medianoche hora Ciudad de México, en una sesión nueva que:
+1. Actualiza `master` y corre `pnpm qa:agents`.
+2. Invoca a `software-standards-agent` para obtener la propuesta priorizada.
+3. La entrega: issue/comentario de GitHub si esa sesión tiene las
+   herramientas `mcp__github__*` disponibles; si no, la agrega a
+   `docs/propuestas-estandares.md` y hace commit + push a la rama
+   `standards-review` (nunca a `master`/`testing`, y nunca tocando código de
+   la app).
+
+La primera corrida de prueba confirmó que la sesión de la Routine **no
+tenía** herramientas de GitHub disponibles — por eso existe el fallback de
+archivo. `docs/propuestas-estandares.md` es la bandeja de entrada real hoy;
+la entrega por GitHub es un mejor-esfuerzo que se usará si algún día la
+Routine sí carga esos conectores.
 
 ## Pendiente de decidir
 
-- Cómo se dispara en el calendario (¿un paso más en
-  `quality-agents.yml` usando la Claude Code GitHub Action, que reutilizaría
-  el cron ya existente, ¿o una programación separada dentro de Claude Code?).
-  Cualquiera de las dos requiere agregar una credencial de Anthropic/Claude
-  Code como secreto del repo — no se hizo todavía porque toca CI/CD.
-- Mecanismo de entrega definitivo (¿issue nuevo por hallazgo, o comentario
-  consolidado en un issue recurrente?).
+- Si vale la pena resolver que la Routine cargue conectores de GitHub (para
+  que la entrega sea un issue en vez de un archivo), o si el archivo en
+  `standards-review` es suficiente.
+- Qué hacer con `standards-review` cuando se acumulen varias corridas: ¿se
+  abre un PR hacia `master` de vez en cuando, o se revisa directo en la
+  rama?
