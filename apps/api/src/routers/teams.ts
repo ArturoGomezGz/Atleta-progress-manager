@@ -1,7 +1,7 @@
 import { db } from "@atleta/db/client"
 import { team, teamInvite, teamMember, user } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, count, eq, gt } from "drizzle-orm"
+import { and, count, eq, gt, or } from "drizzle-orm"
 import { randomBytes } from "node:crypto"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
@@ -195,5 +195,16 @@ export async function assertMember(userId: string, teamId: string) {
 export async function assertCoach(userId: string, teamId: string) {
   const member = await assertMember(userId, teamId)
   if (member.role !== "coach") throw new TRPCError({ code: "FORBIDDEN" })
+  return member
+}
+
+// NOT_FOUND (no FORBIDDEN) para no revelar si el atleta existe en otro equipo
+export async function assertAthleteInTeam(athleteId: string, teamId: string) {
+  const [member] = await db
+    .select()
+    .from(teamMember)
+    .where(and(eq(teamMember.userId, athleteId), eq(teamMember.teamId, teamId), or(eq(teamMember.role, "athlete"), eq(teamMember.selfAthlete, true))))
+    .limit(1)
+  if (!member) throw new TRPCError({ code: "NOT_FOUND" })
   return member
 }

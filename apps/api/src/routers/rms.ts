@@ -4,13 +4,14 @@ import { and, desc, eq } from "drizzle-orm"
 import { z } from "zod"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { protectedProcedure, router } from "../trpc"
-import { assertCoach, assertMember } from "./teams"
+import { assertAthleteInTeam, assertCoach, assertMember } from "./teams"
 
 export const rmsRouter = router({
   listByAthlete: protectedProcedure
     .input(z.object({ teamId: z.string().uuid(), athleteId: z.string() }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
+      await assertAthleteInTeam(input.athleteId, input.teamId)
 
       const allRms = await db
         .select({
@@ -48,6 +49,7 @@ export const rmsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
+      await assertAthleteInTeam(input.athleteId, input.teamId)
       const [rm] = await db
         .insert(athleteExerciseRm)
         .values({ athleteId: input.athleteId, exerciseId: input.exerciseId, rmLbs: input.rmLbs, source: "manual", sessionId: null })
@@ -71,6 +73,7 @@ export const rmsRouter = router({
     }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
+      await assertAthleteInTeam(input.athleteId, input.teamId)
       const [report] = await db
         .select({
           content: exerciseProgressReport.content,
@@ -92,6 +95,7 @@ export const rmsRouter = router({
     .input(z.object({ teamId: z.string().uuid(), athleteId: z.string() }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
+      await assertAthleteInTeam(input.athleteId, input.teamId)
       const reports = await db
         .select({
           exerciseId: exerciseProgressReport.exerciseId,
@@ -119,6 +123,7 @@ export const rmsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
+      await assertAthleteInTeam(input.athleteId, input.teamId)
       await db
         .update(exerciseProgressReport)
         .set({ content: input.content, reportSource: "coach", seenAt: null, generatedAt: new Date() })
@@ -137,6 +142,7 @@ export const rmsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
+      await assertAthleteInTeam(input.athleteId, input.teamId)
       await db
         .update(exerciseProgressReport)
         .set({ seenAt: new Date() })
