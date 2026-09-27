@@ -713,7 +713,7 @@ export const sessionsRouter = router({
           exerciseId: params.exerciseId,
           teamId: params.teamId,
           triggerRmId: params.rmId,
-        }).catch((err) => console.error("Report generation failed", { ...params, err }))
+        }).catch((err) => ctx.log.error({ err, ...params, sessionId: input.id, source: "auto" }, "report generation failed"))
       }
 
       return result
