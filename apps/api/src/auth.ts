@@ -7,10 +7,22 @@ import { Resend } from "resend"
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const FROM = process.env.FROM_EMAIL ?? "onboarding@resend.dev"
 
-// Sin RESEND_API_KEY (desarrollo local) el correo no se envía: el enlace se imprime en consola
+// Enmascara el email para logs: "arturo@dominio.com" → "a***@dominio.com"
+function maskEmail(email: string) {
+  const at = email.indexOf("@")
+  if (at <= 0) return "***"
+  return `${email[0]}***${email.slice(at)}`
+}
+
+// Sin RESEND_API_KEY (desarrollo local) el correo no se envía: el enlace se imprime en consola.
+// En producción nunca se loguea el enlace (contiene el token) ni el email completo.
 async function sendEmail(to: string, subject: string, html: string, link: string) {
   if (!resend) {
-    console.warn(`[email deshabilitado] ${subject} → ${to}: ${link}`)
+    if (process.env.NODE_ENV === "production") {
+      console.warn(`[email deshabilitado] ${subject} → ${maskEmail(to)}`)
+    } else {
+      console.warn(`[email deshabilitado] ${subject} → ${to}: ${link}`)
+    }
     return
   }
   await resend.emails.send({ from: FROM, to, subject, html })
