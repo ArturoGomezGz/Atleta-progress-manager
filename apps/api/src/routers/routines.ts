@@ -189,7 +189,7 @@ export const routinesRouter = router({
       if (!canUseAiRoutines(ctx.session.user, input.teamId)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "La generación con IA no está habilitada para este equipo" })
       }
-      const result = await generateRoutineWithAI(input, ctx.session.user.id)
+      const result = await generateRoutineWithAI(input, ctx.session.user.id, ctx.log)
       return { ...result, content: routineContentSchema.parse(result.content) }
     }),
 

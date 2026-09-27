@@ -2,6 +2,7 @@ import { db } from "@atleta/db/client"
 import { equipment, exercise, type RoutineContent, type RoutineExerciseContent, type RoutineSet } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
 import { and, arrayContains, eq, ilike, inArray, isNull, or } from "drizzle-orm"
+import type { FastifyBaseLogger } from "fastify"
 import type OpenAI from "openai"
 import { z } from "zod"
 import { attachDetails, getOpenAI } from "../routers/exercises"
@@ -363,7 +364,7 @@ function buildUserPrompt(input: AiRoutineInput, equipmentNames: string[] | null)
 
 // ─── Entrada principal ────────────────────────────────────────────────────────
 
-export async function generateRoutineWithAI(input: AiRoutineInput, userId: string) {
+export async function generateRoutineWithAI(input: AiRoutineInput, userId: string, log: FastifyBaseLogger) {
   let equipmentNames: string[] | null = null
   if (input.equipmentIds) {
     equipmentNames = input.equipmentIds.length
@@ -416,7 +417,7 @@ export async function generateRoutineWithAI(input: AiRoutineInput, userId: strin
         if (call.function.name === "submit_routine") {
           const built = buildRoutine(args, ctx)
           if (!("error" in built)) {
-            console.info("[ai-routines] éxito", { teamId: input.teamId, turns: turn, tokens: usage, created: ctx.created.length })
+            log.info({ teamId: input.teamId, turns: turn, tokens: usage, created: ctx.created.length }, "[ai-routines] éxito")
             return { ...built, createdExercises: ctx.created }
           }
           result = built
@@ -441,9 +442,9 @@ export async function generateRoutineWithAI(input: AiRoutineInput, userId: strin
       }
       messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) })
     }
-    console.info("[ai-routines] turno", { teamId: input.teamId, turn, calls: turnLog })
+    log.info({ teamId: input.teamId, turn, calls: turnLog }, "[ai-routines] turno")
   }
 
-  console.warn("[ai-routines] sin rutina válida", { teamId: input.teamId, tokens: usage, lastError, exercisesCreated: ctx.created.length })
+  log.warn({ teamId: input.teamId, tokens: usage, lastError, exercisesCreated: ctx.created.length }, "[ai-routines] sin rutina válida")
   throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "La IA no logró completar la rutina. Intenta de nuevo o agrega más detalle." })
 }
