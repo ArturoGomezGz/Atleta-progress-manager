@@ -473,9 +473,11 @@ export const sessionsRouter = router({
       const [set] = await db.select().from(setRecord).where(eq(setRecord.id, input.setId)).limit(1)
       if (!set) throw new TRPCError({ code: "NOT_FOUND" })
       const [as] = await db.select().from(athleteSession).where(eq(athleteSession.id, set.athleteSessionId)).limit(1)
-      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
-      await assertCoach(ctx.session.user.id, session!.teamId)
-      if (await getRoutineCategory(session!.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
+      if (!as) throw new TRPCError({ code: "NOT_FOUND" })
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, session.teamId)
+      if (await getRoutineCategory(session.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
       const [updated] = await db.update(setRecord).set({ status: input.status }).where(eq(setRecord.id, input.setId)).returning()
       return updated
     }),
@@ -486,9 +488,11 @@ export const sessionsRouter = router({
       const [set] = await db.select().from(setRecord).where(eq(setRecord.id, input.setId)).limit(1)
       if (!set) throw new TRPCError({ code: "NOT_FOUND" })
       const [as] = await db.select().from(athleteSession).where(eq(athleteSession.id, set.athleteSessionId)).limit(1)
-      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
-      await assertCoach(ctx.session.user.id, session!.teamId)
-      if (await getRoutineCategory(session!.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
+      if (!as) throw new TRPCError({ code: "NOT_FOUND" })
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, session.teamId)
+      if (await getRoutineCategory(session.routineId) === "training") throw new TRPCError({ code: "BAD_REQUEST", message: "No permitido en sesiones de entrenamiento" })
       await db.delete(setRecord).where(eq(setRecord.id, input.setId))
     }),
 
