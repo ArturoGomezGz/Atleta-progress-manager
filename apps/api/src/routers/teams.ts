@@ -197,3 +197,14 @@ export async function assertCoach(userId: string, teamId: string) {
   if (member.role !== "coach") throw new TRPCError({ code: "FORBIDDEN" })
   return member
 }
+
+// NOT_FOUND (no FORBIDDEN) para no revelar si el atleta existe en otro equipo
+export async function assertAthleteInTeam(athleteId: string, teamId: string) {
+  const [member] = await db
+    .select()
+    .from(teamMember)
+    .where(and(eq(teamMember.userId, athleteId), eq(teamMember.teamId, teamId), eq(teamMember.role, "athlete")))
+    .limit(1)
+  if (!member) throw new TRPCError({ code: "NOT_FOUND" })
+  return member
+}
