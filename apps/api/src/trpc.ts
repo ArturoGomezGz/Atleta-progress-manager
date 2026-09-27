@@ -14,9 +14,17 @@ export type Context = Awaited<ReturnType<typeof createContext>>
 
 const t = initTRPC.context<Context>().create({
   // En producción no enviamos al cliente el mensaje ni el stack de errores internos
-  // (p. ej. errores de Postgres); los demás códigos conservan su mensaje de negocio
+  // (p. ej. errores de Postgres); los demás códigos conservan su mensaje de negocio.
+  // Solo se ocultan los errores que tRPC envolvió porque se lanzó algo que no era
+  // TRPCError (en ese caso expone el original en `error.cause`); un TRPCError lanzado
+  // a mano con INTERNAL_SERVER_ERROR y mensaje para el usuario se conserva.
   errorFormatter({ shape, error }) {
-    if (error.code === "INTERNAL_SERVER_ERROR" && process.env.NODE_ENV === "production") {
+    const wrappedUnknownError = error.cause !== undefined
+    if (
+      error.code === "INTERNAL_SERVER_ERROR" &&
+      wrappedUnknownError &&
+      process.env.NODE_ENV === "production"
+    ) {
       const { stack: _stack, ...data } = shape.data
       return {
         ...shape,
