@@ -19,7 +19,7 @@ function maskEmail(email: string) {
 async function sendEmail(to: string, subject: string, html: string, link: string) {
   if (!resend) {
     if (process.env.NODE_ENV === "production") {
-      console.warn(`[email deshabilitado] ${subject} → ${maskEmail(to)}`)
+      console.warn(`[ALERTA] RESEND_API_KEY no configurada en producción — "${subject}" no se envió a ${maskEmail(to)}`)
     } else {
       console.warn(`[email deshabilitado] ${subject} → ${to}: ${link}`)
     }
