@@ -7,7 +7,7 @@ export async function createContext({ req }: CreateFastifyContextOptions) {
   const session = await auth.api.getSession({
     headers: fromNodeHeaders(req.headers),
   })
-  return { session }
+  return { session, log: req.log }
 }
 
 export type Context = Awaited<ReturnType<typeof createContext>>

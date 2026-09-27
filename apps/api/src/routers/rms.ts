@@ -58,7 +58,7 @@ export const rmsRouter = router({
         exerciseId: input.exerciseId,
         teamId: input.teamId,
         triggerRmId: rm.id,
-      }).catch((err) => console.error("Report generation failed (manual)", { rmId: rm.id, err }))
+      }).catch((err) => ctx.log.error({ rmId: rm.id, err }, "Report generation failed (manual)"))
 
       return rm
     }),
