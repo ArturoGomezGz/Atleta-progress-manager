@@ -44,7 +44,7 @@ async function main() {
       reply.send(text || null)
     } catch (err) {
       req.log.error(err, "better-auth handler error")
-      reply.status(500).send({ error: String(err) })
+      reply.status(500).send({ error: "Internal Server Error", requestId: req.id })
     }
   })
 
