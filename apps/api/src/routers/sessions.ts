@@ -20,7 +20,7 @@ import { exerciseZones, withZoneProfiles } from "../services/body-zones"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { flattenContent, targetsForExercise } from "../services/routine-content"
 import { protectedProcedure, router } from "../trpc"
-import { assertCoach, assertMember } from "./teams"
+import { assertAthleteInTeam, assertCoach, assertMember } from "./teams"
 
 
 
@@ -753,6 +753,7 @@ export const sessionsRouter = router({
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
       await assertMember(ctx.session.user.id, session.teamId)
+      await assertAthleteInTeam(input.athleteId, session.teamId)
 
       const exercises = await db
         .select({ exerciseId: sessionExercise.exerciseId })

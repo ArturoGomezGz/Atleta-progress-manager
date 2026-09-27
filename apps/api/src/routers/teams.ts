@@ -1,7 +1,7 @@
 import { db } from "@atleta/db/client"
 import { team, teamInvite, teamMember, user } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, count, eq, gt } from "drizzle-orm"
+import { and, count, eq, gt, or } from "drizzle-orm"
 import { randomBytes } from "node:crypto"
 import { z } from "zod"
 import { protectedProcedure, router } from "../trpc"
@@ -203,7 +203,7 @@ export async function assertAthleteInTeam(athleteId: string, teamId: string) {
   const [member] = await db
     .select()
     .from(teamMember)
-    .where(and(eq(teamMember.userId, athleteId), eq(teamMember.teamId, teamId), eq(teamMember.role, "athlete")))
+    .where(and(eq(teamMember.userId, athleteId), eq(teamMember.teamId, teamId), or(eq(teamMember.role, "athlete"), eq(teamMember.selfAthlete, true))))
     .limit(1)
   if (!member) throw new TRPCError({ code: "NOT_FOUND" })
   return member
