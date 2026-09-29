@@ -15,6 +15,10 @@ RUN pnpm install --frozen-lockfile
 COPY packages/db ./packages/db
 COPY apps/api ./apps/api
 
+# Set after install so dev dependencies (tsx, etc.) are still installed.
+# trpc.ts (error masking) and auth.ts (email/token masking) depend on this.
+ENV NODE_ENV=production
+
 EXPOSE 3001
 
 CMD ["pnpm", "--filter", "api", "start"]

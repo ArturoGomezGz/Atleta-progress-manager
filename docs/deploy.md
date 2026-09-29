@@ -62,6 +62,7 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 | `BETTER_AUTH_URL` | URL pública del **web** (ej. `https://atleta.vercel.app`) — ver nota abajo |
 | `WEB_URL` | URL pública del web (ej. `https://atleta.vercel.app`) |
 | `PORT` | `3001` |
+| `NODE_ENV` | `production` — ya la fija el `Dockerfile` (`ENV NODE_ENV=production`), no hace falta agregarla en Railway. De ella dependen el ocultamiento de errores internos (mensaje/stack) en tRPC (`apps/api/src/trpc.ts`) y el enmascarado de emails/enlaces con token en `apps/api/src/auth.ts` |
 | `RESEND_API_KEY` | API key de Resend |
 | `FROM_EMAIL` | Dirección de envío verificada (ej. `noreply@tudominio.com`) |
 | `GOOGLE_CLIENT_ID` | *(Opcional)* Client ID del OAuth 2.0 de Google Cloud Console. Sin él, el login con Google se desactiva |
