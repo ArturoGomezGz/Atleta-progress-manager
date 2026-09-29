@@ -68,6 +68,7 @@ export function AiRoutineGenerator({ teamId, replacesContent, onGenerated, onClo
 }) {
   const [goal, setGoal]                 = useState<Goal | null>(null)
   const [duration, setDuration]         = useState(60)
+  const [durationText, setDurationText] = useState<string | null>(null)
   const [level, setLevel]               = useState<Level | null>(null)
   const [warmup, setWarmup]             = useState(true)
   const [cooldownChoice, setCooldown]   = useState<boolean | null>(null)
@@ -134,11 +135,15 @@ export function AiRoutineGenerator({ teamId, replacesContent, onGenerated, onClo
 
         <Field label="Duración total" hint="incluye calentamiento y descansos">
           <div className="flex flex-wrap items-center gap-1.5">
-            {DURATIONS.map((d) => <Chip key={d} active={duration === d} onClick={() => setDuration(d)}>{d} min</Chip>)}
+            {DURATIONS.map((d) => <Chip key={d} active={duration === d} onClick={() => { setDuration(d); setDurationText(null) }}>{d} min</Chip>)}
             <input
               type="number" min={10} max={180}
-              value={duration}
-              onChange={(e) => setDuration(Math.max(10, Math.min(180, Number(e.target.value) || 10)))}
+              value={durationText ?? duration}
+              onChange={(e) => {
+                setDurationText(e.target.value)
+                setDuration(Math.max(10, Math.min(180, Number(e.target.value) || 10)))
+              }}
+              onBlur={() => setDurationText(null)}
               className="w-16 bg-background border border-border rounded-lg px-2 py-1.5 text-xs"
               aria-label="Duración en minutos"
             />
