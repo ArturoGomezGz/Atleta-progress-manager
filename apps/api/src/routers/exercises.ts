@@ -601,7 +601,7 @@ Rules:
           })
           .map((ex) => ({ ...ex, isSaved: savedIds.has(ex.id) }))
       } catch (err) {
-        console.error("[listPublic] ERROR:", err)
+        ctx.log.error({ err, userId: ctx.session.user.id }, "exercises.listPublic failed")
         throw err
       }
     }),
