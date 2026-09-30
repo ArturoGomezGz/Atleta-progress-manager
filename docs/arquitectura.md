@@ -2,13 +2,14 @@
 
 ## Visión general
 
-Monorepo con `pnpm workspaces` dividido en dos aplicaciones y un paquete compartido.
+Monorepo con `pnpm workspaces` dividido en tres aplicaciones y un paquete compartido.
 
 ```
 cmw-atleta/
 ├── apps/
 │   ├── web/      Next.js 15 — frontend del entrenador y atleta
-│   └── api/      Fastify 5 — backend REST/tRPC + autenticación
+│   ├── api/      Fastify 5 — backend REST/tRPC + autenticación
+│   └── mobile/   Expo (React Native) — app Android del atleta, solo para entrenar (ver docs/mobile.md)
 ├── packages/
 │   └── db/       Drizzle ORM — schema, migraciones y cliente de BD
 ├── docker-compose.yml

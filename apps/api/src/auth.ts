@@ -3,6 +3,7 @@ import * as schema from "@atleta/db/schema"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { Resend } from "resend"
+import { mobileOrigin } from "./services/mobile-origin"
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null
 const FROM = process.env.FROM_EMAIL ?? "onboarding@resend.dev"
@@ -79,7 +80,13 @@ export const auth = betterAuth({
         },
       }
     : {},
-  trustedOrigins: [process.env.WEB_URL ?? "http://localhost:3000"],
+  plugins: [mobileOrigin()],
+  trustedOrigins: [
+    process.env.WEB_URL ?? "http://localhost:3000",
+    "atleta://",
+    // Expo Go / dev client en desarrollo
+    ...(process.env.NODE_ENV === "production" ? [] : ["exp://"]),
+  ],
   secret: process.env.BETTER_AUTH_SECRET!,
 })
 
