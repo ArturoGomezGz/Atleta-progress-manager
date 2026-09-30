@@ -8,12 +8,13 @@ import {
   sessionExercise,
   sessionSetTarget,
   setRecord,
+  team,
   teamMember,
   trainingSession,
   user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, desc, eq, gt, gte, inArray, lte, or, SQL } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, inArray, lte, or, SQL, sql } from "drizzle-orm"
 import { z } from "zod"
 import { zoneProfileFromContent } from "@atleta/db/body-zones"
 import { exerciseZones, withZoneProfiles } from "../services/body-zones"
@@ -79,6 +80,40 @@ export const sessionsRouter = router({
         status: row.status === "cancelled" ? "cancelled" as const : row.athleteSessionStatus,
       }))
     }),
+
+  // Pendientes del atleta en todos sus equipos (app móvil): las activas y las
+  // de entrenamiento programadas, con el mismo criterio que "Mis rutinas" en web.
+  myPending: protectedProcedure.query(async ({ ctx }) => {
+    const athleteId = ctx.session.user.id
+    const rows = await db
+      .select({
+        id: trainingSession.id,
+        teamId: trainingSession.teamId,
+        teamName: team.name,
+        sessionStatus: trainingSession.status,
+        status: athleteSession.status,
+        startedAt: trainingSession.startedAt,
+        scheduledDate: trainingSession.scheduledDate,
+        routineName: routine.name,
+        routineCategory: routine.category,
+      })
+      .from(athleteSession)
+      .innerJoin(trainingSession, eq(athleteSession.sessionId, trainingSession.id))
+      .innerJoin(team, eq(trainingSession.teamId, team.id))
+      .innerJoin(teamMember, and(eq(teamMember.teamId, trainingSession.teamId), eq(teamMember.userId, athleteId)))
+      .leftJoin(routine, eq(trainingSession.routineId, routine.id))
+      .where(and(
+        eq(athleteSession.athleteId, athleteId),
+        inArray(athleteSession.status, ["active", "scheduled"]),
+      ))
+      // Sin fecha primero, como en web
+      .orderBy(sql`${trainingSession.scheduledDate} asc nulls first`, desc(trainingSession.startedAt))
+
+    return rows
+      .filter((r) => r.sessionStatus !== "cancelled")
+      .filter((r) => r.status === "active" || r.routineCategory === "training")
+      .map(({ sessionStatus: _sessionStatus, ...r }) => r)
+  }),
 
   myProgress: protectedProcedure
     .input(z.object({ sessionId: z.string().uuid() }))
