@@ -8,7 +8,7 @@ import type { WorkoutExercise } from "@/lib/workout"
 import { useEffect, useRef, useState } from "react"
 import { Animated, Easing, ScrollView, StyleSheet, View } from "react-native"
 
-export function RoutineDrop({ open, title, done, total, exercises, current, onWatch }: {
+export function RoutineDrop({ open, title, done, total, exercises, current, onWatch, onClosed }: {
   open: boolean
   title: string
   done: number
@@ -16,17 +16,29 @@ export function RoutineDrop({ open, title, done, total, exercises, current, onWa
   exercises: WorkoutExercise[]
   current: WorkoutExercise
   onWatch: (exercise: WorkoutExercise) => void
+  // Se avisa cuando termina la animación de cierre (no si se interrumpe al reabrir)
+  onClosed?: () => void
 }) {
   const [h, setH] = useState(0)
   const progress = useRef(new Animated.Value(0)).current
+  const onClosedRef = useRef(onClosed)
+  onClosedRef.current = onClosed
+  const wasOpen = useRef(false)
 
   useEffect(() => {
-    Animated.timing(progress, {
+    const closing = wasOpen.current && !open
+    wasOpen.current = open
+    const anim = Animated.timing(progress, {
       toValue: open ? 1 : 0,
       duration: open ? 340 : 260,
       easing: open ? Easing.out(Easing.cubic) : Easing.in(Easing.cubic),
       useNativeDriver: true,
-    }).start()
+    })
+    anim.start(({ finished }) => {
+      if (finished && closing) onClosedRef.current?.()
+    })
+    // Si se reabre o se desmonta a medias, la animación se corta sin avisar el cierre
+    return () => anim.stop()
   }, [open, progress])
 
   // Mientras no se conoce el alto, se deja bien arriba fuera de la vista

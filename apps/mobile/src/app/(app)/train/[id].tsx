@@ -15,6 +15,7 @@ import { VideoModal } from "@/components/workout/video"
 import { useSession } from "@/lib/auth"
 import { feedback, prepareSounds, setSoundEnabled, useSoundEnabled } from "@/lib/feedback"
 import { cancelTimerAlert, ensureNotificationPermission, scheduleTimerAlert } from "@/lib/notifications"
+import { clearRestCountdown, showRestCountdown } from "@/lib/rest-notification"
 import { colors, radiusLg } from "@/lib/theme"
 import { setTrainView, useTrainView } from "@/lib/train-view"
 import { trpc } from "@/lib/trpc"
@@ -35,6 +36,9 @@ import { ActivityIndicator, Alert, BackHandler, Modal, Pressable, StyleSheet, us
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
 
 type Rest = { endAt: number; total: number; upcoming: string }
+// Paso del flujo: una serie o el descanso que sigue a esa serie (i = índice en la lista plana)
+type Action = { label: string; icon: typeof Check; onPress: () => void; disabled?: boolean; tone?: ActionTone }
+type Step = { kind: "set" | "rest"; i: number }
 
 function upcomingLabel(p: { exercise: WorkoutExercise; target: WorkoutTarget }) {
   return p.exercise.roundNumber
@@ -67,8 +71,9 @@ export default function TrainScreen() {
   const [notes, setNotes] = useState(false)
   const [video, setVideo] = useState<WorkoutExercise | null>(null)
   const [reps, setReps] = useState(8)
-  // Serie que el atleta está repasando con "Atrás" (solo vista: no toca lo guardado)
-  const [viewId, setViewId] = useState<string | null>(null)
+  // Paso (serie o descanso) que el atleta está repasando con "Atrás" (solo vista: no toca lo guardado).
+  // id = la serie a la que pertenece el paso; en un descanso, la serie que lo precede
+  const [viewStep, setViewStep] = useState<{ kind: Step["kind"]; id: string } | null>(null)
   const [videoPlaying, setVideoPlaying] = useState(false)
   const [toast, setToast] = useState<string | null>(null)
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -77,12 +82,20 @@ export default function TrainScreen() {
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState(false)
   const restAlert = useRef<Promise<string | null> | null>(null)
+  // Acción del pie que espera a que termine de cerrarse la rutina completa
+  const pendingAction = useRef<{ which: "primary" | "secondary"; sig: string } | null>(null)
+  const pendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const footerActions = useRef<{ primary: Action; secondary: Action; sig: string } | null>(null)
   const soundOn = useSoundEnabled()
 
   useEffect(() => {
     prepareSounds()
     ensureNotificationPermission()
-    return () => cancelTimerAlert(restAlert.current)
+    return () => {
+      cancelTimerAlert(restAlert.current)
+      clearRestCountdown()
+      if (pendingTimer.current) clearTimeout(pendingTimer.current)
+    }
   }, [])
 
   const position = progress ? findCurrentPosition(progress.exercises) : null
@@ -91,9 +104,22 @@ export default function TrainScreen() {
   const flat = progress
     ? progress.exercises.flatMap((exercise, exerciseIdx) => exercise.targets.map((target) => ({ exercise, target, exerciseIdx })))
     : []
-  const viewed = viewId ? flat.find((f) => f.target.id === viewId) : undefined
-  const reviewing = !!viewed && viewed.target.id !== position?.target.id
-  const shown = reviewing ? viewed! : position
+  // Pasos en orden: serie, su descanso (si el ejercicio descansa y no es la última serie), serie…
+  const steps: Step[] = flat.flatMap((f, i) => {
+    const out: Step[] = [{ kind: "set", i }]
+    if (i < flat.length - 1 && (f.exercise.restSeconds ?? DEFAULT_REST_SECONDS) > 0) out.push({ kind: "rest", i })
+    return out
+  })
+  const posIdx = position ? flat.findIndex((f) => f.target.id === position.target.id) : -1
+  const liveIdx = steps.findIndex((st) => st.kind === "set" && st.i === posIdx)
+  const viewIdx = viewStep ? steps.findIndex((st) => st.kind === viewStep.kind && flat[st.i].target.id === viewStep.id) : -1
+  const reviewing = viewIdx >= 0 && viewIdx !== liveIdx
+  // Un descanso en curso sin repasar es el que sigue a la última serie hecha
+  const liveRestIdx = rest ? steps.findIndex((st) => st.kind === "rest" && st.i === posIdx - 1) : -1
+  const stepIdx = reviewing ? viewIdx : liveRestIdx >= 0 ? liveRestIdx : liveIdx
+  const step = steps[stepIdx]
+  // En un descanso se muestra el encabezado de lo que viene después, igual que al hacerlo en vivo
+  const shown = step ? flat[step.kind === "rest" ? step.i + 1 : step.i] ?? position : position
   const shownIdx = shown ? flat.findIndex((f) => f.target.id === shown.target.id) : -1
 
   const countdown = useSetCountdown(shown?.target.targetDurationSeconds ?? 30, shown?.exercise.exerciseName ?? "")
@@ -124,18 +150,52 @@ export default function TrainScreen() {
   const endRest = useCallback(() => {
     cancelTimerAlert(restAlert.current)
     restAlert.current = null
+    clearRestCountdown()
     setRest(null)
   }, [])
 
+  // Siempre apunta al último render: el auto-continuar necesita el paso actual
+  const finishRestRef = useRef<() => void>(() => {})
   useEffect(() => {
-    if (rest && restMs != null && restMs <= 0 && autoContinue) endRest()
-  }, [rest, restMs, autoContinue, endRest])
+    if (rest && restMs != null && restMs <= 0 && autoContinue) finishRestRef.current()
+  }, [rest, restMs, autoContinue])
 
   function startRest(seconds: number, upcoming: string) {
     const endAt = Date.now() + seconds * 1000
     setRest({ endAt, total: seconds, upcoming })
     restAlert.current = scheduleTimerAlert(endAt, "Descanso terminado", `Sigue: ${upcoming}`)
+    // También en descansos repasados con "Atrás": son un temporizador real. Al terminar se quita sola
+    showRestCountdown(endAt, upcoming)
   }
+
+  // ─── "Atrás" y "Siguiente" al repasar: solo cambian lo que se ve, nunca lo guardado ───
+  // Un descanso repasado es solo un temporizador: no crea ni toca ninguna serie ni llama al servidor
+  function goToStep(idx: number) {
+    const st = steps[idx]
+    if (!st) return
+    endRest()
+    countdown.reset()
+    setVideoPlaying(false)
+    if (idx === liveIdx) {
+      setViewStep(null)
+    } else if (st.kind === "rest") {
+      const from = flat[st.i]
+      const upcoming = flat[st.i + 1]
+      setViewStep({ kind: "rest", id: from.target.id })
+      startRest(from.exercise.restSeconds ?? DEFAULT_REST_SECONDS, upcomingLabel(upcoming))
+    } else {
+      setViewStep({ kind: "set", id: flat[st.i].target.id })
+    }
+  }
+  const goBack = () => { if (stepIdx > 0) goToStep(stepIdx - 1) }
+  const goNext = () => goToStep(stepIdx + 1)
+
+  // Terminar el descanso: en vivo solo se cierra; repasando, sigue el paso que le toca
+  function finishRest() {
+    if (reviewing) goToStep(stepIdx + 1)
+    else endRest()
+  }
+  finishRestRef.current = finishRest
 
   // ─── Salir ───
   const confirmExit = useCallback(() => {
@@ -153,6 +213,7 @@ export default function TrainScreen() {
   useEffect(() => {
     if (finished) return
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (pendingAction.current) return true // ya se está cerrando para ejecutar una acción
       if (overview) setOverview(false)
       else confirmExit()
       return true
@@ -260,21 +321,6 @@ export default function TrainScreen() {
     }
   }
 
-  // ─── "Atrás" y "Siguiente" al repasar: solo cambian lo que se ve, nunca lo guardado ───
-  function goBack() {
-    if (shownIdx <= 0) return
-    endRest()
-    countdown.reset()
-    setVideoPlaying(false)
-    setViewId(flat[shownIdx - 1].target.id)
-  }
-
-  const currentTargetId = position.target.id
-  function goNext() {
-    const next = flat[shownIdx + 1]
-    setViewId(!next || next.target.id === currentTargetId ? null : next.target.id)
-  }
-
   function startTimer() {
     // Al empezar el tiempo el video se detiene por completo (se desmonta el reproductor, con su audio)
     setVideoPlaying(false)
@@ -294,13 +340,12 @@ export default function TrainScreen() {
       : "Serie hecha"
   const advanceTone: ActionTone = isLast ? "success" : "primary"
 
-  type Action = { label: string; icon: typeof Check; onPress: () => void; disabled?: boolean; tone?: ActionTone }
-  const back: Action = { label: "Atrás", icon: ArrowLeft, onPress: goBack, disabled: shownIdx <= 0 }
+  const back: Action = { label: "Atrás", icon: ArrowLeft, onPress: goBack, disabled: stepIdx <= 0 }
   let primary: Action
   let secondary: Action = back
 
   if (rest) {
-    primary = { label: restOvertime ? "Siguiente" : "Ya descansé", icon: Play, tone: restOvertime ? "destructive" : "primary", onPress: endRest }
+    primary = { label: restOvertime ? "Siguiente" : "Ya descansé", icon: Play, tone: restOvertime ? "destructive" : "primary", onPress: finishRest }
   } else if (reviewing) {
     primary = { label: "Siguiente", icon: ArrowRight, onPress: goNext }
   } else if (isTime && countdown.phase === "idle") {
@@ -321,6 +366,45 @@ export default function TrainScreen() {
     primary = { label: saving ? "Guardando…" : advanceLabel, icon: Check, tone: advanceTone, onPress: handleComplete, disabled: saving }
   }
 
+  // Firma del paso actual: si cambia mientras se cierra la rutina, la acción ya no aplica
+  const sig = `${stepIdx}|${rest ? "r" : "-"}|${countdown.phase}|${reviewing ? "v" : "-"}|${target.id}`
+  footerActions.current = { primary, secondary, sig }
+
+  // Con la rutina completa abierta, el botón primero la cierra y la acción corre al terminar la animación
+  function runPending() {
+    const p = pendingAction.current
+    if (!p) return
+    pendingAction.current = null
+    if (pendingTimer.current) clearTimeout(pendingTimer.current)
+    pendingTimer.current = null
+    const latest = footerActions.current
+    if (!latest || latest.sig !== p.sig) return
+    const action = latest[p.which]
+    if (!action.disabled) action.onPress()
+  }
+
+  function pressFooter(which: "primary" | "secondary") {
+    if (pendingAction.current) return // toque doble mientras cierra: no se encola ni corre dos veces
+    const action = which === "primary" ? primary : secondary
+    if (action.disabled) return
+    if (!overview) {
+      action.onPress()
+      return
+    }
+    pendingAction.current = { which, sig }
+    setOverview(false)
+    // Red de seguridad si el aviso de fin de animación nunca llega
+    pendingTimer.current = setTimeout(runPending, 800)
+  }
+
+  function toggleOverview() {
+    // Reabrir la rutina cancela la acción que estaba esperando
+    pendingAction.current = null
+    if (pendingTimer.current) clearTimeout(pendingTimer.current)
+    pendingTimer.current = null
+    setOverview((o) => !o)
+  }
+
   const headerIconSize = 22
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
@@ -336,7 +420,7 @@ export default function TrainScreen() {
           </Pressable>
           {/* Tocar "Ejercicio N de M" baja la rutina completa desde arriba */}
           <Pressable
-            onPress={() => setOverview((o) => !o)}
+            onPress={toggleOverview}
             style={styles.counter}
             hitSlop={6}
             accessibilityRole="button"
@@ -417,6 +501,7 @@ export default function TrainScreen() {
           exercises={progress.exercises}
           current={exercise}
           onWatch={setVideo}
+          onClosed={runPending}
         />
 
         {toast && <View pointerEvents="none" style={styles.toast}><Text size={14}>{toast}</Text></View>}
@@ -426,8 +511,8 @@ export default function TrainScreen() {
       <View style={styles.footer}>
         {failed && <Text size={14} color={colors.destructive} center>No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.</Text>}
         <View style={styles.footerRow}>
-          <SecondaryAction label={secondary.label} icon={secondary.icon} disabled={secondary.disabled} onPress={secondary.onPress} />
-          <PrimaryAction label={primary.label} icon={primary.icon} tone={primary.tone} disabled={primary.disabled} onPress={primary.onPress} />
+          <SecondaryAction label={secondary.label} icon={secondary.icon} disabled={secondary.disabled} onPress={() => pressFooter("secondary")} />
+          <PrimaryAction label={primary.label} icon={primary.icon} tone={primary.tone} disabled={primary.disabled} onPress={() => pressFooter("primary")} />
         </View>
       </View>
 

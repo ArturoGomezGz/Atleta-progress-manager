@@ -1,0 +1,90 @@
+name: android-apk-production
+
+# APK de apps/mobile apuntando a la API de PRODUCCIÓN. Se publica como release
+# (no pre-release) de GitHub. Se dispara de tres formas:
+#  · Cambiando `.github/mobile-production-version` en master (ej. `0.2.0`): publica el
+#    release `mobile-v0.2.0`. Es la forma normal de sacar una versión.
+#  · Subiendo un tag `mobile-v*`.
+#  · A mano desde Actions, indicando el tag.
+# Si el release del tag ya existe, el workflow falla antes de compilar.
+# Firmado con la llave de depuración: sirve para instalar a mano, no para la tienda.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - ".github/mobile-production-version"
+    tags: ["mobile-v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Tag del release (ej. mobile-v0.1.0). Si ya existe, se usa; si no, se crea sobre el commit elegido."
+        required: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk-production
+  cancel-in-progress: false
+
+env:
+  EXPO_PUBLIC_API_URL: https://api-production-85b2.up.railway.app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then TAG="$INPUT_TAG"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then TAG="$GITHUB_REF_NAME"
+          else TAG="mobile-v$(tr -d '[:space:]' < .github/mobile-production-version)"; fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::El release $TAG ya existe. Cambia la versión en .github/mobile-production-version."
+            exit 1
+          fi
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate native Android project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Publish release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk "atleta-${TAG}.apk"
+          gh release create "$TAG" "atleta-${TAG}.apk" \
+            --target "${{ github.sha }}" \
+            --title "Atleta Android ${TAG}" \
+            --notes "APK desde \`${GITHUB_REF_NAME}\` (${GITHUB_SHA::7}). Usa la API de producción: ${EXPO_PUBLIC_API_URL}"
