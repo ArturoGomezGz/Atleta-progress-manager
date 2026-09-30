@@ -44,7 +44,9 @@ export default function LoginScreen() {
             placeholder="Correo"
             placeholderTextColor={colors.mutedForeground}
             autoCapitalize="none"
+            autoCorrect={false}
             autoComplete="email"
+            textContentType="emailAddress"
             keyboardType="email-address"
             value={email}
             onChangeText={setEmail}
@@ -53,7 +55,10 @@ export default function LoginScreen() {
             style={styles.input}
             placeholder="Contraseña"
             placeholderTextColor={colors.mutedForeground}
+            autoCapitalize="none"
+            autoCorrect={false}
             autoComplete="password"
+            textContentType="password"
             secureTextEntry
             value={password}
             onChangeText={setPassword}
