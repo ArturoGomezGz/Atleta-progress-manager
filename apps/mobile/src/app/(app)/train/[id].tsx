@@ -15,6 +15,7 @@ import { VideoModal } from "@/components/workout/video"
 import { useSession } from "@/lib/auth"
 import { feedback, prepareSounds, setSoundEnabled, useSoundEnabled } from "@/lib/feedback"
 import { cancelTimerAlert, ensureNotificationPermission, scheduleTimerAlert } from "@/lib/notifications"
+import { clearRestCountdown, showRestCountdown } from "@/lib/rest-notification"
 import { colors, radiusLg } from "@/lib/theme"
 import { setTrainView, useTrainView } from "@/lib/train-view"
 import { trpc } from "@/lib/trpc"
@@ -92,6 +93,7 @@ export default function TrainScreen() {
     ensureNotificationPermission()
     return () => {
       cancelTimerAlert(restAlert.current)
+      clearRestCountdown()
       if (pendingTimer.current) clearTimeout(pendingTimer.current)
     }
   }, [])
@@ -148,6 +150,7 @@ export default function TrainScreen() {
   const endRest = useCallback(() => {
     cancelTimerAlert(restAlert.current)
     restAlert.current = null
+    clearRestCountdown()
     setRest(null)
   }, [])
 
@@ -161,6 +164,8 @@ export default function TrainScreen() {
     const endAt = Date.now() + seconds * 1000
     setRest({ endAt, total: seconds, upcoming })
     restAlert.current = scheduleTimerAlert(endAt, "Descanso terminado", `Sigue: ${upcoming}`)
+    // También en descansos repasados con "Atrás": son un temporizador real. Al terminar se quita sola
+    showRestCountdown(endAt, upcoming)
   }
 
   // ─── "Atrás" y "Siguiente" al repasar: solo cambian lo que se ve, nunca lo guardado ───
