@@ -36,7 +36,14 @@ El registro y la verificación de correo siguen en la web.
 
 ## Build (APK de prueba)
 
-`eas.json` tiene el perfil `preview`, que genera un APK instalable:
+El workflow `.github/workflows/android-apk.yml` compila un APK apuntando a la API
+de testing y lo publica como pre-release de GitHub (`android-preview-<n>`). Corre
+en cada push a `feature/mobile-android` que toque `apps/mobile`, o a mano desde
+Actions. Va firmado con la llave de depuración: sirve para instalar a mano, no
+para la tienda. Para que el login funcione, la API de testing debe tener los
+cambios de la app desplegados.
+
+Alternativa con EAS: `eas.json` tiene el perfil `preview`, que genera un APK instalable:
 `npx eas-cli@latest build --platform android --profile preview`
 (requiere cuenta de Expo). El paquete Android es `com.atleta.app`.
 
