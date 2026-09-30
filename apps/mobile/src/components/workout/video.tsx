@@ -45,14 +45,30 @@ export function VideoThumb({ videoId, style, playSize = 36, vertical }: {
   )
 }
 
-/** Reproductor en línea: primero la miniatura, al tocar carga YouTube. */
-export function VideoPlayer({ videoId, title, autoStart = false }: { videoId: string; title: string; autoStart?: boolean }) {
-  const [started, setStarted] = useState(autoStart)
+/**
+ * Reproductor en línea: primero la miniatura, al tocar carga YouTube en el mismo lugar.
+ * Con `playing` + `onPlayingChange` lo controla quien lo usa (el ejecutor lo detiene al
+ * empezar un cronómetro: se desmonta el WebView y con eso se corta también el audio).
+ * Con `fill` ocupa todo el espacio de su contenedor en vez de la caja 16:9.
+ */
+export function VideoPlayer({ videoId, title, autoStart = false, playing, onPlayingChange, fill }: {
+  videoId: string
+  title: string
+  autoStart?: boolean
+  playing?: boolean
+  onPlayingChange?: (playing: boolean) => void
+  fill?: boolean
+}) {
+  const [localStarted, setLocalStarted] = useState(autoStart)
   const [loading, setLoading] = useState(true)
-  useEffect(() => { setStarted(autoStart); setLoading(true) }, [videoId, autoStart])
+  const controlled = playing !== undefined
+  const started = controlled ? playing : localStarted
+  const setStarted = (v: boolean) => { if (controlled) onPlayingChange?.(v); else setLocalStarted(v) }
+  useEffect(() => { if (!controlled) setLocalStarted(autoStart); setLoading(true) }, [videoId, autoStart, controlled])
+  useEffect(() => { if (started) setLoading(true) }, [started])
 
   return (
-    <View style={styles.player}>
+    <View style={[styles.player, fill && styles.playerFill]}>
       {started ? (
         <>
           <WebView
@@ -73,6 +89,11 @@ export function VideoPlayer({ videoId, title, autoStart = false }: { videoId: st
             }}
           />
           {loading && <View style={styles.loading}><ActivityIndicator color="#fff" size="large" /></View>}
+          {controlled && (
+            <Pressable onPress={() => setStarted(false)} style={styles.stopChip} hitSlop={8} accessibilityLabel="Cerrar el video">
+              <X size={18} color="#fff" />
+            </Pressable>
+          )}
         </>
       ) : (
         <Pressable onPress={() => setStarted(true)} style={StyleSheet.absoluteFill} accessibilityLabel={`Reproducir video: ${title}`}>
@@ -121,6 +142,8 @@ const styles = StyleSheet.create({
   playOverlay: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center" },
   playDot: { backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center" },
   player: { width: "100%", aspectRatio: 16 / 9, borderRadius: radiusLg, overflow: "hidden", backgroundColor: "#000" },
+  playerFill: { flex: 1, aspectRatio: undefined, height: undefined, minHeight: 0 },
+  stopChip: { position: "absolute", top: 8, right: 8, width: 34, height: 34, borderRadius: 17, backgroundColor: "rgba(0,0,0,0.7)", alignItems: "center", justifyContent: "center" },
   webview: { flex: 1, backgroundColor: "#000" },
   loading: { ...StyleSheet.absoluteFill, alignItems: "center", justifyContent: "center", backgroundColor: "#000" },
   bigPlay: { width: 80, height: 80, borderRadius: 40, backgroundColor: "#dc2626", alignItems: "center", justifyContent: "center" },

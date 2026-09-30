@@ -1,29 +1,37 @@
 // Ejecutor de la rutina: serie en curso → descanso → siguiente serie, hasta terminar.
+// Todo cabe en una pantalla, sin scroll. El pie tiene dos botones a la misma altura:
+// el secundario (izquierda) es casi siempre "Atrás" y el primario (derecha) avanza el flujo.
 // Mismo flujo que WorkoutRunner de la web (apps/web/src/components/workout-runner.tsx),
 // con lo nativo del teléfono: pantalla siempre encendida, pitidos, vibración y un
 // aviso del sistema si el descanso termina con la app en segundo plano.
 import { Button } from "@/components/button"
 import { Text } from "@/components/text"
-import { RoutineCards } from "@/components/workout/cards"
+import { PrimaryAction, SecondaryAction, type ActionTone } from "@/components/workout/action-button"
 import { RestTimer } from "@/components/workout/rest-timer"
+import { RoutineDrop } from "@/components/workout/routine-drop"
 import { SetExecution } from "@/components/workout/set-execution"
+import { useSetCountdown } from "@/components/workout/time-countdown"
 import { VideoModal } from "@/components/workout/video"
-import type { CountdownPhase } from "@/components/workout/time-countdown"
 import { useSession } from "@/lib/auth"
 import { feedback, prepareSounds, setSoundEnabled, useSoundEnabled } from "@/lib/feedback"
 import { cancelTimerAlert, ensureNotificationPermission, scheduleTimerAlert } from "@/lib/notifications"
 import { colors, radiusLg } from "@/lib/theme"
+import { setTrainView, useTrainView } from "@/lib/train-view"
 import { trpc } from "@/lib/trpc"
 import { useRemainingMs, useSecondTicks } from "@/lib/use-countdown"
 import {
   calcWeight, DEFAULT_REST_SECONDS, doneSets, findCurrentPosition, groupForPreview, sc, totalSets,
   type WorkoutExercise, type WorkoutTarget,
 } from "@/lib/workout"
+import { isTimeTarget } from "@/lib/workout-text"
 import { useKeepAwake } from "expo-keep-awake"
 import { router, useLocalSearchParams } from "expo-router"
-import { ArrowLeft, Check, CheckCircle, List, MessageSquare, Play, Volume2, VolumeX, X } from "lucide-react-native"
+import {
+  ArrowLeft, ArrowRight, Check, CheckCircle, ChevronDown, ChevronUp, Columns2, MessageSquare, Pause, Play,
+  RotateCcw, Rows2, SkipForward, Volume2, VolumeX, X,
+} from "lucide-react-native"
 import { useCallback, useEffect, useRef, useState } from "react"
-import { ActivityIndicator, Alert, BackHandler, Modal, Pressable, ScrollView, StyleSheet, View } from "react-native"
+import { ActivityIndicator, Alert, BackHandler, Modal, Pressable, StyleSheet, useWindowDimensions, View } from "react-native"
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
 
 type Rest = { endAt: number; total: number; upcoming: string }
@@ -59,7 +67,13 @@ export default function TrainScreen() {
   const [notes, setNotes] = useState(false)
   const [video, setVideo] = useState<WorkoutExercise | null>(null)
   const [reps, setReps] = useState(8)
-  const [timerPhase, setTimerPhase] = useState<CountdownPhase>("idle")
+  // Serie que el atleta está repasando con "Atrás" (solo vista: no toca lo guardado)
+  const [viewId, setViewId] = useState<string | null>(null)
+  const [videoPlaying, setVideoPlaying] = useState(false)
+  const [toast, setToast] = useState<string | null>(null)
+  const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const { width } = useWindowDimensions()
+  const view = useTrainView()
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState(false)
   const restAlert = useRef<Promise<string | null> | null>(null)
@@ -72,8 +86,32 @@ export default function TrainScreen() {
   }, [])
 
   const position = progress ? findCurrentPosition(progress.exercises) : null
-  const targetId = position?.target.id
-  useEffect(() => { setReps(8); setTimerPhase("idle"); setFailed(false) }, [targetId])
+
+  // Todas las series en orden de ejecución; sirve para "Atrás" y para los rótulos del botón
+  const flat = progress
+    ? progress.exercises.flatMap((exercise, exerciseIdx) => exercise.targets.map((target) => ({ exercise, target, exerciseIdx })))
+    : []
+  const viewed = viewId ? flat.find((f) => f.target.id === viewId) : undefined
+  const reviewing = !!viewed && viewed.target.id !== position?.target.id
+  const shown = reviewing ? viewed! : position
+  const shownIdx = shown ? flat.findIndex((f) => f.target.id === shown.target.id) : -1
+
+  const countdown = useSetCountdown(shown?.target.targetDurationSeconds ?? 30, shown?.exercise.exerciseName ?? "")
+  const shownTargetId = shown?.target.id
+  useEffect(() => {
+    setReps(8)
+    setFailed(false)
+    setVideoPlaying(false)
+    countdown.reset()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [shownTargetId])
+
+  function showToast(message: string) {
+    setToast(message)
+    if (toastTimer.current) clearTimeout(toastTimer.current)
+    toastTimer.current = setTimeout(() => setToast(null), 1800)
+  }
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current) }, [])
 
   // ─── Descanso ───
   const restMs = useRemainingMs(rest?.endAt ?? null)
@@ -114,9 +152,13 @@ export default function TrainScreen() {
   const finished = !!progress && (progress.status === "active" || progress.status === "completed") && !position
   useEffect(() => {
     if (finished) return
-    const sub = BackHandler.addEventListener("hardwareBackPress", () => { confirmExit(); return true })
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (overview) setOverview(false)
+      else confirmExit()
+      return true
+    })
     return () => sub.remove()
-  }, [confirmExit, finished])
+  }, [confirmExit, finished, overview])
 
   // ─── Fin de la rutina ───
   const completedFor = useRef<string | null>(null)
@@ -180,10 +222,13 @@ export default function TrainScreen() {
     )
   }
 
-  const { exercise, target, exerciseIdx } = position
+  const { exercise, target, exerciseIdx } = shown ?? position
   const weight = calcWeight(target.targetPercent, rms?.[exercise.exerciseId])
   const pct = total > 0 ? done / total : 0
   const restOvertime = restMs != null && restMs <= 0
+  const isTime = isTimeTarget(target)
+  const recorded = exercise.sets.find((set) => set.sessionSetTargetId === target.id)
+  const shownReps = reviewing ? recorded?.reps ?? reps : reps
 
   async function handleComplete() {
     if (saving) return
@@ -204,6 +249,7 @@ export default function TrainScreen() {
       utils.sessions.myProgress.setData({ sessionId: id }, (old) => (old ? { ...old, exercises: next } : old))
       utils.sessions.myProgress.invalidate({ sessionId: id })
       feedback.setDone()
+      countdown.reset()
       const nextPos = findCurrentPosition(next)
       const restFor = exercise.restSeconds ?? DEFAULT_REST_SECONDS
       if (nextPos && restFor > 0) startRest(restFor, upcomingLabel(nextPos))
@@ -214,6 +260,68 @@ export default function TrainScreen() {
     }
   }
 
+  // ─── "Atrás" y "Siguiente" al repasar: solo cambian lo que se ve, nunca lo guardado ───
+  function goBack() {
+    if (shownIdx <= 0) return
+    endRest()
+    countdown.reset()
+    setVideoPlaying(false)
+    setViewId(flat[shownIdx - 1].target.id)
+  }
+
+  const currentTargetId = position.target.id
+  function goNext() {
+    const next = flat[shownIdx + 1]
+    setViewId(!next || next.target.id === currentTargetId ? null : next.target.id)
+  }
+
+  function startTimer() {
+    // Al empezar el tiempo el video se detiene por completo (se desmonta el reproductor, con su audio)
+    setVideoPlaying(false)
+    countdown.start()
+  }
+
+  // ─── Botones del pie ───
+  const isLast = shownIdx >= 0 && shownIdx === flat.length - 1
+  const nextInFlat = flat[shownIdx + 1]
+  const advanceLabel = isLast
+    ? "Terminar rutina"
+    : exercise.blockId
+      ? nextInFlat && nextInFlat.exercise.blockId === exercise.blockId && nextInFlat.exercise.roundNumber === exercise.roundNumber
+        && nextInFlat.exercise.id !== exercise.id
+        ? "Siguiente ejercicio"
+        : nextInFlat && nextInFlat.exercise.id === exercise.id ? "Serie hecha" : "Terminar ronda"
+      : "Serie hecha"
+  const advanceTone: ActionTone = isLast ? "success" : "primary"
+
+  type Action = { label: string; icon: typeof Check; onPress: () => void; disabled?: boolean; tone?: ActionTone }
+  const back: Action = { label: "Atrás", icon: ArrowLeft, onPress: goBack, disabled: shownIdx <= 0 }
+  let primary: Action
+  let secondary: Action = back
+
+  if (rest) {
+    primary = { label: restOvertime ? "Siguiente" : "Ya descansé", icon: Play, tone: restOvertime ? "destructive" : "primary", onPress: endRest }
+  } else if (reviewing) {
+    primary = { label: "Siguiente", icon: ArrowRight, onPress: goNext }
+  } else if (isTime && countdown.phase === "idle") {
+    primary = { label: "Empezar", icon: Play, onPress: startTimer }
+  } else if (isTime && countdown.phase === "prepare") {
+    primary = { label: "Preparando…", icon: Play, tone: "destructive", onPress: () => {}, disabled: true }
+    secondary = { label: "Cancelar", icon: X, onPress: countdown.reset }
+  } else if (isTime && countdown.phase === "running") {
+    // Se puede saltar lo que queda del tiempo: la serie se guarda completa
+    primary = { label: "Terminar ya", icon: Check, tone: "success", onPress: handleComplete, disabled: saving }
+    secondary = { label: "Pausar", icon: Pause, onPress: countdown.pause }
+  } else if (isTime && countdown.phase === "paused") {
+    primary = { label: "Seguir", icon: Play, onPress: countdown.resume }
+    secondary = { label: "Reiniciar", icon: RotateCcw, onPress: countdown.reset }
+  } else if (isTime && countdown.phase === "finished") {
+    primary = { label: saving ? "Guardando…" : advanceLabel, icon: Check, tone: "destructive", onPress: handleComplete, disabled: saving }
+  } else {
+    primary = { label: saving ? "Guardando…" : advanceLabel, icon: Check, tone: advanceTone, onPress: handleComplete, disabled: saving }
+  }
+
+  const headerIconSize = 22
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
       {/* ── Cabecera: progreso ── */}
@@ -222,87 +330,108 @@ export default function TrainScreen() {
           <View style={[styles.progressFill, { width: `${Math.round(pct * 100)}%` }]} />
         </View>
         <View style={styles.headerRow}>
-          <Pressable onPress={confirmExit} style={styles.headerBtn} hitSlop={8}>
-            <X size={22} color={colors.mutedForeground} />
-            <Text size={16} color={colors.mutedForeground}>Salir</Text>
+          <Pressable onPress={confirmExit} style={styles.headerBtn} hitSlop={8} accessibilityLabel="Salir del entrenamiento">
+            <X size={headerIconSize} color={colors.mutedForeground} />
+            {width >= 390 && <Text size={16} color={colors.mutedForeground}>Salir</Text>}
           </Pressable>
-          <Text size={16} color={colors.mutedForeground}>
-            Ejercicio <Text size={16} weight="bold">{exerciseIdx + 1}</Text> de {progress.exercises.length}
-          </Text>
+          {/* Tocar "Ejercicio N de M" baja la rutina completa desde arriba */}
           <Pressable
-            onPress={() => setSoundEnabled(!soundOn)}
-            style={styles.headerBtn}
-            hitSlop={8}
-            accessibilityLabel={soundOn ? "Silenciar sonidos" : "Activar sonidos"}
+            onPress={() => setOverview((o) => !o)}
+            style={styles.counter}
+            hitSlop={6}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: overview }}
+            accessibilityLabel="Ver toda la rutina"
           >
-            {soundOn ? <Volume2 size={22} color={colors.foreground} /> : <VolumeX size={22} color={colors.mutedForeground} />}
+            <Text size={16} color={colors.mutedForeground} numberOfLines={1}>
+              Ejercicio <Text size={16} weight="bold">{exerciseIdx + 1}</Text> de {progress.exercises.length}
+            </Text>
+            {overview ? <ChevronUp size={18} color={colors.mutedForeground} /> : <ChevronDown size={18} color={colors.mutedForeground} />}
           </Pressable>
+          <View style={styles.headerIcons}>
+            <Pressable
+              onPress={() => {
+                const next = view === "split" ? "button" : "split"
+                setTrainView(next)
+                showToast(next === "split" ? "Vista 50-50: video y objetivo" : "Vista solo objetivo: video a demanda")
+              }}
+              style={[styles.iconBtn, view === "split" && styles.iconBtnOn]}
+              hitSlop={4}
+              accessibilityLabel={view === "split" ? "Cambiar a vista solo objetivo" : "Cambiar a vista 50-50"}
+            >
+              {view === "split"
+                ? <Rows2 size={headerIconSize} color={colors.primary} />
+                : <Columns2 size={headerIconSize} color={colors.mutedForeground} />}
+            </Pressable>
+            <Pressable
+              onPress={() => {
+                setAutoContinue(!autoContinue)
+                showToast(autoContinue ? "Continuar automáticamente: apagado" : "Continuar automáticamente: activado")
+              }}
+              style={[styles.iconBtn, autoContinue && styles.iconBtnOn]}
+              hitSlop={4}
+              accessibilityLabel="Continuar automáticamente después del descanso"
+              accessibilityState={{ selected: autoContinue }}
+            >
+              <SkipForward size={headerIconSize} color={autoContinue ? colors.primary : colors.mutedForeground} />
+            </Pressable>
+            <Pressable
+              onPress={() => setSoundEnabled(!soundOn)}
+              style={styles.iconBtn}
+              hitSlop={4}
+              accessibilityLabel={soundOn ? "Silenciar sonidos" : "Activar sonidos"}
+            >
+              {soundOn ? <Volume2 size={headerIconSize} color={colors.foreground} /> : <VolumeX size={headerIconSize} color={colors.mutedForeground} />}
+            </Pressable>
+          </View>
         </View>
       </View>
 
-      {/* ── Contenido ── */}
-      {rest && restMs != null ? (
-        <RestTimer
-          remainingMs={restMs}
-          totalSeconds={rest.total}
-          upcoming={rest.upcoming}
-          autoContinue={autoContinue}
-          onToggleAutoContinue={setAutoContinue}
-        />
-      ) : (
-        <ScrollView contentContainerStyle={styles.content}>
+      {/* ── Contenido (sin scroll) ── */}
+      <View style={styles.body}>
+        {rest && restMs != null ? (
+          <RestTimer remainingMs={restMs} totalSeconds={rest.total} upcoming={rest.upcoming} />
+        ) : (
           <SetExecution
             key={target.id}
             exercise={exercise}
             target={target}
             weight={weight}
-            reps={reps}
+            reps={shownReps}
             onRepsChange={setReps}
-            timerPhase={timerPhase}
-            onTimerPhaseChange={setTimerPhase}
+            countdown={countdown}
+            reviewing={reviewing}
+            view={view}
+            videoPlaying={videoPlaying}
+            onVideoPlayingChange={setVideoPlaying}
             onShowNotes={() => setNotes(true)}
           />
-        </ScrollView>
-      )}
-
-      {/* ── Pie fijo ── */}
-      <View style={styles.footer}>
-        {rest ? (
-          <Button
-            label={restOvertime ? "Siguiente" : "Ya descansé, continuar"}
-            icon={Play}
-            size="lg"
-            variant={restOvertime ? "destructive" : "primary"}
-            onPress={endRest}
-          />
-        ) : (
-          <>
-            <Button label={saving ? "Guardando…" : "Terminé esta serie"} icon={Check} size="lg" loading={saving} onPress={handleComplete} />
-            {failed && <Text size={15} color={colors.destructive} center>No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.</Text>}
-          </>
         )}
-        <Button label="Ver toda la rutina" icon={List} variant="ghost" onPress={() => setOverview(true)} />
+
+        {/* ── Toda la rutina: baja desde la cabecera ── */}
+        <RoutineDrop
+          open={overview}
+          title={sc(progress.routineName ?? "Rutina")}
+          done={done}
+          total={total}
+          exercises={progress.exercises}
+          current={exercise}
+          onWatch={setVideo}
+        />
+
+        {toast && <View pointerEvents="none" style={styles.toast}><Text size={14}>{toast}</Text></View>}
       </View>
 
-      {/* ── Toda la rutina ── */}
-      <Modal visible={overview} animationType="slide" onRequestClose={() => setOverview(false)}>
-        <SafeAreaProvider>
-          <SafeAreaView style={styles.screen}>
-            <ScrollView contentContainerStyle={[styles.content, { gap: 16 }]}>
-              <Pressable onPress={() => setOverview(false)} style={styles.backLink} hitSlop={8}>
-                <ArrowLeft size={20} color={colors.mutedForeground} />
-                <Text size={16} color={colors.mutedForeground}>{rest ? "Volver al descanso" : "Volver al ejercicio"}</Text>
-              </Pressable>
-              <View>
-                <Text heading size={34}>{sc(progress.routineName ?? "Rutina")}</Text>
-                <Text size={16} color={colors.mutedForeground}>{done} de {total} series hechas</Text>
-              </View>
-              <RoutineCards exercises={progress.exercises} current={exercise} onWatch={setVideo} />
-            </ScrollView>
-            <VideoModal exercise={video} onClose={() => setVideo(null)} />
-          </SafeAreaView>
-        </SafeAreaProvider>
-      </Modal>
+      {/* ── Pie fijo: secundario a la izquierda, primario a la derecha ── */}
+      <View style={styles.footer}>
+        {failed && <Text size={14} color={colors.destructive} center>No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.</Text>}
+        <View style={styles.footerRow}>
+          <SecondaryAction label={secondary.label} icon={secondary.icon} disabled={secondary.disabled} onPress={secondary.onPress} />
+          <PrimaryAction label={primary.label} icon={primary.icon} tone={primary.tone} disabled={primary.disabled} onPress={primary.onPress} />
+        </View>
+      </View>
+
+      <VideoModal exercise={video} onClose={() => setVideo(null)} />
 
       {/* ── Indicaciones del coach ── */}
       <Modal visible={notes && !!exercise.notes} transparent animationType="fade" onRequestClose={() => setNotes(false)}>
@@ -327,16 +456,25 @@ const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: colors.background },
   header: { borderBottomWidth: 1, borderBottomColor: colors.border },
-  progressTrack: { height: 8, backgroundColor: colors.mutedSoft },
+  progressTrack: { height: 6, backgroundColor: colors.mutedSoft },
   progressFill: { height: "100%", backgroundColor: colors.primary },
-  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 6 },
-  headerBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 6, paddingVertical: 8, minWidth: 44 },
-  content: { padding: 16, paddingTop: 20, paddingBottom: 24 },
+  headerRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 8, paddingVertical: 4, gap: 4 },
+  headerBtn: { flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 6, paddingVertical: 8, minWidth: 40 },
+  counter: { flex: 1, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 4, paddingVertical: 8, minWidth: 0 },
+  headerIcons: { flexDirection: "row", alignItems: "center", gap: 2 },
+  iconBtn: { width: 38, height: 38, borderRadius: 10, alignItems: "center", justifyContent: "center" },
+  iconBtnOn: { backgroundColor: colors.primarySoft, borderWidth: 1, borderColor: colors.primaryBorder },
+  body: { flex: 1, minHeight: 0, overflow: "hidden" },
+  toast: {
+    position: "absolute", top: 8, alignSelf: "center", zIndex: 20, elevation: 20,
+    backgroundColor: colors.card, borderWidth: 1, borderColor: colors.border, borderRadius: 10,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
   footer: {
-    paddingHorizontal: 16, paddingTop: 12, paddingBottom: 8, gap: 4,
+    paddingHorizontal: 16, paddingTop: 10, paddingBottom: 10, gap: 6,
     borderTopWidth: 1, borderTopColor: colors.border, backgroundColor: colors.background,
   },
-  backLink: { flexDirection: "row", alignItems: "center", gap: 8, paddingVertical: 8 },
+  footerRow: { flexDirection: "row", gap: 10 },
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.6)", alignItems: "center", justifyContent: "center", padding: 16 },
   notesCard: {
     width: "100%", maxWidth: 400, borderRadius: radiusLg, backgroundColor: colors.card,
