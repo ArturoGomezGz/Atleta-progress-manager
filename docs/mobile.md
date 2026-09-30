@@ -6,11 +6,36 @@ muestra historial. Por ahora solo Android.
 
 ## Estado
 
-- Hecho: login con correo y contraseña, lista de rutinas pendientes de todos los
-  equipos (`sessions.myPending`), vista previa de la sesión (`sessions.myProgress`).
-- Siguiente: ejecutor nativo (series, temporizador de descanso en segundo plano,
-  notificaciones locales, sonidos, vibración, pantalla encendida) y cola offline
-  para las series registradas.
+- Hecho:
+  - Login con correo y contraseña.
+  - Lista de rutinas pendientes de todos los equipos (`sessions.myPending`).
+  - Vista previa de la sesión y botón para empezarla (`sessions.activate`) o continuarla.
+  - Ejecutor de la rutina (`src/app/(app)/train/[id].tsx`), mismo flujo que el de la
+    web: serie en curso → descanso → siguiente serie → pantalla final
+    (`sessions.recordSet`, `sessions.completeMySession`). Incluye series por
+    repeticiones, por tiempo y "las que puedas", circuitos por rondas, peso por %RM,
+    indicaciones del coach y "ver toda la rutina".
+  - Lo nativo: pantalla siempre encendida mientras se entrena (`expo-keep-awake`),
+    pitidos 3-2-1 y alarma al terminar (`expo-audio`, se mezclan con la música y se
+    pueden silenciar), vibración (`expo-haptics`) y una notificación del sistema si
+    el descanso o una serie por tiempo termina con la app en segundo plano
+    (`expo-notifications`, canal "Temporizador de entrenamiento").
+  - Mismas fuentes (Inter y Barlow Condensed) y colores que la web.
+  - Videos de los ejercicios (`src/components/workout/video.tsx`): miniatura en
+    las tarjetas con "Ver cómo se hace" (video a pantalla completa con la
+    descripción) y reproductor en la serie en curso. Es el embed de YouTube dentro
+    de un `react-native-webview`; YouTube exige un Referer, así que la página del
+    iframe se carga con origen `https://com.atleta.app` (el id del paquete). Las
+    URLs de YouTube salen de `@atleta/db/youtube`, igual que en la web.
+- Siguiente: cola offline para las series registradas.
+
+Los temporizadores se calculan con la hora de fin, no restando segundos, así que
+siguen siendo exactos si el teléfono se bloquea. En Android 14+ el sistema puede
+retrasar un poco la notificación si no se concede "Alarmas y recordatorios" a la
+app; con la pantalla encendida (lo normal durante la rutina) no afecta.
+
+Los sonidos (`assets/sounds/*.wav`) son tonos generados; `rest_end.wav` también es
+el sonido de la notificación (empaquetado por el plugin de `expo-notifications`).
 
 ## Correr en local
 
@@ -38,8 +63,7 @@ El registro y la verificación de correo siguen en la web.
 
 El workflow `.github/workflows/android-apk.yml` compila un APK apuntando a la API
 de testing y lo publica como pre-release de GitHub (`android-preview-<n>`). Corre
-en cada push a `feature/mobile-android` que toque `apps/mobile`, o a mano desde
-Actions. Va firmado con la llave de depuración: sirve para instalar a mano, no
+en cada push a `master` que toque `apps/mobile`, o a mano desde Actions. Va firmado con la llave de depuración: sirve para instalar a mano, no
 para la tienda. Para que el login funcione, la API de testing debe tener los
 cambios de la app desplegados.
 

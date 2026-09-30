@@ -1,8 +1,9 @@
 import { Button } from "@/components/button"
 import { signIn } from "@/lib/auth"
-import { colors, radius } from "@/lib/theme"
+import { Text } from "@/components/text"
+import { colors, fonts, radius } from "@/lib/theme"
 import { useState } from "react"
-import { KeyboardAvoidingView, StyleSheet, Text, TextInput, View } from "react-native"
+import { KeyboardAvoidingView, StyleSheet, TextInput, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
 // Códigos de error de better-auth → mensaje para el atleta
@@ -34,8 +35,8 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView behavior="height" style={styles.container}>
-        <Text style={styles.title}>Atleta</Text>
-        <Text style={styles.subtitle}>Entra para ver tus rutinas pendientes.</Text>
+        <Text heading size={44}>Atleta</Text>
+        <Text color={colors.mutedForeground} style={{ marginBottom: 24 }}>Entra para ver tus rutinas pendientes.</Text>
 
         <View style={styles.form}>
           <TextInput
@@ -58,11 +59,11 @@ export default function LoginScreen() {
             onChangeText={setPassword}
             onSubmitEditing={submit}
           />
-          {error && <Text style={styles.error}>{error}</Text>}
+          {error && <Text size={14} color={colors.destructive}>{error}</Text>}
           <Button label="Entrar" onPress={submit} loading={loading} disabled={!email || !password} />
         </View>
 
-        <Text style={styles.hint}>¿No tienes cuenta? Créala en la web de Atleta.</Text>
+        <Text size={14} color={colors.mutedForeground} center style={{ marginTop: 24 }}>¿No tienes cuenta? Créala en la web de Atleta.</Text>
       </KeyboardAvoidingView>
     </SafeAreaView>
   )
@@ -71,8 +72,6 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   container: { flex: 1, justifyContent: "center", padding: 24, gap: 8 },
-  title: { color: colors.foreground, fontSize: 32, fontWeight: "700" },
-  subtitle: { color: colors.mutedForeground, fontSize: 16, marginBottom: 24 },
   form: { gap: 12 },
   input: {
     backgroundColor: colors.input,
@@ -81,9 +80,8 @@ const styles = StyleSheet.create({
     borderRadius: radius,
     color: colors.foreground,
     fontSize: 16,
+    fontFamily: fonts.regular,
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
-  error: { color: colors.destructive, fontSize: 14 },
-  hint: { color: colors.mutedForeground, fontSize: 14, textAlign: "center", marginTop: 24 },
 })

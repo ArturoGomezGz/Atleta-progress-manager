@@ -6,7 +6,7 @@ name: android-apk
 
 on:
   push:
-    branches: [feature/mobile-android]
+    branches: [master]
     paths:
       - "apps/mobile/**"
       - "pnpm-lock.yaml"
