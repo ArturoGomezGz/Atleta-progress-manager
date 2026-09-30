@@ -1,11 +1,12 @@
 // Tarjetas de ejercicio y de circuito: vista previa, "ver toda la rutina" y resumen.
-// Mismo diseño que ExerciseOverviewCard / CircuitOverviewCard de la web, sin videos.
+// Mismo diseño que ExerciseOverviewCard / CircuitOverviewCard de la web.
 import { Text } from "@/components/text"
+import { VideoThumb } from "@/components/workout/video"
 import { colors, radiusLg } from "@/lib/theme"
 import { doneFor, groupForPreview, type WorkoutExercise } from "@/lib/workout"
 import { summarizeTargets } from "@/lib/workout-text"
-import { CheckCircle, MessageSquare, Repeat } from "lucide-react-native"
-import { StyleSheet, View } from "react-native"
+import { CheckCircle, MessageSquare, Play, Repeat } from "lucide-react-native"
+import { Pressable, StyleSheet, View } from "react-native"
 
 function DoneLine({ done, total, small }: { done: number; total: number; small?: boolean }) {
   if (done === 0) return null
@@ -30,20 +31,28 @@ function Notes({ notes, small }: { notes: string; small?: boolean }) {
   )
 }
 
-export function ExerciseCard({ exercise, index, highlight, showProgress = true }: {
+export function ExerciseCard({ exercise, index, highlight, showProgress = true, onWatch }: {
   exercise: WorkoutExercise
   index: number
   highlight?: "current" | "done"
   showProgress?: boolean
+  onWatch: (exercise: WorkoutExercise) => void
 }) {
+  const videoId = exercise.youtubeVideoId
   const done = doneFor(exercise)
   const total = exercise.targets.length
   return (
     <View style={[styles.card, highlight === "current" && styles.current]}>
       <View style={styles.row}>
-        <View style={styles.badge}>
-          <Text heading size={26} color={colors.mutedForeground}>{index + 1}</Text>
-        </View>
+        {videoId ? (
+          <Pressable onPress={() => onWatch(exercise)} accessibilityLabel={`Ver video de ${exercise.exerciseName}`}>
+            <VideoThumb videoId={videoId} vertical={exercise.videoOrientation === "vertical"} style={{ width: 128 }} />
+          </Pressable>
+        ) : (
+          <View style={styles.badge}>
+            <Text heading size={26} color={colors.mutedForeground}>{index + 1}</Text>
+          </View>
+        )}
         <View style={{ flex: 1, gap: 2 }}>
           <Text size={14} color={colors.mutedForeground}>Ejercicio {index + 1}</Text>
           <Text size={18} weight="semibold">{exercise.exerciseName}</Text>
@@ -56,17 +65,24 @@ export function ExerciseCard({ exercise, index, highlight, showProgress = true }
           {showProgress && <DoneLine done={done} total={total} />}
         </View>
       )}
+      {videoId && (
+        <Pressable onPress={() => onWatch(exercise)} style={styles.watch} android_ripple={{ color: colors.primarySoft }}>
+          <Play size={20} color={colors.primary} />
+          <Text size={16} weight="semibold" color={colors.primary}>Ver cómo se hace</Text>
+        </Pressable>
+      )}
     </View>
   )
 }
 
-export function CircuitCard({ blockName, rounds, exercises, allExercises, current, showProgress = true }: {
+export function CircuitCard({ blockName, rounds, exercises, allExercises, current, showProgress = true, onWatch }: {
   blockName: string
   rounds: number
   exercises: WorkoutExercise[]
   allExercises: WorkoutExercise[]
   current?: WorkoutExercise
   showProgress?: boolean
+  onWatch: (exercise: WorkoutExercise) => void
 }) {
   const active = current && allExercises.some((ex) => ex.id === current.id) ? current : null
   const totalTargets = allExercises.reduce((s, ex) => s + ex.targets.length, 0)
@@ -106,10 +122,19 @@ export function CircuitCard({ blockName, rounds, exercises, allExercises, curren
               active?.exerciseId === ex.exerciseId && { backgroundColor: colors.primarySoft },
             ]}
           >
-            <Text size={16} weight="semibold">{ex.exerciseName}</Text>
-            <Text size={16}>{summarizeTargets(ex.targets)}</Text>
-            {ex.notes && <Notes notes={ex.notes} small />}
-            {showProgress && <DoneLine done={done} total={total} small />}
+            {ex.youtubeVideoId ? (
+              <Pressable onPress={() => onWatch(ex)} accessibilityLabel={`Ver video de ${ex.exerciseName}`}>
+                <VideoThumb videoId={ex.youtubeVideoId} vertical={ex.videoOrientation === "vertical"} playSize={30} style={{ width: 96 }} />
+              </Pressable>
+            ) : (
+              <View style={[styles.thumbEmpty, { width: 96 }]} />
+            )}
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text size={16} weight="semibold">{ex.exerciseName}</Text>
+              <Text size={16}>{summarizeTargets(ex.targets)}</Text>
+              {ex.notes && <Notes notes={ex.notes} small />}
+              {showProgress && <DoneLine done={done} total={total} small />}
+            </View>
           </View>
         )
       })}
@@ -118,10 +143,11 @@ export function CircuitCard({ blockName, rounds, exercises, allExercises, curren
 }
 
 /** Lista completa de la rutina, agrupando circuitos. */
-export function RoutineCards({ exercises, current, showProgress = true }: {
+export function RoutineCards({ exercises, current, showProgress = true, onWatch }: {
   exercises: WorkoutExercise[]
   current?: WorkoutExercise
   showProgress?: boolean
+  onWatch: (exercise: WorkoutExercise) => void
 }) {
   return (
     <View style={{ gap: 12 }}>
@@ -135,6 +161,7 @@ export function RoutineCards({ exercises, current, showProgress = true }: {
             allExercises={g.allExercises}
             current={current}
             showProgress={showProgress}
+            onWatch={onWatch}
           />
         ) : (
           <ExerciseCard
@@ -142,6 +169,7 @@ export function RoutineCards({ exercises, current, showProgress = true }: {
             exercise={g.exercise}
             index={i}
             showProgress={showProgress}
+            onWatch={onWatch}
             highlight={current?.id === g.exercise.id ? "current" : undefined}
           />
         ),
@@ -169,6 +197,11 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", gap: 4,
     borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, backgroundColor: colors.primarySoft,
   },
-  circuitRow: { padding: 12, paddingHorizontal: 16, gap: 2 },
+  circuitRow: { flexDirection: "row", gap: 12, padding: 12 },
+  thumbEmpty: { aspectRatio: 16 / 9, borderRadius: 12, backgroundColor: colors.muted },
+  watch: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8,
+    paddingVertical: 14, borderTopWidth: 1, borderTopColor: colors.border,
+  },
   divider: { borderTopWidth: 1, borderTopColor: colors.border },
 })

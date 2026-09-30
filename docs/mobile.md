@@ -21,7 +21,13 @@ muestra historial. Por ahora solo Android.
     el descanso o una serie por tiempo termina con la app en segundo plano
     (`expo-notifications`, canal "Temporizador de entrenamiento").
   - Mismas fuentes (Inter y Barlow Condensed) y colores que la web.
-- Siguiente: videos de los ejercicios y cola offline para las series registradas.
+  - Videos de los ejercicios (`src/components/workout/video.tsx`): miniatura en
+    las tarjetas con "Ver cómo se hace" (video a pantalla completa con la
+    descripción) y reproductor en la serie en curso. Es el embed de YouTube dentro
+    de un `react-native-webview`; YouTube exige un Referer, así que la página del
+    iframe se carga con origen `https://com.atleta.app` (el id del paquete). Las
+    URLs de YouTube salen de `@atleta/db/youtube`, igual que en la web.
+- Siguiente: cola offline para las series registradas.
 
 Los temporizadores se calculan con la hora de fin, no restando segundos, así que
 siguen siendo exactos si el teléfono se bloquea. En Android 14+ el sistema puede

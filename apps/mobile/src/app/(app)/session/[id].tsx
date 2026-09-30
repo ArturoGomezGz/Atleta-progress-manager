@@ -3,10 +3,12 @@
 import { Button } from "@/components/button"
 import { Text } from "@/components/text"
 import { RoutineCards } from "@/components/workout/cards"
+import { VideoModal } from "@/components/workout/video"
 import { ensureNotificationPermission } from "@/lib/notifications"
 import { colors, radiusLg } from "@/lib/theme"
 import { trpc } from "@/lib/trpc"
-import { doneSets, groupForPreview, sc, totalSets } from "@/lib/workout"
+import { doneSets, groupForPreview, sc, totalSets, type WorkoutExercise } from "@/lib/workout"
+import { useState } from "react"
 import { router, Stack, useLocalSearchParams } from "expo-router"
 import { Calendar, CheckCircle, Play } from "lucide-react-native"
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native"
@@ -15,6 +17,7 @@ import { SafeAreaView } from "react-native-safe-area-context"
 export default function SessionScreen() {
   const { id } = useLocalSearchParams<{ id: string }>()
   const utils = trpc.useUtils()
+  const [video, setVideo] = useState<WorkoutExercise | null>(null)
   const { data, isLoading, isError, refetch } = trpc.sessions.myProgress.useQuery({ sessionId: id })
   const activate = trpc.sessions.activate.useMutation({
     onSuccess: async () => {
@@ -63,7 +66,8 @@ export default function SessionScreen() {
         {scheduled && (
           <View style={styles.intro}>
             <Text size={16}>
-              Revisa los ejercicios de hoy. Cuando estés listo, pulsa <Text weight="bold">Empezar rutina</Text>.
+              Antes de empezar, puedes tocar cada ejercicio para <Text weight="bold">ver el video</Text> de cómo se hace.
+              Cuando estés listo, pulsa <Text weight="bold">Empezar rutina</Text>.
               La pantalla se mantendrá encendida y te avisaremos con sonido y vibración al terminar cada descanso.
             </Text>
           </View>
@@ -85,8 +89,10 @@ export default function SessionScreen() {
           </View>
         )}
 
-        <RoutineCards exercises={data.exercises} showProgress={!scheduled} />
+        <RoutineCards exercises={data.exercises} showProgress={!scheduled} onWatch={setVideo} />
       </ScrollView>
+
+      <VideoModal exercise={video} onClose={() => setVideo(null)} />
 
       {(scheduled || active) && (
         <View style={styles.footer}>
