@@ -8,6 +8,7 @@
     "db:migrate": "pnpm --filter db migrate",
     "db:seed": "pnpm --filter db seed",
     "db:studio": "pnpm --filter db studio",
+    "reset-password": "pnpm --filter api reset-password",
     "qa:agents": "node scripts/quality-agents/run-all.mjs",
     "qa:agent:logging": "node scripts/quality-agents/logging-audit.mjs",
     "qa:agent:errors": "node scripts/quality-agents/error-flow-audit.mjs",
