@@ -1,9 +1,8 @@
 import { Text } from "@/components/text"
-import { computeMomentum, DAY_LABELS, WEEKLY_GOAL, type MomentumDay } from "@/lib/momentum"
+import { computeMomentum, DAY_LABELS, type MomentumDay } from "@/lib/momentum"
 import { colors, radiusLg } from "@/lib/theme"
 import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
-import Svg, { Circle } from "react-native-svg"
 
 // Niveles del mapa de calor: 0, 1, 2, 3+ sesiones en el día.
 const LEVELS = [colors.secondary, "#2f4c94", "#4272e0", "#7fa5ff"]
@@ -12,26 +11,18 @@ const levelColor = (day: MomentumDay) => LEVELS[Math.min(day.count, 3)]
 
 export function MomentumTracker({ completedAt }: { completedAt: string[] }) {
   const m = useMemo(() => computeMomentum(completedAt), [completedAt])
-  const pct = Math.min(m.thisWeek / WEEKLY_GOAL, 1)
 
   return (
     <View style={{ gap: 16 }}>
-      <View style={[styles.card, styles.row]}>
-        <StreakRing value={m.streak} progress={pct} />
-        <View style={{ flex: 1, gap: 4 }}>
-          <Text heading size={26}>
-            {m.streak === 1 ? "1 semana seguida" : `${m.streak} semanas seguidas`}
-          </Text>
-          <Text size={14} color={colors.mutedForeground}>
-            Cumpliendo tu meta de {WEEKLY_GOAL} sesiones por semana
-          </Text>
-        </View>
+      <View style={styles.streaks}>
+        <StreakCard label="Racha diaria" value={m.dailyStreak} unit={m.dailyStreak === 1 ? "día" : "días"} best={m.bestDailyStreak} bestUnit="día" bestUnitPlural="días" />
+        <StreakCard label="Racha semanal" value={m.weeklyStreak} unit={m.weeklyStreak === 1 ? "semana" : "semanas"} best={m.bestWeeklyStreak} bestUnit="semana" bestUnitPlural="semanas" />
       </View>
 
       <View style={styles.card}>
         <View style={styles.between}>
           <Text size={13} weight="semibold" color={colors.mutedForeground} style={styles.eyebrow}>Esta semana</Text>
-          <Text size={14} weight="bold">{m.thisWeek} de {WEEKLY_GOAL}</Text>
+          <Text size={14} weight="bold">{m.daysThisWeek} de 7</Text>
         </View>
         <View style={[styles.between, { marginTop: 16 }]}>
           {m.weekDays.map((d, i) => (
@@ -64,35 +55,32 @@ export function MomentumTracker({ completedAt }: { completedAt: string[] }) {
   )
 }
 
-function StreakRing({ value, progress }: { value: number; progress: number }) {
-  const size = 88
-  const stroke = 9
-  const r = (size - stroke) / 2
-  const c = 2 * Math.PI * r
+type StreakCardProps = { label: string; value: number; unit: string; best: number; bestUnit: string; bestUnitPlural: string }
+
+function StreakCard({ label, value, unit, best, bestUnit, bestUnitPlural }: StreakCardProps) {
+  const pct = best > 0 ? Math.min(value / best, 1) : 0
   return (
-    <View style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
-      <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
-        <Circle cx={size / 2} cy={size / 2} r={r} stroke={colors.secondary} strokeWidth={stroke} fill="none" />
-        <Circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          stroke={colors.primary}
-          strokeWidth={stroke}
-          fill="none"
-          strokeLinecap="round"
-          strokeDasharray={`${c * progress} ${c}`}
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-      </Svg>
-      <Text heading size={34} tabular>{value}</Text>
+    <View style={[styles.card, styles.streakCard]}>
+      <Text size={13} weight="semibold" color={colors.mutedForeground} style={styles.eyebrow}>{label}</Text>
+      <View style={styles.valueRow}>
+        <Text heading size={48} tabular>{value}</Text>
+        <Text size={15} color={colors.mutedForeground}>{unit}</Text>
+      </View>
+      <View style={styles.track}><View style={[styles.fill, { width: `${pct * 100}%` }]} /></View>
+      <Text size={13} color={colors.mutedForeground}>
+        Mejor racha: <Text size={13} weight="bold">{best} {best === 1 ? bestUnit : bestUnitPlural}</Text>
+      </Text>
     </View>
   )
 }
 
 const styles = StyleSheet.create({
   card: { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1, borderRadius: radiusLg, padding: 20 },
-  row: { flexDirection: "row", alignItems: "center", gap: 20 },
+  streaks: { flexDirection: "row", gap: 12 },
+  streakCard: { flex: 1, gap: 10, paddingHorizontal: 18 },
+  valueRow: { flexDirection: "row", alignItems: "baseline", gap: 8 },
+  track: { height: 6, borderRadius: 3, backgroundColor: colors.secondary },
+  fill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
   between: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   eyebrow: { textTransform: "uppercase", letterSpacing: 0.6 },
   dot: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.secondary },
