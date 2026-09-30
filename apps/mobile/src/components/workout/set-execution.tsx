@@ -2,6 +2,7 @@
 // (repeticiones, tiempo o "las que puedas") e indicaciones del coach.
 import { Text } from "@/components/text"
 import { TimeCountdown, type CountdownPhase } from "@/components/workout/time-countdown"
+import { VideoPlayer } from "@/components/workout/video"
 import { feedback } from "@/lib/feedback"
 import { colors, radiusLg } from "@/lib/theme"
 import type { WorkoutExercise, WorkoutTarget } from "@/lib/workout"
@@ -52,6 +53,14 @@ export function SetExecution({ exercise, target, weight, reps, onRepsChange, tim
           )}
         </View>
       </View>
+
+      {exercise.youtubeVideoId ? (
+        <VideoPlayer videoId={exercise.youtubeVideoId} title={exercise.exerciseName} />
+      ) : (
+        <View style={styles.noVideo}>
+          <Text size={16} color={colors.mutedForeground}>Este ejercicio no tiene video.</Text>
+        </View>
+      )}
 
       <View style={[styles.target, { borderColor: alert ? colors.destructiveBorder : running ? colors.successBorder : colors.primaryBorder }]}>
         <Text size={20} weight="semibold" color={tone} center>
@@ -135,6 +144,7 @@ const styles = StyleSheet.create({
     borderRadius: radiusLg, borderWidth: 2, backgroundColor: colors.card,
     padding: 20, gap: 12, alignItems: "center",
   },
+  noVideo: { borderWidth: 1, borderStyle: "dashed", borderColor: colors.border, borderRadius: radiusLg, padding: 16 },
   stepBtn: {
     width: 68, height: 68, borderRadius: radiusLg, borderWidth: 2, borderColor: colors.border,
     alignItems: "center", justifyContent: "center", overflow: "hidden",

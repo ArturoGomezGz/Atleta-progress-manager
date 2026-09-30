@@ -7,6 +7,7 @@ import { Text } from "@/components/text"
 import { RoutineCards } from "@/components/workout/cards"
 import { RestTimer } from "@/components/workout/rest-timer"
 import { SetExecution } from "@/components/workout/set-execution"
+import { VideoModal } from "@/components/workout/video"
 import type { CountdownPhase } from "@/components/workout/time-countdown"
 import { useSession } from "@/lib/auth"
 import { feedback, prepareSounds, setSoundEnabled, useSoundEnabled } from "@/lib/feedback"
@@ -56,6 +57,7 @@ export default function TrainScreen() {
   const [autoContinue, setAutoContinue] = useState(false)
   const [overview, setOverview] = useState(false)
   const [notes, setNotes] = useState(false)
+  const [video, setVideo] = useState<WorkoutExercise | null>(null)
   const [reps, setReps] = useState(8)
   const [timerPhase, setTimerPhase] = useState<CountdownPhase>("idle")
   const [saving, setSaving] = useState(false)
@@ -295,8 +297,9 @@ export default function TrainScreen() {
                 <Text heading size={34}>{sc(progress.routineName ?? "Rutina")}</Text>
                 <Text size={16} color={colors.mutedForeground}>{done} de {total} series hechas</Text>
               </View>
-              <RoutineCards exercises={progress.exercises} current={exercise} />
+              <RoutineCards exercises={progress.exercises} current={exercise} onWatch={setVideo} />
             </ScrollView>
+            <VideoModal exercise={video} onClose={() => setVideo(null)} />
           </SafeAreaView>
         </SafeAreaProvider>
       </Modal>
