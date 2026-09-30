@@ -1,12 +1,19 @@
 name: android-apk-production
 
 # APK de apps/mobile apuntando a la API de PRODUCCIÓN. Se publica como release
-# (no pre-release) de GitHub. Se dispara al subir un tag `mobile-v*`
-# (ej. `git tag mobile-v0.1.0 && git push origin mobile-v0.1.0`) o a mano desde Actions.
+# (no pre-release) de GitHub. Se dispara de tres formas:
+#  · Cambiando `.github/mobile-production-version` en master (ej. `0.2.0`): publica el
+#    release `mobile-v0.2.0`. Es la forma normal de sacar una versión.
+#  · Subiendo un tag `mobile-v*`.
+#  · A mano desde Actions, indicando el tag.
+# Si el release del tag ya existe, el workflow falla antes de compilar.
 # Firmado con la llave de depuración: sirve para instalar a mano, no para la tienda.
 
 on:
   push:
+    branches: [master]
+    paths:
+      - ".github/mobile-production-version"
     tags: ["mobile-v*"]
   workflow_dispatch:
     inputs:
@@ -23,7 +30,6 @@ concurrency:
 
 env:
   EXPO_PUBLIC_API_URL: https://api-production-85b2.up.railway.app
-  TAG: ${{ github.event.inputs.tag || github.ref_name }}
 
 jobs:
   build:
@@ -32,6 +38,20 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Resolve release tag
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INPUT_TAG: ${{ github.event.inputs.tag }}
+        run: |
+          if [ -n "$INPUT_TAG" ]; then TAG="$INPUT_TAG"
+          elif [ "${{ github.ref_type }}" = "tag" ]; then TAG="$GITHUB_REF_NAME"
+          else TAG="mobile-v$(tr -d '[:space:]' < .github/mobile-production-version)"; fi
+          echo "TAG=$TAG" >> "$GITHUB_ENV"
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            echo "::error::El release $TAG ya existe. Cambia la versión en .github/mobile-production-version."
+            exit 1
+          fi
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v4
