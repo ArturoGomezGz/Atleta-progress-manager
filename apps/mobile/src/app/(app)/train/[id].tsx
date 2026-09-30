@@ -36,6 +36,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context"
 
 type Rest = { endAt: number; total: number; upcoming: string }
 // Paso del flujo: una serie o el descanso que sigue a esa serie (i = índice en la lista plana)
+type Action = { label: string; icon: typeof Check; onPress: () => void; disabled?: boolean; tone?: ActionTone }
 type Step = { kind: "set" | "rest"; i: number }
 
 function upcomingLabel(p: { exercise: WorkoutExercise; target: WorkoutTarget }) {
@@ -80,12 +81,19 @@ export default function TrainScreen() {
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState(false)
   const restAlert = useRef<Promise<string | null> | null>(null)
+  // Acción del pie que espera a que termine de cerrarse la rutina completa
+  const pendingAction = useRef<{ which: "primary" | "secondary"; sig: string } | null>(null)
+  const pendingTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const footerActions = useRef<{ primary: Action; secondary: Action; sig: string } | null>(null)
   const soundOn = useSoundEnabled()
 
   useEffect(() => {
     prepareSounds()
     ensureNotificationPermission()
-    return () => cancelTimerAlert(restAlert.current)
+    return () => {
+      cancelTimerAlert(restAlert.current)
+      if (pendingTimer.current) clearTimeout(pendingTimer.current)
+    }
   }, [])
 
   const position = progress ? findCurrentPosition(progress.exercises) : null
@@ -200,6 +208,7 @@ export default function TrainScreen() {
   useEffect(() => {
     if (finished) return
     const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      if (pendingAction.current) return true // ya se está cerrando para ejecutar una acción
       if (overview) setOverview(false)
       else confirmExit()
       return true
@@ -326,7 +335,6 @@ export default function TrainScreen() {
       : "Serie hecha"
   const advanceTone: ActionTone = isLast ? "success" : "primary"
 
-  type Action = { label: string; icon: typeof Check; onPress: () => void; disabled?: boolean; tone?: ActionTone }
   const back: Action = { label: "Atrás", icon: ArrowLeft, onPress: goBack, disabled: stepIdx <= 0 }
   let primary: Action
   let secondary: Action = back
@@ -353,6 +361,45 @@ export default function TrainScreen() {
     primary = { label: saving ? "Guardando…" : advanceLabel, icon: Check, tone: advanceTone, onPress: handleComplete, disabled: saving }
   }
 
+  // Firma del paso actual: si cambia mientras se cierra la rutina, la acción ya no aplica
+  const sig = `${stepIdx}|${rest ? "r" : "-"}|${countdown.phase}|${reviewing ? "v" : "-"}|${target.id}`
+  footerActions.current = { primary, secondary, sig }
+
+  // Con la rutina completa abierta, el botón primero la cierra y la acción corre al terminar la animación
+  function runPending() {
+    const p = pendingAction.current
+    if (!p) return
+    pendingAction.current = null
+    if (pendingTimer.current) clearTimeout(pendingTimer.current)
+    pendingTimer.current = null
+    const latest = footerActions.current
+    if (!latest || latest.sig !== p.sig) return
+    const action = latest[p.which]
+    if (!action.disabled) action.onPress()
+  }
+
+  function pressFooter(which: "primary" | "secondary") {
+    if (pendingAction.current) return // toque doble mientras cierra: no se encola ni corre dos veces
+    const action = which === "primary" ? primary : secondary
+    if (action.disabled) return
+    if (!overview) {
+      action.onPress()
+      return
+    }
+    pendingAction.current = { which, sig }
+    setOverview(false)
+    // Red de seguridad si el aviso de fin de animación nunca llega
+    pendingTimer.current = setTimeout(runPending, 800)
+  }
+
+  function toggleOverview() {
+    // Reabrir la rutina cancela la acción que estaba esperando
+    pendingAction.current = null
+    if (pendingTimer.current) clearTimeout(pendingTimer.current)
+    pendingTimer.current = null
+    setOverview((o) => !o)
+  }
+
   const headerIconSize = 22
   return (
     <SafeAreaView style={styles.screen} edges={["top", "bottom"]}>
@@ -368,7 +415,7 @@ export default function TrainScreen() {
           </Pressable>
           {/* Tocar "Ejercicio N de M" baja la rutina completa desde arriba */}
           <Pressable
-            onPress={() => setOverview((o) => !o)}
+            onPress={toggleOverview}
             style={styles.counter}
             hitSlop={6}
             accessibilityRole="button"
@@ -449,6 +496,7 @@ export default function TrainScreen() {
           exercises={progress.exercises}
           current={exercise}
           onWatch={setVideo}
+          onClosed={runPending}
         />
 
         {toast && <View pointerEvents="none" style={styles.toast}><Text size={14}>{toast}</Text></View>}
@@ -458,8 +506,8 @@ export default function TrainScreen() {
       <View style={styles.footer}>
         {failed && <Text size={14} color={colors.destructive} center>No se pudo guardar. Revisa tu conexión e inténtalo de nuevo.</Text>}
         <View style={styles.footerRow}>
-          <SecondaryAction label={secondary.label} icon={secondary.icon} disabled={secondary.disabled} onPress={secondary.onPress} />
-          <PrimaryAction label={primary.label} icon={primary.icon} tone={primary.tone} disabled={primary.disabled} onPress={primary.onPress} />
+          <SecondaryAction label={secondary.label} icon={secondary.icon} disabled={secondary.disabled} onPress={() => pressFooter("secondary")} />
+          <PrimaryAction label={primary.label} icon={primary.icon} tone={primary.tone} disabled={primary.disabled} onPress={() => pressFooter("primary")} />
         </View>
       </View>
 
