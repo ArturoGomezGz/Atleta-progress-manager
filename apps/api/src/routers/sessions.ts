@@ -115,6 +115,23 @@ export const sessionsRouter = router({
       .map(({ sessionStatus: _sessionStatus, ...r }) => r)
   }),
 
+  // Fechas de las sesiones que el atleta completó en el último año, para el
+  // tracker de momentum de la app móvil. Semanas y racha se calculan en el
+  // cliente para respetar la zona horaria del dispositivo.
+  myMomentum: protectedProcedure.query(async ({ ctx }) => {
+    const since = new Date(Date.now() - 365 * 86_400_000)
+    const rows = await db
+      .select({ completedAt: athleteSession.completedAt })
+      .from(athleteSession)
+      .where(and(
+        eq(athleteSession.athleteId, ctx.session.user.id),
+        eq(athleteSession.status, "completed"),
+        gte(athleteSession.completedAt, since),
+      ))
+      .orderBy(desc(athleteSession.completedAt))
+    return rows.flatMap((r) => (r.completedAt ? [r.completedAt.toISOString()] : []))
+  }),
+
   myProgress: protectedProcedure
     .input(z.object({ sessionId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {

@@ -1,23 +1,15 @@
-import { signOut } from "@/lib/auth"
 import { sessionDateLabel } from "@/lib/dates"
 import { Text } from "@/components/text"
 import { colors, radiusLg } from "@/lib/theme"
 import { trpc, type RouterOutputs } from "@/lib/trpc"
-import { useQueryClient } from "@tanstack/react-query"
-import { router, Stack } from "expo-router"
-import { ChevronRight, LogOut, Play, Users } from "lucide-react-native"
+import { router } from "expo-router"
+import { ChevronRight, Play, Users } from "lucide-react-native"
 import { ActivityIndicator, Pressable, RefreshControl, SectionList, StyleSheet, View } from "react-native"
 
 type Pending = RouterOutputs["sessions"]["myPending"][number]
 
 export default function PendingScreen() {
-  const queryClient = useQueryClient()
   const { data, isLoading, isError, refetch, isRefetching } = trpc.sessions.myPending.useQuery()
-
-  async function handleSignOut() {
-    await signOut()
-    queryClient.clear()
-  }
 
   const active = data?.filter((s) => s.status === "active") ?? []
   const scheduled = data?.filter((s) => s.status === "scheduled") ?? []
@@ -28,16 +20,6 @@ export default function PendingScreen() {
 
   return (
     <>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <Pressable onPress={handleSignOut} hitSlop={12} style={styles.headerAction}>
-              <LogOut size={18} color={colors.mutedForeground} />
-              <Text size={15} color={colors.mutedForeground}>Salir</Text>
-            </Pressable>
-          ),
-        }}
-      />
       {isLoading ? (
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
       ) : (
@@ -95,7 +77,6 @@ function SessionCard({ session }: { session: Pending }) {
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: "center", justifyContent: "center" },
   list: { padding: 16, gap: 12, flexGrow: 1 },
-  headerAction: { flexDirection: "row", alignItems: "center", gap: 6 },
   sectionTitle: { textTransform: "uppercase", letterSpacing: 0.6, marginTop: 8 },
   card: {
     flexDirection: "row",

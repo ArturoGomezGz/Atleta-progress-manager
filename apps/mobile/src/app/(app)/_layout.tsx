@@ -12,7 +12,7 @@ export default function AppLayout() {
         contentStyle: { backgroundColor: colors.background },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Mis rutinas" }} />
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="session/[id]" options={{ title: "" }} />
       {/* El ejecutor ocupa toda la pantalla; se sale con su botón "Salir" */}
       <Stack.Screen name="train/[id]" options={{ headerShown: false, gestureEnabled: false, animation: "slide_from_bottom" }} />
