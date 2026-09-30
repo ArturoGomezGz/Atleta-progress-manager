@@ -1,0 +1,27 @@
+{
+  "expo": {
+    "name": "Atleta",
+    "slug": "atleta",
+    "scheme": "atleta",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#08090c",
+    "platforms": ["android"],
+    "android": {
+      "package": "com.atleta.app",
+      "adaptiveIcon": {
+        "backgroundColor": "#08090c",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": false
+    },
+    "plugins": ["expo-router", "expo-secure-store"],
+    "experiments": {
+      "typedRoutes": true
+    }
+  }
+}

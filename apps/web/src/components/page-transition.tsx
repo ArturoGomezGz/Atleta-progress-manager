@@ -29,6 +29,11 @@ export function PageTransition({ direction, children, className, onEntered }: {
   onEntered?: () => void
 }) {
   const [entered, setEntered] = useState(false)
+  // Una vez asentada la vista se quitan translate y will-change: cualquiera de los dos
+  // convierte al contenedor en el bloque de referencia de sus descendientes
+  // `position: fixed`, y el DragOverlay de dnd-kit (fixed, con coordenadas de viewport)
+  // aparecía desplazado respecto al dedo.
+  const [settled, setSettled] = useState(false)
 
   const onEnteredRef = useRef(onEntered)
   useEffect(() => {
@@ -38,6 +43,7 @@ export function PageTransition({ direction, children, className, onEntered }: {
   const finish = useCallback(() => {
     if (doneRef.current) return
     doneRef.current = true
+    setSettled(true)
     onEnteredRef.current?.()
   }, [])
 
@@ -67,11 +73,11 @@ export function PageTransition({ direction, children, className, onEntered }: {
     <div
       suppressHydrationWarning
       className={cn(
-        "transition-transform will-change-transform",
-        entered ? "translate-x-0" : direction === "forward" ? "translate-x-full" : "-translate-x-full",
+        !settled && "transition-transform will-change-transform",
+        !settled && (entered ? "translate-x-0" : direction === "forward" ? "translate-x-full" : "-translate-x-full"),
         className,
       )}
-      style={{ transitionDuration: `${SLIDE_MS}ms`, transitionTimingFunction: SLIDE_EASING }}
+      style={settled ? undefined : { transitionDuration: `${SLIDE_MS}ms`, transitionTimingFunction: SLIDE_EASING }}
       onTransitionEnd={(e) => {
         // Solo la transición del propio contenedor (en Tailwind 4 la propiedad es
         // `translate`, no `transform`); las de los hijos también burbujean aquí.

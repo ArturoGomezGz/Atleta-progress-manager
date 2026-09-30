@@ -1,0 +1,70 @@
+name: android-apk
+
+# APK de prueba de apps/mobile, apuntando a la API de testing. Se publica como
+# pre-release de GitHub para descargarlo directo en el teléfono.
+# Firmado con la llave de depuración: sirve para instalar a mano, no para la tienda.
+
+on:
+  push:
+    branches: [feature/mobile-android]
+    paths:
+      - "apps/mobile/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/android-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
+
+env:
+  EXPO_PUBLIC_API_URL: https://api-testing-94f1.up.railway.app
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate native Android project
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: apps/mobile/android
+        run: ./gradlew assembleRelease --no-daemon
+
+      - name: Publish pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="android-preview-${{ github.run_number }}"
+          cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk "atleta-${TAG}.apk"
+          gh release create "$TAG" "atleta-${TAG}.apk" \
+            --prerelease \
+            --target "${{ github.sha }}" \
+            --title "Atleta Android (prueba) #${{ github.run_number }}" \
+            --notes "APK de prueba desde \`${GITHUB_REF_NAME}\` (${GITHUB_SHA::7}). Usa la API de testing: ${EXPO_PUBLIC_API_URL}"

@@ -904,6 +904,28 @@ function DragPreviewCard({ label, icon }: { label: string; icon?: boolean }) {
 // hará después de este ejercicio y antes del siguiente. Vive sobre el campo
 // `restSeconds` del propio ejercicio.
 
+// Estado local en texto: permite vaciar el campo (y borrar el último dígito) sin que
+// el valor se fuerce a 0 mientras se edita; el valor vacío se guarda como 0.
+function RestSecondsInput({ seconds, onChange }: { seconds: number; onChange: (seconds: number) => void }) {
+  const [text, setText] = useState(String(seconds))
+  return (
+    <input
+      type="number"
+      min={0}
+      value={text}
+      onChange={(e) => {
+        setText(e.target.value)
+        onChange(Math.max(0, Number(e.target.value) || 0))
+      }}
+      onBlur={() => setText(String(seconds))}
+      // text-xs y no un tamaño arbitrario: la regla de globals.css que evita el zoom
+      // de iOS al enfocar solo sube a 16px los tamaños del tema (text-xs/text-sm).
+      className="w-14 bg-background border border-primary/30 rounded-md px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+      aria-label="Segundos de descanso"
+    />
+  )
+}
+
 function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
   seconds?: number
   label?: string
@@ -926,16 +948,7 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
     <div className="relative z-0 flex items-center gap-1.5 w-fit max-w-[calc(100%-2.25rem)] ml-9 -mt-2.5 pt-2.5 px-2.5 pb-1.5 rounded-b-lg border border-t-0 border-primary/30 bg-primary/10 text-[11px] text-primary">
       <PauseIcon className="w-3 h-3 shrink-0" />
       <span className="shrink-0 font-medium">{label}</span>
-      <input
-        type="number"
-        min={0}
-        value={seconds}
-        onChange={(e) => onChange(Math.max(0, Number(e.target.value) || 0))}
-        // text-xs y no un tamaño arbitrario: la regla de globals.css que evita el zoom
-        // de iOS al enfocar solo sube a 16px los tamaños del tema (text-xs/text-sm).
-        className="w-14 bg-background border border-primary/30 rounded-md px-1.5 py-0.5 text-xs text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
-        aria-label="Segundos de descanso"
-      />
+      <RestSecondsInput seconds={seconds} onChange={onChange} />
       <span className="shrink-0">seg</span>
       <button
         type="button"
