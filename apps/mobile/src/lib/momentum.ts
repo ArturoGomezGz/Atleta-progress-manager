@@ -1,59 +1,88 @@
-// Momentum = constancia: semanas seguidas (lunes a domingo, hora local) en las
-// que el atleta completó al menos `WEEKLY_GOAL` sesiones.
-export const WEEKLY_GOAL = 3
+// Momentum = constancia. Un día cuenta si el atleta completó al menos una sesión;
+// una semana (lunes a domingo) cuenta si tuvo al menos un día con sesión. Todo en hora local.
 export const HEATMAP_WEEKS = 12
 
+function startOfDay(d: Date) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate())
+}
+
+function addDays(d: Date, n: number) {
+  return new Date(d.getFullYear(), d.getMonth(), d.getDate() + n)
+}
+
 function mondayOf(d: Date) {
-  const m = new Date(d.getFullYear(), d.getMonth(), d.getDate())
-  m.setDate(m.getDate() - ((m.getDay() + 6) % 7))
-  return m
+  return addDays(startOfDay(d), -((d.getDay() + 6) % 7))
 }
 
 export type MomentumDay = { date: Date; count: number; future: boolean }
 
 export type Momentum = {
-  streak: number
-  thisWeek: number
+  dailyStreak: number
+  bestDailyStreak: number
+  weeklyStreak: number
+  bestWeeklyStreak: number
+  /** Días distintos con sesión en la semana en curso (de 7). */
+  daysThisWeek: number
   /** Una entrada por día de lunes a domingo de la semana en curso. */
   weekDays: MomentumDay[]
   /** HEATMAP_WEEKS semanas (más antigua primero), cada una con 7 días. */
   heatmap: MomentumDay[][]
 }
 
-export function computeMomentum(completedAt: string[], now = new Date()): Momentum {
-  const perDay = new Map<string, number>()
-  const perWeek = new Map<number, number>()
-  for (const iso of completedAt) {
-    const d = new Date(iso)
-    const dayKey = d.toDateString()
-    perDay.set(dayKey, (perDay.get(dayKey) ?? 0) + 1)
-    const wk = mondayOf(d).getTime()
-    perWeek.set(wk, (perWeek.get(wk) ?? 0) + 1)
+// Racha actual y mejor racha de una serie de periodos ordenados de menor a mayor;
+// `next` da el periodo siguiente. El periodo en curso no rompe la racha si aún está vacío.
+function streaks(sorted: Date[], current: Date, next: (d: Date) => Date, previous: (d: Date) => Date) {
+  const has = new Set(sorted.map((d) => d.getTime()))
+  let best = 0
+  let run = 0
+  let prev: Date | null = null
+  for (const d of sorted) {
+    run = prev && next(prev).getTime() === d.getTime() ? run + 1 : 1
+    best = Math.max(best, run)
+    prev = d
   }
+  let cursor = has.has(current.getTime()) ? current : previous(current)
+  let now = 0
+  while (has.has(cursor.getTime())) {
+    now++
+    cursor = previous(cursor)
+  }
+  return { now, best }
+}
 
+export function computeMomentum(completedAt: string[], now = new Date()): Momentum {
+  const perDay = new Map<number, number>()
+  for (const iso of completedAt) {
+    const t = startOfDay(new Date(iso)).getTime()
+    perDay.set(t, (perDay.get(t) ?? 0) + 1)
+  }
+  const days = [...perDay.keys()].sort((a, b) => a - b).map((t) => new Date(t))
+  const weeks = [...new Set(days.map((d) => mondayOf(d).getTime()))].map((t) => new Date(t))
+
+  const today = startOfDay(now)
   const thisMonday = mondayOf(now)
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+
+  const daily = streaks(days, today, (d) => addDays(d, 1), (d) => addDays(d, -1))
+  const weekly = streaks(weeks, thisMonday, (d) => addDays(d, 7), (d) => addDays(d, -7))
+
   const week = (monday: Date): MomentumDay[] =>
     Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(monday.getFullYear(), monday.getMonth(), monday.getDate() + i)
-      return { date, count: perDay.get(date.toDateString()) ?? 0, future: date > today }
+      const date = addDays(monday, i)
+      return { date, count: perDay.get(date.getTime()) ?? 0, future: date > today }
     })
 
-  const thisWeek = perWeek.get(thisMonday.getTime()) ?? 0
+  const weekDays = week(thisMonday)
+  const heatmap = Array.from({ length: HEATMAP_WEEKS }, (_, i) => week(addDays(thisMonday, -(HEATMAP_WEEKS - 1 - i) * 7)))
 
-  // La semana en curso suma a la racha si ya cumplió la meta, pero no la rompe si aún no.
-  let streak = thisWeek >= WEEKLY_GOAL ? 1 : 0
-  for (let i = 1; ; i++) {
-    const monday = new Date(thisMonday.getFullYear(), thisMonday.getMonth(), thisMonday.getDate() - i * 7)
-    if ((perWeek.get(monday.getTime()) ?? 0) < WEEKLY_GOAL) break
-    streak++
+  return {
+    dailyStreak: daily.now,
+    bestDailyStreak: daily.best,
+    weeklyStreak: weekly.now,
+    bestWeeklyStreak: weekly.best,
+    daysThisWeek: weekDays.filter((d) => d.count > 0).length,
+    weekDays,
+    heatmap,
   }
-
-  const heatmap = Array.from({ length: HEATMAP_WEEKS }, (_, i) =>
-    week(new Date(thisMonday.getFullYear(), thisMonday.getMonth(), thisMonday.getDate() - (HEATMAP_WEEKS - 1 - i) * 7)),
-  )
-
-  return { streak, thisWeek, weekDays: week(thisMonday), heatmap }
 }
 
 export const DAY_LABELS = ["L", "M", "X", "J", "V", "S", "D"]
