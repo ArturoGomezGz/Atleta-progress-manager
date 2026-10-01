@@ -26,7 +26,30 @@ async function sendEmail(to: string, subject: string, html: string, link: string
     }
     return
   }
-  await resend.emails.send({ from: FROM, to, subject, html })
+  // Resend 6.x no lanza en errores de API: devuelve { data, error }.
+  // No se relanza: en reset permitiría enumerar cuentas y en verificación el usuario ya está creado.
+  // Nunca loguear `link` ni `html` (contienen el token).
+  const { data, error } = await resend.emails.send({ from: FROM, to, subject, html })
+  if (error) {
+    console.error(JSON.stringify({
+      level: "error",
+      message: "resend send failed",
+      subject,
+      to: maskEmail(to),
+      errorName: error.name,
+      errorMessage: error.message,
+    }))
+    return
+  }
+  if (data?.id) {
+    console.info(JSON.stringify({
+      level: "info",
+      message: "resend send succeeded",
+      subject,
+      to: maskEmail(to),
+      resendId: data.id,
+    }))
+  }
 }
 
 export const auth = betterAuth({
