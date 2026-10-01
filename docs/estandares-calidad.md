@@ -47,25 +47,36 @@ crash *antes* de llegar al assert no es solo un bug de UX: es una ruta sin
 comportamiento garantizado (¿niega acceso? ¿revienta con 500?) en el único
 punto que separa equipos entre sí.
 
-**Hallazgo real** — `apps/api/src/routers/sessions.ts:458-491`:
+**Ejemplo histórico (corregido)** — antes en `apps/api/src/routers/sessions.ts:458-491`.
+Ya no refleja el código actual: `sessions.ts` no conserva non-null
+assertions de este tipo antes de `assertCoach`/`assertMember`. Se mantiene
+solo como ilustración del patrón a detectar:
 ```ts
 const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
 await assertCoach(ctx.session.user.id, session!.teamId)
 ```
-Si `session` no existe (fila inconsistente o borrada), `session!.teamId`
-lanza un `TypeError` sin control en vez de un `NOT_FOUND`/`FORBIDDEN` — y
-esto ocurre *antes* de la verificación de rol. `sessions.ts` ya está en
+Si `session` no existía (fila inconsistente o borrada), `session!.teamId`
+lanzaba un `TypeError` sin control en vez de un `NOT_FOUND`/`FORBIDDEN` — y
+eso ocurría *antes* de la verificación de rol. `sessions.ts` ya está en
 `scripts/quality-agents/config/critical-targets.json`: el agente debe tratar
 sus hallazgos como severidad alta por defecto, no como "uno más entre N
 console.log".
 
 ### 2. Errores crudos expuestos en la superficie de autenticación
 
-`apps/api/src/index.ts:47` — el handler de `/api/auth/*` responde
+**Ejemplo histórico (corregido)** — antes en `apps/api/src/index.ts:47`, el
+handler de `/api/auth/*` respondía
 `reply.status(500).send({ error: String(err) })` ante cualquier excepción no
 controlada. Es el endpoint de login/signup/reset-password: el primero que se
-prueba desde fuera. Un error de la librería o de Postgres se serializa tal
+prueba desde fuera. Un error de la librería o de Postgres se serializaba tal
 cual hacia el cliente.
+
+**Comportamiento vigente** — `apps/api/src/index.ts:45-47`: el `catch`
+registra el error completo del lado del servidor con
+`req.log.error(err, "better-auth handler error")` y responde al cliente solo
+`reply.status(500).send({ error: "Internal Server Error", requestId: req.id })`.
+Ese es el patrón esperado: detalle en el log, respuesta genérica con
+`requestId` para correlacionar.
 
 ### 3. Cobertura de pruebas nula sobre autorización y dinero
 
