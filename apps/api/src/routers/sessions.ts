@@ -794,7 +794,7 @@ export const sessionsRouter = router({
         const stillActive = await db
           .select({ id: athleteSession.id })
           .from(athleteSession)
-          .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.status, "active")))
+          .where(and(eq(athleteSession.sessionId, input.sessionId), inArray(athleteSession.status, ["active", "scheduled"])))
         if (stillActive.length === 0) {
           await db.update(trainingSession).set({ status: "completed" }).where(eq(trainingSession.id, input.sessionId))
         }
