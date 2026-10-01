@@ -50,6 +50,27 @@ async function loadSetForCoach(setId: string, userId: string) {
   return row
 }
 
+// Atletas asignados a cada sesión y su avance, para el seguimiento del entrenador.
+// Los atletas no ven a los demás: sin rol de coach se devuelve la lista vacía.
+async function withAssignedAthletes<T extends { id: string }>(isCoach: boolean, rows: T[]) {
+  const byId = new Map<string, { userId: string; name: string | null; status: "scheduled" | "active" | "completed" }[]>()
+  if (isCoach && rows.length > 0) {
+    const assigned = await db
+      .select({ sessionId: athleteSession.sessionId, userId: athleteSession.athleteId, name: user.name, status: athleteSession.status })
+      .from(athleteSession)
+      .innerJoin(user, eq(athleteSession.athleteId, user.id))
+      .where(and(inArray(athleteSession.sessionId, rows.map((r) => r.id)), sql`${athleteSession.status} <> 'cancelled'`))
+      .orderBy(asc(user.name))
+    for (const a of assigned) {
+      if (a.status === "cancelled") continue
+      const list = byId.get(a.sessionId) ?? []
+      list.push({ userId: a.userId, name: a.name, status: a.status })
+      byId.set(a.sessionId, list)
+    }
+  }
+  return rows.map((r) => ({ ...r, athletes: byId.get(r.id) ?? [] }))
+}
+
 export const sessionsRouter = router({
   myList: protectedProcedure
     .input(z.object({ teamId: z.string().uuid() }))
@@ -221,7 +242,7 @@ export const sessionsRouter = router({
       athleteId: z.string().optional(),
     }))
     .query(async ({ ctx, input }) => {
-      await assertMember(ctx.session.user.id, input.teamId)
+      const member = await assertMember(ctx.session.user.id, input.teamId)
       const conditions: SQL[] = [eq(trainingSession.teamId, input.teamId)]
       if (input.category) conditions.push(eq(routine.category, input.category))
 
@@ -238,21 +259,21 @@ export const sessionsRouter = router({
       // Filtrar por atleta: la sesión solo aparece si ese atleta está asignado a ella
       if (input.athleteId) {
         conditions.push(eq(athleteSession.athleteId, input.athleteId))
-        return withZoneProfiles(await db
+        return withAssignedAthletes(member.role === "coach", await withZoneProfiles(await db
           .select(columns)
           .from(trainingSession)
           .innerJoin(routine, eq(trainingSession.routineId, routine.id))
           .innerJoin(athleteSession, eq(athleteSession.sessionId, trainingSession.id))
           .where(and(...conditions))
-          .orderBy(desc(trainingSession.startedAt)))
+          .orderBy(desc(trainingSession.startedAt))))
       }
 
-      return withZoneProfiles(await db
+      return withAssignedAthletes(member.role === "coach", await withZoneProfiles(await db
         .select(columns)
         .from(trainingSession)
         .innerJoin(routine, eq(trainingSession.routineId, routine.id))
         .where(and(...conditions))
-        .orderBy(desc(trainingSession.startedAt)))
+        .orderBy(desc(trainingSession.startedAt))))
     }),
 
   create: protectedProcedure
