@@ -4,20 +4,19 @@ import { TRPCError } from "@trpc/server"
 import { and, count, eq, gt, or } from "drizzle-orm"
 import { randomBytes } from "node:crypto"
 import { z } from "zod"
+import { createTeamWithCoach, ensureDefaultTeam } from "../services/team-setup"
 import { featureProcedure, protectedProcedure, router } from "../trpc"
 
 export const teamsRouter = router({
   create: protectedProcedure
     .input(z.object({ name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
-      const [newTeam] = await db.insert(team).values({ name: input.name }).returning()
-      await db.insert(teamMember).values({
-        teamId: newTeam.id,
-        userId: ctx.session.user.id,
-        role: "coach",
-      })
-      return newTeam
+      return createTeamWithCoach(db, ctx.session.user.id, input.name)
     }),
+
+  // Equipo "Mi equipo" con auto-entrenamiento para quien aún no tiene ninguno.
+  // Idempotente: si ya pertenece a algún equipo no crea nada.
+  ensureDefault: protectedProcedure.mutation(({ ctx }) => ensureDefaultTeam(ctx.session.user.id)),
 
   list: protectedProcedure.query(async ({ ctx }) => {
     return db

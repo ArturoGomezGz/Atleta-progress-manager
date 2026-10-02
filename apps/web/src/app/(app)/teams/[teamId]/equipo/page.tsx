@@ -16,8 +16,10 @@ import {
   UsersIcon,
   XIcon,
 } from "lucide-react"
+import Link from "next/link"
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
+import { NewTeamForm } from "../../../new-team-form"
 
 export default function EquipoPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = use(params)
@@ -47,6 +49,8 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
       <h1 className="text-xl font-semibold">Equipo</h1>
+
+      <TeamSwitcher teams={teams ?? []} activeTeamId={teamId} />
 
       {isCoach && overLimit && (
         <div className="flex items-start gap-3 border border-amber-500/40 bg-amber-500/8 rounded-lg px-4 py-3 text-sm">
@@ -627,6 +631,74 @@ function GruposSection({ teamId, isCoach }: { teamId: string; isCoach: boolean }
           </p>
         )}
       </div>
+    </div>
+  )
+}
+
+type TeamEntry = { team: { id: string; name: string; logoDataUrl?: string | null }; role: string }
+
+function TeamAvatar({ name, logoDataUrl }: { name: string; logoDataUrl?: string | null }) {
+  if (logoDataUrl) {
+    return <img src={logoDataUrl} alt={name} className="w-8 h-8 rounded-md object-cover overflow-hidden shrink-0" />
+  }
+  const initials = name.split(" ").filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+  return (
+    <div className="w-8 h-8 rounded-md bg-primary/20 text-primary text-xs font-bold flex items-center justify-center shrink-0 tracking-wide">
+      {initials}
+    </div>
+  )
+}
+
+function TeamSwitcher({ teams, activeTeamId }: { teams: TeamEntry[]; activeTeamId: string }) {
+  const [creating, setCreating] = useState(false)
+
+  // Con un solo equipo no hay nada que elegir: solo se ofrece crear otro
+  if (teams.length <= 1) {
+    return creating ? (
+      <NewTeamForm onCancel={() => setCreating(false)} className="space-y-2 max-w-xs" />
+    ) : (
+      <button
+        onClick={() => setCreating(true)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+      >
+        <PlusIcon className="w-3.5 h-3.5" />
+        Crear otro equipo
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-1">
+      {teams.map(({ team, role }) => (
+        <Link
+          key={team.id}
+          href={`/teams/${team.id}/equipo`}
+          aria-current={team.id === activeTeamId ? "page" : undefined}
+          className={cn(
+            "w-36 shrink-0 border rounded-lg p-3 space-y-2 transition-colors",
+            team.id === activeTeamId ? "border-primary bg-primary/10" : "border-border hover:bg-muted/60",
+          )}
+        >
+          <TeamAvatar name={team.name} logoDataUrl={team.logoDataUrl} />
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{team.name}</p>
+            <p className="text-xs text-muted-foreground">{role === "coach" ? "Coach" : "Atleta"}</p>
+          </div>
+        </Link>
+      ))}
+      {creating ? (
+        <div className="w-48 shrink-0 border border-border rounded-lg p-3">
+          <NewTeamForm onCancel={() => setCreating(false)} />
+        </div>
+      ) : (
+        <button
+          onClick={() => setCreating(true)}
+          className="w-36 shrink-0 border border-dashed border-border rounded-lg p-3 flex flex-col items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Nuevo equipo
+        </button>
+      )}
     </div>
   )
 }

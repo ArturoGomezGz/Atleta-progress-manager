@@ -3,10 +3,10 @@
 import React from "react"
 import { useFeatures } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
-import { CalendarIcon, ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
+import { CalendarIcon, ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { AccountMenu } from "./account-menu"
 import { cn } from "@/lib/utils"
 
@@ -69,22 +69,8 @@ export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [teamPickerOpen, setTeamPickerOpen] = useState(false)
-  const [creatingTeam, setCreatingTeam] = useState(false)
-  const [newTeamName, setNewTeamName] = useState("")
-  const pickerRef = useRef<HTMLDivElement>(null)
 
-  const { data: teams, refetch } = trpc.teams.list.useQuery()
-  const createTeam = trpc.teams.create.useMutation({
-    onSuccess: (team) => {
-      refetch()
-      setCreatingTeam(false)
-      setNewTeamName("")
-      setTeamPickerOpen(false)
-      setMobileOpen(false)
-      router.push(`/teams/${team.id}/equipo`)
-    },
-  })
+  const { data: teams } = trpc.teams.list.useQuery()
 
   const currentTeamId = extractTeamId(pathname)
   const currentSection = extractSection(pathname)
@@ -112,12 +98,6 @@ export function Sidebar() {
   }, [isAthlete, currentTeamId, currentSection, router, features.isLoading, showProgress])
 
 
-  async function handleCreateTeam(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newTeamName.trim()) return
-    createTeam.mutate({ name: newTeamName.trim() })
-  }
-
   const sidebarContent = (
     <>
       {/* Logo / App name */}
@@ -141,66 +121,18 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Team selector */}
-      <div className="px-3 py-3 border-b border-border relative" ref={pickerRef}>
-        <button
-          onClick={() => setTeamPickerOpen((v) => !v)}
-          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/60 text-sm font-medium transition-colors text-foreground cursor-pointer"
+      {/* Equipo activo: enlace a la página Equipo, donde se cambia o se crea */}
+      {currentTeam ? (
+        <Link
+          href={`/teams/${currentTeam.team.id}/equipo`}
+          className="px-4 py-2 border-b border-border flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
         >
-          {currentTeam && <TeamLogo name={currentTeam.team.name} logoDataUrl={currentTeam.team.logoDataUrl} />}
-          <span className="truncate flex-1 text-left">
-            {currentTeam ? currentTeam.team.name : "Seleccionar equipo"}
-          </span>
-          <ChevronDownIcon className={`w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${teamPickerOpen ? "rotate-180" : ""}`} />
-        </button>
-
-        {teamPickerOpen && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => { setTeamPickerOpen(false); setCreatingTeam(false) }} />
-            <div className="absolute left-3 right-3 top-full mt-1.5 border border-border rounded-lg shadow-2xl bg-popover z-20 overflow-hidden">
-              {teams?.map(({ team }) => (
-                <button
-                  key={team.id}
-                  onClick={() => { router.push(`/teams/${team.id}/equipo`); setTeamPickerOpen(false) }}
-                  className={`w-full flex items-center gap-2.5 text-left px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors cursor-pointer ${
-                    team.id === currentTeamId ? "font-medium text-primary" : "text-foreground"
-                  }`}
-                >
-                  <TeamLogo name={team.name} logoDataUrl={team.logoDataUrl} />
-                  {team.name}
-                </button>
-              ))}
-              {!creatingTeam ? (
-                <button
-                  onClick={() => setCreatingTeam(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/60 border-t border-border transition-colors cursor-pointer"
-                >
-                  <PlusIcon className="w-3.5 h-3.5" />
-                  Nuevo equipo
-                </button>
-              ) : (
-                <form onSubmit={handleCreateTeam} className="p-2.5 border-t border-border space-y-2">
-                  <input
-                    autoFocus
-                    value={newTeamName}
-                    onChange={(e) => setNewTeamName(e.target.value)}
-                    placeholder="Nombre del equipo"
-                    className="w-full bg-card border border-border rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
-                  />
-                  <div className="flex gap-1.5">
-                    <button type="submit" disabled={createTeam.isPending} className="flex-1 bg-primary text-primary-foreground text-xs py-1.5 rounded-md disabled:opacity-50 font-medium cursor-pointer">
-                      Crear
-                    </button>
-                    <button type="button" onClick={() => setCreatingTeam(false)} className="flex-1 border border-border text-xs py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer">
-                      Cancelar
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+          <TeamLogo name={currentTeam.team.name} logoDataUrl={currentTeam.team.logoDataUrl} />
+          <span className="truncate">{currentTeam.team.name}</span>
+        </Link>
+      ) : (
+        <div className="px-4 py-2 border-b border-border text-xs text-muted-foreground">Atleta</div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 space-y-0.5">
@@ -249,7 +181,10 @@ export function Sidebar() {
         >
           <MenuIcon className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <Link
+          href={currentTeam ? `/teams/${currentTeam.team.id}/equipo` : "/dashboard"}
+          className="flex items-center gap-2 flex-1 min-w-0"
+        >
           {currentTeam?.team.logoDataUrl ? (
             <img
               src={currentTeam.team.logoDataUrl}
@@ -267,7 +202,7 @@ export function Sidebar() {
           >
             {currentTeam ? currentTeam.team.name : "Atleta"}
           </span>
-        </div>
+        </Link>
       </div>
 
       {/* Mobile drawer backdrop */}
