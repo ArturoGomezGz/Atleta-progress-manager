@@ -46,6 +46,12 @@ function RegisterForm() {
       return
     }
 
+    // Con AUTO_VERIFY_EMAIL (testing) el registro ya inicia sesión: no hay correo que confirmar.
+    if (result.data?.token) {
+      router.push(redirectTo)
+      return
+    }
+
     const verifyParams = new URLSearchParams({ email })
     if (redirectTo !== "/dashboard") verifyParams.set("redirect", redirectTo)
     router.push(`/verify-email?${verifyParams.toString()}`)

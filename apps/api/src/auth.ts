@@ -29,6 +29,9 @@ async function sendEmail(to: string, subject: string, html: string, link: string
   await resend.emails.send({ from: FROM, to, subject, html })
 }
 
+// Solo para el entorno de testing: las cuentas nuevas nacen verificadas y con sesión iniciada, sin correo.
+const AUTO_VERIFY_EMAIL = process.env.AUTO_VERIFY_EMAIL === "true"
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
@@ -42,7 +45,7 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: true,
+    requireEmailVerification: !AUTO_VERIFY_EMAIL,
     sendResetPassword: async ({ user, url }) => {
       await sendEmail(
         user.email,
@@ -53,7 +56,7 @@ export const auth = betterAuth({
     },
   },
   emailVerification: {
-    sendOnSignUp: true,
+    sendOnSignUp: !AUTO_VERIFY_EMAIL,
     autoSignInAfterVerification: true,
     sendVerificationEmail: async ({ user, url }) => {
       // Ensure the post-verification redirect goes to the web app, not the API
@@ -70,6 +73,13 @@ export const auth = betterAuth({
         `<p>Haz clic <a href="${verifyUrl.toString()}">aquí</a> para verificar tu cuenta de Atleta CMW.</p>`,
         verifyUrl.toString(),
       )
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        before: async (user) => ({ data: AUTO_VERIFY_EMAIL ? { ...user, emailVerified: true } : user }),
+      },
     },
   },
   socialProviders: process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
