@@ -3,11 +3,12 @@ import { teamGroup, teamGroupMember, user, teamMember } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
 import { and, eq } from "drizzle-orm"
 import { z } from "zod"
-import { protectedProcedure, router } from "../trpc"
+import { featureProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
 
+// Grupos de atletas: función aún no pública, solo para usuarios con el flag `groups`
 export const groupsRouter = router({
-  create: protectedProcedure
+  create: featureProcedure("groups")
     .input(z.object({ teamId: z.string().uuid(), name: z.string().min(1) }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
@@ -18,7 +19,7 @@ export const groupsRouter = router({
       return g
     }),
 
-  list: protectedProcedure
+  list: featureProcedure("groups")
     .input(z.object({ teamId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
@@ -36,7 +37,7 @@ export const groupsRouter = router({
       return groupsWithMembers
     }),
 
-  addMember: protectedProcedure
+  addMember: featureProcedure("groups")
     .input(z.object({ groupId: z.string().uuid(), athleteId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const [g] = await db.select().from(teamGroup).where(eq(teamGroup.id, input.groupId)).limit(1)
@@ -56,7 +57,7 @@ export const groupsRouter = router({
         .onConflictDoNothing()
     }),
 
-  removeMember: protectedProcedure
+  removeMember: featureProcedure("groups")
     .input(z.object({ groupId: z.string().uuid(), athleteId: z.string() }))
     .mutation(async ({ ctx, input }) => {
       const [g] = await db.select().from(teamGroup).where(eq(teamGroup.id, input.groupId)).limit(1)
@@ -67,7 +68,7 @@ export const groupsRouter = router({
         .where(and(eq(teamGroupMember.groupId, input.groupId), eq(teamGroupMember.athleteId, input.athleteId)))
     }),
 
-  delete: protectedProcedure
+  delete: featureProcedure("groups")
     .input(z.object({ groupId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const [g] = await db.select().from(teamGroup).where(eq(teamGroup.id, input.groupId)).limit(1)

@@ -1,6 +1,7 @@
 "use client"
 
 import { useSession } from "@/lib/auth"
+import { useFeature } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
@@ -25,6 +26,7 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
   const { teamId } = use(params)
   const router = useRouter()
   const { data: session } = useSession()
+  const hasGroups = useFeature("groups")
   const [deleteDialog, setDeleteDialog] = useState<null | "confirm" | "warn">(null)
 
   const { data: teams } = trpc.teams.list.useQuery()
@@ -91,7 +93,7 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
         />
       )}
 
-      <GruposSection teamId={teamId} isCoach={!!isCoach} />
+      {hasGroups && <GruposSection teamId={teamId} isCoach={!!isCoach} />}
 
       {isCoach && (
         <div className="pt-4 border-t border-border">

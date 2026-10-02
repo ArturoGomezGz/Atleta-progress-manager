@@ -6,7 +6,7 @@
 
 import { TRPCError } from "@trpc/server"
 
-export const FEATURES = ["evaluation", "progress", "ai_generator", "team_appearance", "share_links", "scheduled_sessions"] as const
+export const FEATURES = ["evaluation", "progress", "ai_generator", "team_appearance", "share_links", "scheduled_sessions", "groups"] as const
 export type FeatureKey = (typeof FEATURES)[number]
 
 // Una función que depende de otra solo se activa si la otra también lo está
