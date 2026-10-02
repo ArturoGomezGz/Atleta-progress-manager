@@ -34,7 +34,7 @@ La columna **Verificación** indica de dónde viene el estado:
 | Hoy (atleta) | Lo que toca hoy, en curso, próximos y terminados; ejecutar el entrenamiento paso a paso. | Por confirmar |
 | Biblioteca de ejercicios | Ejercicios con video, zonas del cuerpo, contraindicaciones y alternativas; los propios del equipo. | Por confirmar |
 | Explorar | Catálogo público de ejercicios. | Por confirmar |
-| Configuración | Contraseña, tema (claro/oscuro) y temporizador de descanso. | Por confirmar |
+| Cuenta (`/settings`) | Perfil (nombre, correo verificado, miembro desde), tema (claro/oscuro/sistema), cambio de contraseña y cerrar sesión. | Por confirmar |
 | Ejecución con temporizador de descanso | Descanso automático entre series, configurable. | Por confirmar |
 
 ## Limitadas (solo usuarios permitidos)
