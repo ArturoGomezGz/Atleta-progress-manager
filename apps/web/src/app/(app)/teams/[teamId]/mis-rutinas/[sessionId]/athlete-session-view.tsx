@@ -4,6 +4,7 @@
 // (`@/components/workout-runner`), que es la misma pantalla que ve un invitado
 // que llega por enlace.
 
+import { OnboardingExploreCta } from "@/components/onboarding"
 import {
   RoutinePreview,
   RoutinePreviewSkeleton,
@@ -101,6 +102,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
             >
               <ArrowLeftIcon className="w-6 h-6" /> Volver a Hoy
             </Link>
+            <OnboardingExploreCta teamId={teamId} />
           </WorkoutCelebration>
         )}
       />

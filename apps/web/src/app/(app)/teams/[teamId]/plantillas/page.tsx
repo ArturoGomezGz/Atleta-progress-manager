@@ -1,6 +1,7 @@
 "use client"
 
 import { EntrenamientosHeader } from "@/components/entrenamientos-header"
+import { OnboardingCard, OnboardingReopen } from "@/components/onboarding"
 import { PageTransition, useRevealAfterEnter, type SlideDirection } from "@/components/page-transition"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import { consumeBackNavigation } from "@/lib/page-transition"
@@ -56,15 +57,20 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
         teamId={teamId}
         active="mis-entrenamientos"
         action={
-          <button
-            onClick={goToCreate}
-            className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3.5 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
-          >
-            <PlusIcon className="w-4 h-4" />
-            Crear
-          </button>
+          <div className="flex items-center gap-1 shrink-0">
+            <OnboardingReopen teamId={teamId} />
+            <button
+              onClick={goToCreate}
+              className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3.5 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
+            >
+              <PlusIcon className="w-4 h-4" />
+              Crear
+            </button>
+          </div>
         }
       />
+
+      <OnboardingCard teamId={teamId} />
 
       {/* Search + filter */}
       <div className="flex flex-col sm:flex-row gap-2">

@@ -24,6 +24,7 @@ La columna **Verificación** indica de dónde viene el estado:
 |---|---|---|
 | Registro e inicio de sesión | Correo y contraseña, y Google si está configurado. Recuperar contraseña. Confirmación de correo (en testing se omite con `AUTO_VERIFY_EMAIL`). | Por confirmar |
 | Equipo por defecto | Cada usuario nuevo recibe "Mi equipo", donde es coach y tiene el auto-entrenamiento activado ([equipo-por-defecto.md](equipo-por-defecto.md)). | Por confirmar |
+| Onboarding de usuarios nuevos | Tarjeta "Primeros pasos" en Mis entrenamientos (crear, asignar, hacer, explorar), CTA al terminar y banner en Explorar. Solo para quien recibe el equipo por defecto ([onboarding.md](onboarding.md)). | Por confirmar |
 | Equipos | Crear equipos, cambiar entre ellos desde la sección Equipo, eliminar equipo. | Por confirmar |
 | Miembros e invitaciones | Invitar atletas por enlace, ver miembros y roles. | Por confirmar |
 | Auto-entrenamiento | El coach se asigna entrenamientos a sí mismo y los ve en "Hoy". | Por confirmar |
@@ -72,4 +73,3 @@ Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md).
 | Monetización por equipo | Plan gratuito con 1 atleta y plan de pago ilimitado; ver [monetizacion.md](monetizacion.md). Sin implementar. |
 | RM por atleta | Cálculo y almacenamiento del RM para cargas en % RM; ver [rm-atleta.md](rm-atleta.md). Depende de evaluación. |
 | Capa "Plan" (agrupar entrenamientos) | Fuera de v1 en [rutinas-normales.md](rutinas-normales.md). |
-| Onboarding / tutorial de la web | Se hará sobre las funciones disponibles de esta lista. Las limitadas y por pulir quedan fuera. |

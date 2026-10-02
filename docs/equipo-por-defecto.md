@@ -4,6 +4,8 @@
 
 Un equipo llamado **"Mi equipo"** (`DEFAULT_TEAM_NAME` en `apps/api/src/services/team-setup.ts`) donde el usuario es coach y tiene el auto-entrenamiento activado (`team_member.self_athlete = true`). Así puede crear entrenamientos, asignárselos y verlos en "Hoy" sin invitar a nadie.
 
+No se precrea ningún entrenamiento: el usuario arma el suyo y elige sus ejercicios. Al crear el equipo también se marca el onboarding del usuario como en curso ([onboarding.md](onboarding.md)), en la misma transacción.
+
 ## Cuándo
 
 La mutación `teams.ensureDefault` la llama el dashboard (`/dashboard`) cuando `teams.list` viene vacío. Cubre registros con correo y con Google, y a usuarios existentes con 0 equipos (lo reciben la próxima vez que entran). Tras crearlo, el dashboard navega a `/teams/<id>/plantillas`.

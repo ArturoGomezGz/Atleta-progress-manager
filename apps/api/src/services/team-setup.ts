@@ -1,7 +1,7 @@
 // Creación de equipos compartida por `teams.create` y `teams.ensureDefault`.
 
 import { db } from "@atleta/db/client"
-import { team, teamMember } from "@atleta/db/schema"
+import { team, teamMember, userPreferences } from "@atleta/db/schema"
 import { eq, sql } from "drizzle-orm"
 
 export const DEFAULT_TEAM_NAME = "Mi equipo"
@@ -40,6 +40,12 @@ export async function ensureDefaultTeam(userId: string) {
       .limit(1)
     if (existing) return { teamId: existing.teamId, created: false }
     const created = await createTeamWithCoach(tx, userId, DEFAULT_TEAM_NAME, { selfAthlete: true })
+    // Solo quien recibe el equipo por defecto entra al onboarding (docs/onboarding.md)
+    const onboarding = { status: "active" as const, teamId: created.id }
+    await tx
+      .insert(userPreferences)
+      .values({ userId, onboarding })
+      .onConflictDoUpdate({ target: userPreferences.userId, set: { onboarding } })
     return { teamId: created.id, created: true }
   })
 }
