@@ -3,6 +3,7 @@
 import { useRevealAfterEnter } from "@/components/page-transition"
 import { afterNextPaint } from "@/lib/after-paint"
 import { useFeature } from "@/lib/features"
+import { usePublishTourSignal } from "@/lib/tour-signals"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
@@ -208,6 +209,8 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const createLink = trpc.share.createLink.useMutation()
 
   const athletes = members?.filter((m) => m.role === "athlete" || m.selfAthlete) ?? []
+  // Le avisa al tutorial si ya se eligió a sí mismo
+  usePublishTourSignal("assign.self", athletes.some((a) => a.selfAthlete && selectedAthleteIds.has(a.userId)))
 
   // Sin el flag `evaluation` el filtro por tipo no aplica (la API solo devuelve entrenamiento)
   const activeTypeFilter = hasEvaluation ? typeFilter : "all"
@@ -506,6 +509,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
                 <button
                   key={a.userId}
                   type="button"
+                  data-tour={a.selfAthlete ? "assign-self" : undefined}
                   onClick={() => toggleAthlete(a.userId)}
                   className={cn(
                     "w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-all duration-150 cursor-pointer",
@@ -601,6 +605,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
         <div className="space-y-2">
           <button
             type="submit"
+            data-tour="assign-submit"
             disabled={!canSubmit}
             className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground py-3 rounded-xl text-sm font-semibold disabled:opacity-40 hover:bg-primary/90 transition-colors cursor-pointer"
           >

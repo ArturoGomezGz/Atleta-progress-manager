@@ -4,7 +4,7 @@
 // (`@/components/workout-runner`), que es la misma pantalla que ve un invitado
 // que llega por enlace.
 
-import { OnboardingExploreCta } from "@/components/onboarding"
+import { OnboardingExploreLink } from "@/components/onboarding"
 import {
   RoutinePreview,
   RoutinePreviewSkeleton,
@@ -15,12 +15,13 @@ import {
   type WorkoutProgress,
 } from "@/components/workout-runner"
 import { useSession } from "@/lib/auth"
+import { setSignal, usePublishTourSignal } from "@/lib/tour-signals"
 import { useFullscreenWhileMounted } from "@/lib/fullscreen-mode"
 import { trpc } from "@/lib/trpc/client"
 import { ArrowLeftIcon } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 export function AthleteSessionView({ sessionId }: { sessionId: string }) {
   const { teamId } = useParams<{ teamId: string }>()
@@ -43,6 +44,8 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
   )
   const status = progress?.status ?? listedStatus
   useFullscreenWhileMounted(status === "active")
+  // Le avisa al tutorial en qué estado está este entrenamiento
+  usePublishTourSignal("run.status", progress?.status)
 
   const { data: rms } = trpc.sessions.athleteRms.useQuery(
     { sessionId, athleteId: userId },
@@ -102,7 +105,8 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
             >
               <ArrowLeftIcon className="w-6 h-6" /> Volver a Hoy
             </Link>
-            <OnboardingExploreCta teamId={teamId} />
+            <TourWorkoutDone />
+            <OnboardingExploreLink teamId={teamId} />
           </WorkoutCelebration>
         )}
       />
@@ -110,4 +114,13 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
   }
 
   return <WorkoutSummary progress={typed} back={back} />
+}
+
+/** Avisa al tutorial que se llegó a la pantalla final (el estado "completado" del servidor tarda en llegar). */
+function TourWorkoutDone() {
+  useEffect(() => {
+    setSignal("run.done", true)
+    return () => setSignal("run.done", undefined)
+  }, [])
+  return null
 }

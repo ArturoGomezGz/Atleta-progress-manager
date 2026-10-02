@@ -2,11 +2,19 @@ import { boolean, integer, jsonb, pgTable, text } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 
 // Onboarding de la web (docs/onboarding.md). null = el usuario no tiene onboarding.
-// "active" = en curso, "dismissed" = cerrado con "Ahora no" (reabrible), "completed" = terminado.
+// "active" = tutorial en curso, "dismissed" = omitido (reiniciable), "completed" = terminado.
+/** Pasos del tutorial guiado, en orden. */
+export const ONBOARDING_STEPS = [
+  "create", "name", "exercises", "save", "assign-pick", "assign", "hoy", "run", "explore-go", "explore",
+] as const
+export type OnboardingStep = (typeof ONBOARDING_STEPS)[number]
+
 export type OnboardingState = {
   status: "active" | "dismissed" | "completed"
   /** Equipo por defecto al que pertenece el onboarding. */
   teamId: string
+  /** Paso actual del tutorial. Ausente (estados antiguos) = primer paso. */
+  step?: OnboardingStep
 }
 
 export const userPreferences = pgTable("user_preferences", {

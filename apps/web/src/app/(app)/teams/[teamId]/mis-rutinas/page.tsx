@@ -1,5 +1,6 @@
 "use client"
 
+import { useOnboardingHint } from "@/components/onboarding"
 import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
 import type { ZoneProfile } from "@/lib/body-zones"
 import { trpc } from "@/lib/trpc/client"
@@ -32,7 +33,7 @@ function dateLabel(session: Session) {
   return sc(new Date(session.startedAt).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))
 }
 
-function SessionCard({ teamId, session }: { teamId: string; session: Session }) {
+function SessionCard({ teamId, session, tourTarget }: { teamId: string; session: Session; tourTarget?: boolean }) {
   const isCancelled = session.status === "cancelled"
   const action =
     session.status === "active"    ? { label: "Continuar",  icon: PlayIcon,        tone: "bg-primary text-primary-foreground" } :
@@ -76,7 +77,7 @@ function SessionCard({ teamId, session }: { teamId: string; session: Session }) 
   if (isCancelled) return <div className={cn(cardClass, "opacity-60")}>{content}</div>
 
   return (
-    <Link href={`/teams/${teamId}/mis-rutinas/${session.id}`} className={cn(cardClass, "block hover:border-primary/50 active:scale-[0.99] transition-all")}>
+    <Link href={`/teams/${teamId}/mis-rutinas/${session.id}`} data-tour={tourTarget ? "run-card" : undefined} className={cn(cardClass, "block hover:border-primary/50 active:scale-[0.99] transition-all")}>
       {content}
     </Link>
   )
@@ -94,6 +95,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function MisRutinasPage() {
   const { teamId } = useParams<{ teamId: string }>()
   const { data: sessions, isLoading } = trpc.sessions.myList.useQuery({ teamId })
+  const { pendingSessionId } = useOnboardingHint(teamId)
 
   const active    = sessions?.filter((s) => s.status === "active") ?? []
   const scheduled = (sessions?.filter((s) => s.status === "scheduled" && s.routineCategory === "training") ?? [])
@@ -123,19 +125,19 @@ export default function MisRutinasPage() {
 
       {active.length > 0 && (
         <Section title="En curso">
-          {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+          {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
         </Section>
       )}
 
       {forToday.length > 0 && (
         <Section title="Para hoy">
-          {forToday.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+          {forToday.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
         </Section>
       )}
 
       {upcoming.length > 0 && (
         <Section title="Próximos">
-          {upcoming.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+          {upcoming.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
         </Section>
       )}
 
@@ -156,7 +158,7 @@ export default function MisRutinasPage() {
 
       {past.length > 0 && (
         <Section title="Terminadas">
-          {past.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+          {past.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
         </Section>
       )}
     </div>

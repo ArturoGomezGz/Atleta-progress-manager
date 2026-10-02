@@ -1,154 +1,199 @@
 "use client"
 
-// Onboarding de usuarios nuevos (docs/onboarding.md): tarjeta "Primeros pasos" en
-// Mis entrenamientos, banner en Explorar y CTA al terminar el primer entrenamiento.
-// Mientras no se sabe el estado (cargando o error) no se muestra nada.
+// Tutorial guiado y bloqueante para usuarios nuevos (docs/onboarding.md). El motor visual vive en
+// components/tour/tour-overlay.tsx; los pasos, en lib/onboarding-steps.ts. Aquí se conectan con el
+// estado guardado (onboarding.get / setStep / setStatus) y con la ruta actual.
+//
+// Regla de oro: mientras no se conoce el estado (cargando o error) no se muestra ni bloquea nada.
 
+import { TourErrorBoundary, TourOverlay, type TourView } from "@/components/tour/tour-overlay"
+import { STEPS, resolveStep, type Step, type TourCtx } from "@/lib/onboarding-steps"
+import { setSignal, useTourSignals } from "@/lib/tour-signals"
 import { trpc } from "@/lib/trpc/client"
-import { cn } from "@/lib/utils"
-import { CheckIcon, CircleHelpIcon, XIcon } from "lucide-react"
+import { CircleHelpIcon } from "lucide-react"
 import Link from "next/link"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
-export function useOnboarding(teamId: string) {
-  const utils = trpc.useUtils()
-  const { data } = trpc.onboarding.get.useQuery(undefined, { retry: false })
-  const setStatus = trpc.onboarding.setStatus.useMutation({
-    onSuccess: () => utils.onboarding.get.invalidate(),
-  })
-  // El onboarding pertenece al equipo por defecto; en otros equipos no aparece
-  const state = data && data.teamId === teamId ? data : null
-  return { state, setStatus: (status: "active" | "dismissed" | "completed") => setStatus.mutate({ status }), pending: setStatus.isPending }
+// Una ruta que no corresponde al paso solo se avisa si sigue así un momento: al navegar, la URL y el
+// paso se actualizan en instantes distintos y no debe parpadear un aviso falso.
+const MISMATCH_DELAY_MS = 350
+
+function useOnboardingQuery() {
+  return trpc.onboarding.get.useQuery(undefined, { retry: false })
 }
 
-/** Botón "?" del encabezado que reabre la tarjeta si se cerró. */
+/** Datos del tutorial para marcar elementos objetivo en las pantallas (solo con el tutorial en curso). */
+export function useOnboardingHint(teamId: string) {
+  const { data } = useOnboardingQuery()
+  if (data && data.status === "active" && data.teamId === teamId && "step" in data) {
+    return { assignRoutineId: data.assignRoutineId, pendingSessionId: data.pendingSessionId }
+  }
+  return { assignRoutineId: null, pendingSessionId: null }
+}
+
+/** Botón "?" del encabezado de Entrenamientos: reinicia el tutorial desde el primer paso. */
 export function OnboardingReopen({ teamId }: { teamId: string }) {
-  const { state, setStatus } = useOnboarding(teamId)
-  if (state?.status !== "dismissed") return null
+  const utils = trpc.useUtils()
+  const { data } = useOnboardingQuery()
+  const restart = trpc.onboarding.setStatus.useMutation({ onSettled: () => utils.onboarding.get.invalidate() })
+  if (!data || data.teamId !== teamId || data.status === "active") return null
   return (
     <button
-      onClick={() => setStatus("active")}
-      aria-label="Primeros pasos"
-      title="Primeros pasos"
-      className="p-2 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer shrink-0"
+      onClick={() => restart.mutate({ status: "active" })}
+      disabled={restart.isPending}
+      aria-label="Reiniciar tutorial"
+      title="Reiniciar tutorial"
+      className="p-2 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer shrink-0 disabled:opacity-50"
     >
       <CircleHelpIcon className="w-5 h-5" />
     </button>
   )
 }
 
-export function OnboardingCard({ teamId }: { teamId: string }) {
-  const { state, setStatus } = useOnboarding(teamId)
-  if (state?.status !== "active" || !("assigned" in state)) return null
-
-  const t = `/teams/${teamId}`
-  const { firstRoutineId, assigned, completed, hasRoutine, pendingSessionId } = state
-  const steps = [
-    {
-      title: "Crea tu primer entrenamiento",
-      desc: "Elige tus ejercicios y series. Una idea simple: un circuito de 2 rondas con 2 o 3 ejercicios.",
-      done: hasRoutine,
-      href: `${t}/plantillas/nueva`,
-      cta: "Crear",
-    },
-    {
-      title: "Asígnatelo",
-      desc: "Un entrenamiento es el molde; al asignarlo se convierte en un asignado para ti o tus atletas.",
-      done: assigned,
-      href: firstRoutineId ? `${t}/sesiones/new?routineId=${firstRoutineId}` : `${t}/sesiones/new`,
-      cta: "Asignar",
-      disabled: !hasRoutine,
-    },
-    {
-      title: "Hazlo",
-      desc: "Empieza desde Hoy y registra tus series.",
-      done: completed,
-      href: pendingSessionId ? `${t}/mis-rutinas/${pendingSessionId}` : `${t}/mis-rutinas`,
-      cta: "Ir a Hoy",
-      disabled: !assigned,
-    },
-    {
-      title: "Explora más ejercicios",
-      desc: "Descubre el catálogo para armar tus próximos entrenamientos.",
-      done: false,
-      href: `${t}/explorar`,
-      cta: "Explorar",
-      disabled: !completed,
-    },
-  ]
-  const current = steps.findIndex((s) => !s.done)
-
-  return (
-    <section aria-label="Primeros pasos" className="border border-primary/30 bg-primary/5 rounded-xl p-4 space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">Primeros pasos</h2>
-        <button
-          onClick={() => setStatus("dismissed")}
-          className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground cursor-pointer"
-        >
-          <XIcon className="w-3.5 h-3.5" /> Ahora no
-        </button>
-      </div>
-      <ol className="space-y-2">
-        {steps.map((s, i) => (
-          <li key={s.title} className={cn("flex items-start gap-3", s.done && "opacity-60")}>
-            <span
-              className={cn(
-                "w-6 h-6 rounded-full border flex items-center justify-center text-xs font-semibold shrink-0 mt-0.5",
-                s.done ? "bg-primary border-primary text-primary-foreground" : "border-border text-muted-foreground",
-              )}
-            >
-              {s.done ? <CheckIcon className="w-3.5 h-3.5" /> : i + 1}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className={cn("text-sm font-medium", s.done && "line-through")}>{s.title}</p>
-              <p className="text-xs text-muted-foreground">{s.desc}</p>
-            </div>
-            {!s.done && i === current && !s.disabled && (
-              <Link
-                href={s.href}
-                className="text-xs font-medium px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 shrink-0"
-              >
-                {s.cta}
-              </Link>
-            )}
-          </li>
-        ))}
-      </ol>
-    </section>
-  )
-}
-
-/** Banner de Explorar: "Entendido" completa el onboarding. */
-export function OnboardingExploreBanner({ teamId }: { teamId: string }) {
-  const { state, setStatus, pending } = useOnboarding(teamId)
-  if (state?.status !== "active") return null
-  return (
-    <div className="border border-primary/30 bg-primary/5 rounded-xl p-4 space-y-3">
-      <p className="text-sm">
-        Explorar es el catálogo de ejercicios. Toca uno para ver su video y los músculos que trabaja;
-        guarda los que te gusten y los encontrarás en Ejercicios para armar tus entrenamientos.
-      </p>
-      <button
-        onClick={() => setStatus("completed")}
-        disabled={pending}
-        className="text-sm font-medium px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 cursor-pointer"
-      >
-        Entendido
-      </button>
-    </div>
-  )
-}
-
-/** CTA al terminar un entrenamiento, mientras el onboarding siga en curso. */
-export function OnboardingExploreCta({ teamId }: { teamId: string }) {
-  const { state } = useOnboarding(teamId)
-  if (state?.status !== "active") return null
+/** Enlace a Explorar en la pantalla de felicitación (ahí no hay menú). Solo lo puede pulsar el tutorial. */
+export function OnboardingExploreLink({ teamId }: { teamId: string }) {
+  const { data } = useOnboardingQuery()
+  if (!data || data.status !== "active" || data.teamId !== teamId) return null
   return (
     <Link
       href={`/teams/${teamId}/explorar`}
+      data-tour="explore-cta"
       className="w-full max-w-sm flex items-center justify-center min-h-14 rounded-2xl border-2 border-primary text-primary font-bold text-lg"
     >
-      Siguiente: conoce Explorar
+      Conocer Explorar
     </Link>
   )
+}
+
+export function OnboardingTour() {
+  return (
+    <TourErrorBoundary>
+      <Tour />
+    </TourErrorBoundary>
+  )
+}
+
+function Tour() {
+  const pathname = usePathname()
+  const router = useRouter()
+  const utils = trpc.useUtils()
+  const { data, dataUpdatedAt } = useOnboardingQuery()
+  const signals = useTourSignals()
+
+  const setStepMutation = trpc.onboarding.setStep.useMutation()
+  const setStatusMutation = trpc.onboarding.setStatus.useMutation()
+
+  const active = data && data.status === "active" && "step" in data ? data : null
+
+  // Paso que se acaba de avanzar aquí: manda sobre lo guardado mientras se confirma la escritura
+  const [override, setOverride] = useState<Step | null>(null)
+  useEffect(() => { if (!active) setOverride(null) }, [active])
+  // Aviso del entrenamiento en curso ya cerrado con "Entendido"
+  const [runInfoClosed, setRunInfoClosed] = useState(false)
+
+  // Datos frescos: pedidos al servidor después de entrar a esta ruta. Solo esos sirven para retroceder.
+  // (se anota al renderizar, no en un efecto: ese primer render con la ruta nueva aún trae datos viejos)
+  const route = useRef({ path: pathname, at: 0 })
+  if (route.current.path !== pathname) route.current = { path: pathname, at: Date.now() }
+  useEffect(() => { if (active) void utils.onboarding.get.invalidate() }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const routineIdParam = useSearchParams().get("routineId")
+
+  const teamId = active?.teamId ?? ""
+  // Otros equipos no tienen tutorial; /dashboard solo redirige
+  const inScope =
+    !!active &&
+    pathname !== "/dashboard" &&
+    (!pathname.startsWith("/teams/") || pathname === `/teams/${teamId}` || pathname.startsWith(`/teams/${teamId}/`))
+
+  const ctx: TourCtx | null = active
+    ? {
+        base: `/teams/${teamId}`,
+        pathname,
+        routineIdParam,
+        assignRoutineId: active.assignRoutineId,
+        lastRoutineId: active.lastRoutineId,
+        pendingSessionId: active.pendingSessionId,
+        hasRoutine: active.hasRoutine,
+        hasExercises: active.hasExercises,
+        assigned: active.assigned,
+        completed: active.completed,
+        fresh: dataUpdatedAt >= route.current.at,
+        signals,
+      }
+    : null
+
+  const step: Step | null = active ? (override ?? active.step) : null
+  const resolved = step && ctx && inScope ? resolveStep(step, ctx) : step
+
+  const advance = useCallback((next: Step) => {
+    // Solo local (no se toca la caché de la consulta: sus datos "frescos" no deben fingirse)
+    setOverride(next)
+    setStepMutation.mutate({ step: next })
+  }, [setStepMutation])
+
+  useEffect(() => {
+    if (inScope && step && resolved && resolved !== step) advance(resolved)
+  }, [inScope, step, resolved, advance])
+
+  useEffect(() => { setRunInfoClosed(false) }, [resolved])
+
+  // En móvil, con un paso que apunta al menú, el menú lateral se abre solo
+  const needsNav = inScope && (resolved === "hoy" || resolved === "explore-go")
+  useEffect(() => {
+    setSignal("tour.nav", needsNav ? true : undefined)
+    return () => setSignal("tour.nav", undefined)
+  }, [needsNav])
+
+  const finish = useCallback((status: "dismissed" | "completed") => {
+    // Primero se quita todo de la pantalla; luego se guarda (con un reintento si falla)
+    utils.onboarding.get.setData(undefined, (old) => (old ? { status, teamId: old.teamId } : old))
+    const save = (retry: boolean) =>
+      setStatusMutation.mutate({ status }, { onError: () => { if (retry) setTimeout(() => save(false), 1500) } })
+    save(true)
+  }, [utils, setStatusMutation])
+
+  const skip = useCallback(() => finish("dismissed"), [finish])
+
+  // Aviso de "Sigamos con el tutorial" (ruta que no corresponde al paso)
+  // Solo con datos frescos: tras navegar, los datos viejos pueden hacer creer que el paso es otro
+  const mismatch = !!(inScope && resolved && ctx && ctx.fresh && !STEPS[resolved].matches(ctx))
+  const [showMismatch, setShowMismatch] = useState(false)
+  useEffect(() => {
+    if (!mismatch) { setShowMismatch(false); return }
+    const t = setTimeout(() => setShowMismatch(true), MISMATCH_DELAY_MS)
+    return () => clearTimeout(t)
+  }, [mismatch, pathname, resolved])
+
+  const views: TourView[] = useMemo(() => {
+    if (!inScope || !resolved || !ctx) return []
+    const def = STEPS[resolved]
+    if (mismatch) {
+      if (!showMismatch) return []
+      return [{
+        key: `resume-${resolved}`,
+        selector: null,
+        title: "Sigamos con el tutorial",
+        body: "Te quedaste a mitad de tu primer entrenamiento. Te llevamos de vuelta al paso donde ibas.",
+        action: { label: "Continuar", onClick: () => router.push(def.href(ctx)) },
+      }]
+    }
+    return def.views(ctx).map((v): TourView => {
+      const { action, ...rest } = v
+      const closed = v.key === "run-active" && runInfoClosed
+      return {
+        ...rest,
+        compact: closed || v.compact,
+        action: action
+          ? { label: action.label, onClick: action.kind === "complete" ? () => finish("completed") : () => setRunInfoClosed(true) }
+          : undefined,
+      }
+    })
+    // ctx cambia con cada señal; sus partes relevantes ya están en las dependencias de abajo
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inScope, resolved, mismatch, showMismatch, pathname, routineIdParam, signals, active, runInfoClosed, finish, router])
+
+  if (views.length === 0) return null
+  return <TourOverlay views={views} onSkip={skip} />
 }

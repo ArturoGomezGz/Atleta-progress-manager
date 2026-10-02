@@ -2,6 +2,7 @@
 
 import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
+import { usePublishTourSignal } from "@/lib/tour-signals"
 import { PageTransition, useRevealAfterEnter } from "@/components/page-transition"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
@@ -333,6 +334,14 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     setDirty(true)
   }
 
+  // Le avisa al tutorial cuántos ejercicios hay (ya cargada la plantilla)
+  const exerciseCount = content.items.reduce((n, i) => n + (i.type === "exercise" ? 1 : i.exercises.length), 0)
+  // (no mientras se guarda ni tras guardar: ahí el contenido vuelve a verse vacío hasta que llega la respuesta)
+  usePublishTourSignal(
+    "editor.exercises",
+    showContent && routineData && !updateContent.isPending && !updateContent.isSuccess ? exerciseCount : undefined,
+  )
+
   const emptyBlocks = content.items.filter((i) => i.type === "block" && i.exercises.length === 0).length
 
   // Salida única de la vista: si hay cambios, se pregunta qué hacer con ellos.
@@ -478,6 +487,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           <button
             type="button"
             onClick={requestExit}
+            data-tour="editor-exit"
             aria-label="Salir"
             className="shrink-0 flex items-center gap-1 -ml-2 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
           >
@@ -629,7 +639,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       {/* Add */}
       <div className="flex flex-wrap items-stretch gap-3">
         {available.length > 0 && (
-          <div className="flex-1 min-w-[220px]">
+          <div className="flex-1 min-w-[220px]" data-tour="editor-add">
             <AddExerciseRow exercises={available} onAdd={addExercise} placeholder="Agregar ejercicio…" />
           </div>
         )}
@@ -677,6 +687,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
               <button
                 type="button"
                 onClick={saveAndExit}
+                data-tour="editor-save"
                 disabled={updateContent.isPending || emptyBlocks > 0}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 hover:bg-primary/90 cursor-pointer transition-colors"
               >

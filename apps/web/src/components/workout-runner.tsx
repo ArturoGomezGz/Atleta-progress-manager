@@ -464,6 +464,7 @@ export function RoutinePreview({
         <div className="max-w-xl mx-auto">
           <button
             onClick={onStart}
+            data-tour="run-start"
             disabled={starting}
             className="w-full flex items-center justify-center gap-3 min-h-16 rounded-2xl bg-primary text-primary-foreground font-bold text-xl cursor-pointer disabled:opacity-50 active:scale-[0.98] transition-transform"
           >

@@ -57,7 +57,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
           </h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="border border-border rounded-xl p-4 space-y-4 bg-card/60">
+        <form onSubmit={handleSubmit} data-tour="new-form" className="border border-border rounded-xl p-4 space-y-4 bg-card/60">
           <div className="space-y-1.5">
             <label htmlFor="new-template-name" className="text-sm font-semibold">Nombre</label>
             <input
@@ -70,7 +70,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
             />
           </div>
 
-          {hasEvaluation && <div className="space-y-1.5">
+          {hasEvaluation && <div className="space-y-1.5" data-tour-block>
             <p className="text-sm font-semibold">Tipo</p>
             <div className="flex gap-2">
               {(["training", "evaluation"] as RoutineCategory[]).map((cat) => {
@@ -99,6 +99,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
             <button
               type="button"
               onClick={goBack}
+              data-tour-block
               className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
             >
               Cancelar

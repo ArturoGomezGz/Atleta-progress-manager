@@ -1,7 +1,7 @@
 "use client"
 
 import { EntrenamientosHeader } from "@/components/entrenamientos-header"
-import { OnboardingCard, OnboardingReopen } from "@/components/onboarding"
+import { OnboardingReopen, useOnboardingHint } from "@/components/onboarding"
 import { PageTransition, useRevealAfterEnter, type SlideDirection } from "@/components/page-transition"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import { consumeBackNavigation } from "@/lib/page-transition"
@@ -32,6 +32,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
   const [direction, setDirection] = useState<SlideDirection | null>(null)
   useLayoutEffect(() => { if (consumeBackNavigation()) setDirection("back") }, [])
 
+  const { assignRoutineId } = useOnboardingHint(teamId)
   const { data: routines, refetch } = trpc.routines.list.useQuery({ teamId })
   // Mientras carga no hay lista que filtrar: sin esto se mostraba "Sin plantillas"
   // (a veces en pleno deslizamiento de vuelta) y luego saltaba a la lista real.
@@ -61,6 +62,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
             <OnboardingReopen teamId={teamId} />
             <button
               onClick={goToCreate}
+              data-tour="create"
               className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3.5 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
             >
               <PlusIcon className="w-4 h-4" />
@@ -69,8 +71,6 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
           </div>
         }
       />
-
-      <OnboardingCard teamId={teamId} />
 
       {/* Search + filter */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -146,6 +146,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
               </Link>
               <Link
                 href={`/teams/${teamId}/sesiones/new?routineId=${r.id}`}
+                data-tour={r.id === assignRoutineId ? "assign-btn" : undefined}
                 className="text-xs font-medium px-3 py-1.5 mr-1 border border-border rounded-lg text-foreground hover:border-primary/40 hover:text-primary transition-colors cursor-pointer shrink-0"
               >
                 Asignar

@@ -2,7 +2,6 @@
 
 import { ExerciseDetailSheet, type ExerciseDetail } from "@/components/exercise-detail-sheet"
 import { ExerciseFinderBar, FinderEmptyResults, useExerciseFinder } from "@/components/exercise-finder"
-import { OnboardingExploreBanner } from "@/components/onboarding"
 import { YouTubeThumb } from "@/components/youtube-player"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -13,7 +12,6 @@ import {
   UserIcon,
   ZapIcon,
 } from "lucide-react"
-import { useParams } from "next/navigation"
 import { useEffect, useState } from "react"
 
 // ── Config ────────────────────────────────────────────────────────────────────
@@ -50,7 +48,6 @@ type PublicExercise = {
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function ExplorarPage() {
-  const { teamId } = useParams<{ teamId: string }>()
   const [selected, setSelected] = useState<(ExerciseDetail & { isSaved: boolean }) | null>(null)
 
   // Se trae el catálogo público completo y se filtra en el cliente con el mismo buscador de "Mis ejercicios"
@@ -79,7 +76,6 @@ export default function ExplorarPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
       <h1 className="text-xl font-semibold">Explorar</h1>
-      <OnboardingExploreBanner teamId={teamId} />
 
       {isLoading ? (
         <div className="space-y-1.5">

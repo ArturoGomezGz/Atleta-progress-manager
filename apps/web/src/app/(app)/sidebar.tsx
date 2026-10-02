@@ -2,6 +2,7 @@
 
 import React from "react"
 import { useFeatures } from "@/lib/features"
+import { useTourSignal } from "@/lib/tour-signals"
 import { trpc } from "@/lib/trpc/client"
 import { CalendarIcon, ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
@@ -90,6 +91,10 @@ export function Sidebar() {
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
+  // El tutorial abre el menú en móvil cuando el paso apunta a un enlace del menú
+  const tourNeedsNav = useTourSignal("tour.nav") === true
+  useEffect(() => { setMobileOpen(tourNeedsNav) }, [tourNeedsNav])
+
   useEffect(() => {
     if (features.isLoading) return
     if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar" && currentSection !== "mis-rutinas") {
@@ -146,6 +151,7 @@ export function Sidebar() {
             <Link
               key={item.key}
               href={href}
+              data-tour={`nav-${item.key}`}
               aria-disabled={disabled}
               onClick={(e) => disabled && e.preventDefault()}
               className={cn(
