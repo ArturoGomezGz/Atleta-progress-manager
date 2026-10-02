@@ -61,7 +61,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
             className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3.5 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
           >
             <PlusIcon className="w-4 h-4" />
-            Crear entrenamiento
+            Crear
           </button>
         }
       />
