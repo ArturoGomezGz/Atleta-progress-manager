@@ -1,5 +1,6 @@
 import { router } from "../trpc"
 import { exercisesRouter } from "./exercises"
+import { featuresRouter } from "./features"
 import { groupsRouter } from "./groups"
 import { preferencesRouter } from "./preferences"
 import { rmsRouter } from "./rms"
@@ -11,6 +12,7 @@ import { teamsRouter } from "./teams"
 export const appRouter = router({
   teams: teamsRouter,
   exercises: exercisesRouter,
+  features: featuresRouter,
   routines: routinesRouter,
   sessions: sessionsRouter,
   rms: rmsRouter,

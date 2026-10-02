@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { useFeatures } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
 import { CalendarIcon, ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
@@ -158,19 +159,24 @@ export function Sidebar() {
   // When on a non-team page (/exercises, etc.) fall back to the first team so nav links stay usable
   const effectiveTeamId = currentTeamId ?? teams?.[0]?.team.id ?? null
   const isAthlete = currentTeam?.role === "athlete"
-  const navItems = isAthlete
+  const features = useFeatures()
+  const showProgress = features.has("progress")
+  const baseNav = isAthlete
     ? ATHLETE_NAV
     : currentTeam?.selfAthlete
       ? withSelfTraining(COACH_NAV_BASE)
       : COACH_NAV_BASE
+  // Sin el flag `progress` la vista no existe en el menú (mientras carga tampoco)
+  const navItems = showProgress ? baseNav : baseNav.filter((item) => item.key !== "progreso")
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
   useEffect(() => {
+    if (features.isLoading) return
     if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar" && currentSection !== "mis-rutinas") {
-      router.replace(`/teams/${currentTeamId}/progreso`)
+      router.replace(`/teams/${currentTeamId}/${showProgress ? "progreso" : "mis-rutinas"}`)
     }
-  }, [isAthlete, currentTeamId, currentSection, router])
+  }, [isAthlete, currentTeamId, currentSection, router, features.isLoading, showProgress])
 
 
   async function handleCreateTeam(e: React.FormEvent) {

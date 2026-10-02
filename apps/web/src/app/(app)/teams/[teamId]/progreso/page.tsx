@@ -2,6 +2,7 @@
 
 import { ExercisePicker } from "@/components/exercise-picker"
 import { useSession } from "@/lib/auth"
+import { FeatureGate } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { ChevronDownIcon, ChevronUpIcon, MessageCircleIcon, PencilIcon, PlusIcon, SparklesIcon, XIcon } from "lucide-react"
@@ -21,6 +22,14 @@ const PCT_LEVELS = [90, 80, 75, 70]
 
 export default function ProgresoPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = use(params)
+  return (
+    <FeatureGate feature="progress" teamId={teamId}>
+      <ProgresoContent teamId={teamId} />
+    </FeatureGate>
+  )
+}
+
+function ProgresoContent({ teamId }: { teamId: string }) {
   const { data: session } = useSession()
   const { data: teams } = trpc.teams.list.useQuery()
 

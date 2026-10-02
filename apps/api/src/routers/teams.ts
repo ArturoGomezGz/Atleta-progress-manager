@@ -4,7 +4,7 @@ import { TRPCError } from "@trpc/server"
 import { and, count, eq, gt, or } from "drizzle-orm"
 import { randomBytes } from "node:crypto"
 import { z } from "zod"
-import { protectedProcedure, router } from "../trpc"
+import { featureProcedure, protectedProcedure, router } from "../trpc"
 
 export const teamsRouter = router({
   create: protectedProcedure
@@ -166,7 +166,7 @@ export const teamsRouter = router({
       return data ?? null
     }),
 
-  updateBranding: protectedProcedure
+  updateBranding: featureProcedure("team_appearance")
     .input(z.object({
       teamId: z.string().uuid(),
       logoDataUrl: z.string().optional(),
