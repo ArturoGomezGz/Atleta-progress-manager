@@ -6,6 +6,7 @@ import { z } from "zod"
 import { aiRoutineInputSchema, generateRoutineWithAI } from "../services/ai-routines"
 import { exerciseZones, zoneProfiles } from "../services/body-zones"
 import { canUseAiRoutines } from "../services/feature-access"
+import { assertFeature, hasFeature } from "../lib/features"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
 
@@ -77,6 +78,11 @@ function cloneRoutineContent(content: RoutineContent): RoutineContent {
   }
 }
 
+// Las rutinas de evaluación solo se pueden ver/tocar con el flag `evaluation`
+function assertRoutineFeature(user: { id: string; email: string }, category: "evaluation" | "training") {
+  if (category === "evaluation") assertFeature(user, "evaluation")
+}
+
 // ─── Router ───────────────────────────────────────────────────────────────────
 
 export const routinesRouter = router({
@@ -88,6 +94,7 @@ export const routinesRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
+      if (input.category === "evaluation") assertFeature(ctx.session.user, "evaluation")
       const [r] = await db
         .insert(routine)
         .values({ ...input, createdBy: ctx.session.user.id, content: { v: 1, items: [] } })
@@ -101,6 +108,7 @@ export const routinesRouter = router({
       const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
+      assertRoutineFeature(ctx.session.user, r.category)
 
       const [copy] = await db
         .insert(routine)
@@ -123,6 +131,11 @@ export const routinesRouter = router({
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
       const conditions = [eq(routine.teamId, input.teamId)]
+      // Sin el flag las rutinas de evaluación quedan ocultas (no se borran)
+      if (!hasFeature(ctx.session.user, "evaluation")) {
+        if (input.category === "evaluation") return []
+        conditions.push(eq(routine.category, "training"))
+      }
       if (input.category) conditions.push(eq(routine.category, input.category))
       const rows = await db.select().from(routine).where(and(...conditions))
       const profiles = await zoneProfiles(rows.map((r) => r.content))
@@ -135,6 +148,7 @@ export const routinesRouter = router({
       const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertMember(ctx.session.user.id, r.teamId)
+      assertRoutineFeature(ctx.session.user, r.category)
 
       const exerciseIds = extractExerciseIds(r.content)
       const exercises = exerciseIds.length > 0
@@ -165,6 +179,7 @@ export const routinesRouter = router({
       const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
+      assertRoutineFeature(ctx.session.user, r.category)
 
       const [updated] = await db
         .update(routine)
@@ -199,6 +214,7 @@ export const routinesRouter = router({
       const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
+      assertRoutineFeature(ctx.session.user, r.category)
       const [updated] = await db
         .update(routine)
         .set({ name: input.name, updatedAt: new Date() })
@@ -213,6 +229,7 @@ export const routinesRouter = router({
       const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
+      assertRoutineFeature(ctx.session.user, r.category)
       await db.delete(routine).where(eq(routine.id, input.id))
     }),
 })

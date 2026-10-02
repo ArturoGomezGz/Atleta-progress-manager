@@ -215,7 +215,7 @@ export default function EjerciciosPage() {
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between gap-3">
-        <h1 className="text-xl font-semibold">Mis ejercicios</h1>
+        <h1 className="text-xl font-semibold">Ejercicios</h1>
         <button
           onClick={openCreate}
           className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-4 h-11 rounded-xl cursor-pointer font-medium"
@@ -322,7 +322,7 @@ export default function EjerciciosPage() {
                 <p className="text-base font-semibold">Eliminar ejercicio</p>
                 <p className="text-sm text-muted-foreground leading-relaxed">
                   <span className="text-foreground font-medium">{deleteTarget.name}</span> dejará de estar disponible
-                  para nuevas rutinas. El historial de entrenamientos se conserva.
+                  para nuevos entrenamientos. El historial de entrenamientos se conserva.
                 </p>
               </div>
               <div className="flex gap-3">

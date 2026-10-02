@@ -1,7 +1,9 @@
 "use client"
 
 import { cn } from "@/lib/utils"
+import { Suspense } from "react"
 import { useFullscreenMode } from "@/lib/fullscreen-mode"
+import { OnboardingTour } from "@/components/onboarding"
 import { Sidebar } from "./sidebar"
 
 /**
@@ -21,6 +23,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <main className={cn("flex-1 overflow-y-auto overflow-x-hidden [scrollbar-gutter:stable]", !fullscreen && "pt-14 lg:pt-0")}>
         {children}
       </main>
+      {/* Suspense: el tutorial lee la URL con useSearchParams */}
+      <Suspense fallback={null}>
+        <OnboardingTour />
+      </Suspense>
     </div>
   )
 }

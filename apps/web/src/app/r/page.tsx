@@ -27,20 +27,19 @@ export default function EnterCodePage() {
           <DumbbellIcon className="w-12 h-12 text-primary mx-auto" />
           <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-space-grotesk)" }}>Atleta</h1>
           <p className="text-base text-muted-foreground">
-            Escribe el código que te dio tu entrenador para empezar la rutina.
+            Escribe el código que te dio tu entrenador para empezar el entrenamiento.
           </p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
-            autoFocus
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="ABCD2345"
             inputMode="text"
             autoCapitalize="characters"
             autoComplete="off"
-            aria-label="Código de la rutina"
+            aria-label="Código del entrenamiento"
             className="w-full text-center text-2xl font-bold tracking-[0.3em] uppercase bg-card border-2 border-border rounded-2xl px-4 py-4 focus:outline-none focus:border-primary text-foreground placeholder:text-muted-foreground/40 placeholder:tracking-[0.3em]"
           />
           <button
@@ -48,7 +47,7 @@ export default function EnterCodePage() {
             disabled={clean.length !== 8}
             className="w-full min-h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg disabled:opacity-40 cursor-pointer"
           >
-            Ver rutina
+            Ver entrenamiento
           </button>
         </form>
 

@@ -261,6 +261,7 @@ export function ExerciseFinderBar({ finder, placeholder = "Busca por nombre, mú
           <button
             type="button"
             onClick={() => setFiltersOpen(true)}
+            data-tour-block
             aria-haspopup="dialog"
             aria-label={active > 0 ? `Filtros, ${active} activos` : "Filtros"}
             className={cn(

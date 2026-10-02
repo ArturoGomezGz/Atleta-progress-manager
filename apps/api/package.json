@@ -3,7 +3,8 @@
   "version": "0.0.1",
   "private": true,
   "exports": {
-    "./types": "./src/routers/index.ts"
+    "./types": "./src/routers/index.ts",
+    "./features": "./src/lib/features.ts"
   },
   "scripts": {
     "dev": "tsx watch --env-file=.env src/index.ts",

@@ -1,49 +1,41 @@
 "use client"
 
 import React from "react"
+import { useFeatures } from "@/lib/features"
+import { useTourSignal } from "@/lib/tour-signals"
 import { trpc } from "@/lib/trpc/client"
-import { CalendarIcon, ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, PlusIcon, ChevronDownIcon, UsersIcon, XIcon } from "lucide-react"
+import { CalendarIcon, ChartBarIcon, ClipboardListIcon, CompassIcon, DumbbellIcon, ListIcon, MenuIcon, UsersIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { AccountMenu } from "./account-menu"
 import { cn } from "@/lib/utils"
 
-type SubNavItem = { key: string; label: string; sections: string[]; hrefSuffix: string }
-type NavItem = { key: string; label: string; icon: React.ElementType; hrefSuffix?: string; children?: SubNavItem[] }
+// `sections`: secciones de la URL en las que el ítem se marca activo (por defecto, la de su href)
+type NavItem = { key: string; label: string; icon: React.ElementType; hrefSuffix: string; sections?: string[] }
 
 const COACH_NAV_BASE: NavItem[] = [
-  { key: "equipo",      label: "Equipo",         icon: UsersIcon,    hrefSuffix: "equipo" },
-  {
-    key: "rutinas", label: "Rutinas", icon: CalendarIcon,
-    children: [
-      { key: "plantillas", label: "Plantillas", sections: ["plantillas"], hrefSuffix: "plantillas" },
-      { key: "sesiones",   label: "Sesiones",   sections: ["rutinas", "sesiones"], hrefSuffix: "rutinas" },
-    ],
-  },
-  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
-  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
-  { key: "explorar",    label: "Explorar",       icon: CompassIcon,  hrefSuffix: "explorar" },
+  { key: "equipo",         label: "Equipo",         icon: UsersIcon,    hrefSuffix: "equipo" },
+  // Una sola entrada: las pestañas "Mis entrenamientos" y "Asignados" viven dentro de la vista
+  { key: "entrenamientos", label: "Entrenamientos", icon: CalendarIcon, hrefSuffix: "plantillas", sections: ["plantillas", "rutinas", "sesiones"] },
+  { key: "ejercicios",     label: "Ejercicios",     icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",       label: "Explorar",       icon: CompassIcon,  hrefSuffix: "explorar" },
+  { key: "progreso",       label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
 ]
 
-// Coach con "auto-entrenamiento" activo en el equipo actual: sus propias
-// sesiones se agregan como un tercer sub-ítem de "Rutinas", junto a
-// Plantillas y Sesiones, en vez de vivir como acceso aparte.
-const MIS_RUTINAS_CHILD: SubNavItem = { key: "mis-rutinas", label: "Mis rutinas", sections: ["mis-rutinas"], hrefSuffix: "mis-rutinas" }
+// Coach con "auto-entrenamiento" activo en el equipo actual: su propio "Hoy"
+// aparece como entrada extra, justo después de "Entrenamientos".
+const HOY_ITEM: NavItem = { key: "hoy", label: "Hoy", icon: ClipboardListIcon, hrefSuffix: "mis-rutinas" }
 
 function withSelfTraining(nav: NavItem[]): NavItem[] {
-  return nav.map((item) =>
-    item.key === "rutinas" && item.children
-      ? { ...item, children: [...item.children, MIS_RUTINAS_CHILD] }
-      : item,
-  )
+  return nav.flatMap((item) => (item.key === "entrenamientos" ? [item, HOY_ITEM] : [item]))
 }
 
 const ATHLETE_NAV: NavItem[] = [
-  { key: "mis-rutinas", label: "Mis rutinas",   icon: CalendarIcon, hrefSuffix: "mis-rutinas" },
-  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
-  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
-  { key: "explorar",    label: "Explorar",        icon: CompassIcon,  hrefSuffix: "explorar" },
+  { key: "hoy",        label: "Hoy",        icon: CalendarIcon, hrefSuffix: "mis-rutinas" },
+  { key: "ejercicios", label: "Ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",   label: "Explorar",   icon: CompassIcon,  hrefSuffix: "explorar" },
+  { key: "progreso",   label: "Progreso",   icon: ChartBarIcon, hrefSuffix: "progreso" },
 ]
 
 function extractTeamId(pathname: string): string | null {
@@ -74,83 +66,12 @@ function TeamLogo({ name, logoDataUrl }: { name: string; logoDataUrl?: string | 
   )
 }
 
-function NavGroup({
-  item, currentSection, effectiveTeamId, disabled,
-}: {
-  item: NavItem & { children: SubNavItem[] }
-  currentSection: string | null
-  effectiveTeamId: string | null
-  disabled: boolean
-}) {
-  const groupActive = item.children.some((c) => c.sections.includes(currentSection ?? ""))
-  const [open, setOpen] = useState(groupActive)
-  const Icon = item.icon
-
-  return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer",
-          groupActive ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-        )}
-      >
-        <Icon className={cn("w-4 h-4 shrink-0", groupActive && "text-primary")} />
-        <span className="flex-1 text-left">{item.label}</span>
-        <ChevronDownIcon className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", open ? "rotate-180" : "")} />
-      </button>
-
-      {/* grid-rows animación: 0fr → 1fr sin medir altura con JS */}
-      <div className={cn("grid transition-[grid-template-rows] duration-200 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
-        <div className="overflow-hidden">
-          <div className="ml-3 pl-4 border-l border-border space-y-0.5 mt-0.5 pb-0.5">
-            {item.children.map((child) => {
-              const childHref   = effectiveTeamId ? `/teams/${effectiveTeamId}/${child.hrefSuffix}` : "#"
-              const childActive = child.sections.includes(currentSection ?? "")
-              return (
-                <Link
-                  key={child.key}
-                  href={childHref}
-                  aria-disabled={disabled}
-                  onClick={(e) => disabled && e.preventDefault()}
-                  className={cn(
-                    "relative flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-150",
-                    childActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                    disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
-                  )}
-                >
-                  {childActive && <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />}
-                  {child.label}
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 export function Sidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
-  const [teamPickerOpen, setTeamPickerOpen] = useState(false)
-  const [creatingTeam, setCreatingTeam] = useState(false)
-  const [newTeamName, setNewTeamName] = useState("")
-  const pickerRef = useRef<HTMLDivElement>(null)
 
-  const { data: teams, refetch } = trpc.teams.list.useQuery()
-  const createTeam = trpc.teams.create.useMutation({
-    onSuccess: (team) => {
-      refetch()
-      setCreatingTeam(false)
-      setNewTeamName("")
-      setTeamPickerOpen(false)
-      setMobileOpen(false)
-      router.push(`/teams/${team.id}/equipo`)
-    },
-  })
+  const { data: teams } = trpc.teams.list.useQuery()
 
   const currentTeamId = extractTeamId(pathname)
   const currentSection = extractSection(pathname)
@@ -158,26 +79,29 @@ export function Sidebar() {
   // When on a non-team page (/exercises, etc.) fall back to the first team so nav links stay usable
   const effectiveTeamId = currentTeamId ?? teams?.[0]?.team.id ?? null
   const isAthlete = currentTeam?.role === "athlete"
-  const navItems = isAthlete
+  const features = useFeatures()
+  const showProgress = features.has("progress")
+  const baseNav = isAthlete
     ? ATHLETE_NAV
     : currentTeam?.selfAthlete
       ? withSelfTraining(COACH_NAV_BASE)
       : COACH_NAV_BASE
+  // Sin el flag `progress` la vista no existe en el menú (mientras carga tampoco)
+  const navItems = showProgress ? baseNav : baseNav.filter((item) => item.key !== "progreso")
 
   useEffect(() => { setMobileOpen(false) }, [pathname])
 
+  // El tutorial abre el menú en móvil cuando el paso apunta a un enlace del menú
+  const tourNeedsNav = useTourSignal("tour.nav") === true
+  useEffect(() => { setMobileOpen(tourNeedsNav) }, [tourNeedsNav])
+
   useEffect(() => {
+    if (features.isLoading) return
     if (isAthlete && currentTeamId && currentSection && currentSection !== "progreso" && currentSection !== "ejercicios" && currentSection !== "explorar" && currentSection !== "mis-rutinas") {
-      router.replace(`/teams/${currentTeamId}/progreso`)
+      router.replace(`/teams/${currentTeamId}/${showProgress ? "progreso" : "mis-rutinas"}`)
     }
-  }, [isAthlete, currentTeamId, currentSection, router])
+  }, [isAthlete, currentTeamId, currentSection, router, features.isLoading, showProgress])
 
-
-  async function handleCreateTeam(e: React.FormEvent) {
-    e.preventDefault()
-    if (!newTeamName.trim()) return
-    createTeam.mutate({ name: newTeamName.trim() })
-  }
 
   const sidebarContent = (
     <>
@@ -202,66 +126,18 @@ export function Sidebar() {
         </button>
       </div>
 
-      {/* Team selector */}
-      <div className="px-3 py-3 border-b border-border relative" ref={pickerRef}>
-        <button
-          onClick={() => setTeamPickerOpen((v) => !v)}
-          className="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg hover:bg-muted/60 text-sm font-medium transition-colors text-foreground cursor-pointer"
+      {/* Equipo activo: enlace a la página Equipo, donde se cambia o se crea */}
+      {currentTeam ? (
+        <Link
+          href={`/teams/${currentTeam.team.id}/equipo`}
+          className="px-4 py-2 border-b border-border flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground hover:bg-muted/40 transition-colors"
         >
-          {currentTeam && <TeamLogo name={currentTeam.team.name} logoDataUrl={currentTeam.team.logoDataUrl} />}
-          <span className="truncate flex-1 text-left">
-            {currentTeam ? currentTeam.team.name : "Seleccionar equipo"}
-          </span>
-          <ChevronDownIcon className={`w-3.5 h-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${teamPickerOpen ? "rotate-180" : ""}`} />
-        </button>
-
-        {teamPickerOpen && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => { setTeamPickerOpen(false); setCreatingTeam(false) }} />
-            <div className="absolute left-3 right-3 top-full mt-1.5 border border-border rounded-lg shadow-2xl bg-popover z-20 overflow-hidden">
-              {teams?.map(({ team }) => (
-                <button
-                  key={team.id}
-                  onClick={() => { router.push(`/teams/${team.id}/equipo`); setTeamPickerOpen(false) }}
-                  className={`w-full flex items-center gap-2.5 text-left px-3 py-2.5 text-sm hover:bg-muted/60 transition-colors cursor-pointer ${
-                    team.id === currentTeamId ? "font-medium text-primary" : "text-foreground"
-                  }`}
-                >
-                  <TeamLogo name={team.name} logoDataUrl={team.logoDataUrl} />
-                  {team.name}
-                </button>
-              ))}
-              {!creatingTeam ? (
-                <button
-                  onClick={() => setCreatingTeam(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-muted-foreground hover:bg-muted/60 border-t border-border transition-colors cursor-pointer"
-                >
-                  <PlusIcon className="w-3.5 h-3.5" />
-                  Nuevo equipo
-                </button>
-              ) : (
-                <form onSubmit={handleCreateTeam} className="p-2.5 border-t border-border space-y-2">
-                  <input
-                    autoFocus
-                    value={newTeamName}
-                    onChange={(e) => setNewTeamName(e.target.value)}
-                    placeholder="Nombre del equipo"
-                    className="w-full bg-card border border-border rounded-md px-2.5 py-1.5 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
-                  />
-                  <div className="flex gap-1.5">
-                    <button type="submit" disabled={createTeam.isPending} className="flex-1 bg-primary text-primary-foreground text-xs py-1.5 rounded-md disabled:opacity-50 font-medium cursor-pointer">
-                      Crear
-                    </button>
-                    <button type="button" onClick={() => setCreatingTeam(false)} className="flex-1 border border-border text-xs py-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/60 cursor-pointer">
-                      Cancelar
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          </>
-        )}
-      </div>
+          <TeamLogo name={currentTeam.team.name} logoDataUrl={currentTeam.team.logoDataUrl} />
+          <span className="truncate">{currentTeam.team.name}</span>
+        </Link>
+      ) : (
+        <div className="px-4 py-2 border-b border-border text-xs text-muted-foreground">Atleta</div>
+      )}
 
       {/* Navigation */}
       <nav className="flex-1 px-3 py-3 space-y-0.5">
@@ -269,26 +145,13 @@ export function Sidebar() {
           const disabled = !effectiveTeamId
           const Icon = item.icon
 
-          // Collapsible group with sub-items
-          if (item.children) {
-            return (
-              <NavGroup
-                key={item.key}
-                item={item as NavItem & { children: SubNavItem[] }}
-                currentSection={currentSection}
-                effectiveTeamId={effectiveTeamId}
-                disabled={disabled}
-              />
-            )
-          }
-
-          // Simple item
           const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${item.hrefSuffix}` : "#"
-          const isActive = currentSection === item.hrefSuffix
+          const isActive = (item.sections ?? [item.hrefSuffix]).includes(currentSection ?? "")
           return (
             <Link
               key={item.key}
               href={href}
+              data-tour={`nav-${item.key}`}
               aria-disabled={disabled}
               onClick={(e) => disabled && e.preventDefault()}
               className={cn(
@@ -324,7 +187,10 @@ export function Sidebar() {
         >
           <MenuIcon className="w-5 h-5" />
         </button>
-        <div className="flex items-center gap-2 flex-1 min-w-0">
+        <Link
+          href={currentTeam ? `/teams/${currentTeam.team.id}/equipo` : "/dashboard"}
+          className="flex items-center gap-2 flex-1 min-w-0"
+        >
           {currentTeam?.team.logoDataUrl ? (
             <img
               src={currentTeam.team.logoDataUrl}
@@ -342,7 +208,7 @@ export function Sidebar() {
           >
             {currentTeam ? currentTeam.team.name : "Atleta"}
           </span>
-        </div>
+        </Link>
       </div>
 
       {/* Mobile drawer backdrop */}

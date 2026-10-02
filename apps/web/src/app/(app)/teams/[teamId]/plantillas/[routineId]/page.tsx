@@ -2,6 +2,7 @@
 
 import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
+import { usePublishTourSignal } from "@/lib/tour-signals"
 import { PageTransition, useRevealAfterEnter } from "@/components/page-transition"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
@@ -253,7 +254,9 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   // única salida es el botón "Salir" de la cabecera.
   useFullscreenWhileMounted(true)
 
-  const { data: routineData, refetch } = trpc.routines.get.useQuery({ id: routineId })
+  const { data: routineData, refetch, isError: routineError } = trpc.routines.get.useQuery({ id: routineId }, { retry: false })
+  // Una plantilla de evaluación sin el flag no existe para este usuario
+  useEffect(() => { if (routineError) router.replace(`/teams/${teamId}/plantillas`) }, [routineError, router, teamId])
   const { onEntered, showContent, showSkeleton } = useRevealAfterEnter(routineData !== undefined)
   const { data: catalog }              = trpc.exercises.list.useQuery({ teamId })
   const updateContent                  = trpc.routines.updateContent.useMutation({ onSuccess: () => refetch() })
@@ -330,6 +333,14 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     setLocalContent((prev) => fn(prev ?? routineData?.content ?? { v: 1, items: [] }))
     setDirty(true)
   }
+
+  // Le avisa al tutorial cuántos ejercicios hay (ya cargada la plantilla)
+  const exerciseCount = content.items.reduce((n, i) => n + (i.type === "exercise" ? 1 : i.exercises.length), 0)
+  // (no mientras se guarda ni tras guardar: ahí el contenido vuelve a verse vacío hasta que llega la respuesta)
+  usePublishTourSignal(
+    "editor.exercises",
+    showContent && routineData && !updateContent.isPending && !updateContent.isSuccess ? exerciseCount : undefined,
+  )
 
   const emptyBlocks = content.items.filter((i) => i.type === "block" && i.exercises.length === 0).length
 
@@ -476,6 +487,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           <button
             type="button"
             onClick={requestExit}
+            data-tour="editor-exit"
             aria-label="Salir"
             className="shrink-0 flex items-center gap-1 -ml-2 p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
           >
@@ -498,7 +510,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
             className="flex-1 min-w-0 text-base font-bold tracking-wide uppercase bg-transparent outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary/60 transition-colors truncate cursor-text"
             style={{ fontFamily: "var(--font-barlow-condensed)" }}
-            aria-label="Nombre de la plantilla"
+            aria-label="Nombre del entrenamiento"
           />
           )}
         </div>
@@ -544,7 +556,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           </div>
           {aiResult.createdExercises.length > 0 && (
             <p className="text-[11px] text-muted-foreground pl-6">
-              Ejercicios nuevos añadidos al catálogo del equipo, sin video: {aiResult.createdExercises.map((e) => e.name).join(", ")}. Revísalos en Mis ejercicios.
+              Ejercicios nuevos añadidos al catálogo del equipo, sin video: {aiResult.createdExercises.map((e) => e.name).join(", ")}. Revísalos en Ejercicios.
             </p>
           )}
           <p className="text-[11px] text-muted-foreground pl-6">Es una propuesta: ajústala a tu gusto y, al salir, elige <strong>Guardar</strong> para conservarla.</p>
@@ -613,7 +625,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
           {content.items.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl gap-2 text-center px-6">
-              <p className="text-sm font-medium">Esta plantilla está vacía</p>
+              <p className="text-sm font-medium">Este entrenamiento está vacío</p>
               <p className="text-xs text-muted-foreground">Agrega ejercicios desde el catálogo. Cada uno trae su video de YouTube.</p>
             </div>
           )}
@@ -627,7 +639,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       {/* Add */}
       <div className="flex flex-wrap items-stretch gap-3">
         {available.length > 0 && (
-          <div className="flex-1 min-w-[220px]">
+          <div className="flex-1 min-w-[220px]" data-tour="editor-add">
             <AddExerciseRow exercises={available} onAdd={addExercise} placeholder="Agregar ejercicio…" />
           </div>
         )}
@@ -675,6 +687,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
               <button
                 type="button"
                 onClick={saveAndExit}
+                data-tour="editor-save"
                 disabled={updateContent.isPending || emptyBlocks > 0}
                 className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50 hover:bg-primary/90 cursor-pointer transition-colors"
               >
@@ -784,7 +797,7 @@ function AddCircuitPlaceholder({ onClick }: { onClick: () => void }) {
 function RoutineStartMarker() {
   return (
     <div className="flex flex-col items-center gap-1 py-1 text-muted-foreground/50">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Inicio de la rutina</span>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Inicio del entrenamiento</span>
       <ChevronDownIcon className="w-4 h-4" />
     </div>
   )
@@ -1046,7 +1059,7 @@ function ExerciseCard({
           aria-hidden="true"
         />
       )}
-      <CardCornerActions onRemove={onRemove} confirmMessage={`¿Eliminar "${info.name}" de la rutina?`} />
+      <CardCornerActions onRemove={onRemove} confirmMessage={`¿Eliminar "${info.name}" del entrenamiento?`} />
       <div className="flex flex-wrap items-center gap-3 pl-3 pr-14 py-2.5 min-h-[84px] bg-muted/10">
         <span className="w-6 h-6 rounded-full bg-primary/15 border border-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
           {label}

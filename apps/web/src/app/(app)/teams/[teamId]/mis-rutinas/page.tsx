@@ -1,5 +1,6 @@
 "use client"
 
+import { useOnboardingHint } from "@/components/onboarding"
 import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
 import type { ZoneProfile } from "@/lib/body-zones"
 import { trpc } from "@/lib/trpc/client"
@@ -32,7 +33,7 @@ function dateLabel(session: Session) {
   return sc(new Date(session.startedAt).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))
 }
 
-function SessionCard({ teamId, session }: { teamId: string; session: Session }) {
+function SessionCard({ teamId, session, tourTarget }: { teamId: string; session: Session; tourTarget?: boolean }) {
   const isCancelled = session.status === "cancelled"
   const action =
     session.status === "active"    ? { label: "Continuar",  icon: PlayIcon,        tone: "bg-primary text-primary-foreground" } :
@@ -46,7 +47,7 @@ function SessionCard({ teamId, session }: { teamId: string; session: Session }) 
       <ZoneBar profile={session.zoneProfile} className="h-1 rounded-none" />
       <div className="p-4 sm:p-5">
         <div className="space-y-1">
-          <p className="text-lg font-semibold leading-snug">{sc(session.routineName ?? "Rutina")}</p>
+          <p className="text-lg font-semibold leading-snug">{sc(session.routineName ?? "Entrenamiento")}</p>
           <p className="text-base text-muted-foreground flex items-center gap-1.5">
             <CalendarIcon className="w-4 h-4 shrink-0" />
             {dateLabel(session)}
@@ -76,7 +77,7 @@ function SessionCard({ teamId, session }: { teamId: string; session: Session }) 
   if (isCancelled) return <div className={cn(cardClass, "opacity-60")}>{content}</div>
 
   return (
-    <Link href={`/teams/${teamId}/mis-rutinas/${session.id}`} className={cn(cardClass, "block hover:border-primary/50 active:scale-[0.99] transition-all")}>
+    <Link href={`/teams/${teamId}/mis-rutinas/${session.id}`} data-tour={tourTarget ? "run-card" : undefined} className={cn(cardClass, "block hover:border-primary/50 active:scale-[0.99] transition-all")}>
       {content}
     </Link>
   )
@@ -94,10 +95,16 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 export default function MisRutinasPage() {
   const { teamId } = useParams<{ teamId: string }>()
   const { data: sessions, isLoading } = trpc.sessions.myList.useQuery({ teamId })
+  const { pendingSessionId } = useOnboardingHint(teamId)
 
   const active    = sessions?.filter((s) => s.status === "active") ?? []
   const scheduled = (sessions?.filter((s) => s.status === "scheduled" && s.routineCategory === "training") ?? [])
     .sort((a, b) => (a.scheduledDate ?? "").localeCompare(b.scheduledDate ?? ""))
+  // Fecha local (no UTC) para que "hoy" coincida con lo que ve la persona
+  const now = new Date()
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+  const forToday = scheduled.filter((s) => (s.scheduledDate ?? todayStr) <= todayStr)
+  const upcoming = scheduled.filter((s) => (s.scheduledDate ?? todayStr) > todayStr)
   const past      = sessions?.filter((s) => s.status === "completed" || s.status === "cancelled") ?? []
 
   if (isLoading) {
@@ -112,27 +119,33 @@ export default function MisRutinasPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold">Mis rutinas</h1>
-        <p className="text-base text-muted-foreground">Toca una rutina para ver los ejercicios y sus videos.</p>
+        <h1 className="text-3xl font-bold">Hoy</h1>
+        <p className="text-base text-muted-foreground">Toca un entrenamiento para ver los ejercicios y sus videos.</p>
       </div>
 
       {active.length > 0 && (
         <Section title="En curso">
-          {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+          {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
         </Section>
       )}
 
-      {scheduled.length > 0 && (
-        <Section title="Para hacer">
-          {scheduled.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+      {forToday.length > 0 && (
+        <Section title="Para hoy">
+          {forToday.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
+        </Section>
+      )}
+
+      {upcoming.length > 0 && (
+        <Section title="Próximos">
+          {upcoming.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
         </Section>
       )}
 
       {scheduled.length === 0 && active.length === 0 && (
-        <Section title="Para hacer">
+        <Section title="Para hoy">
           <div className="flex flex-col items-center justify-center py-16 gap-4 text-center border border-dashed border-border rounded-2xl px-6">
             <DumbbellIcon className="w-12 h-12 text-muted-foreground/50" />
-            <p className="text-lg">No tienes rutinas pendientes.</p>
+            <p className="text-lg">No tienes entrenamientos pendientes.</p>
             <Link
               href={`/teams/${teamId}/explorar`}
               className="inline-flex items-center gap-2 mt-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-base font-semibold hover:bg-primary/90 transition-colors"
@@ -145,7 +158,7 @@ export default function MisRutinasPage() {
 
       {past.length > 0 && (
         <Section title="Terminadas">
-          {past.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+          {past.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
         </Section>
       )}
     </div>

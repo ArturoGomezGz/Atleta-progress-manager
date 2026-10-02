@@ -1,7 +1,9 @@
 "use client"
 
+import { EntrenamientosHeader } from "@/components/entrenamientos-header"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import type { ZoneProfile } from "@/lib/body-zones"
+import { useFeature } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { CheckIcon, ChevronDownIcon, Link2Icon, PlusIcon, SearchIcon, UserIcon, XIcon } from "lucide-react"
@@ -89,6 +91,7 @@ function SessionCard({ teamId, session }: { teamId: string; session: SessionItem
     ? new Date(session.scheduledDate + "T12:00:00").toLocaleDateString("es", { dateStyle: "medium" })
     : new Date(session.startedAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })
 
+  const athleteNames = session.athletes?.map((a) => a.name).filter(Boolean).join(", ")
   const showProgress = session.routineCategory === "training" && (session.athletes?.length ?? 0) > 0
 
   return (
@@ -103,7 +106,9 @@ function SessionCard({ teamId, session }: { teamId: string; session: SessionItem
           <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
             {session.routineName ? sc(session.routineName) : "—"}
           </p>
-          <p className="text-xs text-muted-foreground mt-0.5">{dateLabel}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 truncate">
+            {athleteNames ? `${athleteNames} · ${dateLabel}` : dateLabel}
+          </p>
           <ZoneLegend profile={session.zoneProfile} className="mt-1" />
         </div>
         <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border shrink-0", config.badge)}>
@@ -234,7 +239,6 @@ function AthleteFilter({
             <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
               <SearchIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               <input
-                autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar atleta"
@@ -282,6 +286,7 @@ function AthleteFilter({
 }
 
 function SesionesContent({ teamId }: { teamId: string }) {
+  const hasEvaluation = useFeature("evaluation")
   const [histFilter, setHistFilter] = useState<"all" | "evaluation" | "training">("all")
   const [athleteFilter, setAthleteFilter] = useState<string | null>(null)
 
@@ -303,7 +308,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
   }, [athleteFilter, members, athletes])
 
   const athleteId = athleteFilter ?? undefined
-  const { data: evalSessions }     = trpc.sessions.list.useQuery({ teamId, category: "evaluation", athleteId })
+  const { data: evalSessions }     = trpc.sessions.list.useQuery({ teamId, category: "evaluation", athleteId }, { enabled: hasEvaluation })
   const { data: trainingSessions } = trpc.sessions.list.useQuery({ teamId, category: "training", athleteId })
   // Un enlace sin revocar es, para el entrenador, una sesión abierta más.
   // Un enlace no pertenece a ningún atleta, así que al filtrar por uno se oculta.
@@ -330,23 +335,19 @@ function SesionesContent({ teamId }: { teamId: string }) {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <h1
-          className="text-2xl font-bold tracking-wider uppercase"
-          style={{ fontFamily: "var(--font-barlow-condensed)" }}
-        >
-          Sesiones
-        </h1>
-        {isCoach && (
+      <EntrenamientosHeader
+        teamId={teamId}
+        active="asignados"
+        action={isCoach && (
           <Link
             href={`/teams/${teamId}/sesiones/new`}
             className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3.5 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
           >
             <PlusIcon className="w-4 h-4" />
-            Nueva
+            Asignar
           </Link>
         )}
-      </div>
+      />
 
       {/* Filtro por atleta (solo entrenador) */}
       {isCoach && athletes.length > 0 && (
@@ -383,15 +384,15 @@ function SesionesContent({ teamId }: { teamId: string }) {
         <div className="flex flex-col items-center justify-center py-10 px-4 border border-dashed border-border rounded-xl gap-2 text-center">
           <p className="text-sm text-muted-foreground break-words">
             {selectedAthleteName
-              ? `${selectedAthleteName} no tiene sesiones activas o programadas.`
-              : "Sin sesiones activas o programadas."}
+              ? `${selectedAthleteName} no tiene entrenamientos asignados en curso o programados.`
+              : "Sin entrenamientos asignados en curso o programados."}
           </p>
           {isCoach && (
             <Link
               href={`/teams/${teamId}/sesiones/new`}
               className="text-xs text-primary hover:underline cursor-pointer mt-1"
             >
-              Crear una sesión
+              Asignar un entrenamiento
             </Link>
           )}
         </div>
@@ -401,7 +402,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
       <section className="space-y-3">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Historial</p>
 
-        <div className="flex gap-1">
+        {hasEvaluation && <div className="flex gap-1">
           {(["all", "training", "evaluation"] as const).map((f) => (
             <button
               key={f}
@@ -414,7 +415,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
               {f === "all" ? "Todas" : f === "training" ? "Entrenamiento" : "Evaluación"}
             </button>
           ))}
-        </div>
+        </div>}
 
         <div className="space-y-2">
           {history.slice(0, 20).map((s) => (
@@ -424,7 +425,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
             <p className="text-sm text-muted-foreground text-center py-8">
               {histFilter !== "all" || athleteFilter
                 ? "Sin resultados."
-                : "Sin sesiones en el historial."}
+                : "Sin entrenamientos asignados en el historial."}
             </p>
           )}
         </div>
