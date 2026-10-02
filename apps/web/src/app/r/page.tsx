@@ -33,7 +33,6 @@ export default function EnterCodePage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <input
-            autoFocus
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="ABCD2345"

@@ -327,7 +327,6 @@ function ExerciseRmRow({
         {isCoach && editing ? (
           <form onSubmit={handleEdit} className="flex items-center gap-1.5" onClick={(e) => e.stopPropagation()}>
             <input
-              autoFocus
               type="number"
               min={0}
               step={0.5}
@@ -495,7 +494,6 @@ function ExerciseRmRow({
             ) : editingReport ? (
               <form onSubmit={handleReportEdit} className="space-y-2">
                 <textarea
-                  autoFocus
                   value={reportEditValue}
                   onChange={(e) => setReportEditValue(e.target.value)}
                   rows={4}

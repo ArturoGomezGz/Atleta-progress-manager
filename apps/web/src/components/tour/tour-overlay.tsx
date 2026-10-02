@@ -142,13 +142,28 @@ function useBox(el: HTMLElement | null): Box | null {
   return box
 }
 
+// `width`/`height`: viewport de layout (donde viven los `fixed`). `vv`: parte realmente visible; en móvil
+// el teclado la achica sin cambiar la de layout, y es contra ella que hay que acomodar el pop-over.
 function useViewport() {
-  const [view, setView] = useState({ width: 0, height: 0 })
+  const [view, setView] = useState({ width: 0, height: 0, vv: { left: 0, top: 0, width: 0, height: 0 } })
   useLayoutEffect(() => {
-    const on = () => setView({ width: window.innerWidth, height: window.innerHeight })
+    const vvp = window.visualViewport
+    const on = () => setView({
+      width: window.innerWidth,
+      height: window.innerHeight,
+      vv: vvp
+        ? { left: vvp.offsetLeft, top: vvp.offsetTop, width: vvp.width, height: vvp.height }
+        : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight },
+    })
     on()
     window.addEventListener("resize", on)
-    return () => window.removeEventListener("resize", on)
+    vvp?.addEventListener("resize", on)
+    vvp?.addEventListener("scroll", on)
+    return () => {
+      window.removeEventListener("resize", on)
+      vvp?.removeEventListener("resize", on)
+      vvp?.removeEventListener("scroll", on)
+    }
   }, [])
   return view
 }
@@ -281,11 +296,13 @@ function Layer({ view, el, onSkip, prominentSkip = false }: { view: TourView; el
   useEffect(() => {
     if (!el) return
     const r = el.getBoundingClientRect()
-    const vh = window.innerHeight
-    if (r.top < 64 || r.bottom > vh - 24) {
+    const top = viewport.vv.top
+    const vh = viewport.vv.height || window.innerHeight
+    if (r.top < top + 64 || r.bottom > top + vh - 24) {
       el.scrollIntoView({ block: r.height > vh * 0.7 ? "start" : "center", behavior: reduced ? "auto" : "smooth" })
     }
-  }, [el, reduced])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [el, reduced, Math.round(viewport.vv.height)])
 
   // El foco va al pop-over, salvo que ya esté dentro del objetivo (p. ej. escribiendo)
   useEffect(() => {
@@ -317,15 +334,20 @@ function Layer({ view, el, onSkip, prominentSkip = false }: { view: TourView; el
 
   const vp = { width: viewport.width, height: viewport.height }
   const hole = box && vp.width > 0 ? holeBox(box, vp) : null
+  // El pop-over se acomoda en la parte visible (sin el teclado): se calcula en coordenadas de esa
+  // parte y luego se devuelve a las de layout, que son las del `fixed`
+  const vv = viewport.vv
+  const vvBox: Box | null = box ? { left: box.left - vv.left, top: box.top - vv.top, width: box.width, height: box.height } : null
   // Parte visible del objetivo: el pop-over se acomoda respecto a eso, no a su tamaño total
-  const visible: Box | null = box && vp.width > 0
+  const visible: Box | null = vvBox && vv.width > 0
     ? (() => {
-        const left = Math.max(0, box.left), top = Math.max(0, box.top)
-        const right = Math.min(vp.width, box.left + box.width), bottom = Math.min(vp.height, box.top + box.height)
+        const left = Math.max(0, vvBox.left), top = Math.max(0, vvBox.top)
+        const right = Math.min(vv.width, vvBox.left + vvBox.width), bottom = Math.min(vv.height, vvBox.top + vvBox.height)
         return { left, top, width: Math.max(0, right - left), height: Math.max(0, bottom - top) }
       })()
     : null
-  const placement = popSize && vp.width > 0 ? computePlacement(el ? visible : null, popSize, vp) : null
+  const rawPlacement = popSize && vv.width > 0 ? computePlacement(el ? visible : null, popSize, { width: vv.width, height: vv.height }) : null
+  const placement = rawPlacement ? { ...rawPlacement, left: rawPlacement.left + vv.left, top: rawPlacement.top + vv.top } : null
 
   const skipProminent = prominentSkip || stuck
 

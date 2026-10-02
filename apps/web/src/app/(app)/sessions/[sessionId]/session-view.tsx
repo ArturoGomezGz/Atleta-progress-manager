@@ -376,7 +376,6 @@ function RecordSetForm({
     <form onSubmit={handleSubmit} className="flex items-center gap-2 flex-wrap">
       <div className="flex items-center gap-1">
         <input
-          autoFocus
           type="number"
           min={0}
           value={reps}

@@ -25,7 +25,6 @@ export function NewTeamForm({ onCancel, className }: { onCancel?: () => void; cl
   return (
     <form onSubmit={handleSubmit} className={className ?? "space-y-2"}>
       <input
-        autoFocus
         value={name}
         onChange={(e) => setName(e.target.value)}
         placeholder="Nombre del equipo"

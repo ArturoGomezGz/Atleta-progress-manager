@@ -7,7 +7,7 @@ import { getRoutineTypeConfig, type RoutineCategory } from "@/lib/routine-types"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { ChevronLeftIcon } from "lucide-react"
-import { use, useRef, useState } from "react"
+import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 
 export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamId: string }> }) {
@@ -16,7 +16,6 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
 
   const [name, setName]         = useState("")
   const [category, setCategory] = useState<RoutineCategory>("training")
-  const nameInputRef = useRef<HTMLInputElement>(null)
   const hasEvaluation = useFeature("evaluation")
 
   const createRoutine = trpc.routines.create.useMutation({
@@ -35,10 +34,8 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
   }
 
   return (
-    // Enfocar al terminar el deslizamiento, no al montar: con `autoFocus` el input
-    // se enfoca aún fuera de pantalla y el navegador desplaza <main> (y abre el
-    // teclado en móvil) en plena animación.
-    <PageTransition direction="forward" onEntered={() => nameInputRef.current?.focus({ preventScroll: true })}>
+    // No se enfoca el input solo: en móvil abriría el teclado y taparía la vista.
+    <PageTransition direction="forward">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div className="flex items-center gap-2">
           <button
@@ -62,7 +59,6 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
             <label htmlFor="new-template-name" className="text-sm font-semibold">Nombre</label>
             <input
               id="new-template-name"
-              ref={nameInputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nombre del entrenamiento"

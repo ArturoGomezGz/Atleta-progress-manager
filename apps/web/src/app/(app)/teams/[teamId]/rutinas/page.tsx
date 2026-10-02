@@ -239,7 +239,6 @@ function AthleteFilter({
             <div className="flex items-center gap-2 px-3 py-2 border-b border-border">
               <SearchIcon className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
               <input
-                autoFocus
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar atleta"

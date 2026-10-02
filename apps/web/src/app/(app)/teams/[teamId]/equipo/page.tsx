@@ -523,7 +523,6 @@ function GruposSection({ teamId, isCoach }: { teamId: string; isCoach: boolean }
               className="flex gap-2"
             >
               <input
-                autoFocus
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
                 placeholder="Nombre del grupo"
