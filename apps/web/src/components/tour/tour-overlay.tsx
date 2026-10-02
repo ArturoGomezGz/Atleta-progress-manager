@@ -168,6 +168,43 @@ function useViewport() {
   return view
 }
 
+// En móvil, mientras se escribe en un campo el teclado ocupa media pantalla: el pop-over se oculta
+// para no tapar lo que se escribe y vuelve al cerrarse el teclado. Se detecta por campo enfocado +
+// pantalla visible achicada; solo el foco no basta, porque al cerrar el teclado el campo sigue enfocado.
+function useKeyboardOpen(): boolean {
+  const [open, setOpen] = useState(false)
+  useEffect(() => {
+    const touch = window.matchMedia("(pointer: coarse)")
+    const vv = window.visualViewport
+    const heights = () => Math.max(window.innerHeight, vv?.height ?? 0)
+    let baseline = heights() // alto de pantalla con el teclado cerrado
+    const check = () => {
+      const a = document.activeElement as HTMLElement | null
+      const editable = !!a && (a.isContentEditable || a.tagName === "TEXTAREA" ||
+        (a.tagName === "INPUT" && !["checkbox", "radio", "button", "submit", "range", "file", "color"].includes((a as HTMLInputElement).type)))
+      const visibleHeight = vv?.height ?? window.innerHeight
+      if (!editable) baseline = Math.max(heights(), visibleHeight)
+      else baseline = Math.max(baseline, heights())
+      setOpen(touch.matches && editable && visibleHeight < baseline - 120)
+    }
+    // El foco cambia en dos tiempos (sale uno, entra otro): se mira ya asentado
+    const later = () => setTimeout(check, 0)
+    const reset = () => { baseline = heights(); check() }
+    document.addEventListener("focusin", later)
+    document.addEventListener("focusout", later)
+    vv?.addEventListener("resize", check)
+    window.addEventListener("orientationchange", reset)
+    check()
+    return () => {
+      document.removeEventListener("focusin", later)
+      document.removeEventListener("focusout", later)
+      vv?.removeEventListener("resize", check)
+      window.removeEventListener("orientationchange", reset)
+    }
+  }, [])
+  return open
+}
+
 function focusables(root: HTMLElement | null): HTMLElement[] {
   if (!root) return []
   const list = Array.from(root.querySelectorAll<HTMLElement>(FOCUSABLE))
@@ -285,6 +322,7 @@ function Layer({ view, el, onSkip, prominentSkip = false }: { view: TourView; el
   const reduced = usePrefersReducedMotion()
   const box = useBox(el)
   const viewport = useViewport()
+  const keyboardOpen = useKeyboardOpen()
   const titleId = useId()
   const bodyId = useId()
   const [popSize, setPopSize] = useState<{ width: number; height: number } | null>(null)
@@ -394,7 +432,7 @@ function Layer({ view, el, onSkip, prominentSkip = false }: { view: TourView; el
         zIndex: Z + 1,
         // Aviso no bloqueante: arriba al centro, sin tapar los controles de abajo
         ...(blocking
-          ? { left: placement?.left ?? 0, top: placement?.top ?? 0, visibility: placement ? "visible" : "hidden" }
+          ? { left: placement?.left ?? 0, top: placement?.top ?? 0, visibility: placement && !keyboardOpen ? "visible" : "hidden" }
           : { left: "50%", top: 8, marginLeft: "calc(min(22rem, 100vw - 1.5rem) / -2)" }),
       }}
     >
