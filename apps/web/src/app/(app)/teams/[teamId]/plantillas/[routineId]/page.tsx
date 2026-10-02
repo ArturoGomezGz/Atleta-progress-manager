@@ -253,7 +253,9 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   // única salida es el botón "Salir" de la cabecera.
   useFullscreenWhileMounted(true)
 
-  const { data: routineData, refetch } = trpc.routines.get.useQuery({ id: routineId })
+  const { data: routineData, refetch, isError: routineError } = trpc.routines.get.useQuery({ id: routineId }, { retry: false })
+  // Una plantilla de evaluación sin el flag no existe para este usuario
+  useEffect(() => { if (routineError) router.replace(`/teams/${teamId}/plantillas`) }, [routineError, router, teamId])
   const { onEntered, showContent, showSkeleton } = useRevealAfterEnter(routineData !== undefined)
   const { data: catalog }              = trpc.exercises.list.useQuery({ teamId })
   const updateContent                  = trpc.routines.updateContent.useMutation({ onSuccess: () => refetch() })

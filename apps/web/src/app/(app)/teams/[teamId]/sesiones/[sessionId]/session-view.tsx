@@ -2,6 +2,7 @@
 
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
+import { useFeature } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
@@ -18,7 +19,7 @@ import {
   XIcon,
 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 // ─── Status config ─────────────────────────────────────────────────────────────
@@ -36,8 +37,12 @@ export function SessionView({ sessionId }: Props) {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<"complete" | "cancel" | null>(null)
   const router = useRouter()
+  const { teamId } = useParams<{ teamId: string }>()
+  const hasEvaluation = useFeature("evaluation")
 
-  const { data: session, refetch: refetchSession } = trpc.sessions.get.useQuery({ id: sessionId }, { refetchInterval: 4000 })
+  const { data: session, refetch: refetchSession, isError } = trpc.sessions.get.useQuery({ id: sessionId }, { refetchInterval: 4000, retry: false })
+  // Una sesión de evaluación sin el flag no existe para este usuario
+  useEffect(() => { if (isError) router.replace(`/teams/${teamId}/rutinas`) }, [isError, router, teamId])
   const completeSession  = trpc.sessions.complete.useMutation({ onSuccess: () => { setConfirming(null); if (session) router.push(`/teams/${session.teamId}/rutinas`) } })
   const cancelSession    = trpc.sessions.cancel.useMutation({ onSuccess: () => { refetchSession(); setConfirming(null) } })
   const activateSession  = trpc.sessions.activate.useMutation({ onSuccess: () => refetchSession() })
@@ -49,7 +54,7 @@ export function SessionView({ sessionId }: Props) {
   const statusCfg    = STATUS_CONFIG[session.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.active
   const isActive     = session.status === "active"
   const isScheduled  = session.status === "scheduled"
-  const canRecord    = isActive && session.routineCategory === "evaluation"
+  const canRecord    = isActive && hasEvaluation && session.routineCategory === "evaluation"
   const backHref     = `/teams/${session.teamId}/rutinas`
 
   const activeAthleteId = selectedAthleteId ?? session.athletes.find((a) => a.status === "active")?.athleteId ?? null

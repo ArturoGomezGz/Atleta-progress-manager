@@ -1,6 +1,7 @@
 "use client"
 
 import { PageTransition } from "@/components/page-transition"
+import { useFeature } from "@/lib/features"
 import { markBackNavigation } from "@/lib/page-transition"
 import { getRoutineTypeConfig, type RoutineCategory } from "@/lib/routine-types"
 import { trpc } from "@/lib/trpc/client"
@@ -16,6 +17,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
   const [name, setName]         = useState("")
   const [category, setCategory] = useState<RoutineCategory>("training")
   const nameInputRef = useRef<HTMLInputElement>(null)
+  const hasEvaluation = useFeature("evaluation")
 
   const createRoutine = trpc.routines.create.useMutation({
     onSuccess: (r) => router.push(`/teams/${teamId}/plantillas/${r.id}`),
@@ -29,7 +31,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    createRoutine.mutate({ teamId, name: name.trim().toLowerCase(), category })
+    createRoutine.mutate({ teamId, name: name.trim().toLowerCase(), category: hasEvaluation ? category : "training" })
   }
 
   return (
@@ -68,7 +70,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
             />
           </div>
 
-          <div className="space-y-1.5">
+          {hasEvaluation && <div className="space-y-1.5">
             <p className="text-sm font-semibold">Tipo</p>
             <div className="flex gap-2">
               {(["training", "evaluation"] as RoutineCategory[]).map((cat) => {
@@ -91,7 +93,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
                 )
               })}
             </div>
-          </div>
+          </div>}
 
           <div className="flex gap-2 justify-end pt-1">
             <button

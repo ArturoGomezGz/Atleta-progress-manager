@@ -450,6 +450,7 @@ Resultado:
 | Bucle de tools (`search_exercises`, `propose_new_exercise`, `submit_routine`), validación y conversión a `RoutineContent` | `apps/api/src/services/ai-routines.ts` |
 | Endpoints `routines.aiAvailable` y `routines.generateWithAI` | `apps/api/src/routers/routines.ts` |
 | Acceso experimental por allowlist | `apps/api/src/services/feature-access.ts` |
+| Flag por usuario `ai_generator` (`FEATURE_AI_GENERATOR_USERS`) | `apps/api/src/lib/features.ts`, ver `docs/feature-flags.md` |
 | Formulario y panel en el editor de plantillas | `apps/web/src/components/ai-routine-generator.tsx`, `apps/web/src/app/(app)/teams/[teamId]/plantillas/[routineId]/page.tsx` |
 
 Diferencias con esta guía:

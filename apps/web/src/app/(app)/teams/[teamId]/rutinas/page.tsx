@@ -2,6 +2,7 @@
 
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import type { ZoneProfile } from "@/lib/body-zones"
+import { useFeature } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { CheckIcon, ChevronDownIcon, Link2Icon, PlusIcon, SearchIcon, UserIcon, XIcon } from "lucide-react"
@@ -282,6 +283,7 @@ function AthleteFilter({
 }
 
 function SesionesContent({ teamId }: { teamId: string }) {
+  const hasEvaluation = useFeature("evaluation")
   const [histFilter, setHistFilter] = useState<"all" | "evaluation" | "training">("all")
   const [athleteFilter, setAthleteFilter] = useState<string | null>(null)
 
@@ -303,7 +305,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
   }, [athleteFilter, members, athletes])
 
   const athleteId = athleteFilter ?? undefined
-  const { data: evalSessions }     = trpc.sessions.list.useQuery({ teamId, category: "evaluation", athleteId })
+  const { data: evalSessions }     = trpc.sessions.list.useQuery({ teamId, category: "evaluation", athleteId }, { enabled: hasEvaluation })
   const { data: trainingSessions } = trpc.sessions.list.useQuery({ teamId, category: "training", athleteId })
   // Un enlace sin revocar es, para el entrenador, una sesión abierta más.
   // Un enlace no pertenece a ningún atleta, así que al filtrar por uno se oculta.
@@ -401,7 +403,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
       <section className="space-y-3">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-widest">Historial</p>
 
-        <div className="flex gap-1">
+        {hasEvaluation && <div className="flex gap-1">
           {(["all", "training", "evaluation"] as const).map((f) => (
             <button
               key={f}
@@ -414,7 +416,7 @@ function SesionesContent({ teamId }: { teamId: string }) {
               {f === "all" ? "Todas" : f === "training" ? "Entrenamiento" : "Evaluación"}
             </button>
           ))}
-        </div>
+        </div>}
 
         <div className="space-y-2">
           {history.slice(0, 20).map((s) => (

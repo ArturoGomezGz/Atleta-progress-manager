@@ -2,6 +2,7 @@
 
 import { useRevealAfterEnter } from "@/components/page-transition"
 import { afterNextPaint } from "@/lib/after-paint"
+import { useFeature } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
@@ -181,6 +182,8 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const category = searchParams.get("category") as "evaluation" | "training" | null
+  const hasEvaluation = useFeature("evaluation")
+  const hasShareLinks = useFeature("share_links")
 
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null)
   const [selectedAthleteIds, setSelectedAthleteIds] = useState<Set<string>>(new Set())
@@ -201,8 +204,10 @@ function NewSessionForm({ teamId }: { teamId: string }) {
 
   const athletes = members?.filter((m) => m.role === "athlete" || m.selfAthlete) ?? []
 
+  // Sin el flag `evaluation` el filtro por tipo no aplica (la API solo devuelve entrenamiento)
+  const activeTypeFilter = hasEvaluation ? typeFilter : "all"
   const filtered = (routines ?? []).filter((r) => {
-    if (typeFilter !== "all" && r.category !== typeFilter) return false
+    if (activeTypeFilter !== "all" && r.category !== activeTypeFilter) return false
     if (search && !r.name.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -496,7 +501,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
             })}
 
             {/* Invitado: no ocupa lugar en el equipo, entrena con el enlace */}
-            <button
+            {hasShareLinks && <button
               type="button"
               onClick={() => setGuestSelected((v) => !v)}
               className={cn(
@@ -519,7 +524,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
                 <span className="block text-sm">Invitado</span>
                 <span className="block text-xs text-muted-foreground">Cualquiera con el enlace, sin cuenta</span>
               </span>
-            </button>
+            </button>}
           </div>
 
           {guestSelected && (

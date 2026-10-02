@@ -3,6 +3,7 @@
 import { PageTransition, useRevealAfterEnter, type SlideDirection } from "@/components/page-transition"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import { consumeBackNavigation } from "@/lib/page-transition"
+import { useFeature } from "@/lib/features"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -20,6 +21,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
   const { teamId } = use(params)
   const router = useRouter()
 
+  const hasEvaluation = useFeature("evaluation")
   const [filter, setFilter]       = useState<Filter>("all")
   const [search, setSearch]       = useState("")
   const [deleting, setDeleting]   = useState<{ id: string; name: string } | null>(null)
@@ -76,7 +78,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
             className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
           />
         </div>
-        <div className="flex gap-1">
+        {hasEvaluation && <div className="flex gap-1">
           {(["all", "training", "evaluation"] as Filter[]).map((f) => (
             <button
               key={f}
@@ -89,7 +91,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
               {f === "all" ? "Todas" : f === "training" ? "Entrenamiento" : "Evaluación"}
             </button>
           ))}
-        </div>
+        </div>}
       </div>
 
       {/* List */}
