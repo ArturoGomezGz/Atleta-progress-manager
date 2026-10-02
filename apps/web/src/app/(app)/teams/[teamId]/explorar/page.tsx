@@ -83,7 +83,7 @@ export default function ExplorarPage() {
         </div>
       ) : exercises.length === 0 ? (
         <p className="text-sm text-muted-foreground text-center py-12">
-          No hay ejercicios públicos de otros entrenadores. Los tuyos están en “Mis ejercicios”.
+          No hay ejercicios públicos de otros entrenadores. Los tuyos están en “Ejercicios”.
         </p>
       ) : (
         <>

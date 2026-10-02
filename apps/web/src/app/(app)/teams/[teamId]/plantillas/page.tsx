@@ -1,5 +1,6 @@
 "use client"
 
+import { EntrenamientosHeader } from "@/components/entrenamientos-header"
 import { PageTransition, useRevealAfterEnter, type SlideDirection } from "@/components/page-transition"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import { consumeBackNavigation } from "@/lib/page-transition"
@@ -51,21 +52,19 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
     <PageTransition direction={direction} onEntered={onEntered}>
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
-        <h1
-          className="text-2xl font-bold tracking-wider uppercase"
-          style={{ fontFamily: "var(--font-barlow-condensed)" }}
-        >
-          Plantillas
-        </h1>
-        <button
-          onClick={goToCreate}
-          className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3.5 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
-        >
-          <PlusIcon className="w-4 h-4" />
-          Nueva
-        </button>
-      </div>
+      <EntrenamientosHeader
+        teamId={teamId}
+        active="mis-entrenamientos"
+        action={
+          <button
+            onClick={goToCreate}
+            className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-3.5 py-2 rounded-xl font-medium hover:bg-primary/90 transition-colors cursor-pointer shrink-0"
+          >
+            <PlusIcon className="w-4 h-4" />
+            Crear entrenamiento
+          </button>
+        }
+      />
 
       {/* Search + filter */}
       <div className="flex flex-col sm:flex-row gap-2">
@@ -74,7 +73,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
           <input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Buscar plantilla..."
+            placeholder="Buscar entrenamiento..."
             className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
           />
         </div>
@@ -139,11 +138,17 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
                   {new Date(r.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
                 </span>
               </Link>
+              <Link
+                href={`/teams/${teamId}/sesiones/new?routineId=${r.id}`}
+                className="text-xs font-medium px-3 py-1.5 mr-1 border border-border rounded-lg text-foreground hover:border-primary/40 hover:text-primary transition-colors cursor-pointer shrink-0"
+              >
+                Asignar
+              </Link>
               <div className="flex items-center gap-1 pr-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
                   onClick={() => duplicateRoutine.mutate({ id: r.id })}
                   disabled={duplicateRoutine.isPending}
-                  title="Duplicar plantilla"
+                  title="Duplicar entrenamiento"
                   className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer disabled:opacity-50"
                 >
                   <CopyIcon className="w-3.5 h-3.5" />
@@ -162,7 +167,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
         {filtered.length === 0 && (
           <div className="flex flex-col items-center justify-center py-16 border border-dashed border-border rounded-xl gap-3 text-center">
             <p className="text-sm text-muted-foreground">
-              {search || filter !== "all" ? "Sin resultados. Prueba con otro filtro." : "Sin plantillas. Crea la primera."}
+              {search || filter !== "all" ? "Sin resultados. Prueba con otro filtro." : "Sin entrenamientos. Crea el primero."}
             </p>
             {!search && filter === "all" && (
               <button
@@ -170,7 +175,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
                 className="flex items-center gap-1.5 text-sm bg-primary text-primary-foreground px-4 py-2 rounded-lg font-medium hover:bg-primary/90 transition-colors cursor-pointer"
               >
                 <PlusIcon className="w-4 h-4" />
-                Nueva plantilla
+                Crear entrenamiento
               </button>
             )}
           </div>

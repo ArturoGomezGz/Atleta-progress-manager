@@ -46,7 +46,7 @@ function SessionCard({ teamId, session }: { teamId: string; session: Session }) 
       <ZoneBar profile={session.zoneProfile} className="h-1 rounded-none" />
       <div className="p-4 sm:p-5">
         <div className="space-y-1">
-          <p className="text-lg font-semibold leading-snug">{sc(session.routineName ?? "Rutina")}</p>
+          <p className="text-lg font-semibold leading-snug">{sc(session.routineName ?? "Entrenamiento")}</p>
           <p className="text-base text-muted-foreground flex items-center gap-1.5">
             <CalendarIcon className="w-4 h-4 shrink-0" />
             {dateLabel(session)}
@@ -98,6 +98,11 @@ export default function MisRutinasPage() {
   const active    = sessions?.filter((s) => s.status === "active") ?? []
   const scheduled = (sessions?.filter((s) => s.status === "scheduled" && s.routineCategory === "training") ?? [])
     .sort((a, b) => (a.scheduledDate ?? "").localeCompare(b.scheduledDate ?? ""))
+  // Fecha local (no UTC) para que "hoy" coincida con lo que ve la persona
+  const now = new Date()
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+  const forToday = scheduled.filter((s) => (s.scheduledDate ?? todayStr) <= todayStr)
+  const upcoming = scheduled.filter((s) => (s.scheduledDate ?? todayStr) > todayStr)
   const past      = sessions?.filter((s) => s.status === "completed" || s.status === "cancelled") ?? []
 
   if (isLoading) {
@@ -112,8 +117,8 @@ export default function MisRutinasPage() {
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold">Mis rutinas</h1>
-        <p className="text-base text-muted-foreground">Toca una rutina para ver los ejercicios y sus videos.</p>
+        <h1 className="text-3xl font-bold">Hoy</h1>
+        <p className="text-base text-muted-foreground">Toca un entrenamiento para ver los ejercicios y sus videos.</p>
       </div>
 
       {active.length > 0 && (
@@ -122,17 +127,23 @@ export default function MisRutinasPage() {
         </Section>
       )}
 
-      {scheduled.length > 0 && (
-        <Section title="Para hacer">
-          {scheduled.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+      {forToday.length > 0 && (
+        <Section title="Para hoy">
+          {forToday.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
+        </Section>
+      )}
+
+      {upcoming.length > 0 && (
+        <Section title="Próximos">
+          {upcoming.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} />)}
         </Section>
       )}
 
       {scheduled.length === 0 && active.length === 0 && (
-        <Section title="Para hacer">
+        <Section title="Para hoy">
           <div className="flex flex-col items-center justify-center py-16 gap-4 text-center border border-dashed border-border rounded-2xl px-6">
             <DumbbellIcon className="w-12 h-12 text-muted-foreground/50" />
-            <p className="text-lg">No tienes rutinas pendientes.</p>
+            <p className="text-lg">No tienes entrenamientos pendientes.</p>
             <Link
               href={`/teams/${teamId}/explorar`}
               className="inline-flex items-center gap-2 mt-1 px-4 py-2.5 rounded-xl bg-primary text-primary-foreground text-base font-semibold hover:bg-primary/90 transition-colors"

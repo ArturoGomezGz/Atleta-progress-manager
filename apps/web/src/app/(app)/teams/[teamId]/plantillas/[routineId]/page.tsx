@@ -500,7 +500,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
             onKeyDown={(e) => { if (e.key === "Enter") e.currentTarget.blur() }}
             className="flex-1 min-w-0 text-base font-bold tracking-wide uppercase bg-transparent outline-none border-b border-transparent hover:border-muted-foreground/30 focus:border-primary/60 transition-colors truncate cursor-text"
             style={{ fontFamily: "var(--font-barlow-condensed)" }}
-            aria-label="Nombre de la plantilla"
+            aria-label="Nombre del entrenamiento"
           />
           )}
         </div>
@@ -546,7 +546,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           </div>
           {aiResult.createdExercises.length > 0 && (
             <p className="text-[11px] text-muted-foreground pl-6">
-              Ejercicios nuevos añadidos al catálogo del equipo, sin video: {aiResult.createdExercises.map((e) => e.name).join(", ")}. Revísalos en Mis ejercicios.
+              Ejercicios nuevos añadidos al catálogo del equipo, sin video: {aiResult.createdExercises.map((e) => e.name).join(", ")}. Revísalos en Ejercicios.
             </p>
           )}
           <p className="text-[11px] text-muted-foreground pl-6">Es una propuesta: ajústala a tu gusto y, al salir, elige <strong>Guardar</strong> para conservarla.</p>
@@ -615,7 +615,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
           {content.items.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 border border-dashed border-border rounded-xl gap-2 text-center px-6">
-              <p className="text-sm font-medium">Esta plantilla está vacía</p>
+              <p className="text-sm font-medium">Este entrenamiento está vacío</p>
               <p className="text-xs text-muted-foreground">Agrega ejercicios desde el catálogo. Cada uno trae su video de YouTube.</p>
             </div>
           )}
@@ -786,7 +786,7 @@ function AddCircuitPlaceholder({ onClick }: { onClick: () => void }) {
 function RoutineStartMarker() {
   return (
     <div className="flex flex-col items-center gap-1 py-1 text-muted-foreground/50">
-      <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Inicio de la rutina</span>
+      <span className="text-[10px] font-semibold uppercase tracking-[0.2em]">Inicio del entrenamiento</span>
       <ChevronDownIcon className="w-4 h-4" />
     </div>
   )
@@ -1048,7 +1048,7 @@ function ExerciseCard({
           aria-hidden="true"
         />
       )}
-      <CardCornerActions onRemove={onRemove} confirmMessage={`¿Eliminar "${info.name}" de la rutina?`} />
+      <CardCornerActions onRemove={onRemove} confirmMessage={`¿Eliminar "${info.name}" del entrenamiento?`} />
       <div className="flex flex-wrap items-center gap-3 pl-3 pr-14 py-2.5 min-h-[84px] bg-muted/10">
         <span className="w-6 h-6 rounded-full bg-primary/15 border border-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0">
           {label}

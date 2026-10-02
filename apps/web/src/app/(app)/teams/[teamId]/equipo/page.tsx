@@ -457,7 +457,7 @@ function SelfTrainingSection({
       <div className="space-y-0.5">
         <p className="text-sm font-medium">Auto-entrenamiento</p>
         <p className="text-xs text-muted-foreground max-w-sm">
-          Aparecerás como atleta en tus propias sesiones sin cambiar tu rol de entrenador del equipo.
+          Aparecerás como atleta en tus propios entrenamientos sin cambiar tu rol de entrenador del equipo.
         </p>
       </div>
       <button
@@ -623,7 +623,7 @@ function GruposSection({ teamId, isCoach }: { teamId: string; isCoach: boolean }
 
         {groups?.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8 border rounded-lg">
-            Sin grupos todavía.{isCoach ? " Crea uno para asignar rutinas a varios atletas a la vez." : ""}
+            Sin grupos todavía.{isCoach ? " Crea uno para asignar entrenamientos a varios atletas a la vez." : ""}
           </p>
         )}
       </div>

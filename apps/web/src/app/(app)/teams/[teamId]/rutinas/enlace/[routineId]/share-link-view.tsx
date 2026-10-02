@@ -50,7 +50,7 @@ export function ShareLinkView({ teamId, routineId }: { teamId: string; routineId
         <BackLink href={backHref} />
         <div className="border border-border rounded-2xl p-8 text-center space-y-2">
           <p className="text-base font-semibold">Este enlace ya no está activo</p>
-          <p className="text-sm text-muted-foreground">Genera uno nuevo desde la plantilla si quieres seguir compartiéndola.</p>
+          <p className="text-sm text-muted-foreground">Genera uno nuevo desde el entrenamiento si quieres seguir compartiéndola.</p>
         </div>
       </div>
     )
@@ -105,7 +105,7 @@ export function ShareLinkView({ teamId, routineId }: { teamId: string; routineId
         </div>
 
         <a
-          href={`https://wa.me/?text=${encodeURIComponent(`Te comparto esta rutina para entrenar: ${url}`)}`}
+          href={`https://wa.me/?text=${encodeURIComponent(`Te comparto este entrenamiento: ${url}`)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="w-full flex items-center justify-center gap-2 min-h-12 rounded-xl bg-primary text-primary-foreground font-semibold cursor-pointer"
@@ -195,7 +195,7 @@ function BackLink({ href }: { href: string }) {
       className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer w-fit"
     >
       <ChevronLeftIcon className="w-3.5 h-3.5" />
-      Sesiones
+      Entrenamientos
     </Link>
   )
 }

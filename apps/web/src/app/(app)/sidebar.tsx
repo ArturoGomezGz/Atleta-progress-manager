@@ -10,41 +10,31 @@ import { useEffect, useRef, useState } from "react"
 import { AccountMenu } from "./account-menu"
 import { cn } from "@/lib/utils"
 
-type SubNavItem = { key: string; label: string; sections: string[]; hrefSuffix: string }
-type NavItem = { key: string; label: string; icon: React.ElementType; hrefSuffix?: string; children?: SubNavItem[] }
+// `sections`: secciones de la URL en las que el ítem se marca activo (por defecto, la de su href)
+type NavItem = { key: string; label: string; icon: React.ElementType; hrefSuffix: string; sections?: string[] }
 
 const COACH_NAV_BASE: NavItem[] = [
-  { key: "equipo",      label: "Equipo",         icon: UsersIcon,    hrefSuffix: "equipo" },
-  {
-    key: "rutinas", label: "Rutinas", icon: CalendarIcon,
-    children: [
-      { key: "plantillas", label: "Plantillas", sections: ["plantillas"], hrefSuffix: "plantillas" },
-      { key: "sesiones",   label: "Sesiones",   sections: ["rutinas", "sesiones"], hrefSuffix: "rutinas" },
-    ],
-  },
-  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
-  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
-  { key: "explorar",    label: "Explorar",       icon: CompassIcon,  hrefSuffix: "explorar" },
+  { key: "equipo",         label: "Equipo",         icon: UsersIcon,    hrefSuffix: "equipo" },
+  // Una sola entrada: las pestañas "Mis entrenamientos" y "Asignados" viven dentro de la vista
+  { key: "entrenamientos", label: "Entrenamientos", icon: CalendarIcon, hrefSuffix: "plantillas", sections: ["plantillas", "rutinas", "sesiones"] },
+  { key: "ejercicios",     label: "Ejercicios",     icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",       label: "Explorar",       icon: CompassIcon,  hrefSuffix: "explorar" },
+  { key: "progreso",       label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
 ]
 
-// Coach con "auto-entrenamiento" activo en el equipo actual: sus propias
-// sesiones se agregan como un tercer sub-ítem de "Rutinas", junto a
-// Plantillas y Sesiones, en vez de vivir como acceso aparte.
-const MIS_RUTINAS_CHILD: SubNavItem = { key: "mis-rutinas", label: "Mis rutinas", sections: ["mis-rutinas"], hrefSuffix: "mis-rutinas" }
+// Coach con "auto-entrenamiento" activo en el equipo actual: su propio "Hoy"
+// aparece como entrada extra, justo después de "Entrenamientos".
+const HOY_ITEM: NavItem = { key: "hoy", label: "Hoy", icon: ClipboardListIcon, hrefSuffix: "mis-rutinas" }
 
 function withSelfTraining(nav: NavItem[]): NavItem[] {
-  return nav.map((item) =>
-    item.key === "rutinas" && item.children
-      ? { ...item, children: [...item.children, MIS_RUTINAS_CHILD] }
-      : item,
-  )
+  return nav.flatMap((item) => (item.key === "entrenamientos" ? [item, HOY_ITEM] : [item]))
 }
 
 const ATHLETE_NAV: NavItem[] = [
-  { key: "mis-rutinas", label: "Mis rutinas",   icon: CalendarIcon, hrefSuffix: "mis-rutinas" },
-  { key: "progreso",    label: "Progreso",       icon: ChartBarIcon, hrefSuffix: "progreso" },
-  { key: "ejercicios",  label: "Mis ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
-  { key: "explorar",    label: "Explorar",        icon: CompassIcon,  hrefSuffix: "explorar" },
+  { key: "hoy",        label: "Hoy",        icon: CalendarIcon, hrefSuffix: "mis-rutinas" },
+  { key: "ejercicios", label: "Ejercicios", icon: ListIcon,     hrefSuffix: "ejercicios" },
+  { key: "explorar",   label: "Explorar",   icon: CompassIcon,  hrefSuffix: "explorar" },
+  { key: "progreso",   label: "Progreso",   icon: ChartBarIcon, hrefSuffix: "progreso" },
 ]
 
 function extractTeamId(pathname: string): string | null {
@@ -71,63 +61,6 @@ function TeamLogo({ name, logoDataUrl }: { name: string; logoDataUrl?: string | 
   return (
     <div className="w-6 h-6 rounded-md bg-primary/20 text-primary text-[10px] font-bold flex items-center justify-center shrink-0 tracking-wide">
       {initials}
-    </div>
-  )
-}
-
-function NavGroup({
-  item, currentSection, effectiveTeamId, disabled,
-}: {
-  item: NavItem & { children: SubNavItem[] }
-  currentSection: string | null
-  effectiveTeamId: string | null
-  disabled: boolean
-}) {
-  const groupActive = item.children.some((c) => c.sections.includes(currentSection ?? ""))
-  const [open, setOpen] = useState(groupActive)
-  const Icon = item.icon
-
-  return (
-    <div>
-      <button
-        onClick={() => setOpen((v) => !v)}
-        className={cn(
-          "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-all duration-200 cursor-pointer",
-          groupActive ? "text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-        )}
-      >
-        <Icon className={cn("w-4 h-4 shrink-0", groupActive && "text-primary")} />
-        <span className="flex-1 text-left">{item.label}</span>
-        <ChevronDownIcon className={cn("w-3.5 h-3.5 shrink-0 transition-transform duration-200", open ? "rotate-180" : "")} />
-      </button>
-
-      {/* grid-rows animación: 0fr → 1fr sin medir altura con JS */}
-      <div className={cn("grid transition-[grid-template-rows] duration-200 ease-out", open ? "grid-rows-[1fr]" : "grid-rows-[0fr]")}>
-        <div className="overflow-hidden">
-          <div className="ml-3 pl-4 border-l border-border space-y-0.5 mt-0.5 pb-0.5">
-            {item.children.map((child) => {
-              const childHref   = effectiveTeamId ? `/teams/${effectiveTeamId}/${child.hrefSuffix}` : "#"
-              const childActive = child.sections.includes(currentSection ?? "")
-              return (
-                <Link
-                  key={child.key}
-                  href={childHref}
-                  aria-disabled={disabled}
-                  onClick={(e) => disabled && e.preventDefault()}
-                  className={cn(
-                    "relative flex items-center px-3 py-2 rounded-lg text-sm transition-colors duration-150",
-                    childActive ? "bg-primary/10 text-primary font-semibold" : "text-muted-foreground hover:text-foreground hover:bg-muted/60",
-                    disabled ? "opacity-25 cursor-default pointer-events-none" : "cursor-pointer",
-                  )}
-                >
-                  {childActive && <span className="absolute left-0 inset-y-2 w-0.5 bg-primary rounded-full" />}
-                  {child.label}
-                </Link>
-              )
-            })}
-          </div>
-        </div>
-      </div>
     </div>
   )
 }
@@ -275,22 +208,8 @@ export function Sidebar() {
           const disabled = !effectiveTeamId
           const Icon = item.icon
 
-          // Collapsible group with sub-items
-          if (item.children) {
-            return (
-              <NavGroup
-                key={item.key}
-                item={item as NavItem & { children: SubNavItem[] }}
-                currentSection={currentSection}
-                effectiveTeamId={effectiveTeamId}
-                disabled={disabled}
-              />
-            )
-          }
-
-          // Simple item
           const href = effectiveTeamId ? `/teams/${effectiveTeamId}/${item.hrefSuffix}` : "#"
-          const isActive = currentSection === item.hrefSuffix
+          const isActive = (item.sections ?? [item.hrefSuffix]).includes(currentSection ?? "")
           return (
             <Link
               key={item.key}

@@ -52,7 +52,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
   const recordSet = trpc.sessions.recordSet.useMutation()
   const completeSession = trpc.sessions.completeMySession.useMutation()
 
-  const back = { href: `/teams/${teamId}/mis-rutinas`, label: "Mis rutinas" }
+  const back = { href: `/teams/${teamId}/mis-rutinas`, label: "Hoy" }
 
   if (isLoading || !progress) {
     return status === "active" ? <WorkoutRunnerSkeleton withSidebar={false} /> : <RoutinePreviewSkeleton />
@@ -99,7 +99,7 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
               href={back.href}
               className="w-full max-w-sm flex items-center justify-center gap-2 min-h-16 rounded-2xl bg-primary text-primary-foreground font-bold text-xl"
             >
-              <ArrowLeftIcon className="w-6 h-6" /> Volver a mis rutinas
+              <ArrowLeftIcon className="w-6 h-6" /> Volver a Hoy
             </Link>
           </WorkoutCelebration>
         )}

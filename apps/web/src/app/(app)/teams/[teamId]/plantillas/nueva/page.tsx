@@ -53,7 +53,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
             className="text-2xl font-bold tracking-wider uppercase"
             style={{ fontFamily: "var(--font-barlow-condensed)" }}
           >
-            Nueva plantilla
+            Nuevo entrenamiento
           </h1>
         </div>
 
@@ -65,7 +65,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
               ref={nameInputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nombre de la plantilla"
+              placeholder="Nombre del entrenamiento"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
             />
           </div>

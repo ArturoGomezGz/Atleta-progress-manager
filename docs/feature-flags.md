@@ -8,7 +8,7 @@ Formato: lista separada por comas de **correos o ids de usuario** (sin distingui
 
 | Variable | Clave | Qué controla |
 |---|---|---|
-| `FEATURE_EVALUATION_USERS` | `evaluation` | Plantillas, sesiones e historial de categoría "evaluación" y su registro de series. Sin el flag solo existe "entrenamiento". |
+| `FEATURE_EVALUATION_USERS` | `evaluation` | Entrenamientos, asignados e historial de categoría "evaluación" y su registro de series. Sin el flag solo existe "entrenamiento". |
 | `FEATURE_PROGRESS_USERS` | `progress` | Vista Progreso (PRs/RM) y su entrada del menú. Requiere además `evaluation`. |
 | `FEATURE_AI_GENERATOR_USERS` | `ai_generator` | Generador de rutinas con IA. |
 | `FEATURE_TEAM_APPEARANCE_USERS` | `team_appearance` | Edición de la apariencia del equipo (logo y color). |

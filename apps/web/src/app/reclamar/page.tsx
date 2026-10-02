@@ -48,7 +48,7 @@ export default function ClaimPage() {
           <DumbbellIcon className="w-12 h-12 text-muted-foreground mx-auto" />
           <p className="text-lg font-semibold">No encontramos tu entrenamiento</p>
           <p className="text-base text-muted-foreground">
-            Solo podemos recuperarlo desde el mismo navegador donde hiciste la rutina.
+            Solo podemos recuperarlo desde el mismo navegador donde hiciste el entrenamiento.
             Tu cuenta ya está lista: puedes empezar desde aquí.
           </p>
           <Link href="/dashboard" className="inline-block text-base text-primary font-medium">Ir a Atleta</Link>
@@ -78,7 +78,7 @@ export default function ClaimPage() {
           <p className="text-xl font-bold">¡Tu entrenamiento está guardado!</p>
           <p className="text-base text-muted-foreground">
             {joinedTeam
-              ? `Ya formas parte de ${teamName}. Tu entrenador podrá asignarte rutinas y seguir tu progreso.`
+              ? `Ya formas parte de ${teamName}. Tu entrenador podrá asignarte entrenamientos y seguir tu progreso.`
               : personalTeam
                 ? "Lo guardamos en tu espacio personal. Cuando tu entrenador te invite a su equipo, podrás entrenar con él."
                 : `Lo guardamos en ${teamName ?? "tu equipo"}.`}
@@ -87,7 +87,7 @@ export default function ClaimPage() {
             href={`/teams/${teamId}/mis-rutinas`}
             className="w-full inline-flex items-center justify-center min-h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg"
           >
-            Ver mis rutinas
+            Ir a Hoy
           </Link>
         </Card>
       </Screen>

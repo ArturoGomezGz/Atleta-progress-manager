@@ -10,12 +10,12 @@ export default function DashboardPage() {
 
   useEffect(() => {
     if (!teams || teams.length === 0) return
-    // Si el usuario entrena en algún equipo, lo primero que necesita ver es su rutina
+    // Si el usuario entrena en algún equipo, lo primero que necesita ver es su "Hoy"
     const athleteTeam = teams.find((t) => t.role === "athlete")
     if (athleteTeam && !teams.some((t) => t.role === "coach")) {
       router.replace(`/teams/${athleteTeam.team.id}/mis-rutinas`)
     } else {
-      router.replace(`/teams/${teams[0].team.id}/sesiones`)
+      router.replace(`/teams/${teams[0].team.id}/plantillas`)
     }
   }, [teams, router])
 

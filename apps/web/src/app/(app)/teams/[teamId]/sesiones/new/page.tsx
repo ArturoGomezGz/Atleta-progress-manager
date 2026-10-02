@@ -134,7 +134,7 @@ function TemplatePreviewSheet({
           ))}
 
           {showContent && exercises.length === 0 && (
-            <p className="text-sm text-muted-foreground text-center py-6">Esta plantilla no tiene ejercicios aún.</p>
+            <p className="text-sm text-muted-foreground text-center py-6">Este entrenamiento no tiene ejercicios aún.</p>
           )}
 
           {exercises.map((ex, idx) => {
@@ -168,7 +168,7 @@ function TemplatePreviewSheet({
             onClick={handleSelect}
             className="w-full bg-primary text-primary-foreground py-3 rounded-xl text-sm font-semibold hover:bg-primary/90 transition-colors cursor-pointer"
           >
-            Seleccionar esta plantilla
+            Seleccionar este entrenamiento
           </button>
         </div>
       </div>
@@ -182,10 +182,14 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const router = useRouter()
   const searchParams = useSearchParams()
   const category = searchParams.get("category") as "evaluation" | "training" | null
+  // Desde "Asignar" en la lista de entrenamientos llega ya elegido
+  const preselectedId = searchParams.get("routineId")
   const hasEvaluation = useFeature("evaluation")
   const hasShareLinks = useFeature("share_links")
 
-  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(null)
+  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(preselectedId)
+  // Con el entrenamiento preelegido se oculta el paso de elegirlo, salvo que se pida cambiarlo
+  const [changingRoutine, setChangingRoutine] = useState(false)
   const [selectedAthleteIds, setSelectedAthleteIds] = useState<Set<string>>(new Set())
   const [startMode, setStartMode] = useState<"now" | "scheduled">("now")
   const [scheduledDate, setScheduledDate] = useState(tomorrow)
@@ -213,6 +217,12 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   })
 
   const selectedRoutine = routines?.find((r) => r.id === selectedRoutineId)
+  const showRoutinePicker = !preselectedId || !selectedRoutine || changingRoutine
+
+  // Un routineId inválido o de otro equipo no debe quedar seleccionado
+  useEffect(() => {
+    if (routines && selectedRoutineId && !selectedRoutine) setSelectedRoutineId(null)
+  }, [routines, selectedRoutineId, selectedRoutine])
 
   function toggleAthlete(id: string) {
     setSelectedAthleteIds((prev) => {
@@ -265,11 +275,11 @@ function NewSessionForm({ teamId }: { teamId: string }) {
 
   // Una rutina de evaluación la registra el coach en persona, así que no se comparte
   const guestBlockedReason = !selectedRoutine
-    ? "Elige primero una plantilla."
+    ? "Elige primero un entrenamiento."
     : selectedRoutine.category !== "training"
-      ? "Solo puedes compartir plantillas de entrenamiento: las de evaluación las registras tú en persona."
+      ? "Solo puedes compartir entrenamientos, no evaluaciones: las evaluaciones las registras tú en persona."
       : (selectedRoutine.content as RoutineContent).items.length === 0
-        ? "Esta plantilla todavía no tiene ejercicios."
+        ? "Este entrenamiento todavía no tiene ejercicios."
         : null
 
   const canSubmit =
@@ -286,24 +296,39 @@ function NewSessionForm({ teamId }: { teamId: string }) {
       {/* Header */}
       <div>
         <Link
-          href={`/teams/${teamId}/rutinas`}
+          href={`/teams/${teamId}/${preselectedId ? "plantillas" : "rutinas"}`}
           className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors mb-3"
         >
           <ChevronLeftIcon className="w-3.5 h-3.5" />
-          Sesiones
+          Entrenamientos
         </Link>
         <h1
           className="text-2xl font-bold tracking-wider uppercase"
           style={{ fontFamily: "var(--font-barlow-condensed)" }}
         >
-          Nueva sesión
+          Asignar entrenamiento
         </h1>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-7">
-        {/* ── Plantilla ── */}
+        {/* ── Entrenamiento ── */}
         <section className="space-y-2">
-          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Plantilla</h2>
+          <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Entrenamiento</h2>
+
+          {!showRoutinePicker && selectedRoutine && (
+            <div className={cn("flex items-center gap-2 px-3 py-2.5 rounded-lg text-sm", getRoutineTypeConfig(selectedRoutine.category).bg)}>
+              <span className="font-medium text-foreground truncate">{sc(selectedRoutine.name)}</span>
+              <button
+                type="button"
+                onClick={() => setChangingRoutine(true)}
+                className="ml-auto text-xs text-muted-foreground hover:text-foreground cursor-pointer shrink-0"
+              >
+                Cambiar
+              </button>
+            </div>
+          )}
+
+          {showRoutinePicker && <>
 
           {/* Search */}
           <div className="relative">
@@ -311,7 +336,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar plantilla..."
+              placeholder="Buscar entrenamiento..."
               className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
             />
             {search && (
@@ -369,7 +394,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               {filtered.length === 0 && (
                 <div className="px-4 py-8 text-center">
                   <p className="text-sm text-muted-foreground">
-                    {search ? `Sin resultados para "${search}"` : "Sin plantillas disponibles."}
+                    {search ? `Sin resultados para "${search}"` : "Sin entrenamientos disponibles."}
                   </p>
                   {search && (
                     <button
@@ -416,7 +441,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
                       type="button"
                       onClick={() => setPreviewId(r.id)}
                       className="p-1 text-muted-foreground/50 hover:text-muted-foreground transition-colors cursor-pointer shrink-0"
-                      aria-label="Ver contenido de la plantilla"
+                      aria-label="Ver contenido del entrenamiento"
                     >
                       <InfoIcon className="w-3.5 h-3.5" />
                     </button>
@@ -446,7 +471,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
                 const Icon = cfg.icon
                 return <Icon className={cn("w-3.5 h-3.5 shrink-0", cfg.text)} />
               })()}
-              <span className="text-muted-foreground">Seleccionada:</span>
+              <span className="text-muted-foreground">Seleccionado:</span>
               <span className="font-medium text-foreground truncate">{sc(selectedRoutine.name)}</span>
               <button
                 type="button"
@@ -457,6 +482,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               </button>
             </div>
           )}
+          </>}
         </section>
 
         {/* ── Atletas ── */}
@@ -579,12 +605,12 @@ function NewSessionForm({ teamId }: { teamId: string }) {
           >
             {guestSelected && <Link2Icon className="w-4 h-4" />}
             {isSubmitting
-              ? "Creando..."
+              ? "Asignando..."
               : guestSelected && selectedAthleteIds.size === 0
               ? "Compartir enlace"
               : startMode === "scheduled"
-              ? "Programar sesión"
-              : "Comenzar sesión"}
+              ? "Asignar"
+              : "Asignar y comenzar"}
           </button>
           {submitError && (
             <p className="text-xs text-destructive text-center">{submitError}</p>

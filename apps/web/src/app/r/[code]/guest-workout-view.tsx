@@ -96,7 +96,7 @@ export function GuestWorkoutView({ code }: { code: string }) {
         intro={
           <>
             No necesitas cuenta para entrenar. Toca cada ejercicio para <strong>ver el video</strong> y
-            pulsa <strong>Empezar rutina</strong> cuando estés listo — al terminar podrás guardar tu progreso.
+            pulsa <strong>Empezar entrenamiento</strong> cuando estés listo — al terminar podrás guardar tu progreso.
           </>
         }
       >
@@ -131,13 +131,13 @@ export function GuestWorkoutView({ code }: { code: string }) {
             href="/dashboard"
             className="w-full flex items-center justify-center gap-2 min-h-14 rounded-2xl bg-primary text-primary-foreground font-bold text-lg"
           >
-            Ir a mis rutinas
+            Ir a Hoy
           </Link>
           <button
             onClick={restart}
             className="w-full flex items-center justify-center min-h-12 rounded-2xl border border-border text-base font-medium cursor-pointer"
           >
-            Hacer la rutina otra vez
+            Hacer el entrenamiento otra vez
           </button>
         </div>
       </div>
@@ -193,7 +193,7 @@ function SharedByHeader({
         </div>
       )}
       <div className="min-w-0">
-        <p className="text-sm text-muted-foreground">Rutina compartida por</p>
+        <p className="text-sm text-muted-foreground">Entrenamiento compartido por</p>
         <p className="text-lg font-semibold truncate">{coachName} · {teamName}</p>
       </div>
     </div>
@@ -216,7 +216,7 @@ function SignUpCta({ loggedIn, token }: { loggedIn: boolean; token: string }) {
             href={`/teams/${claim.data.teamId}/mis-rutinas`}
             className="w-full flex items-center justify-center gap-2 min-h-16 rounded-2xl bg-primary text-primary-foreground font-bold text-xl"
           >
-            Ver mis rutinas
+            Ir a Hoy
           </Link>
         </div>
       )
