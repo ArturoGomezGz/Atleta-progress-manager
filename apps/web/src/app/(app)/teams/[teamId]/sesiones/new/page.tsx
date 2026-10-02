@@ -186,6 +186,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const preselectedId = searchParams.get("routineId")
   const hasEvaluation = useFeature("evaluation")
   const hasShareLinks = useFeature("share_links")
+  const hasScheduling = useFeature("scheduled_sessions")
 
   const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(preselectedId)
   // Con el entrenamiento preelegido se oculta el paso de elegirlo, salvo que se pida cambiarlo
@@ -252,7 +253,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               routineId: selectedRoutineId,
               teamId,
               athleteIds: Array.from(selectedAthleteIds),
-              ...(startMode === "scheduled" ? { scheduledDate } : {}),
+              ...(hasScheduling && startMode === "scheduled" ? { scheduledDate } : {}),
             })
           : Promise.resolve(null),
         guestSelected ? createLink.mutateAsync({ routineId: selectedRoutineId }) : Promise.resolve(null),
@@ -567,7 +568,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
         </section>
 
         {/* ── Cuándo ── */}
-        <section className="space-y-2">
+        {hasScheduling && <section className="space-y-2">
           <h2 className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">Cuándo</h2>
           <div className="flex gap-2">
             {(["now", "scheduled"] as const).map((mode) => (
@@ -595,7 +596,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               className="w-full border border-border rounded-xl px-3 py-2.5 text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
             />
           )}
-        </section>
+        </section>}
 
         <div className="space-y-2">
           <button
@@ -608,7 +609,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               ? "Asignando..."
               : guestSelected && selectedAthleteIds.size === 0
               ? "Compartir enlace"
-              : startMode === "scheduled"
+              : hasScheduling && startMode === "scheduled"
               ? "Asignar"
               : "Asignar y comenzar"}
           </button>
