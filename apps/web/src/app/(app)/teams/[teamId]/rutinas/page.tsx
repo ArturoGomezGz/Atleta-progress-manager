@@ -25,6 +25,60 @@ type SessionItem = {
   routineName: string
   routineCategory?: string | null
   zoneProfile?: ZoneProfile
+  // Solo llega para el entrenador
+  athletes?: { userId: string; name: string | null; status: "scheduled" | "active" | "completed" }[]
+}
+
+const ATHLETE_STATUS = {
+  completed: { label: "Completada", className: "text-emerald-400" },
+  active:    { label: "En curso",   className: "text-green-400" },
+  scheduled: { label: "Pendiente",  className: "text-muted-foreground" },
+} as const
+
+// Progreso de los atletas asignados; la línea completa despliega la lista con el estado de cada uno
+function AthleteProgress({ athletes }: { athletes: NonNullable<SessionItem["athletes"]> }) {
+  const [open, setOpen] = useState(false)
+  const total = athletes.length
+  const done = athletes.filter((a) => a.status === "completed").length
+  const inProgress = athletes.filter((a) => a.status === "active").length
+
+  return (
+    <div className="border-t border-border">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        className="w-full flex items-center gap-3 px-3.5 py-2.5 cursor-pointer text-left"
+      >
+        <span className="text-xs font-semibold tabular-nums text-foreground shrink-0">
+          {done}/{total} completaron
+        </span>
+        <span className="flex-1 h-1.5 rounded-full bg-border overflow-hidden flex" aria-hidden="true">
+          <span className="bg-emerald-400 transition-all" style={{ width: `${(done / total) * 100}%` }} />
+          <span className="bg-green-400/50 transition-all" style={{ width: `${(inProgress / total) * 100}%` }} />
+        </span>
+        <ChevronDownIcon className={cn("w-3.5 h-3.5 text-muted-foreground shrink-0 transition-transform duration-300", open && "rotate-180")} />
+      </button>
+      <div
+        className={cn(
+          "grid transition-[grid-template-rows,opacity] duration-300 ease-out motion-reduce:transition-none",
+          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+        )}
+      >
+        <ul className="overflow-hidden min-h-0 px-3.5" aria-hidden={!open}>
+          {athletes.map((a) => {
+            const st = ATHLETE_STATUS[a.status]
+            return (
+              <li key={a.userId} className="flex items-center justify-between gap-3 py-1.5 text-sm border-t border-border/60 first:border-t-0">
+                <span className="truncate">{a.name ?? "—"}</span>
+                <span className={cn("text-xs font-medium shrink-0", st.className)}>{st.label}</span>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+    </div>
+  )
 }
 
 function SessionCard({ teamId, session }: { teamId: string; session: SessionItem }) {
@@ -35,24 +89,29 @@ function SessionCard({ teamId, session }: { teamId: string; session: SessionItem
     ? new Date(session.scheduledDate + "T12:00:00").toLocaleDateString("es", { dateStyle: "medium" })
     : new Date(session.startedAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })
 
+  const showProgress = session.routineCategory === "training" && (session.athletes?.length ?? 0) > 0
+
   return (
-    <Link
-      href={`/teams/${teamId}/sesiones/${session.id}`}
-      className="group flex items-center gap-3 p-3.5 border border-border rounded-xl hover:border-primary/30 bg-card/60 transition-all duration-200 cursor-pointer"
-    >
-      {/* El estado ya lo dice la etiqueta de la derecha: el borde muestra las zonas que se trabajan */}
-      <ZoneStripe profile={session.zoneProfile} className="min-h-8" />
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
-          {session.routineName ? sc(session.routineName) : "—"}
-        </p>
-        <p className="text-xs text-muted-foreground mt-0.5">{dateLabel}</p>
-        <ZoneLegend profile={session.zoneProfile} className="mt-1" />
-      </div>
-      <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border shrink-0", config.badge)}>
-        {config.label}
-      </span>
-    </Link>
+    <div className="border border-border rounded-xl hover:border-primary/30 bg-card/60 transition-all duration-200 overflow-hidden">
+      <Link
+        href={`/teams/${teamId}/sesiones/${session.id}`}
+        className="group flex items-center gap-3 p-3.5 cursor-pointer"
+      >
+        {/* El estado ya lo dice la etiqueta de la derecha: el borde muestra las zonas que se trabajan */}
+        <ZoneStripe profile={session.zoneProfile} className="min-h-8" />
+        <div className="flex-1 min-w-0">
+          <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
+            {session.routineName ? sc(session.routineName) : "—"}
+          </p>
+          <p className="text-xs text-muted-foreground mt-0.5">{dateLabel}</p>
+          <ZoneLegend profile={session.zoneProfile} className="mt-1" />
+        </div>
+        <span className={cn("text-xs font-medium px-2 py-0.5 rounded-full border shrink-0", config.badge)}>
+          {config.label}
+        </span>
+      </Link>
+      {showProgress && <AthleteProgress athletes={session.athletes!} />}
+    </div>
   )
 }
 
