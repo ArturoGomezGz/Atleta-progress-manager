@@ -34,6 +34,7 @@ export const rmsRouter = router({
         if (!exerciseMap.has(rm.exerciseId)) {
           exerciseMap.set(rm.exerciseId, { exerciseId: rm.exerciseId, exerciseName: rm.exerciseName, current: rm, history: [] })
         }
+        // qa-ignore: non-null-safe, map.set ya garantiza la entrada arriba
         exerciseMap.get(rm.exerciseId)!.history.push(rm)
       }
 

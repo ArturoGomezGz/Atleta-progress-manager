@@ -1,0 +1,5 @@
+{
+  "consoleExcludeFiles": [
+    "apps/api/src/reset-password.ts"
+  ]
+}

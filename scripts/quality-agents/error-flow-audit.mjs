@@ -11,7 +11,15 @@ const findings = []
 for (const file of files) {
   const content = fs.readFileSync(file, "utf8")
   const code = maskNonCode(content)
-  pushMatches(code, file, /[A-Za-z0-9_$\]\)\.]\s*!\s*(?:\.|\[)/g, "high", "Uso de non-null assertion con acceso inmediato; puede provocar crash en runtime.")
+  const rawLines = content.split("\n")
+  pushMatches(
+    code,
+    file,
+    /[A-Za-z0-9_$\]\)\.]\s*!\s*(?:\.|\[)/g,
+    "high",
+    "Uso de non-null assertion con acceso inmediato; puede provocar crash en runtime.",
+    (line) => !hasIgnoreComment(rawLines, line, "non-null-safe"),
+  )
   pushMatches(
     code,
     file,
@@ -42,17 +50,25 @@ fs.writeFileSync(reportPath, JSON.stringify(report, null, 2))
 console.log(`error-flow-audit: ${findings.length} findings`)
 console.log(`report: ${repoRelative(cwd, reportPath)}`)
 
-function pushMatches(content, file, regex, severity, message) {
+function pushMatches(content, file, regex, severity, message, keep = () => true) {
   for (const match of content.matchAll(regex)) {
+    const line = lineNumberAt(content, match.index ?? 0)
+    if (!keep(line)) continue
     findings.push({
       category: "error-handling",
       severity,
       file: repoRelative(cwd, file),
-      line: lineNumberAt(content, match.index ?? 0),
+      line,
       message,
       snippet: match[0],
     })
   }
+}
+
+// Excepción explícita por línea: `// qa-ignore: <regla> <razón>` en la misma línea o en la anterior.
+function hasIgnoreComment(rawLines, line, rule) {
+  const marker = new RegExp(`//\\s*qa-ignore:\\s*${rule}\\b`)
+  return [rawLines[line - 1], rawLines[line - 2]].some((l) => l !== undefined && marker.test(l))
 }
 
 function readArg(name) {
