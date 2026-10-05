@@ -9,6 +9,7 @@ dist
 .claude/settings.local.json
 .claude/skills/*
 !.claude/skills/deploy-testing/
+!.claude/skills/design-preview/
 
 # TypeScript build cache
 apps/web/tsconfig.tsbuildinfo
