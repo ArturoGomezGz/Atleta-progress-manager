@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-02.
+> **Última revisión:** 2026-10-05.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -72,4 +72,5 @@ Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md).
 |---|---|
 | Monetización por equipo | Plan gratuito con 1 atleta y plan de pago ilimitado; ver [monetizacion.md](monetizacion.md). Sin implementar. |
 | RM por atleta | Cálculo y almacenamiento del RM para cargas en % RM; ver [rm-atleta.md](rm-atleta.md). Depende de evaluación. |
+| Chat de ajustes con IA sobre un entrenamiento | Pedir cambios en lenguaje natural (sustituir ejercicios, series, descansos, bloques) y revisar un diff antes de guardar. **Backend experimental listo** (`routines.refineWithAI`, mismo acceso que el generador con IA, no guarda nada); falta la UI y probarlo con el modelo real. Ver [ia-generacion-rutinas.md](ia-generacion-rutinas.md) §11. |
 | Capa "Plan" (agrupar entrenamientos) | Fuera de v1 en [rutinas-normales.md](rutinas-normales.md). |

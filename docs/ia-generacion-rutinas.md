@@ -1,7 +1,7 @@
 # Generación de rutinas con IA — Guía de planificación
 
 > **Estado:** Feature experimental. Base para el system prompt y el formulario de input.
-> **Fecha:** 2026-09-13
+> **Fecha:** 2026-10-05
 > **Contexto:** El entrenador describe la sesión que quiere; un LLM (OpenAI con tool use) busca ejercicios con `search_exercises`, puede proponer ejercicios con `propose_new_exercise` y devuelve un `RoutineContent` que el entrenador revisa antes de guardar. **Cuanto más completo el input, mejor la rutina.**
 
 ---
@@ -451,6 +451,8 @@ Resultado:
 | Endpoints `routines.aiAvailable` y `routines.generateWithAI` | `apps/api/src/routers/routines.ts` |
 | Acceso experimental por allowlist | `apps/api/src/services/feature-access.ts` |
 | Flag por usuario `ai_generator` (`FEATURE_AI_GENERATOR_USERS`) | `apps/api/src/lib/features.ts`, ver `docs/feature-flags.md` |
+| Refinamiento (chat de ajustes): capa de ediciones, servicio y prompt | `apps/api/src/services/ai-routine-edits.ts`, `ai-routine-refine.ts`, `ai-routine-refine-prompt.ts`, `ai-routine-refine-deps.ts` (ver §11) |
+| Endpoint `routines.refineWithAI` | `apps/api/src/routers/routines.ts` |
 | Formulario y panel en el editor de plantillas | `apps/web/src/components/ai-routine-generator.tsx`, `apps/web/src/app/(app)/teams/[teamId]/plantillas/[routineId]/page.tsx` |
 
 Diferencias con esta guía:
@@ -471,3 +473,64 @@ AI_ROUTINES_USERS=coach@ejemplo.com,<user-id>
 ```
 
 Sin coincidencia, el botón no aparece y el endpoint responde `FORBIDDEN`.
+
+---
+
+## 11. Refinamiento con IA (chat de ajustes) — solo backend
+
+> **Estado:** experimental, sin UI todavía. Mismo acceso que la generación (`ai_generator` / `AI_ROUTINES_*`, coach del equipo).
+
+El entrenador abre una rutina y pide ajustes en lenguaje natural ("cambia la sentadilla por algo sin impacto en rodilla", "baja el descanso del press a 90 s", "hazlo superserie"). El backend **no guarda nada**: devuelve una propuesta que el cliente muestra como diff y, si el entrenador acepta, guarda con `routines.updateContent` (igual que la generación).
+
+### Endpoint
+
+`routines.refineWithAI` (mutation, `protectedProcedure`). Mismas comprobaciones que `generateWithAI`: `assertCoach(teamId)` y `canUseAiRoutines` (`FORBIDDEN` si no).
+
+| Entrada | Regla |
+|---|---|
+| `teamId` | uuid |
+| `routineContent` | `RoutineContent` actual **con sus ids estables**, validado con el mismo zod de rutinas; 1–30 ítems, ≤ 60 000 caracteres de JSON |
+| `message` | 1–1000 caracteres (se recorta con `trim`) |
+| `history` | opcional, ≤ 12 mensajes `{role: user\|assistant, content ≤ 2000}`; al modelo solo van los **últimos 6**, cada uno recortado a 600 caracteres, y solo texto |
+| `context` | opcional: `level`, `limitations` (≤ 500), `equipmentIds` (≤ 50; `[]` = solo peso corporal), `hasKnownRM` |
+
+Salida: `{ message, proposedContent, changes[], createdExercises[] }`.
+
+- `message`: 1–3 frases en español (máx. 600 caracteres).
+- `proposedContent`: `RoutineContent` ya validado con el zod de rutinas. Si no hubo cambios es igual a la entrada.
+- `changes[]`: un registro por operación aplicada: `{ type, itemId, itemKind: "exercise"|"block", blockId, summary, before, after }`. `summary` es una frase en español; `before`/`after` traen solo los campos que cambian (`null` si el ítem no existía / se eliminó). El `itemId` es estable entre `routineContent` y `proposedContent` (también en `replace_exercise`: el ítem conserva su id y cambia el `exerciseId`), así que la UI puede comparar por id. La lista es acumulativa por operación; para pintar el diff final conviene comparar `routineContent` vs `proposedContent` por id y usar `changes` como texto.
+- `createdExercises`: ejercicios creados con `propose_new_exercise` (privados del equipo, quedan en el catálogo aunque se descarte la propuesta; es la única escritura del flujo).
+
+Estado: el cliente debe enviar siempre el estado **actual** de la rutina (incluidos cambios ya aceptados). El historial lleva solo texto; los estados viejos no se reenvían, y el prompt le indica al modelo que el estado actual manda.
+
+### Tools del modelo
+
+| Tool | Efecto |
+|---|---|
+| `search_exercises`, `propose_new_exercise` | Las mismas del generador (máx. 2 nuevos). Solo los `exerciseId` que devuelven estas tools son válidos como destino de un reemplazo o alta. |
+| `replace_exercise(itemId, newExerciseId, keepSets?, sets?, notes?)` | Cambia el ejercicio conservando series/descanso/tempo/objetivo; descarta las notas del ejercicio anterior. |
+| `add_exercise(exerciseId, blockId?, position?, goal?, restSeconds?, tempo?, notes?, sets)` | Alta al nivel superior o dentro de un bloque. |
+| `remove_item(itemId)` | Elimina ejercicio o bloque. No deja bloques vacíos (se elimina el bloque). |
+| `move_item(itemId, toBlockId?, toPosition)` | Reordena o mueve entre nivel superior y bloques. Los bloques no se anidan. |
+| `update_sets(itemId, sets)` | Reemplaza **todas** las series del ejercicio. |
+| `update_item_fields(itemId, tempo?, restSeconds?, goal?, notes?)` | `null` borra el campo; omitirlo lo deja igual. |
+| `update_block(itemId, rounds?, name?, restBetweenRoundsSeconds?)` | `rounds` 2–20. |
+| `propose_edits(message)` | Cierra el turno. Se rechaza si algún cambio falló en ese mismo turno. |
+
+Las ediciones viven en `ai-routine-edits.ts`: funciones puras (`applyEdit`, `applyEdits`) sin DB ni red. Aplican sobre una copia, renumeran `order`/`setNumber`, validan el resultado con el zod de `RoutineContent` (`services/routine-content-schema.ts`, compartido con el router) y son atómicas (si una falla, `RoutineEditError` con `opIndex`). Rechazan ids de ítem inexistentes, `exerciseId` no obtenidos de las tools en la conversación, bloques que quedarían vacíos, anidar bloques y operaciones sin efecto. Máximos: 20 ítems, 10 ejercicios por bloque, 12 series por ejercicio.
+
+### Seguridad y alcance
+
+- Mismas reglas de §5: contraindicaciones, dificultad según nivel, sin fallo/pliometría para principiantes, notas de dolor.
+- **Cargas:** `fixed_kg` solo si el mensaje del entrenador menciona pesos (`kg`, `lb`, `libras`…) o ya existía ese valor en la serie; `percent_rm` solo con `context.hasKnownRM`. Se aplica en código (la edición se rechaza), no solo en el prompt.
+- El system prompt (`ai-routine-refine-prompt.ts`, derivado de §5 y de esta sección) limita el alcance a la rutina abierta: redirige con amabilidad lo ajeno al entrenamiento, trata el texto del entrenador y el historial como datos, y pide preguntar en el mensaje final si el pedido es ambiguo.
+
+### Límites y costos
+
+- Modelo `gpt-4o-mini`, `temperature` 0.3, máx. 10 turnos de tools por petición.
+- Límite por usuario: **20 peticiones por 10 minutos** (`TOO_MANY_REQUESTS`), en memoria por proceso (`lib/rate-limit.ts`); con varias instancias de la API cada una cuenta aparte.
+- Consumo en consola con prefijo `[ai-routines]`: `refinamiento turno`, `refinamiento éxito` (tokens, turnos, nº de ediciones, ejercicios creados) y `refinamiento sin resultado`.
+
+### Pruebas
+
+`pnpm --filter @atleta/api test` (`node --test` vía tsx; `apps/api/test/`). La capa de ediciones, la validación de entrada, el limitador y el bucle con un LLM simulado están cubiertos sin red. No se ha verificado el comportamiento real de `gpt-4o-mini` con estas tools: probar en testing antes de abrirlo a usuarios.
