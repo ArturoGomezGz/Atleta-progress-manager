@@ -84,7 +84,7 @@ export const adjustRestSkill = defineSkill({
     const ops = restOps(content, { more: input.direction === "up", scope, absolute: input.seconds ?? undefined })
     const n = applyAll(ops, rt)
     if (n === 0) return { result: { ok: false }, message: "No encontré descansos que ajustar." }
-    const what = input.seconds ? `Dejé el descanso en ${input.seconds} s` : input.direction === "up" ? "Aumenté el descanso 15 s" : "Reduje el descanso 15 s"
+    const what = input.seconds ? `Dejé el descanso en ${input.seconds} s` : input.direction === "up" ? "Aumenté el descanso (hasta 15 s)" : "Reduje el descanso (hasta 15 s)"
     return { result: { ok: true, changed: n }, message: `${what} en ${plural(n, "ítem", "ítems")}.` }
   },
 })
