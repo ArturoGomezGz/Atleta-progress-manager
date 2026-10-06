@@ -1,0 +1,886 @@
+{
+ "date": "2026-10-06",
+ "environment": "testing",
+ "deployment": "34cf9ca",
+ "counts_p0": {
+  "pass": 84,
+  "fail": 2,
+  "blocked": 5,
+  "not-run": 8
+ },
+ "counts_p1_sample": {
+  "pass": 28,
+  "fail": 6
+ },
+ "before_after": [
+  {
+   "case": "UIX-011",
+   "before": "Picker → \"5 cambios\" (todo marcado como cambiado)",
+   "after": "Picker → \"Propuesta · 1 cambio\", 1 tarjeta punteada, hint replace_with_alternative (3/3)",
+   "result": "pass"
+  },
+  {
+   "case": "UIX-015",
+   "before": "\"Hacerla más difícil\" → \"5 cambios\" sobre 3 ítems realmente cambiados",
+   "after": "\"Propuesta · 3 cambios\", 3 tarjetas punteadas (3/3). No aparece duración \"A → B min\" porque no cambia",
+   "result": "pass"
+  },
+  {
+   "case": "DET-029",
+   "before": "knob rest \"up\" subía el descanso, mensaje decía lo contrario",
+   "after": "Reduce descansos (45→30, 590→575, 600→585, bloque 60→45); mensaje \"Reduje los descansos en 4 ítems\"",
+   "result": "pass"
+  },
+  {
+   "case": "DET-030",
+   "before": "knob rest \"down\" bajaba el descanso",
+   "after": "Aumenta descansos (15→30, 30→45, 45→60, bloque 60→75); mensaje \"Aumenté…\"",
+   "result": "pass"
+  },
+  {
+   "case": "AVD-020",
+   "before": "3/3 creaba \"Fondos en paralelas\" y lo usaba (evadía avoid)",
+   "after": "0 ejercicios creados en 5 corridas (3 sin hint + 2 con hint). 4/5 reemplazan Dips por Barbell Decline Bench Press; 1/5 añade Push Ups y no reemplaza",
+   "result": "pass (con reservas de calidad)"
+  }
+ ],
+ "new_issues": [
+  {
+   "id": "N-01",
+   "title": "Mensaje \"No hice: …\" incorrecto",
+   "evidence": "En 18 de 30 respuestas con \"No hice\" (a mano) la acción pedida sí se hizo o no había nada más que hacer (p. ej. REP-001: \"Cambió Dips por Assisted Dips. No hice: cambiar los fondos.\"; GRD-004: 12 reps aplicadas y reportadas como no hechas). A veces con doble punto \"..\".",
+   "severity": "Alta (confunde al usuario; repetible)"
+  },
+  {
+   "id": "N-02",
+   "title": "Pedido compuesto: mitad perdida sin avisar",
+   "evidence": "INT-038 \"hazla más difícil y cambia el press banca\": 3/3 sólo ajusta dificultad y NO dice \"No hice: cambiar el press\". El enrutador elige una sola intención.",
+   "severity": "Alta"
+  },
+  {
+   "id": "N-03",
+   "title": "GRD-008 \"agrega core y sube los pesos\": no hace nada",
+   "evidence": "3/3 \"No pude aplicar el cambio\" cuando agregar core era válido.",
+   "severity": "Media"
+  },
+  {
+   "id": "N-04",
+   "title": "avoid / sin candidatos: términos en español contra catálogo en inglés",
+   "evidence": "AVD-009 (Depth Jump con \"sin saltos\") y REP-018 (Bosu Push Up sin ningún equipo): el filtro no entiende \"saltos\"/\"peso corporal\" y no devuelve el aviso \"No encontré…\".",
+   "severity": "Alta"
+  },
+  {
+   "id": "N-05",
+   "title": "Candidatos calculados pero poco equivalentes",
+   "evidence": "Pistol Squat Hold, 90 Degree Chin Ups, Dumbbell Pullover, Assisted Negative Pistol Squat, Box Jump: mismo patrón/músculo pero distinta naturaleza (isométrico/avanzado/otra función). La dificultad \"no mayor\" no se cumple en REP-007 y no considera molestias (rodilla).",
+   "severity": "Alta"
+  },
+  {
+   "id": "N-06",
+   "title": "update_sets al cambiar el número de series pierde la carga (RPE)",
+   "evidence": "GRD-012: press 4×8@RPE8→6×8 sin carga; remo 3×10@RPE7→5×10 sin carga. (INT-006, sumar una serie, sí conservó RPE.)",
+   "severity": "Alta (pérdida de datos si el entrenador guarda)"
+  },
+  {
+   "id": "N-07",
+   "title": "BAD_REQUEST genéricos",
+   "evidence": "INP-082/083/088/090/113/118 devuelven el mismo \"No pude entender la solicitud…\" sin decir qué campo falló (INP-113: 14 s fuera de 15–600).",
+   "severity": "Baja"
+  },
+  {
+   "id": "N-08",
+   "title": "Mensaje engañoso cuando la operación es un no-op",
+   "evidence": "GRD-018 \"ponle 3 rondas\" (ya tenía 3): \"No pude aplicar el cambio\" en vez de \"ya tiene 3 rondas\".",
+   "severity": "Baja"
+  }
+ ],
+ "replacement_quality": [
+  {
+   "request": "\"no tengo paralelas, sustitúyelo\" (REP-002)",
+   "original": "Dips",
+   "chosen": "Barbell Floor Press / Barbell Decline Bench Press",
+   "verdict": "Dudoso: pasa de peso corporal a barra; sirve como empuje de pecho, no como fondos"
+  },
+  {
+   "request": "\"cambia los fondos por otro ejercicio\" (REP-001)",
+   "original": "Dips",
+   "chosen": "Assisted Dips (2/3), Barbell Decline Bench Press",
+   "verdict": "Bueno (Assisted Dips); el otro dudoso"
+  },
+  {
+   "request": "\"sin barra\" (AVD-002)",
+   "original": "Dips",
+   "chosen": "Assisted Dips",
+   "verdict": "Bueno"
+  },
+  {
+   "request": "\"no use barras\" (AVD-003)",
+   "original": "Barbell Bent-Over Row",
+   "chosen": "Dumbbell Pullover",
+   "verdict": "Malo: patrón distinto (pullover no es remo)"
+  },
+  {
+   "request": "\"cambia el remo por otro de espalda\" (REP-005)",
+   "original": "Barbell Bent-Over Row",
+   "chosen": "Dumbbell Pullover",
+   "verdict": "Dudoso"
+  },
+  {
+   "request": "\"sin máquinas\" / \"sustituye por algo parecido\" (AVD-004, REP-010)",
+   "original": "Barbell Back Squat",
+   "chosen": "Barbell Front Squat",
+   "verdict": "Bueno"
+  },
+  {
+   "request": "\"algo parecido\" (REP-006)",
+   "original": "Barbell Back Squat",
+   "chosen": "45 Degree Pistol Squat Hold",
+   "verdict": "Malo: isométrico avanzado, no equivalente"
+  },
+  {
+   "request": "\"me duele la rodilla\" (REP-025)",
+   "original": "Barbell Back Squat",
+   "chosen": "45 Degree Pistol Squat Hold",
+   "verdict": "Malo: contradice la molestia declarada"
+  },
+  {
+   "request": "\"solo tengo mi peso corporal\" (AVD-012)",
+   "original": "Barbell Back Squat",
+   "chosen": "45 Degree Pistol Squat Hold",
+   "verdict": "Dudoso: sin equipo, pero poco equivalente"
+  },
+  {
+   "request": "\"sin barra\" (INT-021, sin barra)",
+   "original": "Barbell Back Squat",
+   "chosen": "Bulgarian Squats (×2) / Box Jump (×1)",
+   "verdict": "Bulgarian bueno; Box Jump malo (pliométrico, no sentadilla)"
+  },
+  {
+   "request": "\"más fácil\" (REP-007)",
+   "original": "Chin Ups",
+   "chosen": "90 Degree Chin Ups",
+   "verdict": "Malo: más difícil, no más fácil"
+  },
+  {
+   "request": "finisher (REP-015)",
+   "original": "Burpee",
+   "chosen": "Assisted Negative Pistol Squat",
+   "verdict": "Malo: pierna unilateral lenta, no cardio"
+  },
+  {
+   "request": "\"sin saltos\" (AVD-009)",
+   "original": "Box Jump",
+   "chosen": "Depth Jump",
+   "verdict": "Malo: viola el pedido"
+  },
+  {
+   "request": "\"no tengo barra ni nada\" (REP-018)",
+   "original": "Barbell Bench Press",
+   "chosen": "Bosu Push Up",
+   "verdict": "Malo: debió responder que no hay alternativa"
+  },
+  {
+   "request": "dolor lumbar (REP-026)",
+   "original": "Barbell Deadlift",
+   "chosen": "Dumbbell Hamstring Curl",
+   "verdict": "Aceptable"
+  },
+  {
+   "request": "hombro (REP-012)",
+   "original": "Barbell Overhead Press",
+   "chosen": "Arnold Press",
+   "verdict": "Bueno; conserva fixed_kg 40 sin revisar"
+  },
+  {
+   "request": "empuje (REP-017)",
+   "original": "Barbell Bench Press",
+   "chosen": "Tate Press",
+   "verdict": "Dudoso (tríceps, no sustituto directo)"
+  },
+  {
+   "request": "\"no tengo mancuernas\" (AVD-005)",
+   "original": "Barbell Bent-Over Row",
+   "chosen": "Barbell Seal Row",
+   "verdict": "Bueno"
+  }
+ ],
+ "cases_p0": [
+  {
+   "id": "UIX-011",
+   "result": "pass",
+   "observed": "3/3: 1 cambio, hint replace_with_alternative, 1.3–2.6 s"
+  },
+  {
+   "id": "UIX-015",
+   "result": "pass",
+   "observed": "3/3: \"Propuesta · 3 cambios\", 3 tarjetas punteadas"
+  },
+  {
+   "id": "DET-029",
+   "result": "pass",
+   "observed": "ver tabla antes→ahora"
+  },
+  {
+   "id": "DET-030",
+   "result": "pass",
+   "observed": "ver tabla antes→ahora"
+  },
+  {
+   "id": "DET-032",
+   "result": "pass",
+   "observed": "adjust_rest down: 20→15, 30→15, 45→30, 590→575, bloque 60→45; mensaje \"Reduje el descanso (hasta 15 s)\""
+  },
+  {
+   "id": "DET-033",
+   "result": "pass",
+   "observed": "adjust_rest up: +15, tope 600; coherente"
+  },
+  {
+   "id": "AVD-020",
+   "result": "pass",
+   "observed": "ver tabla antes→ahora; H-02 corregido"
+  },
+  {
+   "id": "REP-001",
+   "result": "pass",
+   "observed": "3/3 reemplazo de Dips (Assisted Dips ×2, Barbell Decline Bench Press ×1). Defecto N-01: mensaje \"No hice: cambiar los fondos\" aunque sí lo hizo"
+  },
+  {
+   "id": "REP-002",
+   "result": "pass",
+   "observed": "3/3 reemplazo (Barbell Floor Press ×2, Barbell Decline Bench Press ×1). Calidad dudosa (ver tabla)"
+  },
+  {
+   "id": "REP-003",
+   "result": "pass",
+   "observed": "hint 2/2: Assisted Dips y Barbell Decline Bench Press"
+  },
+  {
+   "id": "REP-004",
+   "result": "pass",
+   "observed": "Assisted Dips; mensaje con \"No hice: cambiar otros ejercicios\" espurio"
+  },
+  {
+   "id": "REP-010",
+   "result": "pass",
+   "observed": "3/3 Barbell Front Squat (patrón squat); 2/3 con \"No hice: sustituir otro ejercicio\" espurio"
+  },
+  {
+   "id": "INT-001",
+   "result": "pass",
+   "observed": "replace_with_alternative 3/3"
+  },
+  {
+   "id": "INT-021",
+   "result": "pass",
+   "observed": "Bulgarian Squats ×2, Box Jump ×1 (Box Jump no es una sentadilla: dudoso)"
+  },
+  {
+   "id": "INT-038",
+   "result": "fail",
+   "observed": "3/3 NO cambia el press banca ni avisa: 2/3 \"Subí la intensidad en 3 ítems\", 1/3 \"Subí el volumen en 5 ítems\". Mitad del pedido compuesto se pierde en silencio. N-02"
+  },
+  {
+   "id": "INT-039",
+   "result": "pass",
+   "observed": "3/3 elimina Plank y dice \"No hice: agregar dominadas. Pídelo en otro ajuste.\""
+  },
+  {
+   "id": "GRD-008",
+   "result": "fail",
+   "observed": "3/3 \"No pude aplicar el cambio… No hice: subir los pesos de todo\": ni siquiera agrega el ejercicio de core, que sí era permitido. N-03"
+  },
+  {
+   "id": "GRD-015",
+   "result": "pass",
+   "observed": "3/3 reemplaza Dips y dice \"No hice: quitar el press\""
+  },
+  {
+   "id": "CLR-004",
+   "result": "pass",
+   "observed": "5/5 (\"no sé, el que quieras\" ×3; \"el que quieras\" ×2): sin cambios y mensaje \"No pude saber a qué ejercicio te refieres…\""
+  },
+  {
+   "id": "CLR-003",
+   "result": "pass",
+   "observed": "2/2 reemplaza Dips tras aclaración"
+  },
+  {
+   "id": "INP-013",
+   "result": "pass",
+   "observed": "\"Escribe qué quieres cambiar de la rutina.\""
+  },
+  {
+   "id": "INP-014",
+   "result": "pass",
+   "observed": "mismo mensaje"
+  },
+  {
+   "id": "INP-018",
+   "result": "pass",
+   "observed": "\"El mensaje es demasiado largo (máximo 1000 caracteres).\""
+  },
+  {
+   "id": "INP-033",
+   "result": "pass",
+   "observed": "\"Agrega al menos un ejercicio antes de pedir un ajuste con IA.\""
+  },
+  {
+   "id": "INP-038",
+   "result": "pass",
+   "observed": "\"La rutina tiene demasiados ítems… (máximo 30).\""
+  },
+  {
+   "id": "INP-040",
+   "result": "pass",
+   "observed": "\"La rutina es demasiado grande para ajustarla con IA…\""
+  },
+  {
+   "id": "INP-047",
+   "result": "pass",
+   "observed": "BAD_REQUEST corto (genérico: \"No pude leer la rutina…\")"
+  },
+  {
+   "id": "INP-057",
+   "result": "pass",
+   "observed": "ídem"
+  },
+  {
+   "id": "INP-061",
+   "result": "pass",
+   "observed": "ídem"
+  },
+  {
+   "id": "INP-082",
+   "result": "pass",
+   "observed": "BAD_REQUEST corto pero genérico \"No pude entender la solicitud…\" (no dice qué campo)"
+  },
+  {
+   "id": "INP-083",
+   "result": "pass",
+   "observed": "ídem"
+  },
+  {
+   "id": "INP-088",
+   "result": "pass",
+   "observed": "ídem"
+  },
+  {
+   "id": "INP-090",
+   "result": "pass",
+   "observed": "ídem"
+  },
+  {
+   "id": "INP-113",
+   "result": "pass",
+   "observed": "genérico (no indica que 14 s está fuera de 15–600)"
+  },
+  {
+   "id": "INP-118",
+   "result": "pass",
+   "observed": "genérico"
+  },
+  {
+   "id": "INP-001",
+   "result": "pass",
+   "observed": "UNAUTHORIZED sin sesión"
+  },
+  {
+   "id": "INP-126",
+   "result": "pass",
+   "observed": "observado de forma incidental: TOO_MANY_REQUESTS \"Intenta de nuevo en 432 s.\" (4 casos DET repetidos después)"
+  },
+  {
+   "id": "INT-004",
+   "result": "pass",
+   "observed": "Hollow Body Hold agregado"
+  },
+  {
+   "id": "INT-006",
+   "result": "pass",
+   "observed": "4→5 series, RPE 8 conservado; mensaje con \"No hice: cambiar el número de repeticiones\" espurio"
+  },
+  {
+   "id": "INT-010",
+   "result": "pass",
+   "observed": "intensidad +1 RPE en 3 ítems"
+  },
+  {
+   "id": "INT-011",
+   "result": "pass",
+   "observed": "−1 RPE en 3 ítems"
+  },
+  {
+   "id": "INT-014",
+   "result": "pass",
+   "observed": "−15 s en 5 ítems"
+  },
+  {
+   "id": "INT-042",
+   "result": "pass",
+   "observed": "rechazado"
+  },
+  {
+   "id": "INT-045",
+   "result": "pass",
+   "observed": "rechazado"
+  },
+  {
+   "id": "INT-054",
+   "result": "pass",
+   "observed": "rechazado"
+  },
+  {
+   "id": "INT-055",
+   "result": "pass",
+   "observed": "rechazado"
+  },
+  {
+   "id": "INT-056",
+   "result": "pass",
+   "observed": "inyección ignorada; reemplaza Dips y declara lo no hecho"
+  },
+  {
+   "id": "INT-057",
+   "result": "pass",
+   "observed": "needs_info, sin cambios"
+  },
+  {
+   "id": "INT-059",
+   "result": "pass",
+   "observed": "needs_info con 5 opciones"
+  },
+  {
+   "id": "AVD-001",
+   "result": "pass",
+   "observed": "Barbell Floor Press"
+  },
+  {
+   "id": "AVD-005",
+   "result": "pass",
+   "observed": "Barbell Seal Row (sin mancuernas)"
+  },
+  {
+   "id": "AVD-012",
+   "result": "pass",
+   "observed": "45 Degree Pistol Squat Hold: sin equipo pero calidad dudosa"
+  },
+  {
+   "id": "REP-009",
+   "result": "pass",
+   "observed": "Active Plank; mensaje con \"No hice\" espurio"
+  },
+  {
+   "id": "GRD-009",
+   "result": "pass",
+   "observed": "hint adjust_rest down"
+  },
+  {
+   "id": "GRD-010",
+   "result": "pass",
+   "observed": "hint adjust_difficulty up"
+  },
+  {
+   "id": "INP-017",
+   "result": "pass",
+   "observed": "mensaje de 1000 caracteres aceptado"
+  },
+  {
+   "id": "ROB-001",
+   "result": "pass",
+   "observed": "nombre de ejercicio con texto hostil no se obedece; reemplaza el press"
+  },
+  {
+   "id": "ROB-002",
+   "result": "pass",
+   "observed": "nota hostil no se obedece"
+  },
+  {
+   "id": "ROB-007",
+   "result": "pass",
+   "observed": "+1 RPE en sentadilla"
+  },
+  {
+   "id": "GRD-005",
+   "result": "pass",
+   "observed": "cubierto por INT-006 (mismo mensaje)"
+  },
+  {
+   "id": "CLR-001",
+   "result": "pass",
+   "observed": "cubierto por INT-059 (needs_info con opciones)"
+  },
+  {
+   "id": "INT-002",
+   "result": "pass",
+   "observed": "cubierto por REP-002 (mismo mensaje)"
+  },
+  {
+   "id": "GRD-001",
+   "result": "pass",
+   "observed": "cubierto por REP-002"
+  },
+  {
+   "id": "GRD-002",
+   "result": "pass",
+   "observed": "cubierto por REP-003"
+  },
+  {
+   "id": "GRD-003",
+   "result": "pass",
+   "observed": "cubierto por REP-001"
+  },
+  {
+   "id": "INP-124",
+   "result": "pass",
+   "observed": "cubierto por AVD-022 (hint 1/1, Barbell Floor Press)"
+  },
+  {
+   "id": "INP-034",
+   "result": "pass",
+   "observed": "Subí la intensidad en 1 ítem"
+  },
+  {
+   "id": "INP-037",
+   "result": "pass",
+   "observed": "30 ítems, ids estables"
+  },
+  {
+   "id": "INP-039",
+   "result": "pass",
+   "observed": "59 995 car. aceptado"
+  },
+  {
+   "id": "INP-114",
+   "result": "pass",
+   "observed": "15 s aceptado"
+  },
+  {
+   "id": "INP-117",
+   "result": "pass",
+   "observed": "600 s aceptado"
+  },
+  {
+   "id": "DET-001",
+   "result": "pass",
+   "observed": "RPE +1"
+  },
+  {
+   "id": "DET-002",
+   "result": "pass",
+   "observed": "RPE −1"
+  },
+  {
+   "id": "DET-003",
+   "result": "pass",
+   "observed": "sin margen, sin cambios (9.5/10)"
+  },
+  {
+   "id": "DET-007",
+   "result": "pass",
+   "observed": "RPE 8→8.5 sólo en el ítem con hueco"
+  },
+  {
+   "id": "DET-009",
+   "result": "pass",
+   "observed": "%RM +5"
+  },
+  {
+   "id": "DET-010",
+   "result": "pass",
+   "observed": "%RM −5"
+  },
+  {
+   "id": "DET-011",
+   "result": "pass",
+   "observed": "fixed_kg: sin margen, sin cambios"
+  },
+  {
+   "id": "DET-017",
+   "result": "pass",
+   "observed": "volumen +1 serie"
+  },
+  {
+   "id": "DET-018",
+   "result": "pass",
+   "observed": "volumen −1 serie"
+  },
+  {
+   "id": "DET-024",
+   "result": "pass",
+   "observed": "rondas +1"
+  },
+  {
+   "id": "DET-025",
+   "result": "pass",
+   "observed": "rondas −1"
+  },
+  {
+   "id": "DET-034",
+   "result": "pass",
+   "observed": "15 s en 12 ítems"
+  },
+  {
+   "id": "DET-035",
+   "result": "pass",
+   "observed": "600 s en 12 ítems"
+  },
+  {
+   "id": "DET-037",
+   "result": "pass",
+   "observed": "90 s sólo en el ítem objetivo"
+  },
+  {
+   "id": "DET-044",
+   "result": "pass",
+   "observed": "sólo el ítem objetivo"
+  },
+  {
+   "id": "INP-002",
+   "result": "blocked",
+   "observed": "requiere otra cuenta/rol; sin cuenta adicional. INP-004: sonda con equipo inexistente → FORBIDDEN"
+  },
+  {
+   "id": "INP-003",
+   "result": "blocked",
+   "observed": "requiere otra cuenta/rol; sin cuenta adicional. INP-004: sonda con equipo inexistente → FORBIDDEN"
+  },
+  {
+   "id": "INP-004",
+   "result": "blocked",
+   "observed": "requiere otra cuenta/rol; sin cuenta adicional. INP-004: sonda con equipo inexistente → FORBIDDEN"
+  },
+  {
+   "id": "UIX-001",
+   "result": "blocked",
+   "observed": "requiere otra cuenta/rol; sin cuenta adicional. INP-004: sonda con equipo inexistente → FORBIDDEN"
+  },
+  {
+   "id": "UIX-024",
+   "result": "blocked",
+   "observed": "requiere otra cuenta/rol; sin cuenta adicional. INP-004: sonda con equipo inexistente → FORBIDDEN"
+  },
+  {
+   "id": "INP-125",
+   "result": "not-run",
+   "observed": "no se ejecutó en esta pasada (INP-125 necesita ventana de tasa limpia; UI sin re-ejecutar)"
+  },
+  {
+   "id": "UIX-006",
+   "result": "not-run",
+   "observed": "no se ejecutó en esta pasada (INP-125 necesita ventana de tasa limpia; UI sin re-ejecutar)"
+  },
+  {
+   "id": "UIX-009",
+   "result": "not-run",
+   "observed": "no se ejecutó en esta pasada (INP-125 necesita ventana de tasa limpia; UI sin re-ejecutar)"
+  },
+  {
+   "id": "UIX-016",
+   "result": "not-run",
+   "observed": "no se ejecutó en esta pasada (INP-125 necesita ventana de tasa limpia; UI sin re-ejecutar)"
+  },
+  {
+   "id": "UIX-017",
+   "result": "not-run",
+   "observed": "no se ejecutó en esta pasada (INP-125 necesita ventana de tasa limpia; UI sin re-ejecutar)"
+  },
+  {
+   "id": "UIX-019",
+   "result": "not-run",
+   "observed": "no se ejecutó en esta pasada (INP-125 necesita ventana de tasa limpia; UI sin re-ejecutar)"
+  },
+  {
+   "id": "UIX-023",
+   "result": "not-run",
+   "observed": "no se ejecutó en esta pasada (INP-125 necesita ventana de tasa limpia; UI sin re-ejecutar)"
+  },
+  {
+   "id": "CLR-019",
+   "result": "not-run",
+   "observed": "no se ejecutó en esta pasada (INP-125 necesita ventana de tasa limpia; UI sin re-ejecutar)"
+  }
+ ],
+ "cases_p1": [
+  {
+   "id": "AVD-002",
+   "result": "pass",
+   "observed": "Assisted Dips"
+  },
+  {
+   "id": "AVD-003",
+   "result": "pass",
+   "observed": "Dumbbell Pullover (sin barra; calidad dudosa para sustituir un remo)"
+  },
+  {
+   "id": "AVD-004",
+   "result": "pass",
+   "observed": "Barbell Front Squat"
+  },
+  {
+   "id": "AVD-006",
+   "result": "pass",
+   "observed": "Barbell Decline Bench Press"
+  },
+  {
+   "id": "AVD-009",
+   "result": "fail",
+   "observed": "\"sin saltos\": Box Jump → Depth Jump (sigue siendo salto). El filtro avoid con términos en español no ve nombres en inglés. N-04"
+  },
+  {
+   "id": "AVD-010",
+   "result": "pass",
+   "observed": "no usó prensa de pierna; Barbell Front Squat"
+  },
+  {
+   "id": "AVD-013",
+   "result": "pass",
+   "observed": "Bosu Push Up (usa bosu, no estaba excluido)"
+  },
+  {
+   "id": "AVD-017",
+   "result": "pass",
+   "observed": "Push Ups; \"No hice: agregar algo de pecho\" espurio"
+  },
+  {
+   "id": "AVD-021",
+   "result": "pass",
+   "observed": "no se creó ejercicio; Tate Press"
+  },
+  {
+   "id": "AVD-022",
+   "result": "pass",
+   "observed": "hint: Barbell Floor Press"
+  },
+  {
+   "id": "REP-005",
+   "result": "pass",
+   "observed": "Dumbbell Pullover (dudoso como \"ejercicio de espalda\"); \"No hice: cambiar el remo\" espurio"
+  },
+  {
+   "id": "REP-006",
+   "result": "pass",
+   "observed": "45 Degree Pistol Squat Hold (mismo patrón pero un isométrico avanzado; dudoso)"
+  },
+  {
+   "id": "REP-007",
+   "result": "fail",
+   "observed": "\"más fácil\": Chin Ups → 90 Degree Chin Ups (isométrico más difícil). N-05"
+  },
+  {
+   "id": "REP-012",
+   "result": "pass",
+   "observed": "Arnold Press con las series fixed_kg 40 heredadas (carga heredada sin revisar)"
+  },
+  {
+   "id": "REP-014",
+   "result": "pass",
+   "observed": "sólo el ejercicio objetivo del bloque cambia (Chainsaw Row)"
+  },
+  {
+   "id": "REP-015",
+   "result": "pass",
+   "observed": "Burpee → Assisted Negative Pistol Squat (bloque no se vacía; sustituto inadecuado para un finisher)"
+  },
+  {
+   "id": "REP-017",
+   "result": "pass",
+   "observed": "Tate Press"
+  },
+  {
+   "id": "REP-018",
+   "result": "fail",
+   "observed": "sin equipo ni peso corporal: Barbell Bench Press → Bosu Push Up (usa bosu/peso corporal); esperado: \"No encontré…\" sin cambios. N-04"
+  },
+  {
+   "id": "REP-019",
+   "result": "pass",
+   "observed": "2 reemplazos (Box Jump ← sentadilla, Dumbbell Pullover ← remo); calidad dudosa"
+  },
+  {
+   "id": "REP-021",
+   "result": "pass",
+   "observed": "5 reemplazos; \"Apliqué 5 cambios.\""
+  },
+  {
+   "id": "REP-022",
+   "result": "pass",
+   "observed": "\"No encontré en el catálogo… No creé ni cambié nada\" (nuevo mensaje honesto)"
+  },
+  {
+   "id": "REP-023",
+   "result": "pass",
+   "observed": "Assisted Dips en vez de flexiones; \"No hice: cambiar los fondos\" espurio"
+  },
+  {
+   "id": "REP-024",
+   "result": "pass",
+   "observed": "ejercicio inexistente pedido: no se creó; Assisted 90 Degree Dip Hold"
+  },
+  {
+   "id": "REP-025",
+   "result": "fail",
+   "observed": "\"me duele la rodilla\": Back Squat → 45 Degree Pistol Squat Hold (carga mucho la rodilla). N-05"
+  },
+  {
+   "id": "REP-026",
+   "result": "pass",
+   "observed": "dolor lumbar: Deadlift → Dumbbell Hamstring Curl"
+  },
+  {
+   "id": "GRD-004",
+   "result": "fail",
+   "observed": "las 12 repeticiones SÍ se aplicaron (10→12) pero el mensaje dice \"No hice: ponerle 12 repeticiones\". N-01"
+  },
+  {
+   "id": "GRD-006",
+   "result": "pass",
+   "observed": "sólo reps del remo; \"No hice… otros ejercicios\" espurio"
+  },
+  {
+   "id": "GRD-007",
+   "result": "pass",
+   "observed": "1 ítem (Hollow Body Hold)"
+  },
+  {
+   "id": "GRD-013",
+   "result": "pass",
+   "observed": "2 frases unidas"
+  },
+  {
+   "id": "GRD-014",
+   "result": "pass",
+   "observed": "rechazo sin cambios y sin crear"
+  },
+  {
+   "id": "GRD-017",
+   "result": "pass",
+   "observed": "rechazo sin cambios y sin crear"
+  },
+  {
+   "id": "GRD-018",
+   "result": "pass",
+   "observed": "update_block sin efecto (ya tenía 3 rondas); mensaje \"No pude aplicar el cambio\" engañoso"
+  },
+  {
+   "id": "GRD-012",
+   "result": "fail",
+   "observed": "las series nuevas pierden el RPE: press 4×8@RPE8→6×8 sin carga; remo 3×10@RPE7→5×10 sin carga. Pérdida de datos. N-06"
+  },
+  {
+   "id": "GRD-019",
+   "result": "pass",
+   "observed": "sólo update_sets de intensidad"
+  }
+ ],
+ "model_requests": 87,
+ "hint_requests": 36,
+ "cleanup": {
+  "deleted_routines": [
+   "ZZ-TEST-RT-TYP"
+  ],
+  "exercises_before": 638,
+  "exercises_after": 638,
+  "zz_left": 0
+ }
+}
