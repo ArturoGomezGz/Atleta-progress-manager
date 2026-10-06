@@ -34,6 +34,7 @@ La columna **Verificación** indica de dónde viene el estado:
 | Hoy (atleta) | Lo que toca hoy, en curso, próximos y terminados; ejecutar el entrenamiento paso a paso. | Por confirmar |
 | Biblioteca de ejercicios | Ejercicios con video, zonas del cuerpo, contraindicaciones y alternativas; los propios del equipo. | Por confirmar |
 | Explorar | Catálogo público de ejercicios. | Por confirmar |
+| Búsqueda de ejercicios | Buscador de Explorar, Mis ejercicios y el selector de ejercicios. Ignora mayúsculas, tildes, guiones y espacios (`pull-up` = `pullup`), plurales y errores de tecleo; entiende términos en español (`dominadas`, `flexiones`, `press banca`); ordena por relevancia con el nombre por encima de la descripción. Todo en el cliente, sin búsqueda semántica (descartada por ahora). Lógica en `apps/web/src/lib/exercise-search.ts`. | Por confirmar |
 | Cuenta (`/settings`) | Perfil (nombre, correo verificado, miembro desde), tema (claro/oscuro/sistema), cambio de contraseña y cerrar sesión. | Por confirmar |
 | Ejecución con temporizador de descanso | Descanso automático entre series, configurable. | Por confirmar |
 

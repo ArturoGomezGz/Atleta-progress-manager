@@ -12,7 +12,7 @@ import {
   user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, eq, ilike, inArray, isNull, or } from "drizzle-orm"
+import { and, asc, eq, inArray, isNull, or } from "drizzle-orm"
 import { z } from "zod"
 import OpenAI from "openai"
 import { protectedProcedure, router } from "../trpc"
@@ -555,7 +555,6 @@ Rules:
 
   listPublic: protectedProcedure
     .input(z.object({
-      query: z.string().optional(),
       bodyZone: z.enum(["upper", "lower", "core"]).optional(),
       difficulty: difficultySchema.optional(),
       movementPattern: movementPatternSchema.optional(),
@@ -571,7 +570,6 @@ Rules:
             and(
               eq(exercise.isPublic, true),
               isNull(exercise.deletedAt),
-              input?.query ? ilike(exercise.name, `%${input.query}%`) : undefined,
               input?.difficulty ? eq(exercise.difficulty, input.difficulty) : undefined,
             ),
           )
