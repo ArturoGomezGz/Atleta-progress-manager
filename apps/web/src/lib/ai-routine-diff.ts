@@ -17,6 +17,23 @@ export function setsSummary(sets: RoutineSet[]): string {
   return first.setType === "time" ? `${n} × ${effort(first)}` : `${n} × ${effort(first)} reps`
 }
 
+/** Igualdad profunda insensible al orden de claves; undefined/null/ausente se tratan igual dentro de objetos. */
+export function sameValue(a: unknown, b: unknown): boolean {
+  if (a === b) return true
+  if (Array.isArray(a) || Array.isArray(b)) {
+    return Array.isArray(a) && Array.isArray(b) && a.length === b.length && a.every((v, i) => sameValue(v, b[i]))
+  }
+  if (a && b && typeof a === "object" && typeof b === "object") {
+    const x = a as Record<string, unknown>, y = b as Record<string, unknown>
+    const keys = new Set([...Object.keys(x), ...Object.keys(y)])
+    for (const k of keys) {
+      if (!sameValue(x[k] ?? undefined, y[k] ?? undefined)) return false
+    }
+    return true
+  }
+  return false
+}
+
 // ─── Aplanado ────────────────────────────────────────────────────────────────
 
 type Flat =
@@ -165,7 +182,7 @@ export function diffRoutine(
       const n0 = nameOf(old.ex.exerciseId), n1 = nameOf(now.ex.exerciseId)
       if (old.ex.exerciseId !== now.ex.exerciseId) p.name = { before: n0, after: n1 }
       const s0 = setsSummary(old.ex.sets), s1 = setsSummary(now.ex.sets)
-      if (JSON.stringify(old.ex.sets) !== JSON.stringify(now.ex.sets)) p.sets = { before: s0, after: s1 !== s0 ? s1 : `${s1} (con otras cargas)` }
+      if (!sameValue(old.ex.sets, now.ex.sets)) p.sets = { before: s0, after: s1 !== s0 ? s1 : `${s1} (con otras cargas)` }
       if ((old.ex.restSeconds ?? null) !== (now.ex.restSeconds ?? null)) p.rest = { before: old.ex.restSeconds ?? null, after: now.ex.restSeconds ?? null }
     } else if (old.kind === "block" && now.kind === "block") {
       if (old.block.rounds !== now.block.rounds) p.rounds = { before: old.block.rounds, after: now.block.rounds }
@@ -173,9 +190,9 @@ export function diffRoutine(
       if ((old.block.restBetweenRoundsSeconds ?? null) !== (now.block.restBetweenRoundsSeconds ?? null)) p.rest = { before: old.block.restBetweenRoundsSeconds ?? null, after: now.block.restBetweenRoundsSeconds ?? null }
     }
     const fieldsChanged = old.kind === "exercise" && now.kind === "exercise"
-      ? JSON.stringify({ ...old.ex, order: 0, sets: old.ex.sets }) !== JSON.stringify({ ...now.ex, order: 0, sets: now.ex.sets })
+      ? !sameValue({ ...old.ex, order: 0 }, { ...now.ex, order: 0 })
       : old.kind === "block" && now.kind === "block"
-        ? JSON.stringify({ ...old.block, order: 0, exercises: 0 }) !== JSON.stringify({ ...now.block, order: 0, exercises: 0 })
+        ? !sameValue({ ...old.block, order: 0, exercises: 0 }, { ...now.block, order: 0, exercises: 0 })
         : false
     const moved = movedIds.has(id)
     if (moved) p.moved = true
