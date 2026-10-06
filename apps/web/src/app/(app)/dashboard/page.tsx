@@ -1,10 +1,8 @@
 "use client"
 
-import { readGuestWorkout } from "@/lib/guest-workout"
 import { trpc } from "@/lib/trpc/client"
 import { useRouter } from "next/navigation"
 import { useEffect, useRef } from "react"
-import { NewTeamForm } from "../new-team-form"
 
 export default function DashboardPage() {
   const router = useRouter()
@@ -29,13 +27,12 @@ export default function DashboardPage() {
     }
   }, [teams, router])
 
-  // Usuario sin equipos: se le crea "Mi equipo", salvo que venga a reclamar un
-  // entrenamiento de invitado (su destino es /reclamar, no un equipo propio).
+  // Usuario sin equipos: se le crea "Mi equipo" solo, sin pedir nombre, y entra al onboarding.
+  // Si falla se reintenta una vez; después se ofrece un botón para reintentar.
   useEffect(() => {
     if (teams === undefined || teams.length > 0 || ensureCalled.current) return
-    if (readGuestWorkout()) return
     ensureCalled.current = true
-    ensureDefault.mutate()
+    ensureDefault.mutate(undefined, { onError: () => ensureDefault.mutate() })
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [teams])
 
@@ -47,13 +44,13 @@ export default function DashboardPage() {
     return (
       <div className="flex items-center justify-center h-full px-6">
         <div className="text-center space-y-4 max-w-sm w-full">
-          <div className="space-y-2">
-            <p className="text-lg">Todavía no perteneces a ningún equipo.</p>
-            <p className="text-muted-foreground">
-              Pídele a tu entrenador el enlace de invitación, o crea tu propio equipo.
-            </p>
-          </div>
-          <NewTeamForm className="space-y-2 text-left" />
+          <p className="text-lg">No pudimos preparar tu equipo.</p>
+          <button
+            onClick={() => ensureDefault.mutate()}
+            className="bg-primary text-primary-foreground text-sm px-4 py-2 rounded-md font-medium cursor-pointer"
+          >
+            Reintentar
+          </button>
         </div>
       </div>
     )

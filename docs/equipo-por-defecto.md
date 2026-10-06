@@ -14,12 +14,12 @@ El auto-entrenamiento ocupa una plaza de atleta (`team.max_athletes`, 1 por defe
 
 La mutación `teams.ensureDefault` la llama el dashboard (`/dashboard`) cuando `teams.list` viene vacío. Cubre registros con correo y con Google, y a usuarios existentes con 0 equipos (lo reciben la próxima vez que entran). Tras crearlo, el dashboard navega a `/teams/<id>/plantillas`.
 
-Si la creación falla, el dashboard muestra el estado vacío de siempre (crear equipo propio / esperar invitación).
+Nunca se pide nombre: si la creación falla, el dashboard reintenta una vez y luego muestra un botón "Reintentar".
 
 ## Casos excluidos
 
 - **Invitación (`/join/[token]`)**: el registro/login conserva `?redirect=/join/<token>`, así que el usuario no pasa por `/dashboard` antes de unirse. Si ya se unió, tiene membresía y `ensureDefault` no crea nada.
-- **Invitado que reclama (`/reclamar`, `/r/*`)**: el dashboard no llama a `ensureDefault` si el navegador guarda un entrenamiento de invitado pendiente (`readGuestWorkout()`). Además, `share.claim` ya reutiliza un equipo coach con auto-entrenamiento como equipo personal.
+- **Invitado que reclama (`/reclamar`, `/r/*`)**: el dashboard también crea "Mi equipo" (ya no se omite por `readGuestWorkout()`); `share.claim` reutiliza ese equipo coach con auto-entrenamiento como equipo personal.
 - Usuarios con equipos: no cambian.
 
 ## Idempotencia
