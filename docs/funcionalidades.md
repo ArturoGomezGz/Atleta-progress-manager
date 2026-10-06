@@ -23,7 +23,7 @@ La columna **Verificación** indica de dónde viene el estado:
 | Función | Qué hace | Verificación |
 |---|---|---|
 | Registro e inicio de sesión | Correo y contraseña, y Google si está configurado. Recuperar contraseña. Confirmación de correo (en testing se omite con `AUTO_VERIFY_EMAIL`). | Por confirmar |
-| Equipo por defecto | Cada usuario nuevo recibe "Mi equipo", donde es coach y tiene el auto-entrenamiento activado ([equipo-por-defecto.md](equipo-por-defecto.md)). | Por confirmar |
+| Equipo por defecto | Cada usuario nuevo recibe "Mi equipo", donde es coach y tiene el auto-entrenamiento activado, que ocupa una plaza de atleta ([equipo-por-defecto.md](equipo-por-defecto.md)). | Por confirmar |
 | Onboarding de usuarios nuevos | Tutorial guiado y bloqueante (spotlight con flecha): solo se puede hacer clic donde indica, hasta crear su primer entrenamiento, asignárselo, hacerlo y conocer Explorar. Se puede omitir siempre y reiniciar con el botón "?". Solo para quien recibe el equipo por defecto ([onboarding.md](onboarding.md)). | Por confirmar |
 | Equipos | Crear equipos, cambiar entre ellos desde la sección Equipo, eliminar equipo. | Por confirmar |
 | Miembros e invitaciones | Invitar atletas por enlace, ver miembros y roles. | Por confirmar |

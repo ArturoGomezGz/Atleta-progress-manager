@@ -1,10 +1,10 @@
 import { db } from "@atleta/db/client"
 import { team, teamInvite, teamMember, user } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, count, eq, gt, or } from "drizzle-orm"
+import { and, eq, gt, or } from "drizzle-orm"
 import { randomBytes } from "node:crypto"
 import { z } from "zod"
-import { createTeamWithCoach, ensureDefaultTeam } from "../services/team-setup"
+import { countAthletePlazas, createTeamWithCoach, ensureDefaultTeam } from "../services/team-setup"
 import { featureProcedure, protectedProcedure, router } from "../trpc"
 
 export const teamsRouter = router({
@@ -44,10 +44,7 @@ export const teamsRouter = router({
       await assertCoach(ctx.session.user.id, input.teamId)
 
       const [teamData] = await db.select().from(team).where(eq(team.id, input.teamId)).limit(1)
-      const [{ athleteCount }] = await db
-        .select({ athleteCount: count() })
-        .from(teamMember)
-        .where(and(eq(teamMember.teamId, input.teamId), eq(teamMember.role, "athlete")))
+      const athleteCount = await countAthletePlazas(db, input.teamId)
 
       if (athleteCount >= teamData.maxAthletes) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo ha alcanzado el límite de atletas" })
@@ -75,10 +72,7 @@ export const teamsRouter = router({
 
       if (!existing) {
         const [teamData] = await db.select().from(team).where(eq(team.id, invite.teamId)).limit(1)
-        const [{ athleteCount }] = await db
-          .select({ athleteCount: count() })
-          .from(teamMember)
-          .where(and(eq(teamMember.teamId, invite.teamId), eq(teamMember.role, "athlete")))
+        const athleteCount = await countAthletePlazas(db, invite.teamId)
 
         if (athleteCount >= teamData.maxAthletes) {
           throw new TRPCError({ code: "BAD_REQUEST", message: "El equipo ya está lleno" })
@@ -111,7 +105,14 @@ export const teamsRouter = router({
   toggleSelfTraining: protectedProcedure
     .input(z.object({ teamId: z.string().uuid(), enabled: z.boolean() }))
     .mutation(async ({ ctx, input }) => {
-      await assertCoach(ctx.session.user.id, input.teamId)
+      const member = await assertCoach(ctx.session.user.id, input.teamId)
+      // Activarlo ocupa una plaza de atleta; desactivarlo siempre se permite.
+      if (input.enabled && !member.selfAthlete) {
+        const [teamData] = await db.select().from(team).where(eq(team.id, input.teamId)).limit(1)
+        if ((await countAthletePlazas(db, input.teamId)) >= teamData.maxAthletes) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "No hay plazas de atleta disponibles para el auto-entrenamiento" })
+        }
+      }
       await db
         .update(teamMember)
         .set({ selfAthlete: input.enabled })
