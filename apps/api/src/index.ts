@@ -5,7 +5,7 @@ import Fastify from "fastify"
 import { runMigrations } from "./migrate"
 import { auth } from "./auth"
 import { accountActions } from "./services/account-approval"
-import { handleTelegramUpdate, isValidWebhookSecret, registerTelegramWebhook } from "./services/telegram"
+import { handleTelegramUpdate, isValidWebhookSecret, notifyStartup, registerTelegramWebhook } from "./services/telegram"
 import { appRouter } from "./routers"
 import { createContext } from "./trpc"
 
@@ -71,6 +71,8 @@ async function main() {
 
   const port = Number(process.env.PORT ?? 3001)
   await app.listen({ port, host: "0.0.0.0" })
+
+  notifyStartup().catch((err) => app.log.error(err, "no se pudo enviar el aviso de arranque a Telegram"))
 
   // En desarrollo no hay URL pública: el webhook solo se registra en producción
   if (process.env.NODE_ENV === "production") {

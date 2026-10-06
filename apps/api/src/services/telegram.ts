@@ -54,6 +54,12 @@ export function notifyPasswordReset(user: { name: string; email: string }, url: 
   )
 }
 
+// Aviso de arranque: confirma que el bot está bien configurado cada vez que la API inicia.
+export function notifyStartup() {
+  if (!telegramEnabled) return Promise.resolve()
+  return sendTelegram("🚀 Aplicación iniciada")
+}
+
 // Registra el webhook en Telegram al arrancar; solo con secreto y URL pública configurados.
 export async function registerTelegramWebhook(publicUrl: string | undefined) {
   if (!telegramEnabled || !WEBHOOK_SECRET() || !publicUrl) return
