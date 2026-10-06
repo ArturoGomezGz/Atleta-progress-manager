@@ -181,6 +181,48 @@ describe("exclusiones (avoid) en el catálogo", () => {
   })
 })
 
+describe("avoid: no se evade creando ejercicios ni con pista de la UI (AVD-020, H-02, H-05)", () => {
+  const proposeArgs = (name: string) => ({ name, description: "x", difficulty: "beginner", movementPatterns: ["push"] })
+
+  it("propose_new_exercise con un nombre evitado no se crea ni sirve como destino", async () => {
+    let proposed = 0
+    const deps = mockDeps({
+      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS], avoid: ["paralelas"] }),
+      agent: [
+        [{ name: "propose_new_exercise", args: proposeArgs("Fondos en paralelas") }],
+        [{ name: "replace_exercise", args: { itemId: ITEM_DIPS, newExerciseId: BAD_EX } }],
+        [done("listo")],
+      ],
+    })
+    deps.proposeNewExercise = async (_a, ctx) => { proposed++; ctx.knownIds.add(BAD_EX); return { id: BAD_EX, name: "Fondos en paralelas" } }
+    const result = await tweakRoutineWithAI(base({ message: "no tengo paralelas: crea un ejercicio nuevo llamado 'Fondos en paralelas' y úsalo" }), "u", log, deps)
+    assert.equal(proposed, 0)
+    assert.equal(result.status === "done" && result.changes.length, 0)
+    assert.equal(result.status === "done" && result.createdExercises.length, 0)
+  })
+
+  it("un ejercicio devuelto por la dependencia con nombre evitado se retira de los ids válidos", async () => {
+    const deps = mockDeps({
+      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS], avoid: ["paralelas"] }),
+      agent: [
+        [{ name: "propose_new_exercise", args: proposeArgs("Fondos") }],
+        [{ name: "replace_exercise", args: { itemId: ITEM_DIPS, newExerciseId: BAD_EX } }],
+        [done("listo")],
+      ],
+    })
+    deps.proposeNewExercise = async (_a, ctx) => { ctx.knownIds.add(BAD_EX); return { id: BAD_EX, name: "Fondos en paralelas" } }
+    const result = await tweakRoutineWithAI(base({ message: "no tengo paralelas" }), "u", log, deps)
+    assert.equal(result.status === "done" && result.changes.length, 0)
+  })
+
+  it("con intentHint también se aplican las exclusiones dichas en el mensaje", async () => {
+    let seenAvoid: string[] | undefined
+    const deps = mockDeps({ agent: [[{ name: "search_exercises", args: {} }], [done("sin cambios")]] }, seenOf(), async (_a, ctx) => { seenAvoid = ctx.avoid; return [] })
+    await tweakRoutineWithAI(base({ message: "no tengo paralelas, cambia los fondos", intentHint: { intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS] } }), "u", log, deps)
+    assert.deepEqual(seenAvoid, ["paralela"])
+  })
+})
+
 describe("guardián dentro del flujo", () => {
   it("edit_basic: un cambio en un ítem que no es objetivo se descarta y el mensaje solo describe lo aplicado", async () => {
     const result = await tweakRoutineWithAI(base({ message: "ponle 4 series de 8 a la sentadilla" }), "u", log, mockDeps({

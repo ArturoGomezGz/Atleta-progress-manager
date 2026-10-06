@@ -244,6 +244,11 @@ export async function proposeNewExercise(raw: unknown, ctx: Ctx) {
   const args = proposeArgsSchema.parse(raw)
   const name = args.name.trim()
 
+  // Exclusión ANTES de registrar ids o crear nada: un ejercicio nuevo/existente con el término evitado no es válido
+  if (ctx.avoid?.length && matchesAvoid({ name }, ctx.avoid)) {
+    return { error: "El nombre contiene algo que el entrenador pidió evitar. Elige otro ejercicio, no lo crees." }
+  }
+
   const [existing] = await db
     .select({ id: exercise.id, name: exercise.name })
     .from(exercise)

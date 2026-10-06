@@ -54,7 +54,7 @@ export async function tweakRoutineWithAI(rawInput: TweakInput, userId: string, l
   const usage = { input: 0, output: 0 }
 
   // 1. Intención
-  let decision: RouteDecision | null = input.intentHint ? decisionFromHint(input.intentHint, original, names) : null
+  let decision: RouteDecision | null = input.intentHint ? decisionFromHint(input.intentHint, original, names, `${input.message} ${input.clarification?.answer ?? ""}`) : null
   const source: "hint" | "router" = decision ? "hint" : "router"
   if (!decision) {
     try {

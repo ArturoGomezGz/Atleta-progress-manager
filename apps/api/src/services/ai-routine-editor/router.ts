@@ -4,7 +4,7 @@
 
 import type { RoutineContent } from "@atleta/db/schema"
 import { z } from "zod"
-import { normalizeAvoid } from "./avoid"
+import { extractAvoidFromMessage, normalizeAvoid } from "./avoid"
 import type { TweakDeps } from "./deps"
 import { EXEC_INTENTS, INTENTS, type IntentParams } from "./intents"
 import type { TweakInput } from "./input"
@@ -80,11 +80,11 @@ function resolveIntent(params: IntentParams, content: RoutineContent, names: Rec
 }
 
 /** Pista de la UI -> decisión, sin llamar al modelo. null si la pista no alcanza (se usa el enrutador). */
-export function decisionFromHint(hint: NonNullable<TweakInput["intentHint"]>, content: RoutineContent, names: Record<string, string>): RouteDecision | null {
+export function decisionFromHint(hint: NonNullable<TweakInput["intentHint"]>, content: RoutineContent, names: Record<string, string>, message = ""): RouteDecision | null {
   const params: IntentParams = {
     intent: hint.intent,
     targetItemIds: ensureValidTargets(hint.targetItemIds, content, names),
-    avoid: [],
+    avoid: extractAvoidFromMessage(message), // la pista salta al modelo, pero lo dicho en el mensaje igual se respeta
     direction: hint.direction,
     knob: hint.knob,
     seconds: hint.seconds,

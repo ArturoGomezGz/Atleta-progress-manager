@@ -89,10 +89,19 @@ export const proposeNewExerciseSkill = defineSkill({
     contraindications: { type: "string" },
   }, ["name", "description", "difficulty", "movementPatterns"]),
   async run(input, rt) {
+    // Un nombre que contiene lo excluido ni se crea: si no, "Fondos en paralelas" evade `no tengo paralelas`
+    if (matchesAvoid({ name: input.name }, rt.avoid)) {
+      return { result: { error: "El nombre contiene algo que el entrenador pidió evitar. Elige otro ejercicio, no lo crees." } }
+    }
     const created = await rt.catalog.propose(input)
     if (created.id && created.name) {
       rt.names[created.id] = created.name
-      if (!matchesAvoid({ name: created.name }, rt.avoid)) rt.knownExerciseIds.add(created.id)
+      // El id solo es válido como destino DESPUÉS de pasar la exclusión (la dependencia real ya lo registró: se retira)
+      if (matchesAvoid({ name: created.name }, rt.avoid)) {
+        rt.knownExerciseIds.delete(created.id)
+        return { result: { error: "Ese ejercicio contiene algo que el entrenador pidió evitar. Elige otro." } }
+      }
+      rt.knownExerciseIds.add(created.id)
     }
     return { result: created }
   },
