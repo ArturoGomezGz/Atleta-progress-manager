@@ -6,16 +6,15 @@ import type { FastifyBaseLogger } from "fastify"
 import type OpenAI from "openai"
 import { z } from "zod"
 import { attachDetails, getOpenAI } from "../routers/exercises"
+import { bodyZones, levels, MAX_NEW_EXERCISES, patterns } from "./ai-routine-editor/catalog-constants"
+import { matchesAvoid } from "./ai-routine-editor/avoid"
 import { AI_ROUTINE_SYSTEM_PROMPT } from "./ai-routines-prompt"
 
 export const AI_MODEL = "gpt-4o-mini"
 const MAX_TURNS = 16
-export const MAX_NEW_EXERCISES = 2
 
 const goals = ["strength", "hypertrophy", "endurance", "power", "cardio", "recovery"] as const
-export const levels = ["beginner", "intermediate", "advanced"] as const
-export const patterns = ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core"] as const
-export const bodyZones = ["upper", "lower", "core"] as const
+export { bodyZones, levels, MAX_NEW_EXERCISES, patterns }
 
 export const aiRoutineInputSchema = z.object({
   teamId:          z.string().uuid(),
@@ -175,6 +174,8 @@ export type Ctx = {
   allowedEquipment: Set<string> | null
   knownIds: Set<string>
   created: { id: string; name: string }[]
+  /** Términos a excluir de search_exercises (nombre o equipamiento), ya normalizados. Solo el editor de rutinas. */
+  avoid?: string[]
 }
 
 function visibleTo(ctx: Ctx) {
@@ -214,6 +215,7 @@ export async function searchExercises(raw: unknown, ctx: Ctx) {
   const results = (await attachDetails(rows))
     .filter((ex) => !args.bodyZone || ex.muscles.some((m) => m.role === "primary" && m.bodyZone === args.bodyZone))
     .filter((ex) => !ctx.allowedEquipment || ex.equipment.every((e) => ctx.allowedEquipment!.has(e.equipmentId)))
+    .filter((ex) => !ctx.avoid?.length || !matchesAvoid({ name: ex.name, equipment: ex.equipment }, ctx.avoid))
     .slice(0, 12)
 
   for (const ex of results) ctx.knownIds.add(ex.id)

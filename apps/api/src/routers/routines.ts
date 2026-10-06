@@ -4,8 +4,9 @@ import { TRPCError } from "@trpc/server"
 import { and, eq, inArray } from "drizzle-orm"
 import { z } from "zod"
 import { aiRoutineInputSchema, generateRoutineWithAI } from "../services/ai-routines"
-import { refineRoutineInputSchema, refineRoutineWithAI } from "../services/ai-routine-refine"
-import { createRefineDeps } from "../services/ai-routine-refine-deps"
+import { createTweakDeps } from "../services/ai-routine-editor/deps-real"
+import { tweakInputSchema } from "../services/ai-routine-editor/input"
+import { tweakRoutineWithAI } from "../services/ai-routine-editor/tweak"
 import { routineContentSchema } from "../services/routine-content-schema"
 import { exerciseZones, zoneProfiles } from "../services/body-zones"
 import { canUseAiRoutines } from "../services/feature-access"
@@ -14,10 +15,10 @@ import { createRateLimiter } from "../lib/rate-limit"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
 
-// Límite por usuario para el chat de ajustes con IA (en memoria, por proceso)
-const REFINE_RATE_MAX = 20
-const REFINE_RATE_WINDOW_MS = 10 * 60 * 1000
-const refineRateLimiter = createRateLimiter({ max: REFINE_RATE_MAX, windowMs: REFINE_RATE_WINDOW_MS })
+// Límite por usuario para los ajustes (tweaks) con IA (en memoria, por proceso)
+const TWEAK_RATE_MAX = 20
+const TWEAK_RATE_WINDOW_MS = 10 * 60 * 1000
+const tweakRateLimiter = createRateLimiter({ max: TWEAK_RATE_MAX, windowMs: TWEAK_RATE_WINDOW_MS })
 
 // ─── Helper ───────────────────────────────────────────────────────────────────
 
@@ -176,22 +177,23 @@ export const routinesRouter = router({
       return { ...result, content: routineContentSchema.parse(result.content) }
     }),
 
-  // Experimental: chat de ajustes sobre una rutina abierta. No guarda nada: devuelve el mensaje,
-  // el contenido propuesto y la lista de cambios; el cliente aplica y guarda con updateContent.
-  refineWithAI: protectedProcedure
-    .input(refineRoutineInputSchema)
+  // Experimental (flag ai_routine_tweaks): AI Routine Editor. Un tweak = una tarea, sin historial. No guarda
+  // nada: devuelve una pregunta de aclaración (máx. una) o la propuesta (mensaje, contenido y cambios);
+  // el cliente aplica al borrador y guarda con updateContent.
+  tweakWithAI: protectedProcedure
+    .input(tweakInputSchema)
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
       assertFeature(ctx.session.user, "ai_routine_tweaks")
       if (!canUseAiRoutines(ctx.session.user, input.teamId)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "La IA para rutinas no está habilitada para este equipo" })
       }
-      const limit = refineRateLimiter.hit(ctx.session.user.id)
+      const limit = tweakRateLimiter.hit(ctx.session.user.id)
       if (!limit.ok) {
-        ctx.log.warn({ userId: ctx.session.user.id, retryAfterSeconds: limit.retryAfterSeconds }, "[ai-routines] refinamiento limitado por tasa")
+        ctx.log.warn({ userId: ctx.session.user.id, retryAfterSeconds: limit.retryAfterSeconds }, "[ai-routines] tweak limitado por tasa")
         throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: `Demasiados ajustes con IA seguidos. Intenta de nuevo en ${limit.retryAfterSeconds} s.` })
       }
-      return refineRoutineWithAI(input, ctx.session.user.id, ctx.log, createRefineDeps())
+      return tweakRoutineWithAI(input, ctx.session.user.id, ctx.log, createTweakDeps())
     }),
 
   rename: protectedProcedure
