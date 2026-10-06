@@ -1,7 +1,7 @@
 "use client"
 
 import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
-import { AiRoutineChat } from "@/components/ai-routine-chat"
+import { AiRoutineEditor } from "@/components/ai-routine-editor"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
 import { setsSummary, type ItemPreview } from "@/lib/ai-routine-diff"
 import { useFeature } from "@/lib/features"
@@ -676,7 +676,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     {/* Modales fuera del contenedor que se desliza: un ancestro con `transform` crea un
         nuevo contenedor de posicionamiento y rompe `position: fixed`. */}
     {showAiChat && (
-      <AiRoutineChat
+      <AiRoutineEditor
         teamId={teamId}
         routineName={name}
         content={content}

@@ -1,4 +1,4 @@
-// Comparación entre la rutina actual del editor y la propuesta de la IA (routines.refineWithAI).
+// Comparación entre la rutina actual del editor y la propuesta de la IA (routines.tweakWithAI).
 // Se compara por id (estable entre ambos contenidos) y `changes[]` del backend solo aporta texto:
 // trae un registro por operación y puede incluir alta + baja del mismo ítem.
 import type { RoutineContent, RoutineExerciseContent, RoutineItemBlock, RoutineSet } from "@atleta/db/schema"
