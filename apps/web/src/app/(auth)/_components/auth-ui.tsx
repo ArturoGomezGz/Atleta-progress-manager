@@ -17,7 +17,7 @@ export function GoogleIcon() {
 /** Fondo atmosférico + marca "ATLETA" con línea dorada, y la columna del formulario. */
 export function AuthShell({ tagline, title, children }: { tagline: string; title: string; children: ReactNode }) {
   return (
-    <div className="auth-shell relative min-h-screen isolate overflow-hidden bg-background flex flex-col items-center px-5 pt-16 pb-6 sm:justify-center sm:pt-6">
+    <div className="auth-shell relative min-h-dvh isolate overflow-hidden bg-background flex flex-col items-center px-5 pt-16 pb-6 sm:justify-center sm:pt-6">
       <div className="auth-bg" aria-hidden="true" />
       <header className="flex flex-col items-center gap-3 text-center">
         <p
