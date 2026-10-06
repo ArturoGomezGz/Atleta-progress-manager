@@ -5,6 +5,7 @@
 import type { RoutineContent } from "@atleta/db/schema"
 import { z } from "zod"
 import { extractAvoidFromMessage, normalizeAvoid } from "./avoid"
+import { resolveLeftover } from "./compound"
 import type { TweakDeps } from "./deps"
 import { EXEC_INTENTS, INTENTS, type IntentParams } from "./intents"
 import type { TweakInput } from "./input"
@@ -146,7 +147,7 @@ export async function routeRequest(args: {
 
   const params: IntentParams = {
     intent: r.intent,
-    leftover: r.leftover?.trim() || undefined,
+    leftover: resolveLeftover(`${input.message} ${input.clarification?.answer ?? ""}`.trim(), r.intent, r.leftover ?? undefined),
     targetItemIds: ensureValidTargets(r.targetItemIds, content, names),
     avoid: normalizeAvoid(r.avoid),
     direction: r.direction ?? undefined,

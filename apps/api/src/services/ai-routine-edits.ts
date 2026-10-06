@@ -214,6 +214,21 @@ export function buildSets(sets: SetInput[], opts: Pick<EditOptions, "allowFixedK
   })
 }
 
+/**
+ * Al cambiar las series de un ejercicio, las que llegan sin carga heredan la de la serie original en la
+ * misma posición (o la última): el modelo suele olvidar loadType/loadValue y se perdería el RPE o el peso.
+ * Solo aplica al mismo tipo de trabajo (reps con reps, tiempo con tiempo).
+ */
+export function inheritLoads(sets: SetInput[], previous: RoutineSet[]): SetInput[] {
+  if (previous.length === 0) return sets
+  return sets.map((s, i) => {
+    if (s.loadType || s.loadValue != null) return s
+    const ref = previous[i] ?? previous[previous.length - 1]!
+    if (!ref.loadType || ref.loadValue == null || ref.setType !== s.setType) return s
+    return { ...s, loadType: ref.loadType, loadValue: ref.loadValue }
+  })
+}
+
 function describeSet(s: RoutineSet): string {
   const volume = s.setType === "time" ? `${s.targetDurationSeconds ?? "?"} s` : `${s.targetReps ?? "?"} reps`
   const load = s.loadType && s.loadValue != null
@@ -352,7 +367,7 @@ function applyOne(content: RoutineContent, op: EditOp, opts: EditOptions): Routi
       const loc = mustLocate(content, op.itemId)
       const ex = exerciseAt(loc)
       const before = structuredClone(ex.sets)
-      ex.sets = buildSets(op.sets, opts, ex.sets)
+      ex.sets = buildSets(inheritLoads(op.sets, before), opts, ex.sets)
       return {
         type: op.op, itemId: ex.id, itemKind: "exercise", blockId: loc.parent?.id ?? null,
         summary: `${nameOf(opts, ex.exerciseId)}: series de ${describeSets(before)} a ${describeSets(ex.sets)}`,

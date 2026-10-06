@@ -49,6 +49,14 @@ export function friendlyTweakInputMessage(issues: readonly { path: (string | num
       return "No pude leer la rutina para ajustarla. Revisa que no tenga ejercicios o circuitos vacíos."
     }
   }
+  for (const i of issues) {
+    if (i.path[0] === "intentHint") {
+      if (i.path[1] === "seconds") return "El descanso debe estar entre 15 y 600 segundos."
+      return "La acción rápida no es válida. Vuelve a intentarlo desde el menú."
+    }
+    if (i.path[0] === "clarification") return "La respuesta debe tener entre 1 y 300 caracteres."
+    if (i.path[0] === "teamId") return "No pude identificar el equipo de la rutina. Recarga la página e inténtalo de nuevo."
+  }
   return "No pude entender la solicitud. Revisa el mensaje y la rutina e inténtalo de nuevo."
 }
 

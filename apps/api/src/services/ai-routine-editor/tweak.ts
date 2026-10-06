@@ -39,13 +39,13 @@ const noAlternativeMessage = (names: string[], avoid: string[]) =>
   `No encontré en el catálogo un ejercicio parecido que sirva para reemplazar ${names.join(", ")}${avoid.length ? ` sin ${avoid.join(", ")}` : ""}. No creé ni cambié nada. Prueba con menos exclusiones o crea el ejercicio que necesitas en Ejercicios y vuelve a pedirlo.`
 
 /** Mensaje final: describe SOLO lo que quedó aplicado (nunca lo que el modelo dijo haber hecho). */
-export function buildFinalMessage(args: { changes: RoutineChange[]; skillMessage?: string; agentMessage?: string; dropped: number; hadErrors: boolean; leftover?: string; notes?: string[] }): string {
+export function buildFinalMessage(args: { changes: RoutineChange[]; skillMessage?: string; agentMessage?: string; dropped: number; hadErrors: boolean; onlyNoops?: boolean; leftover?: string; notes?: string[] }): string {
   const { changes, skillMessage, agentMessage, dropped, hadErrors } = args
   let text: string
   if (changes.length === 0) {
     text = dropped > 0
       ? "No apliqué cambios: la IA intentó modificar cosas que no pediste."
-      : skillMessage ?? (hadErrors || !agentMessage ? "No pude aplicar el cambio. Intenta reformularlo." : agentMessage)
+      : skillMessage ?? (args.onlyNoops ? "La rutina ya estaba así: no hubo nada que cambiar." : hadErrors || !agentMessage ? "No pude aplicar el cambio. Intenta reformularlo." : agentMessage)
   } else if (skillMessage && dropped === 0) {
     text = skillMessage
   } else {
@@ -120,6 +120,7 @@ export async function tweakRoutineWithAI(rawInput: TweakInput, userId: string, l
   let skillMessage: string | undefined
   let agentMessage: string | undefined
   let hadErrors = false
+  let onlyNoops = false
   let turns = 0
   let knob: IntentParams["knob"] | null = params.knob
 
@@ -135,6 +136,7 @@ export async function tweakRoutineWithAI(rawInput: TweakInput, userId: string, l
     usage.output += outcome.usage.output
     agentMessage = outcome.message
     hadErrors = outcome.hadErrors
+    onlyNoops = !!outcome.onlyNoops
     turns = outcome.turns
     // Si el modelo no eligió, se usa el mejor candidato (ya ordenados): un reemplazo pedido no se queda sin hacer
     if (params.intent === "replace_with_alternative") {
@@ -157,7 +159,7 @@ export async function tweakRoutineWithAI(rawInput: TweakInput, userId: string, l
   if (dropped.length) log.warn({ teamId: input.teamId, userId, intent: params.intent, dropped }, "[ai-routines] tweak cambios fuera de alcance descartados")
 
   const proposedContent = routineContentSchema.parse(guarded.content) as RoutineContent
-  const message = buildFinalMessage({ changes: guarded.changes, skillMessage, agentMessage, dropped: dropped.length, hadErrors, leftover: params.leftover, notes })
+  const message = buildFinalMessage({ changes: guarded.changes, skillMessage, agentMessage, dropped: dropped.length, hadErrors, onlyNoops, leftover: params.leftover, notes })
   log.info({
     teamId: input.teamId, userId, intent: params.intent, source, turns, tokens: usage,
     edits: guarded.changes.length, dropped: dropped.length,

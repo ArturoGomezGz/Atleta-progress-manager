@@ -43,12 +43,12 @@ const searchInput = z.object({
 export const searchExercisesSkill = defineSkill({
   id: "search_exercises",
   name: "Buscar ejercicios",
-  description: "Busca ejercicios en el catálogo disponible para el equipo (nombres en español). Devuelve hasta 12 resultados; excluye lo que el mensaje pidió evitar.",
+  description: "Busca ejercicios en el catálogo disponible para el equipo (la mayoría de los nombres están en inglés: prefiere filtrar por movementPattern o bodyZone, y si usas query que sea una o dos palabras en inglés). Devuelve hasta 12 resultados; excluye lo que el mensaje pidió evitar.",
   category: "catalog", execution: "deterministic", scope: "read", status: "limited", risk: "low", mcp: "yes", flag: FLAG, reviewedAt: REVIEWED,
   notes: "Aplica `avoid` (nombre o equipamiento, sin acentos ni mayúsculas) antes de registrar ids válidos.",
   inputSchema: searchInput,
   parameters: params({
-    query:           { type: "string", description: "Texto parcial del nombre en español, ej. 'sentadilla'. Omitir para buscar solo por filtros" },
+    query:           { type: "string", description: "Texto parcial del nombre, ej. 'squat' o 'plank' (catálogo mayormente en inglés). Omitir para buscar solo por filtros" },
     movementPattern: { type: "string", enum: patterns },
     bodyZone:        { type: "string", enum: bodyZones },
     difficulty:      { type: "string", enum: levels },

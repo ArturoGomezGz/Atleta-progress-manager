@@ -3,7 +3,7 @@ import { describe, it } from "node:test"
 import type OpenAI from "openai"
 import { tweakInputSchema, TWEAK_MAX_MESSAGE_CHARS, type TweakInput } from "../../../src/services/ai-routine-editor/input"
 import { tweakRoutineWithAI } from "../../../src/services/ai-routine-editor/tweak"
-import { content, BAD_EX, ITEM_DIPS, ITEM_PRESS, ITEM_ROW, ITEM_SQUAT, log, mockDeps, NEW_EX, TEAM, id, type Call, type Seen } from "./helpers"
+import { content, BAD_EX, DIPS, PRESS, ITEM_DIPS, ITEM_PRESS, ITEM_ROW, ITEM_SQUAT, log, mockDeps, NEW_EX, TEAM, id, type Call, type Seen } from "./helpers"
 
 const base = (over: Partial<TweakInput> = {}): TweakInput => ({ teamId: TEAM, routineContent: content(), message: "sustitúyelo por algo más", ...over })
 const route = (args: Record<string, unknown>): Call => ({ name: "route_request", args })
@@ -176,7 +176,7 @@ describe("exclusiones (avoid) en el catálogo", () => {
     }))
     const searchReply = toolReplies(seen, 1)[0]!
     assert.ok(!searchReply.includes(BAD_EX) && searchReply.includes(NEW_EX))
-    assert.match(toolReplies(seen, 2)[1] ?? toolReplies(seen, 2)[0]!, /no salió de search_exercises/)
+    assert.match(toolReplies(seen, 2)[1] ?? toolReplies(seen, 2)[1]!, /no salió de search_exercises/)
     assert.equal(result.status === "done" && result.changes.length, 1)
   })
 })
@@ -237,7 +237,7 @@ describe("sin creación de ejercicios y candidatos deterministas (find_alternati
       info(3, "Ring Dips", { difficulty: "advanced" }),
       info(4, "Parallel Bar Dips", { equipment: ["Parallel bars", "Paralelas"] }),
       info(5, "Sentadilla", { patterns: ["squat"], primaryMuscles: ["Cuádriceps"], bodyZones: ["lower"] }),
-      info(6, "Bench Press", { id: ITEM_PRESS }),
+      info(6, "Bench Press", { id: PRESS }),
     ]
     const result = await tweakRoutineWithAI(base({ message: "no tengo paralelas, cámbialo" }), "u", log, mockDeps({
       route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS], avoid: ["paralelas"] }),
@@ -260,15 +260,16 @@ describe("sin creación de ejercicios y candidatos deterministas (find_alternati
 
   it("add_exercise rechaza un ejercicio ya presente salvo que se pida repetir (H-27)", async () => {
     const add = (exerciseId: string) => ({ name: "add_exercise", args: { exerciseId, sets: [{ setType: "reps", targetReps: 10 }] } })
+    const find = { name: "search_exercises", args: { query: "dips" } }
     const search = async (_a: unknown, ctx: { knownIds: Set<string> }) => { ctx.knownIds.add(DIPS).add(NEW_EX); return [] }
     const seen = seenOf()
     const r1 = await tweakRoutineWithAI(base({ message: "agrega un ejercicio de pecho" }), "u", log, mockDeps({
-      route: route({ intent: "add_exercise" }), agent: [[add(DIPS)], [add(NEW_EX)]],
+      route: route({ intent: "add_exercise" }), agent: [[find], [add(DIPS)], [add(NEW_EX)]],
     }, seen, search as never))
-    assert.match(toolReplies(seen, 1)[0]!, /ya está en la rutina/)
+    assert.match(toolReplies(seen, 2)[1]!, /ya está en la rutina/)
     assert.equal(r1.status === "done" && r1.changes.length, 1)
     const r2 = await tweakRoutineWithAI(base({ message: "agrega fondos otra vez" }), "u", log, mockDeps({
-      route: route({ intent: "add_exercise" }), agent: [[add(DIPS)]],
+      route: route({ intent: "add_exercise" }), agent: [[find], [add(DIPS)]],
     }, seenOf(), search as never))
     assert.equal(r2.status === "done" && r2.changes.length, 1)
   })

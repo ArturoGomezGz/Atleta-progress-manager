@@ -17,6 +17,8 @@ import type { TweakRuntime } from "./runtime"
 import { getSkill } from "./skills"
 
 export const AGENT_MAX_TURNS = 6
+/** Errores de las operaciones que no cambian nada (el valor pedido ya estaba). */
+const NOOP_ERRORS = /no cambia nada|ya está en esa posición/i
 const MAX_REPLY_CHARS = 600
 
 export function buildExecutionPrompt(params: IntentParams, input: TweakInput, content: RoutineContent, names: Record<string, string>, alternatives: Record<string, FindAlternativesMeta> = {}): string {
@@ -58,6 +60,8 @@ export type AgentOutcome = {
   usage: { input: number; output: number }
   /** Alguna herramienta falló durante la ejecución. */
   hadErrors: boolean
+  /** Todos los fallos fueron "la operación no cambia nada": el ajuste ya estaba así. */
+  onlyNoops?: boolean
   finished: boolean
 }
 
@@ -73,6 +77,7 @@ export async function runAgent(args: { params: IntentParams; input: TweakInput; 
 
   const usage = { input: 0, output: 0 }
   let hadErrors = false
+  let realErrors = false
   let message: string | undefined
 
   for (let turn = 1; turn <= AGENT_MAX_TURNS; turn++) {
@@ -106,12 +111,13 @@ export async function runAgent(args: { params: IntentParams; input: TweakInput; 
         result = { error: text }
         turnLog.push({ tool: name, error: text })
         hadErrors = true
+        if (!NOOP_ERRORS.test(text)) realErrors = true
       }
       messages.push({ role: "tool", tool_call_id: call.id, content: JSON.stringify(result) })
     }
     log.info({ teamId: input.teamId, intent: params.intent, turn, calls: turnLog }, "[ai-routines] tweak turno")
 
-    if (message || isComplete(params, rt)) return { message, turns: turn, usage, hadErrors, finished: true }
+    if (message || isComplete(params, rt)) return { message, turns: turn, usage, hadErrors, onlyNoops: hadErrors && !realErrors, finished: true }
   }
-  return { message, turns: AGENT_MAX_TURNS, usage, hadErrors, finished: false }
+  return { message, turns: AGENT_MAX_TURNS, usage, hadErrors, onlyNoops: hadErrors && !realErrors, finished: false }
 }

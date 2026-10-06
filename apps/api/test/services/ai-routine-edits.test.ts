@@ -276,3 +276,22 @@ describe("applyEdits: propiedades generales", () => {
     fails(() => applyEdit(content, { op: "add_exercise", exerciseId: NEW_EX, sets }, baseOpts), /máximo/)
   })
 })
+
+describe("update_sets conserva la carga al cambiar el número de series", () => {
+  it("las series nuevas sin carga heredan la de la original en esa posición o la última", () => {
+    const base = fixture()
+    const sq = base.items[0]!
+    assert.ok(sq.type === "exercise")
+    const loadOf = (c: typeof base) => { const it = c.items[0]!; return it.type === "exercise" ? it.sets.map((s) => [s.loadType, s.loadValue]) : [] }
+    const up = applyEdit(base, { op: "update_sets", itemId: ITEM_SQUAT, sets: Array.from({ length: 6 }, () => ({ setType: "reps" as const, targetReps: 8 })) }, baseOpts)
+    assert.deepEqual(loadOf(up.content), Array.from({ length: 6 }, () => ["rpe", 8]))
+  })
+  it("una carga indicada por el modelo gana sobre la heredada, y el tiempo no hereda de reps", () => {
+    const base = fixture()
+    const out = applyEdit(base, { op: "update_sets", itemId: ITEM_SQUAT, sets: [{ setType: "reps", targetReps: 5, loadType: "rpe", loadValue: 9 }, { setType: "time", targetDurationSeconds: 30 }] }, baseOpts)
+    const it = out.content.items[0]!
+    assert.ok(it.type === "exercise")
+    assert.equal(it.sets[0]!.loadValue, 9)
+    assert.equal(it.sets[1]!.loadType, undefined)
+  })
+})
