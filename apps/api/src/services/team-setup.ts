@@ -2,11 +2,23 @@
 
 import { db } from "@atleta/db/client"
 import { team, teamMember, userPreferences } from "@atleta/db/schema"
-import { eq, sql } from "drizzle-orm"
+import { and, count, eq, or, sql } from "drizzle-orm"
 
 export const DEFAULT_TEAM_NAME = "Mi equipo"
 
 type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+/**
+ * Plazas de atleta ocupadas: atletas del equipo más coaches con auto-entrenamiento
+ * (un mismo miembro cuenta una sola vez).
+ */
+export async function countAthletePlazas(tx: Pick<Tx, "select">, teamId: string) {
+  const [{ plazas }] = await tx
+    .select({ plazas: count() })
+    .from(teamMember)
+    .where(and(eq(teamMember.teamId, teamId), or(eq(teamMember.role, "athlete"), eq(teamMember.selfAthlete, true))))
+  return plazas
+}
 
 /** Crea el equipo y la membresía de coach de su dueño. */
 export async function createTeamWithCoach(
