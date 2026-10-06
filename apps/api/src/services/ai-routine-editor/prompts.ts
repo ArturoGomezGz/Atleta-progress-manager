@@ -35,7 +35,7 @@ const INTENT_PROMPTS: Record<ExecIntent, string> = {
 1. Recibes CANDIDATOS del catálogo ya filtrados (mismo patrón, dificultad no mayor, sin lo evitado) y ordenados del mejor al peor. Elige UNO: el más parecido en rol y músculo, que no choque con lo que dice el entrenador ni con contraindications. Solo si el entrenador nombró un ejercicio concreto que no está entre ellos, usa search_exercises.
 2. replace_exercise sobre el ítem objetivo con keepSets=true (envía sets solo si cambia el tipo de trabajo, p. ej. reps a tiempo). No envíes notes: se conservan las del original.
 No uses otras herramientas ni cambies otros ítems.`,
-  add_exercise: `TAREA: agregar UN ejercicio nuevo que complemente la rutina. search_exercises (los nombres del catálogo pueden estar en inglés; busca por movementPattern o bodyZone) y luego add_exercise con un ejercicio que NO esté ya en la rutina y con series coherentes con el resto (descanso y objetivo del estilo de los demás). Nada más.`,
+  add_exercise: `TAREA: agregar UN ejercicio nuevo que complemente la rutina. Primero search_exercises SIN query de texto en español: usa movementPattern o bodyZone (core -> bodyZone=core o movementPattern=core; piernas -> lower; empuje -> push; etc.; los nombres del catálogo están en inglés). El exerciseId debe salir de esa búsqueda y luego add_exercise con un ejercicio que NO esté ya en la rutina y con series coherentes con el resto (descanso y objetivo del estilo de los demás). Nada más.`,
   edit_basic: `TAREA: aplicar el cambio puntual pedido sobre los ítems objetivo, con la herramienta que corresponda. No toques ítems que no sean objetivo.`,
   adjust_difficulty: "",
   adjust_rest: "",

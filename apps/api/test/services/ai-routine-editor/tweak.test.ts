@@ -296,6 +296,18 @@ describe("sin creación de ejercicios y candidatos deterministas (find_alternati
     if (result.status === "done") assert.match(result.message, /No hice: cambiar el press\. Pídelo en otro ajuste\./)
   })
 
+  it("el router no declara leftover en pedidos simples, y se deduce en compuestos aunque el modelo lo omita (N-01, N-02)", async () => {
+    const simple = await tweakRoutineWithAI(base({ message: "cambia los fondos por otro ejercicio" }), "u", log, mockDeps({
+      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS], leftover: "cambiar los fondos" }),
+      agent: [[{ name: "replace_exercise", args: { itemId: ITEM_DIPS, newExerciseId: NEW_EX } }]],
+    }))
+    assert.equal(simple.status === "done" && /No hice/.test(simple.message), false)
+    const compound = await tweakRoutineWithAI(base({ message: "hazla más difícil y cambia el press banca" }), "u", log, mockDeps({
+      route: route({ intent: "adjust_difficulty", direction: "up" }),
+    }))
+    assert.equal(compound.status === "done" && /No hice: cambia el press banca\./.test(compound.message), true)
+  })
+
   it("aclaración vaga ('el que quieras') no elige un ejercicio al azar (CLR-004)", async () => {
     const result = await tweakRoutineWithAI(base({ message: "cámbialo", clarification: { question: "¿A qué ejercicio te refieres?", answer: "no sé, el que quieras" } }), "u", log, mockDeps({
       route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_SQUAT] }),
