@@ -130,13 +130,6 @@ function RegisterForm() {
                 <a href="/login" className="text-primary hover:brightness-110 font-medium">
                   Iniciar sesión
                 </a>
-                <span className="text-muted-foreground">·</span>
-                <a
-                  href={`/verify-email?email=${encodeURIComponent(email)}`}
-                  className="text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Reenviar verificación
-                </a>
               </div>
             </div>
           )}

@@ -1,6 +1,6 @@
 "use client"
 
-import { authClient, signIn } from "@/lib/auth"
+import { signIn } from "@/lib/auth"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
 
@@ -24,7 +24,6 @@ function LoginForm() {
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
   const [unverified, setUnverified] = useState(false)
-  const [resendSent, setResendSent] = useState(false)
 
   const redirectTo = searchParams.get("redirect") ?? "/dashboard"
 
@@ -52,12 +51,6 @@ function LoginForm() {
   async function handleGoogle() {
     setGoogleLoading(true)
     await signIn.social({ provider: "google", callbackURL: redirectTo })
-  }
-
-  async function handleResendVerification() {
-    setResendSent(false)
-    await authClient.sendVerificationEmail({ email, callbackURL: "/dashboard" })
-    setResendSent(true)
   }
 
   return (
@@ -116,19 +109,10 @@ function LoginForm() {
           {error && <p className="text-destructive text-sm">{error}</p>}
 
           {unverified && (
-            <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-2">
-              <p className="text-sm text-foreground">Debes verificar tu email antes de iniciar sesión.</p>
-              {resendSent ? (
-                <p className="text-sm text-primary">Email de verificación reenviado.</p>
-              ) : (
-                <button
-                  type="button"
-                  onClick={handleResendVerification}
-                  className="text-sm text-primary hover:brightness-110 font-medium"
-                >
-                  Reenviar email de verificación
-                </button>
-              )}
+            <div className="rounded-lg border border-border bg-muted/40 p-3">
+              <p className="text-sm text-foreground">
+                Tu cuenta sigue en revisión. Te daremos acceso en unos minutos.
+              </p>
             </div>
           )}
 

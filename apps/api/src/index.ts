@@ -4,6 +4,8 @@ import { fromNodeHeaders } from "better-auth/node"
 import Fastify from "fastify"
 import { runMigrations } from "./migrate"
 import { auth } from "./auth"
+import { accountActions } from "./services/account-approval"
+import { handleTelegramUpdate, isValidWebhookSecret, registerTelegramWebhook } from "./services/telegram"
 import { appRouter } from "./routers"
 import { createContext } from "./trpc"
 
@@ -48,6 +50,19 @@ async function main() {
     }
   })
 
+  // Botones del bot de Telegram (aprobar/rechazar cuentas). Telegram firma con un secreto en la cabecera.
+  app.post("/api/telegram/webhook", async (req, reply) => {
+    if (!isValidWebhookSecret(req.headers["x-telegram-bot-api-secret-token"] as string | undefined)) {
+      return reply.status(401).send()
+    }
+    try {
+      await handleTelegramUpdate(req.body as Parameters<typeof handleTelegramUpdate>[0], accountActions)
+    } catch (err) {
+      req.log.error(err, "telegram webhook error")
+    }
+    return reply.status(200).send()
+  })
+
   // tRPC routes
   await app.register(fastifyTRPCPlugin, {
     prefix: "/trpc",
@@ -56,6 +71,13 @@ async function main() {
 
   const port = Number(process.env.PORT ?? 3001)
   await app.listen({ port, host: "0.0.0.0" })
+
+  // En desarrollo no hay URL pública: el webhook solo se registra en producción
+  if (process.env.NODE_ENV === "production") {
+    registerTelegramWebhook(process.env.BETTER_AUTH_URL).catch((err) =>
+      app.log.error(err, "no se pudo registrar el webhook de Telegram"),
+    )
+  }
 }
 
 main().catch((err) => {

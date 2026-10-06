@@ -9,6 +9,10 @@ const config: NextConfig = {
         destination: `${process.env.NEXT_PUBLIC_API_URL}/api/auth/:path*`,
       },
       {
+        source: "/api/telegram/:path*",
+        destination: `${process.env.NEXT_PUBLIC_API_URL}/api/telegram/:path*`,
+      },
+      {
         source: "/trpc/:path*",
         destination: `${process.env.NEXT_PUBLIC_API_URL}/trpc/:path*`,
       },
