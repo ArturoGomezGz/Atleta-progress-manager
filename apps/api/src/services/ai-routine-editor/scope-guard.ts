@@ -16,6 +16,13 @@ export type ScopeContext = {
   knob?: Knob | null
   /** Contenido ANTES del tweak (para resolver hijos de bloques objetivo). */
   original: RoutineContent
+  /** El entrenador pidió tocar notas. Sin esto, un reemplazo no puede escribir ni borrar notas. */
+  allowNotes?: boolean
+}
+
+/** ¿El mensaje habla de notas/indicaciones? Solo entonces un reemplazo puede cambiarlas. */
+export function messageRequestsNotes(message: string): boolean {
+  return /\bnotas?\b|\bindicaci(?:on|ón|ones|ónes)\b|\bcomentarios?\b/i.test(message)
 }
 
 export type Dropped = { type: EditOpType; itemId: string; reason: string }
@@ -41,7 +48,11 @@ export function outOfScopeReason(applied: AppliedOp, ctx: ScopeContext): string 
 
   switch (ctx.intent) {
     case "replace_with_alternative":
-      return allowed(["replace_exercise", "update_sets", "update_item_fields"]) ?? mustTarget()
+      return (
+        allowed(["replace_exercise", "update_sets", "update_item_fields"]) ??
+        mustTarget() ??
+        (type === "update_item_fields" && !ctx.allowNotes && "notes" in (change.after ?? {}) ? "notas no pedidas" : null)
+      )
 
     case "add_exercise":
       return allowed(["add_exercise"])
@@ -91,11 +102,18 @@ export function guardChanges(
     if (reason) dropped.push({ type: a.change.type, itemId: a.change.itemId, reason })
     else kept.push(a)
   }
-  if (dropped.length === 0) return { content: working, changes: applied.map((a) => a.change), dropped }
+  // Un reemplazo conserva las notas del original: se quitan las que el modelo escribió sin que se pidieran
+  const stripNotes = (a: AppliedOp): AppliedOp =>
+    ctx.intent === "replace_with_alternative" && !ctx.allowNotes && a.op.op === "replace_exercise" && a.op.notes !== undefined
+      ? { ...a, op: { ...a.op, notes: undefined } }
+      : a
+  const sanitized = kept.map(stripNotes)
+  const sanitizedAny = sanitized.some((a, i) => a !== kept[i])
+  if (dropped.length === 0 && !sanitizedAny) return { content: working, changes: applied.map((a) => a.change), dropped }
 
   let content = ctx.original
   const changes: AppliedOp["change"][] = []
-  for (const a of kept) {
+  for (const a of sanitized) {
     try {
       // Un alta conserva el id que ya tenía para que las operaciones siguientes lo encuentren
       const res = applyEdit(content, a.op, { ...editOptions, newId: () => a.change.itemId })

@@ -2,7 +2,7 @@
 
 > **Estado:** Feature experimental. Base para el system prompt y el formulario de input.
 > **Fecha:** 2026-10-05
-> **Contexto:** El entrenador describe la sesión que quiere; un LLM (OpenAI con tool use) busca ejercicios con `search_exercises`, puede proponer ejercicios con `propose_new_exercise` y devuelve un `RoutineContent` que el entrenador revisa antes de guardar. **Cuanto más completo el input, mejor la rutina.**
+> **Contexto:** El entrenador describe la sesión que quiere; un LLM (OpenAI con tool use) busca ejercicios con `search_exercises`, usa **solo ejercicios del catálogo** (la IA no crea ejercicios) y devuelve un `RoutineContent` que el entrenador revisa antes de guardar. **Cuanto más completo el input, mejor la rutina.**
 
 ---
 
@@ -28,7 +28,7 @@ Fuentes: `packages/db/src/schema/routines.ts`, `apps/api/src/routers/routines.ts
 | Regla | Consecuencia para el LLM |
 |---|---|
 | `items[].type` es `"exercise"` o `"block"` (discriminated union) | Siempre incluir `type`. |
-| `id` y `exerciseId` son `uuid` | `exerciseId` solo de `search_exercises`/`propose_new_exercise`. Los `id` de ítem/bloque **los asigna el backend** (`crypto.randomUUID()`); el modelo puede enviar placeholders. |
+| `id` y `exerciseId` son `uuid` | `exerciseId` solo de `search_exercises`. Los `id` de ítem/bloque **los asigna el backend** (`crypto.randomUUID()`); el modelo puede enviar placeholders. |
 | `order` entero ≥ 0 | Numerar 0..n dentro de `items` y dentro de cada `block.exercises`. |
 | `sets` mínimo 1; `setNumber` ≥ 1 | Nunca ejercicio sin series. |
 | `restSeconds`, `targetReps`, `targetDurationSeconds`, `targetDistanceMeters` enteros **positivos** | Descanso 0 → **omitir** el campo, no enviar `0`. |
@@ -209,7 +209,7 @@ Conflictos: los campos estructurados mandan sobre `description`, salvo en seguri
 Eres un preparador físico (strength & conditioning) basado en evidencia. Diseñas UNA sesión de entrenamiento que un entrenador revisará antes de guardar.
 
 HERRAMIENTAS Y DATOS
-1. Usa SOLO exerciseId devueltos por search_exercises (o por propose_new_exercise). Nunca inventes ni modifiques un UUID.
+1. Usa SOLO exerciseId devueltos por search_exercises. No puedes crear ejercicios: si no hay equivalente, omite o elige otro. Nunca inventes ni modifiques un UUID.
 2. Busca antes de proponer: haz varias búsquedas (por nombre, patrón, músculo, equipamiento) antes de concluir que no existe un ejercicio.
 3. No propongas ejercicios nuevos si existe un equivalente razonable en el catálogo. Máximo 2 ejercicios propuestos por rutina.
 4. Filtra por el equipamiento disponible. Si no se indica y la descripción sugiere casa/sin equipo, usa solo peso corporal.
@@ -447,7 +447,7 @@ Resultado:
 | Pieza | Archivo |
 |---|---|
 | System prompt (deriva de §7, mantener sincronizado) | `apps/api/src/services/ai-routines-prompt.ts` |
-| Bucle de tools (`search_exercises`, `propose_new_exercise`, `submit_routine`), validación y conversión a `RoutineContent` | `apps/api/src/services/ai-routines.ts` |
+| Bucle de tools (`search_exercises`, `submit_routine`), validación y conversión a `RoutineContent` | `apps/api/src/services/ai-routines.ts` |
 | Endpoints `routines.aiAvailable` y `routines.generateWithAI` | `apps/api/src/routers/routines.ts` |
 | Acceso experimental por allowlist | `apps/api/src/services/feature-access.ts` |
 | Flag por usuario `ai_generator` (`FEATURE_AI_GENERATOR_USERS`) | `apps/api/src/lib/features.ts`, ver `docs/feature-flags.md` |
@@ -460,7 +460,7 @@ Diferencias con esta guía:
 - Solo `setType` `reps`/`time` (lo que soporta el editor).
 - `fixed_kg` se muestra en libras en la app; el prompt pide libras.
 - Todavía no hay `loadPreference` ni `isGroup`: se infieren de `hasKnownRM` y de la descripción.
-- Los ejercicios propuestos (máx. 2) se crean al generar como ejercicios privados del equipo, sin video. Si el entrenador descarta la rutina, quedan en el catálogo del equipo.
+- La IA **no crea ejercicios** (2026-10-06: se retiró `propose_new_exercise`; los ejercicios creados quedaban vacíos, eludían las exclusiones y ensuciaban el catálogo). Si no hay equivalente en el catálogo, el modelo omite el ejercicio o elige otro.
 - Modelo: `gpt-4o-mini`, máximo 10 turnos. El consumo de tokens se registra en consola (`[ai-routines]`).
 
 ### Habilitar para un equipo o usuario
@@ -484,9 +484,9 @@ Un **tweak** es **una sola tarea** sobre la rutina abierta ("cambia X", "hazla m
 
 ### Flujo
 
-1. **Enrutador** (`router.ts`): una llamada barata al modelo clasifica el pedido en una intención (`replace_with_alternative`, `add_exercise`, `edit_basic`, `adjust_difficulty`, `adjust_rest`), los ítems objetivo y los términos a evitar (`avoid`), o decide que falta un dato imprescindible. Las acciones rápidas de la UI mandan `intentHint` y se saltan este paso.
+1. **Enrutador** (`router.ts`): una llamada barata al modelo clasifica el pedido en una intención (`replace_with_alternative`, `add_exercise`, `edit_basic`, `adjust_difficulty`, `adjust_rest`), los ítems objetivo y los términos a evitar (`avoid`), o decide que falta un dato imprescindible. Si el pedido trae varias cosas, hace una y dice en el mensaje final lo que **no** hizo (`leftover`: "No hice: cambiar el press. Pídelo en otro ajuste."). Tras una aclaración vaga ("no sé, el que quieras") no elige un ejercicio al azar: responde que no pudo resolver a cuál te refieres. Las acciones rápidas de la UI mandan `intentHint` y se saltan este paso.
 2. **Aclaración (máx. una).** Salida `needs_info`; el cliente reenvía el mensaje original + `{question, answer}` y el modelo ya no puede volver a preguntar.
-3. **Ejecución.** `adjust_difficulty` y `adjust_rest` son deterministas (sin LLM, pasos pequeños y acotados). Las demás las dirige el modelo con **solo** las herramientas de su intención y un prompt corto; los resultados de las herramientas son un resumen del cambio (no repiten la rutina).
+3. **Ejecución.** `adjust_difficulty` y `adjust_rest` son deterministas (sin LLM, pasos pequeños y acotados). Las demás las dirige el modelo con **solo** las herramientas de su intención y un prompt corto. En `replace_with_alternative` el servidor calcula antes los **candidatos** (`find_alternatives`: catálogo consultado por patrón de movimiento y músculo primario, dificultad no mayor que la del original, equipo permitido, sin lo ya presente en la rutina ni lo evitado; los 8 mejores) y el modelo elige uno; si no elige, se aplica el mejor. Sin candidatos no hay cambios y el mensaje lo dice. El reemplazo conserva las notas del original; el modelo no puede escribir notas si no se pidieron. `add_exercise` rechaza un ejercicio ya presente salvo que se pida repetirlo; los resultados de las herramientas son un resumen del cambio (no repiten la rutina).
 4. **Guardián de alcance** (`scope-guard.ts`): descarta, antes de armar la propuesta, todo cambio fuera de lo que la intención permite (p. ej. un reemplazo más `update_sets` sobre otros ítems), y lo registra. El mensaje final describe solo lo que quedó aplicado.
 
 ### Endpoint
@@ -506,14 +506,18 @@ Ya no existen `history` ni `context` (nivel, limitaciones, equipamiento, RM): qu
 Salida (unión):
 
 - `{ status: "needs_info", question, options? }`
-- `{ status: "done", message, proposedContent, changes[], createdExercises[] }`
+- `{ status: "done", message, proposedContent, changes[] }`
   - `message`: describe lo aplicado (máx. 600 caracteres). Sin cambios, `proposedContent` es igual a la entrada.
   - `changes[]`: un registro por operación aplicada `{ type, itemId, itemKind, blockId, summary, before, after }`. El `itemId` es estable entre `routineContent` y `proposedContent`, así que la UI compara por id y usa `changes` como texto.
-  - `createdExercises`: ejercicios creados con `propose_new_exercise` (máx. 2; privados del equipo; quedan en el catálogo aunque se rechace la propuesta; única escritura del flujo).
+  - El tweak **no escribe nada** en la base de datos: la IA nunca crea ejercicios.
 
 ### Exclusiones dentro del mensaje (`avoid`)
 
-"No tengo paralelas", "sin barra", "nada de saltos": el enrutador extrae términos y `search_exercises` excluye (sin acentos ni mayúsculas, tolerando plurales) todo ejercicio cuyo **nombre o equipamiento** los contenga; un id excluido tampoco es válido como destino de un reemplazo. Solo valen para ese tweak: no son memoria.
+"No tengo paralelas", "sin barra", "nada de saltos": el enrutador extrae términos (con `intentHint` se extraen del mensaje de forma determinista, `extractAvoidFromMessage`) y `search_exercises` y `find_alternatives` excluyen (sin acentos ni mayúsculas, tolerando plurales) todo ejercicio cuyo **nombre o equipamiento** los contenga; un id excluido tampoco es válido como destino de un reemplazo. Solo valen para ese tweak: no son memoria.
+
+### Errores de entrada
+
+Una entrada inválida (`BAD_REQUEST`) devuelve un mensaje corto en español (mensaje vacío o demasiado largo, rutina vacía, demasiados ítems, rutina demasiado grande) en vez del JSON de zod; el detalle técnico queda en los logs (`tweak con entrada inválida`).
 
 ### Seguridad y alcance
 
@@ -526,7 +530,7 @@ Salida (unión):
 
 - Modelo `gpt-4o-mini` para el enrutador y la ejecución, `temperature` 0.2, máx. 6 turnos del agente. Un tweak determinista cuesta una sola llamada (el enrutador, o ninguna con `intentHint`); el agente termina en cuanto el cambio pedido está aplicado.
 - Límite por usuario: **20 peticiones por 10 minutos** (`TOO_MANY_REQUESTS`), en memoria por proceso (`lib/rate-limit.ts`); con varias instancias de la API cada una cuenta aparte.
-- Consumo en consola con prefijo `[ai-routines]`: `tweak turno`, `tweak aclaración`, `tweak éxito` (intención, origen `router`/`hint`, tokens, turnos, nº de ediciones, **`dropped`** cambios descartados por el guardián, ejercicios creados), `tweak cambios fuera de alcance descartados` y `tweak sin resultado`.
+- Consumo en consola con prefijo `[ai-routines]`: `tweak turno`, `tweak aclaración`, `tweak éxito` (intención, origen `router`/`hint`, tokens, turnos, nº de ediciones, **`dropped`** cambios descartados por el guardián), `tweak sin alternativas en el catálogo`, `tweak cambios fuera de alcance descartados` y `tweak sin resultado`.
 
 ### Pruebas
 

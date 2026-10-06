@@ -54,7 +54,7 @@ describe("applyEdits: replace_exercise", () => {
     assert.equal(item.sets.length, 3)
     assert.equal(item.tempo, "2-1-1-0")
     assert.equal(item.restSeconds, 180)
-    assert.equal(item.notes, undefined, "las notas del ejercicio anterior se descartan")
+    assert.equal(item.notes, "Profundidad paralela", "las notas del original se conservan por defecto")
     assert.equal(changes.length, 1)
     assert.equal(changes[0]!.type, "replace_exercise")
     assert.equal(changes[0]!.itemId, ITEM_SQUAT)

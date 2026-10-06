@@ -6,7 +6,7 @@ import { adjustDifficultySkill, adjustRestSkill } from "../../../src/services/ai
 import { createRuntime } from "../../../src/services/ai-routine-editor/runtime"
 import { content, id, ITEM_DIPS, ITEM_PRESS, ITEM_ROW, ITEM_SQUAT, NAMES, TEAM } from "./helpers"
 
-const run = (c: RoutineContent) => createRuntime({ original: c, names: NAMES, avoid: [], userId: "u", teamId: TEAM, allowFixedKg: false, deps: { async searchExercises() { return [] }, async proposeNewExercise() { return {} } } })
+const run = (c: RoutineContent) => createRuntime({ original: c, names: NAMES, avoid: [], userId: "u", teamId: TEAM, allowFixedKg: false, deps: { async searchExercises() { return [] }, async findAlternativePool() { return { target: null, pool: [] } } } })
 
 const exercise = (c: RoutineContent, itemId: string) => {
   const it = c.items.find((i) => i.id === itemId)
@@ -79,6 +79,55 @@ describe("adjust_difficulty (determinista)", () => {
     assert.equal(exercise(c, ITEM_ROW).restSeconds, 45)
     assert.equal(exercise(c, ITEM_DIPS).restSeconds, undefined)
     assert.ok(rt.applied.every((a) => a.change.type === "update_item_fields"))
+  })
+
+  describe("palanca de descanso: nunca invierte el sentido (DET-029/030)", () => {
+    const withRests = (rests: number[]): RoutineContent => ({
+      v: 1,
+      items: rests.map((r, i) => ({ type: "exercise" as const, id: id(200 + i), exerciseId: id(104), order: i, restSeconds: r, sets: [{ setNumber: 1, setType: "reps" as const, targetReps: 10 }] })),
+    })
+    const rests = (rt: ReturnType<typeof run>) => rt.working().items.map((i) => (i.type === "exercise" ? i.restSeconds : null))
+
+    it("más difícil: 15 y 20 s no suben a 30; 60 baja a 45; el mensaje cuenta solo lo que cambió", () => {
+      const rt = run(withRests([15, 20, 30, 60]))
+      const out = adjustDifficultySkill.run!({ direction: "up", knob: "rest" }, rt) as { message: string }
+      assert.deepEqual(rests(rt), [15, 20, 30, 45])
+      assert.equal(out.message, "Reduje los descansos en 1 ítem.")
+    })
+
+    it("más fácil: 590 y 600 s no bajan a 180; 60 sube a 75", () => {
+      const rt = run(withRests([60, 180, 590, 600]))
+      const out = adjustDifficultySkill.run!({ direction: "down", knob: "rest" }, rt) as { message: string }
+      assert.deepEqual(rests(rt), [75, 180, 590, 600])
+      assert.equal(out.message, "Aumenté los descansos en 1 ítem.")
+    })
+
+    it("si nada puede moverse en el sentido pedido no hay cambios", () => {
+      const up = run(withRests([15, 20]))
+      assert.match((adjustDifficultySkill.run!({ direction: "up", knob: "rest" }, up) as { message: string }).message, /No encontré margen/)
+      assert.equal(up.applied.length, 0)
+      const down = run(withRests([590, 600]))
+      assert.match((adjustDifficultySkill.run!({ direction: "down", knob: "rest" }, down) as { message: string }).message, /No encontré margen/)
+      assert.equal(down.applied.length, 0)
+    })
+
+    it("valores de los casos (32/33): 15,15,15,30,575,585 y 30,35,45,60,600,600", () => {
+      const hard = run(withRests([15, 20, 30, 45, 590, 600]))
+      adjustDifficultySkill.run!({ direction: "up", knob: "rest" }, hard)
+      assert.deepEqual(rests(hard), [15, 20, 30, 30, 575, 585])
+      const easy = run(withRests([15, 20, 30, 45, 590, 600]))
+      adjustDifficultySkill.run!({ direction: "down", knob: "rest" }, easy)
+      assert.deepEqual(rests(easy), [30, 35, 45, 60, 590, 600])
+    })
+
+    it("bloques: el descanso entre rondas sigue el mismo sentido", () => {
+      const block = (rest: number, n: number) => ({ type: "block" as const, id: id(300 + n), order: n, rounds: 3, restBetweenRoundsSeconds: rest, exercises: [] })
+      const c: RoutineContent = { v: 1, items: [block(60, 0), block(20, 1), block(600, 2)] }
+      const hard = planDifficulty(c, { direction: "up", knob: "rest" }).ops
+      assert.deepEqual(hard.map((o) => (o.op === "update_block" ? [o.itemId, o.restBetweenRoundsSeconds] : null)), [[id(300), 45], [id(302), 585]])
+      const easy = planDifficulty(c, { direction: "down", knob: "rest" }).ops
+      assert.deepEqual(easy.map((o) => (o.op === "update_block" ? [o.itemId, o.restBetweenRoundsSeconds] : null)), [[id(300), 75], [id(301), 35]])
+    })
   })
 
   it("acota a los ítems objetivo", () => {

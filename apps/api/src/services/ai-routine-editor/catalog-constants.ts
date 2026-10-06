@@ -2,4 +2,3 @@
 export const levels = ["beginner", "intermediate", "advanced"] as const
 export const patterns = ["push", "pull", "squat", "hinge", "carry", "rotation", "isometric", "mobility", "core"] as const
 export const bodyZones = ["upper", "lower", "core"] as const
-export const MAX_NEW_EXERCISES = 2

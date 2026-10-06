@@ -46,3 +46,20 @@ Ambigüedades y sospechas de bug encontradas al diseñar `casos.md` sobre `maste
 6. ¿Debe un pedido compuesto avisar de lo que no se hizo? Hoy no hay aviso.
 7. ¿Qué umbral de tokens/latencia es aceptable? Los de `casos.md` son supuestos del diseñador.
 8. ¿Cómo se fuerza una falla del modelo en testing (mock/flag)? Sin eso, los casos ROB de fallas inyectadas quedan bloqueados.
+
+## Correcciones (rama `claude/ai-routine-editor-fixes`)
+
+Verificadas solo con pruebas unitarias y de flujo con LLM simulado; falta re-probar con el modelo real en testing.
+
+| Hallazgo / caso | Corrección | Commit |
+|---|---|---|
+| UIX-011, UIX-015 | El diff compara con igualdad profunda insensible al orden de claves (`sameValue`) | f721bc2 |
+| H-06, DET-029, DET-030 | Los descansos nunca se mueven en sentido contrario al pedido; el mensaje cuenta solo lo que cambió | 8fc3b11 |
+| H-05, AVD-022, INP-124 | Con `intentHint` el `avoid` se extrae del mensaje (`extractAvoidFromMessage`) | c73739e |
+| H-02, AVD-020 | Resuelto de raíz al retirar `propose_new_exercise` (la IA ya no crea ejercicios); además el id solo se registra tras pasar `avoid` | c73739e, ebd24d7 |
+| H-03, H-04, REP-001..004, REP-010 | `find_alternatives`: candidatos por patrón, músculo primario, dificultad y equipo, ordenados; el modelo ve patrón/músculos/dificultad del original; fallback al mejor candidato; sin candidatos, mensaje claro y sin cambios | ebd24d7 |
+| H-14, REP-010, INT-021 | El reemplazo conserva las notas del original; el guardián descarta notas no pedidas | ebd24d7 |
+| H-27, GRD-008 | `add_exercise` rechaza ejercicios ya presentes salvo que se pida repetir | ebd24d7 |
+| Pregunta abierta 6, INT-038, INT-039, GRD-015 | El enrutador devuelve `leftover` y el mensaje final dice "No hice: …. Pídelo en otro ajuste." | ebd24d7 |
+| CLR-004 | Decisión: tras una aclaración vaga ("no sé, el que quieras") se responde que no se pudo resolver el ejercicio (UNRESOLVED_REPLY), sin reemplazo arbitrario y sin segunda pregunta (el caso prohíbe `needs_info`) | ebd24d7 |
+| H-19, INP-013/014/018/033… | `BAD_REQUEST` del tweak con mensajes cortos en español; el detalle de zod va al log | 372d88b |

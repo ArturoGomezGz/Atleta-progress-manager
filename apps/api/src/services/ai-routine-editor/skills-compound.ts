@@ -84,7 +84,7 @@ export const adjustRestSkill = defineSkill({
     const ops = restOps(content, { more: input.direction === "up", scope, absolute: input.seconds ?? undefined })
     const n = applyAll(ops, rt)
     if (n === 0) return { result: { ok: false }, message: "No encontré descansos que ajustar." }
-    const what = input.seconds ? `Dejé el descanso en ${input.seconds} s` : input.direction === "up" ? "Aumenté el descanso 15 s" : "Reduje el descanso 15 s"
+    const what = input.seconds ? `Dejé el descanso en ${input.seconds} s` : input.direction === "up" ? "Aumenté el descanso (hasta 15 s)" : "Reduje el descanso (hasta 15 s)"
     return { result: { ok: true, changed: n }, message: `${what} en ${plural(n, "ítem", "ítems")}.` }
   },
 })
@@ -94,7 +94,7 @@ export const replaceWithAlternativeSkill = defineSkill({
   name: "Reemplazar por una alternativa",
   description: "Sustituye un ejercicio por otro del mismo patrón de movimiento y rol (\"sustitúyelo por algo más\", \"no tengo paralelas\"): busca en el catálogo respetando las exclusiones del mensaje y reemplaza conservando series, descanso y tempo.",
   category: "compound", execution: "llm", scope: "draft", status: "limited", risk: "medium", mcp: "no", flag: FLAG, reviewedAt: REVIEWED,
-  composedOf: ["search_exercises", "propose_new_exercise", "replace_exercise"],
+  composedOf: ["find_alternatives", "search_exercises", "replace_exercise"],
   notes: "Elegir la alternativa requiere criterio, así que la dirige un LLM del agente del editor (no va dentro de un MCP: un cliente MCP usa las atómicas). Solo puede producir un reemplazo (o ajuste de series/campos) sobre los ítems objetivo.",
   inputSchema: z.object({ itemId: z.string().uuid(), avoid: z.array(z.string().max(60)).max(8).nullish() }),
   parameters: {

@@ -43,7 +43,7 @@ export const completion = (calls: Call[]): Completion => ({
 export type Seen = { router: OpenAI.Chat.Completions.ChatCompletionMessageParam[][]; agent: { messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[]; tools: string[] }[] }
 
 /** LLM simulado: `route` responde al enrutador (route_request); `agent` es el guion de turnos del agente. */
-export function mockDeps(script: { route?: Call; agent?: Call[][] }, seen: Seen = { router: [], agent: [] }, search?: TweakDeps["searchExercises"]): TweakDeps {
+export function mockDeps(script: { route?: Call; agent?: Call[][] }, seen: Seen = { router: [], agent: [] }, search?: TweakDeps["searchExercises"], findPool?: TweakDeps["findAlternativePool"]): TweakDeps {
   let turn = 0
   return {
     async complete({ messages, tools }) {
@@ -62,7 +62,10 @@ export function mockDeps(script: { route?: Call; agent?: Call[][] }, seen: Seen 
       ctx.knownIds.add(NEW_EX)
       return [{ id: NEW_EX, name: "Prensa de pierna", equipment: ["Máquina"], patterns: ["squat"] }]
     }),
-    async proposeNewExercise() { return { error: "no" } },
+    findAlternativePool: findPool ?? (async () => ({
+      target: { id: DIPS, name: "Fondos en paralelas", difficulty: "intermediate", patterns: ["push"], primaryMuscles: ["Pecho"], bodyZones: ["upper"], equipment: [] },
+      pool: [{ id: NEW_EX, name: "Prensa de pierna", difficulty: "intermediate", patterns: ["push"], primaryMuscles: ["Pecho"], bodyZones: ["upper"], equipment: ["Máquina"] }],
+    })),
     async getExerciseNames() { return { ...NAMES } },
   }
 }

@@ -3,7 +3,7 @@ import { db } from "@atleta/db/client"
 import { exercise } from "@atleta/db/schema"
 import { inArray } from "drizzle-orm"
 import { getOpenAI } from "../../routers/exercises"
-import { AI_MODEL, proposeNewExercise, searchExercises } from "../ai-routines"
+import { AI_MODEL, findAlternativePool, searchExercises } from "../ai-routines"
 import type { TweakDeps } from "./deps"
 
 export function createTweakDeps(): TweakDeps {
@@ -26,7 +26,7 @@ export function createTweakDeps(): TweakDeps {
       }
     },
     searchExercises,
-    proposeNewExercise,
+    findAlternativePool,
     async getExerciseNames(ids) {
       if (ids.length === 0) return {}
       const rows = await db.select({ id: exercise.id, name: exercise.name }).from(exercise).where(inArray(exercise.id, ids))

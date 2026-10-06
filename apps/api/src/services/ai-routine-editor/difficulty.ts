@@ -126,7 +126,9 @@ function volumeOps(content: RoutineContent, dir: Direction, scope: Set<string> |
 export function restOps(content: RoutineContent, opts: { more: boolean; scope: Set<string> | null; absolute?: number; min?: number; max?: number }): EditOp[] {
   const min = opts.min ?? REST_MIN
   const max = opts.max ?? REST_MAX
-  const step = (v: number) => (opts.more ? Math.min(max, v + REST_STEP) : Math.max(min, v - REST_STEP))
+  // Nunca mueve un valor en sentido contrario al pedido: si el tope/piso ya quedó del lado "equivocado"
+  // (p. ej. 15 s al endurecer con piso 30, o 590 s al facilitar con tope 180), el valor se deja igual.
+  const step = (v: number) => (opts.more ? (v >= max ? v : Math.min(max, v + REST_STEP)) : v <= min ? v : Math.max(min, v - REST_STEP))
   const ops: EditOp[] = []
   for (const it of [...content.items].sort((a, b) => a.order - b.order)) {
     if (it.type === "exercise") {

@@ -1,6 +1,8 @@
 import { TRPCError, initTRPC } from "@trpc/server"
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify"
 import { fromNodeHeaders } from "better-auth/node"
+import { ZodError } from "zod"
+import { friendlyTweakInputMessage } from "./services/ai-routine-editor/input"
 import { auth } from "./auth"
 import { assertFeature, type FeatureKey } from "./lib/features"
 
@@ -19,7 +21,12 @@ const t = initTRPC.context<Context>().create({
   // Solo se ocultan los errores que tRPC envolvió porque se lanzó algo que no era
   // TRPCError (en ese caso expone el original en `error.cause`); un TRPCError lanzado
   // a mano con INTERNAL_SERVER_ERROR y mensaje para el usuario se conserva.
-  errorFormatter({ shape, error }) {
+  errorFormatter({ shape, error, path, ctx }) {
+    // El zod crudo no es un mensaje para el usuario: se traduce y el detalle técnico queda en los logs
+    if (error.code === "BAD_REQUEST" && path === "routines.tweakWithAI" && error.cause instanceof ZodError) {
+      ctx?.log?.warn({ issues: error.cause.issues }, "[ai-routines] tweak con entrada inválida")
+      return { ...shape, message: friendlyTweakInputMessage(error.cause.issues) }
+    }
     const wrappedUnknownError = error.cause !== undefined
     if (
       error.code === "INTERNAL_SERVER_ERROR" &&

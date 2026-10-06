@@ -72,11 +72,15 @@ function errorText(e: unknown): string {
   const code = (e as { data?: { code?: string } } | null)?.data?.code
   if (code === "TOO_MANY_REQUESTS") return "Hiciste muchos ajustes seguidos. Espera unos minutos y vuelve a intentarlo."
   if (code === "FORBIDDEN") return "Los ajustes con IA no están disponibles para tu cuenta o este equipo."
-  if (code === "BAD_REQUEST") return "No pude leer la rutina para ajustarla. Revisa que no haya circuitos vacíos."
+  // El servidor ya manda un mensaje corto en español; si llega zod crudo (JSON) se usa uno genérico
+  if (code === "BAD_REQUEST") {
+    const msg = (e as { message?: string } | null)?.message ?? ""
+    return msg && !/^[[{]/.test(msg.trim()) ? msg : "No pude leer la rutina para ajustarla. Revisa que no haya ejercicios o circuitos vacíos."
+  }
   return "La IA no pudo responder esta vez. Inténtalo de nuevo."
 }
 
-export function AiRoutineEditor({ teamId, routineName, content, nameOf, onPreview, onAccept, onCreatedExercises }: {
+export function AiRoutineEditor({ teamId, routineName, content, nameOf, onPreview, onAccept }: {
   teamId: string
   routineName: string
   content: RoutineContent
@@ -84,7 +88,6 @@ export function AiRoutineEditor({ teamId, routineName, content, nameOf, onPrevie
   /** Vista previa de la propuesta abierta sobre las tarjetas del editor (null = ninguna). */
   onPreview: (preview: Map<string, ItemPreview> | null) => void
   onAccept: (proposed: RoutineContent, changedIds: string[]) => void
-  onCreatedExercises: (list: { id: string; name: string }[]) => void
 }) {
   const tweak = trpc.routines.tweakWithAI.useMutation()
   const [open, setOpen]       = useState(false)
@@ -168,9 +171,7 @@ export function AiRoutineEditor({ teamId, routineName, content, nameOf, onPrevie
         setPhase({ name: "clarify", request, question: res.question, options: res.options ?? [] })
         return
       }
-      if (res.createdExercises.length) onCreatedExercises(res.createdExercises)
-      const created = new Map(res.createdExercises.map((e) => [e.id, e.name]))
-      const diff = diffRoutine(content, res.proposedContent, (id) => created.get(id) ?? nameOf(id), res.changes)
+      const diff = diffRoutine(content, res.proposedContent, nameOf, res.changes)
       setPhase(diff.entries.length
         ? { name: "proposal", request, proposal: { base, message: res.message, proposed: res.proposedContent, diff } }
         : { name: "nochange", request, message: res.message })

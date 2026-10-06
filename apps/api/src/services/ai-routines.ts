@@ -1,12 +1,13 @@
 import { db } from "@atleta/db/client"
-import { equipment, exercise, type RoutineContent, type RoutineExerciseContent, type RoutineSet } from "@atleta/db/schema"
+import { equipment, exercise, exerciseMuscle, type RoutineContent, type RoutineExerciseContent, type RoutineSet } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, arrayContains, eq, ilike, inArray, isNull, or } from "drizzle-orm"
+import { and, arrayContains, arrayOverlaps, eq, ilike, inArray, isNull, ne, or } from "drizzle-orm"
 import type { FastifyBaseLogger } from "fastify"
 import type OpenAI from "openai"
 import { z } from "zod"
 import { attachDetails, getOpenAI } from "../routers/exercises"
-import { bodyZones, levels, MAX_NEW_EXERCISES, patterns } from "./ai-routine-editor/catalog-constants"
+import { bodyZones, levels, patterns } from "./ai-routine-editor/catalog-constants"
+import type { AlternativeInfo } from "./ai-routine-editor/alternatives"
 import { matchesAvoid } from "./ai-routine-editor/avoid"
 import { AI_ROUTINE_SYSTEM_PROMPT } from "./ai-routines-prompt"
 
@@ -14,7 +15,7 @@ export const AI_MODEL = "gpt-4o-mini"
 const MAX_TURNS = 16
 
 const goals = ["strength", "hypertrophy", "endurance", "power", "cardio", "recovery"] as const
-export { bodyZones, levels, MAX_NEW_EXERCISES, patterns }
+export { bodyZones, levels, patterns }
 
 export const aiRoutineInputSchema = z.object({
   teamId:          z.string().uuid(),
@@ -85,7 +86,7 @@ const setJsonSchema = {
 const exerciseJsonSchema = {
   type: "object",
   properties: {
-    exerciseId:  { type: "string", description: "id devuelto por search_exercises o propose_new_exercise" },
+    exerciseId:  { type: "string", description: "id devuelto por search_exercises" },
     goal:        { type: "string", enum: goals },
     restSeconds: { type: "integer" },
     tempo:       { type: "string", description: "Formato excéntrica-pausa-concéntrica-pausa, ej. 3-1-1-0" },
@@ -110,26 +111,6 @@ export const searchExercisesTool: OpenAI.Chat.Completions.ChatCompletionTool =
           difficulty:      { type: "string", enum: levels },
           warmupOnly:      { type: "boolean", description: "true para ejercicios marcados como aptos para calentamiento" },
         },
-      },
-    },
-  }
-
-export const proposeExerciseTool: OpenAI.Chat.Completions.ChatCompletionTool =
-  {
-    type: "function",
-    function: {
-      name: "propose_new_exercise",
-      description: `Crea un ejercicio nuevo en el catálogo del equipo cuando ninguna búsqueda devuelve un equivalente razonable. Máximo ${MAX_NEW_EXERCISES} por rutina.`,
-      parameters: {
-        type: "object",
-        properties: {
-          name:              { type: "string", description: "Nombre en español" },
-          description:       { type: "string", description: "Ejecución en 1-2 frases" },
-          difficulty:        { type: "string", enum: levels },
-          movementPatterns:  { type: "array", items: { type: "string", enum: patterns } },
-          contraindications: { type: "string" },
-        },
-        required: ["name", "description", "difficulty", "movementPatterns"],
       },
     },
   }
@@ -164,7 +145,7 @@ const submitRoutineTool: OpenAI.Chat.Completions.ChatCompletionTool =
     },
   }
 
-const tools = [searchExercisesTool, proposeExerciseTool, submitRoutineTool]
+const tools = [searchExercisesTool, submitRoutineTool]
 
 // ─── Ejecución de tools ───────────────────────────────────────────────────────
 
@@ -173,7 +154,6 @@ export type Ctx = {
   teamId: string
   allowedEquipment: Set<string> | null
   knownIds: Set<string>
-  created: { id: string; name: string }[]
   /** Términos a excluir de search_exercises (nombre o equipamiento), ya normalizados. Solo el editor de rutinas. */
   avoid?: string[]
 }
@@ -232,52 +212,47 @@ export async function searchExercises(raw: unknown, ctx: Ctx) {
   }))
 }
 
-const proposeArgsSchema = z.object({
-  name:              z.string().min(2).max(80),
-  description:       z.string().max(400),
-  difficulty:        z.enum(levels),
-  movementPatterns:  z.array(z.enum(patterns)).max(4),
-  contraindications: z.string().max(300).optional().nullable(),
-})
+type DetailedExercise = Awaited<ReturnType<typeof attachDetails>>[number]
 
-export async function proposeNewExercise(raw: unknown, ctx: Ctx) {
-  const args = proposeArgsSchema.parse(raw)
-  const name = args.name.trim()
-
-  const [existing] = await db
-    .select({ id: exercise.id, name: exercise.name })
-    .from(exercise)
-    .where(and(visibleTo(ctx), ilike(exercise.name, name)))
-    .limit(1)
-  if (existing) {
-    ctx.knownIds.add(existing.id)
-    return { id: existing.id, name: existing.name, note: "Ya existía en el catálogo; úsalo" }
+function toAlternativeInfo(ex: DetailedExercise): AlternativeInfo {
+  const primary = ex.muscles.filter((m) => m.role === "primary")
+  return {
+    id: ex.id,
+    name: ex.name,
+    difficulty: ex.difficulty,
+    patterns: ex.movementPatterns,
+    primaryMuscles: [...new Set(primary.map((m) => m.muscleName))],
+    bodyZones: [...new Set(primary.map((m) => m.bodyZone))],
+    equipment: ex.equipment.map((e) => e.equipmentName),
   }
+}
 
-  if (ctx.created.length >= MAX_NEW_EXERCISES) {
-    return { error: `Límite de ${MAX_NEW_EXERCISES} ejercicios nuevos alcanzado. Usa uno del catálogo.` }
-  }
+const POOL_LIMIT = 300
 
-  const [inserted] = await db
-    .insert(exercise)
-    .values({
-      name,
-      description: args.description,
-      difficulty: args.difficulty,
-      movementPatterns: args.movementPatterns,
-      contraindications: args.contraindications ?? null,
-      isPublic: false,
-      ownerTeamId: ctx.teamId,
-      createdBy: ctx.userId,
-    })
-    .onConflictDoNothing()
-    .returning({ id: exercise.id, name: exercise.name })
+/**
+ * Candidatos para reemplazar `exerciseId`: ejercicios visibles que comparten patrón de movimiento o músculo
+ * primario con él (el orden y la selección final los hace rankAlternatives). Respeta el equipo permitido.
+ */
+export async function findAlternativePool(exerciseId: string, ctx: Ctx): Promise<{ target: AlternativeInfo | null; pool: AlternativeInfo[] }> {
+  const [row] = await db.select().from(exercise).where(and(visibleTo(ctx), eq(exercise.id, exerciseId))).limit(1)
+  if (!row) return { target: null, pool: [] }
+  const [detailed] = await attachDetails([row])
+  const target = toAlternativeInfo(detailed!)
+  const muscleIds = detailed!.muscles.filter((m) => m.role === "primary").map((m) => m.muscleId)
 
-  if (!inserted) return { error: "No se pudo crear (nombre duplicado). Búscalo con search_exercises." }
+  const related = or(
+    target.patterns.length ? arrayOverlaps(exercise.movementPatterns, target.patterns as (typeof patterns)[number][]) : undefined,
+    muscleIds.length
+      ? inArray(exercise.id, db.select({ id: exerciseMuscle.exerciseId }).from(exerciseMuscle).where(and(inArray(exerciseMuscle.muscleId, muscleIds), eq(exerciseMuscle.role, "primary"))))
+      : undefined,
+  )
+  if (!related) return { target, pool: [] }
 
-  ctx.knownIds.add(inserted.id)
-  ctx.created.push(inserted)
-  return inserted
+  const rows = await db.select().from(exercise).where(and(visibleTo(ctx), ne(exercise.id, exerciseId), related)).orderBy(exercise.name).limit(POOL_LIMIT)
+  const pool = (await attachDetails(rows))
+    .filter((ex) => !ctx.allowedEquipment || ex.equipment.every((e) => ctx.allowedEquipment!.has(e.equipmentId)))
+    .map(toAlternativeInfo)
+  return { target, pool }
 }
 
 // ─── Conversión a RoutineContent ──────────────────────────────────────────────
@@ -318,7 +293,7 @@ function buildRoutine(raw: unknown, ctx: Ctx): { content: RoutineContent; summar
   const ids = parsed.data.items.flatMap((it) => it.type === "exercise" ? [it.exerciseId] : it.exercises.map((e) => e.exerciseId))
   const unknown = [...new Set(ids.filter((id) => !ctx.knownIds.has(id)))]
   if (unknown.length > 0) {
-    return { error: `Estos exerciseId no salieron de search_exercises ni propose_new_exercise: ${unknown.join(", ")}. Busca de nuevo y usa solo ids devueltos.` }
+    return { error: `Estos exerciseId no salieron de search_exercises: ${unknown.join(", ")}. Busca de nuevo y usa solo ids devueltos.` }
   }
 
   const content: RoutineContent = {
@@ -384,7 +359,6 @@ export async function generateRoutineWithAI(input: AiRoutineInput, userId: strin
     teamId: input.teamId,
     allowedEquipment: input.equipmentIds ? new Set(input.equipmentIds) : null,
     knownIds: new Set(),
-    created: [],
   }
 
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -424,17 +398,14 @@ export async function generateRoutineWithAI(input: AiRoutineInput, userId: strin
         if (call.function.name === "submit_routine") {
           const built = buildRoutine(args, ctx)
           if (!("error" in built)) {
-            log.info({ teamId: input.teamId, turns: turn, tokens: usage, created: ctx.created.length }, "[ai-routines] éxito")
-            return { ...built, createdExercises: ctx.created }
+            log.info({ teamId: input.teamId, turns: turn, tokens: usage }, "[ai-routines] éxito")
+            return built
           }
           result = built
           lastError = built.error
           turnLog.push({ tool: call.function.name, error: built.error })
         } else if (call.function.name === "search_exercises") {
           result = await searchExercises(args, ctx)
-          turnLog.push({ tool: call.function.name })
-        } else if (call.function.name === "propose_new_exercise") {
-          result = await proposeNewExercise(args, ctx)
           turnLog.push({ tool: call.function.name })
         } else {
           const unknownToolError = `Tool desconocida: ${call.function.name}`
@@ -452,6 +423,6 @@ export async function generateRoutineWithAI(input: AiRoutineInput, userId: strin
     log.info({ teamId: input.teamId, turn, calls: turnLog }, "[ai-routines] turno")
   }
 
-  log.warn({ teamId: input.teamId, tokens: usage, lastError, exercisesCreated: ctx.created.length }, "[ai-routines] sin rutina válida")
+  log.warn({ teamId: input.teamId, tokens: usage, lastError }, "[ai-routines] sin rutina válida")
   throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "La IA no logró completar la rutina. Intenta de nuevo o agrega más detalle." })
 }

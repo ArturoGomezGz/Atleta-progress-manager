@@ -19,11 +19,11 @@ export type IntentDef = {
 export const INTENTS: Record<ExecIntent, IntentDef> = {
   replace_with_alternative: {
     id: "replace_with_alternative", label: "Reemplazar por una alternativa", execution: "llm", requiresTargets: true,
-    skillIds: ["search_exercises", "propose_new_exercise", "replace_exercise"],
+    skillIds: ["search_exercises", "replace_exercise"],
   },
   add_exercise: {
     id: "add_exercise", label: "Agregar un ejercicio", execution: "llm", requiresTargets: false,
-    skillIds: ["search_exercises", "propose_new_exercise", "add_exercise"],
+    skillIds: ["search_exercises", "add_exercise"],
   },
   edit_basic: {
     id: "edit_basic", label: "Edición puntual (series, campos, bloque, orden, quitar)", execution: "llm", requiresTargets: true,
@@ -41,4 +41,6 @@ export type IntentParams = {
   direction?: Direction
   knob?: Knob
   seconds?: number
+  /** Parte del pedido que NO se hará (pedido compuesto): se le avisa al entrenador. */
+  leftover?: string
 }
