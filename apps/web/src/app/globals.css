@@ -61,6 +61,50 @@
   .tour-ring { animation: tour-ring-pulse 1.6s ease-in-out infinite; }
 }
 
+/* Login y registro (diseño "Marcador"): fondo con carriles, línea dorada y apertura suave
+   del formulario de correo. Con prefers-reduced-motion todo es instantáneo. */
+.auth-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(70% 40% at 50% 0%, hsl(var(--primary) / 0.28), transparent 70%),
+    repeating-radial-gradient(ellipse 120% 60% at 50% -10%, transparent 0 36px, hsl(var(--primary) / 0.14) 36px 37px);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 70%);
+}
+.auth-collapse {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+}
+.auth-collapse[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+.auth-collapse-inner { min-height: 0; overflow: hidden; }
+@media (prefers-reduced-motion: no-preference) {
+  .auth-collapse {
+    transition: grid-template-rows 320ms cubic-bezier(0.2, 0.8, 0.2, 1), opacity 220ms ease-out;
+  }
+  .auth-collapse[data-open="true"] { transition-delay: 0s, 60ms; }
+  .auth-collapse-inner > div {
+    transform: translateY(-6px);
+    transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .auth-collapse[data-open="true"] .auth-collapse-inner > div { transform: none; }
+  .auth-chevron { transition: transform 280ms cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .auth-chevron[data-open="true"] { transform: rotate(180deg); }
+  @keyframes auth-wordmark-in { from { opacity: 0; letter-spacing: 0.3em; } }
+  @keyframes auth-line-draw { from { transform: scaleX(0); } }
+  .auth-wordmark { animation: auth-wordmark-in 800ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+  .auth-gold-line { transform-origin: left; animation: auth-line-draw 800ms 250ms cubic-bezier(0.6, 0, 0.2, 1) both; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .auth-chevron[data-open="true"] { transform: rotate(180deg); }
+}
+
 @layer base {
   /* ── Dark mode (default + explicit .dark class) ───────────────────── */
   :root,
