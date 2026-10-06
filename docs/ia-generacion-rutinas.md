@@ -476,9 +476,9 @@ Sin coincidencia, el botón no aparece y el endpoint responde `FORBIDDEN`.
 
 ---
 
-## 11. Refinamiento con IA (chat de ajustes) — solo backend
+## 11. Refinamiento con IA (chat de ajustes)
 
-> **Estado:** experimental, sin UI todavía. Mismo acceso que la generación (`ai_generator` / `AI_ROUTINES_*`, coach del equipo).
+> **Estado:** experimental. Requiere el flag propio `ai_routine_tweaks` (`FEATURE_AI_ROUTINE_TWEAKS_USERS`) además del acceso a IA de rutinas (`OPENAI_API_KEY` y `ai_generator` / `AI_ROUTINES_*`) y ser coach del equipo. UI: `components/ai-routine-chat.tsx` y `lib/ai-routine-diff.ts`; solo se acepta la propuesta completa (los `changes` no son independientes entre sí).
 
 El entrenador abre una rutina y pide ajustes en lenguaje natural ("cambia la sentadilla por algo sin impacto en rodilla", "baja el descanso del press a 90 s", "hazlo superserie"). El backend **no guarda nada**: devuelve una propuesta que el cliente muestra como diff y, si el entrenador acepta, guarda con `routines.updateContent` (igual que la generación).
 

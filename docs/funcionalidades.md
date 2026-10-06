@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-05.
+> **Última revisión:** 2026-10-06.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -46,6 +46,7 @@ Se activan por usuario con variables de entorno en la API. El dueño las tiene t
 | Evaluación (entrenamientos y asignados de categoría evaluación, registro de peso y repeticiones por atleta) | `evaluation` | `FEATURE_EVALUATION_USERS` | Aún sin probar |
 | Progreso (RM, gráficas, reportes) | `progress` | `FEATURE_PROGRESS_USERS` | Depende de evaluación; requiere ambas |
 | Generador de entrenamientos con IA | `ai_generator` | `FEATURE_AI_GENERATOR_USERS` | Experimental |
+| Chat de ajustes con IA en el editor de plantillas (barra inferior, propuesta con diff, aceptar/rechazar; solo cambia el borrador, aceptar todo o nada) | `ai_routine_tweaks` | `FEATURE_AI_ROUTINE_TWEAKS_USERS` | Experimental; requiere además el acceso a IA de rutinas |
 | Apariencia del equipo (logo y color) | `team_appearance` | `FEATURE_TEAM_APPEARANCE_USERS` | Decisión de producto |
 | Compartir por enlace (crear enlaces nuevos) | `share_links` | `FEATURE_SHARE_LINKS_USERS` | Decisión de producto. Los enlaces ya creados siguen funcionando. |
 | Programar asignados para una fecha futura | `scheduled_sessions` | `FEATURE_SCHEDULED_SESSIONS_USERS` | Sin probar; solo se ha usado "Ahora" |
@@ -72,5 +73,4 @@ Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md).
 |---|---|
 | Monetización por equipo | Plan gratuito con 1 atleta y plan de pago ilimitado; ver [monetizacion.md](monetizacion.md). Sin implementar. |
 | RM por atleta | Cálculo y almacenamiento del RM para cargas en % RM; ver [rm-atleta.md](rm-atleta.md). Depende de evaluación. |
-| Chat de ajustes con IA sobre un entrenamiento | Pedir cambios en lenguaje natural (sustituir ejercicios, series, descansos, bloques) y revisar un diff antes de guardar. **Backend experimental listo** (`routines.refineWithAI`, mismo acceso que el generador con IA, no guarda nada); falta la UI y probarlo con el modelo real. Ver [ia-generacion-rutinas.md](ia-generacion-rutinas.md) §11. |
 | Capa "Plan" (agrupar entrenamientos) | Fuera de v1 en [rutinas-normales.md](rutinas-normales.md). |

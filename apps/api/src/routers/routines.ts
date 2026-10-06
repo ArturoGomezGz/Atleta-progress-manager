@@ -182,6 +182,7 @@ export const routinesRouter = router({
     .input(refineRoutineInputSchema)
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
+      assertFeature(ctx.session.user, "ai_routine_tweaks")
       if (!canUseAiRoutines(ctx.session.user, input.teamId)) {
         throw new TRPCError({ code: "FORBIDDEN", message: "La IA para rutinas no está habilitada para este equipo" })
       }

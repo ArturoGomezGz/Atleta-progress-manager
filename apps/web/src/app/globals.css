@@ -37,6 +37,15 @@
   50%      { border-color: hsl(var(--primary) / 0.55); }
 }
 
+/* Ajustes con IA: las tarjetas que cambian destellan una vez al aceptar la propuesta. */
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes ai-flash {
+    0%   { box-shadow: 0 0 0 4px hsl(var(--primary) / 0.55); }
+    100% { box-shadow: 0 0 0 0 hsl(var(--primary) / 0); }
+  }
+  .ai-flash { animation: ai-flash 1.6s ease-out; }
+}
+
 /* Tutorial guiado (components/tour): el pop-over aparece suave y el aro del objetivo late.
    Con prefers-reduced-motion no hay ninguna animación. */
 @media (prefers-reduced-motion: no-preference) {
