@@ -47,7 +47,7 @@ Se activan por usuario con variables de entorno en la API. El dueño las tiene t
 | Evaluación (entrenamientos y asignados de categoría evaluación, registro de peso y repeticiones por atleta) | `evaluation` | `FEATURE_EVALUATION_USERS` | Aún sin probar |
 | Progreso (RM, gráficas, reportes) | `progress` | `FEATURE_PROGRESS_USERS` | Depende de evaluación; requiere ambas |
 | Generador de entrenamientos con IA | `ai_generator` | `FEATURE_AI_GENERATOR_USERS` | Experimental |
-| Chat de ajustes con IA en el editor de plantillas (barra inferior, propuesta con diff, aceptar/rechazar; solo cambia el borrador, aceptar todo o nada) | `ai_routine_tweaks` | `FEATURE_AI_ROUTINE_TWEAKS_USERS` | Experimental; requiere además el acceso a IA de rutinas |
+| Ajustes con IA en el editor de plantillas (AI Routine Editor: barra inferior; un ajuste = una tarea, sin conversación; a lo sumo una pregunta de aclaración; propuesta con diff, aceptar/rechazar, solo cambia el borrador; habilidades en [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md)) | `ai_routine_tweaks` | `FEATURE_AI_ROUTINE_TWEAKS_USERS` | Experimental; requiere además el acceso a IA de rutinas. Sin probar con el modelo real |
 | Apariencia del equipo (logo y color) | `team_appearance` | `FEATURE_TEAM_APPEARANCE_USERS` | Decisión de producto |
 | Compartir por enlace (crear enlaces nuevos) | `share_links` | `FEATURE_SHARE_LINKS_USERS` | Decisión de producto. Los enlaces ya creados siguen funcionando. |
 | Programar asignados para una fecha futura | `scheduled_sessions` | `FEATURE_SCHEDULED_SESSIONS_USERS` | Sin probar; solo se ha usado "Ahora" |
@@ -75,3 +75,4 @@ Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md).
 | Monetización por equipo | Plan gratuito con 1 atleta y plan de pago ilimitado; ver [monetizacion.md](monetizacion.md). Sin implementar. |
 | RM por atleta | Cálculo y almacenamiento del RM para cargas en % RM; ver [rm-atleta.md](rm-atleta.md). Depende de evaluación. |
 | Capa "Plan" (agrupar entrenamientos) | Fuera de v1 en [rutinas-normales.md](rutinas-normales.md). |
+| Más habilidades del editor de IA | Ajustar a una duración, duplicar/agrupar/separar bloques, restricciones de equipo o lesión, convertir RPE a % RM, crear variantes, y habilidades de cuenta/atletas para un futuro conector MCP; ver [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md). Sin implementar. |

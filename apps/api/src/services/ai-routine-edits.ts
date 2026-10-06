@@ -1,5 +1,5 @@
 // Capa pura de ediciones sobre un RoutineContent (sin base de datos ni red).
-// La usa el refinamiento con IA (ai-routine-refine.ts): el modelo propone operaciones,
+// La usan las habilidades del AI Routine Editor (services/ai-routine-editor/): el modelo propone operaciones,
 // aquí se aplican sobre una copia, se valida el resultado con el zod de la rutina y se
 // devuelve el contenido nuevo más una lista de cambios legibles para mostrar un diff.
 // Ver docs/ia-generacion-rutinas.md (sección "Refinamiento").
