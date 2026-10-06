@@ -4,12 +4,13 @@ import { afterNextPaint } from "@/lib/after-paint"
 import { cn } from "@/lib/utils"
 import { deriveBodyZone } from "@/lib/body-zones"
 import { CheckIcon, SearchIcon, SlidersHorizontalIcon, XIcon } from "lucide-react"
-import { useEffect, useRef, useState } from "react"
+import { buildSearchEntry, normalizeText, parseQuery, scoreEntry } from "@/lib/exercise-search"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { createPortal } from "react-dom"
 
 // Buscador de ejercicios compartido por "Mis ejercicios" y "Explorar":
 // barra de texto siempre visible + botón "Filtros" que abre un panel con Movimiento, Nivel y Equipo.
-// Todo se filtra en el cliente (la lista completa ya está en memoria).
+// Todo se filtra en el cliente (la lista completa ya está en memoria); la lógica del texto vive en lib/exercise-search.ts.
 
 // ── Tipos ─────────────────────────────────────────────────────────────────────
 
@@ -36,6 +37,7 @@ export const EMPTY_FILTERS: ExerciseFilters = { query: "", patterns: [], difficu
 
 type FacetOption = { key: string; label: string; count: number; selected: boolean; disabled: boolean }
 type Facets = Record<FacetKey, FacetOption[]>
+type Scores = Map<string, number> | null
 type EmptySuggestion = { label: string; count: number; onApply: () => void }
 
 const FACETS: FacetKey[] = ["patterns", "difficulties", "equipment"]
@@ -54,62 +56,39 @@ const ZONE_LABELS = { upper: "Superior", lower: "Inferior", core: "Core", full_b
 const NO_EQUIPMENT_KEY = "none"
 const NO_EQUIPMENT_NAMES = new Set(["sin equipo", "suelo", "peso corporal", "ninguno"])
 
-// Los nombres del catálogo están en inglés: "flexion" debe encontrar "Push Ups"
-const SEARCH_SYNONYMS: Record<string, string[]> = {
-  flexion: ["push up", "pushup"],
-  lagartija: ["push up", "pushup"],
-  dominada: ["pull up", "pullup", "chin up"],
-  fondo: ["dip"],
-  sentadilla: ["squat", "pistol"],
-  zancada: ["lunge"],
-  plancha: ["plank", "planche"],
-  puente: ["bridge"],
-  remo: ["row"],
-  pino: ["handstand"],
-  vertical: ["handstand"],
-  elevacion: ["raise"],
-  colgado: ["hang"],
-}
-
 // ── Filtrado ──────────────────────────────────────────────────────────────────
 // Texto AND movimiento AND nivel AND equipo; dentro de cada faceta basta con una opción (OR).
-
-function normalizeText(s: string) {
-  return s.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLowerCase().replace(/[-_]/g, " ")
-}
 
 function isNoEquipment(ex: FinderExercise) {
   return ex.equipment.length === 0 || ex.equipment.every((e) => NO_EQUIPMENT_NAMES.has(normalizeText(e.equipmentName)))
 }
 
-function buildSearchText(ex: FinderExercise) {
+function buildSearchEntryFor(ex: FinderExercise) {
   const zone = deriveBodyZone(ex.muscles)
-  return normalizeText([
-    ex.name,
-    ex.description ?? "",
-    ...ex.movementPatterns.map((p) => PATTERN_LABELS[p] ?? p),
-    ex.difficulty ? DIFFICULTY_LABELS[ex.difficulty] : "",
-    ...ex.equipment.map((e) => e.equipmentName),
-    ...ex.muscles.flatMap((m) => [m.muscleName, m.muscleGroupName]),
-    zone ? ZONE_LABELS[zone] : "",
-    isNoEquipment(ex) ? "sin equipo peso corporal" : "",
-  ].join(" "))
+  return buildSearchEntry({
+    name: ex.name,
+    description: ex.description ?? "",
+    keywords: [
+      ...ex.movementPatterns.map((p) => PATTERN_LABELS[p] ?? p),
+      ex.difficulty ? DIFFICULTY_LABELS[ex.difficulty] : "",
+      ...ex.equipment.map((e) => e.equipmentName),
+      ...ex.muscles.flatMap((m) => [m.muscleName, m.muscleGroupName]),
+      zone ? ZONE_LABELS[zone] : "",
+      isNoEquipment(ex) ? "sin equipo peso corporal" : "",
+    ],
+  })
 }
 
-function matchesQuery(searchText: string, query: string) {
-  const tokens = normalizeText(query).split(/\s+/).filter(Boolean)
-  return tokens.every((token) => {
-    // Si lo escrito es el inicio de una palabra con sinónimos ("flex" → flexión), se exige el
-    // sinónimo ("push up") o la palabra completa; así "flex" no coincide con "Flexores del antebrazo"
-    const synonymEntries = Object.entries(SEARCH_SYNONYMS).filter(([word]) => word.startsWith(token))
-    if (synonymEntries.length > 0) {
-      const wholeWord = new RegExp(`(^|\\s)${token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}(\\s|$)`).test(searchText)
-      return wholeWord || synonymEntries.some(([word, synonyms]) =>
-        searchText.includes(word) || synonyms.some((s) => searchText.includes(s)),
-      )
-    }
-    return searchText.includes(token)
-  })
+/** Relevancia de cada ejercicio para el texto buscado; los que no coinciden no aparecen. Sin texto → null. */
+function scoreQuery(entries: Map<string, ReturnType<typeof buildSearchEntry>>, query: string) {
+  const parsed = parseQuery(query)
+  if (!parsed) return null
+  const scores = new Map<string, number>()
+  for (const [id, entry] of entries) {
+    const score = scoreEntry(entry, parsed)
+    if (score > 0) scores.set(id, score)
+  }
+  return scores
 }
 
 function matchesFacet(ex: FinderExercise, facet: FacetKey, keys: string[]) {
@@ -121,9 +100,9 @@ function matchesFacet(ex: FinderExercise, facet: FacetKey, keys: string[]) {
   }
 }
 
-function applyFilters<T extends FinderExercise>(pool: T[], filters: ExerciseFilters, index: Map<string, string>, except?: FacetKey) {
+function applyFilters<T extends FinderExercise>(pool: T[], filters: ExerciseFilters, scores: Scores, except?: FacetKey) {
   return pool.filter((ex) =>
-    matchesQuery(index.get(ex.id) ?? "", filters.query) &&
+    (scores === null || scores.has(ex.id)) &&
     FACETS.every((f) => f === except || matchesFacet(ex, f, filters[f])),
   )
 }
@@ -133,9 +112,9 @@ function applyFilters<T extends FinderExercise>(pool: T[], filters: ExerciseFilt
  * habría si se eligiera, respetando los demás filtros. Solo aparecen opciones presentes en la
  * colección; las que quedan en 0 por los filtros se muestran atenuadas (salvo si están elegidas).
  */
-function buildFacets(pool: FinderExercise[], filters: ExerciseFilters, index: Map<string, string>): Facets {
+function buildFacets(pool: FinderExercise[], filters: ExerciseFilters, scores: Scores): Facets {
   function options(facet: FacetKey, candidates: { key: string; label: string }[]): FacetOption[] {
-    const base = applyFilters(pool, filters, index, facet)
+    const base = applyFilters(pool, filters, scores, facet)
     return candidates.flatMap(({ key, label }) => {
       const selected = filters[facet].includes(key)
       if (!selected && !pool.some((ex) => matchesFacet(ex, facet, [key]))) return []
@@ -171,16 +150,19 @@ function buildFacets(pool: FinderExercise[], filters: ExerciseFilters, index: Ma
 export function useExerciseFinder<T extends FinderExercise>(pool: T[]) {
   const [filters, setFilters] = useState<ExerciseFilters>(EMPTY_FILTERS)
 
-  const index = new Map(pool.map((ex) => [ex.id, buildSearchText(ex)]))
-  const results = applyFilters(pool, filters, index)
-  const facets = buildFacets(pool, filters, index)
+  const entries = useMemo(() => new Map(pool.map((ex) => [ex.id, buildSearchEntryFor(ex)])), [pool])
+  const scores = useMemo(() => scoreQuery(entries, filters.query), [entries, filters.query])
+  const results = applyFilters(pool, filters, scores)
+  // Con texto, lo más relevante primero (el sort es estable: a igualdad queda el orden de la lista)
+  if (scores) results.sort((a, b) => (scores.get(b.id) ?? 0) - (scores.get(a.id) ?? 0))
+  const facets = buildFacets(pool, filters, scores)
   const activeFilterCount = FACETS.reduce((n, f) => n + filters[f].length, 0)
 
   // Estado vacío: qué pasaría quitando cada filtro activo
   const emptySuggestions: EmptySuggestion[] = results.length > 0 ? [] : [
     ...(filters.query.trim() ? [{
       label: "Borrar búsqueda",
-      count: applyFilters(pool, { ...filters, query: "" }, index).length,
+      count: applyFilters(pool, { ...filters, query: "" }, null).length,
       onApply: () => setFilters((f) => ({ ...f, query: "" })),
     }] : []),
     ...FACETS.flatMap((facet) =>
@@ -188,7 +170,7 @@ export function useExerciseFinder<T extends FinderExercise>(pool: T[]) {
         const next = { ...filters, [facet]: filters[facet].filter((k) => k !== key) }
         return {
           label: `Quitar «${facets[facet].find((o) => o.key === key)?.label ?? key}»`,
-          count: applyFilters(pool, next, index).length,
+          count: applyFilters(pool, next, scores).length,
           onApply: () => setFilters(next),
         }
       }),
