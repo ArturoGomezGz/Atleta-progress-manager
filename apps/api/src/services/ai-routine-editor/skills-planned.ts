@@ -26,8 +26,6 @@ export const PLANNED_SKILLS: AnySkill[] = [
   planned("routine_summary", "Resumen de la rutina", "Describe la rutina: duración estimada, zonas, patrones y carga total.", "read", { scope: "read", mcp: "yes" }),
   planned("review_against_constraints", "Revisar contra lesiones o equipo", "Señala ejercicios que choquen con limitaciones o equipamiento dados, sin editar.", "read", { scope: "read", execution: "llm", mcp: "no", notes: "Necesita las restricciones persistentes, fuera de alcance por ahora." }),
   planned("answer_question", "Responder preguntas sobre la rutina", "Contesta \"¿por qué este ejercicio?\" sin cambiar nada.", "read", { scope: "read", execution: "llm", mcp: "no", notes: "El tweak es una sola tarea; hoy un pedido que solo pregunta se responde como \"fuera de alcance\"." }),
-  // Catálogo
-  planned("find_alternatives", "Buscar alternativas", "Devuelve opciones equivalentes a un ejercicio (mismo patrón y rol) sin reemplazarlo.", "catalog", { scope: "read", mcp: "yes" }),
   // Edición básica
   planned("duplicate_item", "Duplicar ejercicio o bloque", "Copia un ítem con ids nuevos justo debajo.", "edit", { mcp: "yes" }),
   planned("group_into_block", "Agrupar en bloque", "Junta ejercicios sueltos en un circuito o superserie.", "edit", { mcp: "yes" }),

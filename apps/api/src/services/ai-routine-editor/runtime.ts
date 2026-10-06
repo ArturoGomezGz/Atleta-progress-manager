@@ -21,10 +21,11 @@ export function createRuntime(args: {
   avoid: string[]
   userId: string
   teamId: string
-  deps: Pick<TweakDeps, "searchExercises" | "proposeNewExercise">
+  deps: Pick<TweakDeps, "searchExercises" | "findAlternativePool">
   allowFixedKg: boolean
+  allowRepeatExercises?: boolean
 }): TweakRuntime {
-  const ctx: Ctx = { userId: args.userId, teamId: args.teamId, allowedEquipment: null, knownIds: new Set(), created: [], avoid: args.avoid }
+  const ctx: Ctx = { userId: args.userId, teamId: args.teamId, allowedEquipment: null, knownIds: new Set(), avoid: args.avoid }
   let working = args.original
   const applied: AppliedOp[] = []
 
@@ -41,12 +42,13 @@ export function createRuntime(args: {
     names: args.names,
     knownExerciseIds: ctx.knownIds,
     avoid: args.avoid,
+    allowRepeatExercises: args.allowRepeatExercises,
     getContent: () => working,
     working: () => working,
     editOptions,
     catalog: {
       async search(a) { return (await args.deps.searchExercises(a, ctx)) as CatalogExercise[] },
-      async propose(a) { return (await args.deps.proposeNewExercise(a, ctx)) as { id?: string; name?: string; error?: string; note?: string } },
+      alternatives: (exerciseId) => args.deps.findAlternativePool(exerciseId, ctx),
     },
     apply(op: EditOp) {
       const res = applyEdit(working, op, editOptions())

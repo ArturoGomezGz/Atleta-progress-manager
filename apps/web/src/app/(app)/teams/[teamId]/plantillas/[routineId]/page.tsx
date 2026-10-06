@@ -271,15 +271,13 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   function applyAiResult(result: AiRoutineResult) {
     setLocalContent(result.content)
     setDirty(true)
-    setAiResult({ summary: result.summary, createdExercises: result.createdExercises })
+    setAiResult({ summary: result.summary })
     setAiOpen(false)
-    if (result.createdExercises.length > 0) utils.exercises.list.invalidate({ teamId })
   }
 
-  // Ajustes con IA: vista previa de la propuesta abierta, tarjetas que destellan al aceptar y nombres de ejercicios recién creados
+  // Ajustes con IA: vista previa de la propuesta abierta, tarjetas que destellan al aceptar 
   const [aiPreview, setAiPreview] = useState<Map<string, ItemPreview> | null>(null)
   const [aiFlash, setAiFlash]     = useState<Set<string>>(new Set())
-  const [aiNames, setAiNames]     = useState<Record<string, string>>({})
   const aiPreviewValue = useMemo(() => ({ preview: aiPreview, flash: aiFlash }), [aiPreview, aiFlash])
 
   const [localContent, setLocalContent] = useState<RoutineContent | null>(null)
@@ -332,7 +330,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     ...Object.fromEntries(Object.entries(routineData?.exerciseInfo ?? {}).map(([id, e]) => [id, { name: e.name, youtubeVideoId: e.youtubeVideoId, videoOrientation: e.videoOrientation, zone: e.zone }])),
     ...Object.fromEntries((catalog ?? []).map((e) => [e.id, { name: e.name, youtubeVideoId: e.youtubeVideoId, videoOrientation: e.videoOrientation, zone: deriveBodyZone(e.muscles) }])),
   }
-  const infoFor = (id: string): ExerciseInfo => info[id] ?? { name: aiNames[id] ?? "…", youtubeVideoId: null, videoOrientation: "horizontal", zone: null }
+  const infoFor = (id: string): ExerciseInfo => info[id] ?? { name: "…", youtubeVideoId: null, videoOrientation: "horizontal", zone: null }
   // Se recalcula con cada cambio sin guardar: el entrenador ve cómo se reparte la rutina mientras la arma
   const zoneProfile = zoneProfileFromContent(content, (id) => info[id]?.zone)
 
@@ -344,10 +342,6 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     setAiFlash(new Set(changedIds))
     setTimeout(() => setAiFlash(new Set()), 1800)
   }
-  const handleCreatedExercises = useCallback((list: { id: string; name: string }[]) => {
-    setAiNames((cur) => ({ ...cur, ...Object.fromEntries(list.map((e) => [e.id, e.name])) }))
-    utils.exercises.list.invalidate({ teamId })
-  }, [utils, teamId])
   const showAiChat = showContent && !!routineData && aiTweaksEnabled && !!aiAvailable && routineData.category !== "evaluation" && content.items.length > 0
 
   function mutate(fn: (c: RoutineContent) => RoutineContent) {
@@ -575,11 +569,6 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
               <XIcon className="w-3.5 h-3.5" />
             </button>
           </div>
-          {aiResult.createdExercises.length > 0 && (
-            <p className="text-[11px] text-muted-foreground pl-6">
-              Ejercicios nuevos añadidos al catálogo del equipo, sin video: {aiResult.createdExercises.map((e) => e.name).join(", ")}. Revísalos en Ejercicios.
-            </p>
-          )}
           <p className="text-[11px] text-muted-foreground pl-6">Es una propuesta: ajústala a tu gusto y, al salir, elige <strong>Guardar</strong> para conservarla.</p>
         </div>
       )}
@@ -683,7 +672,6 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
         nameOf={(id) => infoFor(id).name}
         onPreview={setAiPreview}
         onAccept={applyAiProposal}
-        onCreatedExercises={handleCreatedExercises}
       />
     )}
 

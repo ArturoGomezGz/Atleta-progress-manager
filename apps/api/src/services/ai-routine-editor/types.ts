@@ -6,6 +6,7 @@
 import type { RoutineContent } from "@atleta/db/schema"
 import type { z } from "zod"
 import type { EditOp, RoutineChange } from "../ai-routine-edits"
+import type { AlternativeInfo } from "./alternatives"
 
 export type JsonSchema = Record<string, unknown>
 
@@ -23,7 +24,8 @@ export type CatalogExercise = { id: string; name: string; equipment?: string[]; 
 /** Acceso al catálogo que el runtime inyecta (la implementación real vive en deps.ts). */
 export type CatalogPort = {
   search(args: unknown): Promise<CatalogExercise[]>
-  propose(args: unknown): Promise<{ id?: string; name?: string; error?: string; note?: string }>
+  /** Ejercicio de referencia y candidatos del catálogo (sin ranking: lo hace `rankAlternatives`). */
+  alternatives(exerciseId: string): Promise<{ target: AlternativeInfo | null; pool: AlternativeInfo[] }>
 }
 
 export type AppliedOp = { op: EditOp; change: RoutineChange }
@@ -36,6 +38,8 @@ export type SkillRuntime = {
   /** Términos a excluir en búsquedas (ya normalizados). */
   avoid: string[]
   catalog: CatalogPort
+  /** El entrenador pidió explícitamente repetir un ejercicio ya presente (add_exercise). */
+  allowRepeatExercises?: boolean
   /** Aplica una operación pura sobre el borrador, la registra y devuelve el cambio. Lanza RoutineEditError si no es válida. */
   apply(op: EditOp): RoutineChange
 }

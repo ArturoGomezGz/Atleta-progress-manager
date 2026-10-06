@@ -36,6 +36,22 @@ export const tweakInputSchema = z.object({
   }).optional(),
 })
 
+/** Mensaje corto en español para un BAD_REQUEST de la entrada del tweak (el detalle técnico va a los logs). */
+export function friendlyTweakInputMessage(issues: readonly { path: (string | number)[]; message: string; code: string }[]): string {
+  for (const i of issues) {
+    if (i.path[0] === "message") {
+      return i.code === "too_big" ? `El mensaje es demasiado largo (máximo ${TWEAK_MAX_MESSAGE_CHARS} caracteres).` : "Escribe qué quieres cambiar de la rutina."
+    }
+    if (i.path[0] === "routineContent") {
+      if (i.message === "La rutina está vacía") return "Agrega al menos un ejercicio antes de pedir un ajuste con IA."
+      if (i.message.startsWith("Máximo")) return `La rutina tiene demasiados ítems para ajustarla con IA (máximo ${TWEAK_MAX_ITEMS}).`
+      if (i.message === "La rutina es demasiado grande") return "La rutina es demasiado grande para ajustarla con IA. Simplifícala e inténtalo de nuevo."
+      return "No pude leer la rutina para ajustarla. Revisa que no tenga ejercicios o circuitos vacíos."
+    }
+  }
+  return "No pude entender la solicitud. Revisa el mensaje y la rutina e inténtalo de nuevo."
+}
+
 export type TweakInput = z.infer<typeof tweakInputSchema>
 
 export type TweakResult =
@@ -45,6 +61,4 @@ export type TweakResult =
       message: string
       proposedContent: RoutineContent
       changes: RoutineChange[]
-      /** Ejercicios creados con propose_new_exercise (privados del equipo; quedan en el catálogo aunque se rechace). */
-      createdExercises: { id: string; name: string }[]
     }

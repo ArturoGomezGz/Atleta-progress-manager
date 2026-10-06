@@ -16,7 +16,6 @@ type EquipmentMode = "any" | "bodyweight" | "pick"
 export type AiRoutineResult = {
   content: RoutineContent
   summary: string
-  createdExercises: { id: string; name: string }[]
 }
 
 const GOALS: [Goal, string][] = [

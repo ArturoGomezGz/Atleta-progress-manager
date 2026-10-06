@@ -30,6 +30,7 @@ const routeSchema = z.object({
   question:      z.string().max(300).nullish(),
   options:       z.array(z.string().max(60)).nullish(),
   reply:         z.string().max(300).nullish(),
+  leftover:      z.string().max(200).nullish(),
 })
 
 function routeTool(canClarify: boolean) {
@@ -50,6 +51,7 @@ function routeTool(canClarify: boolean) {
           question: { type: "string", description: "Solo con clarify: pregunta corta en español" },
           options: { type: "array", items: { type: "string" }, description: "Solo con clarify: respuestas posibles (máx. 8)" },
           reply: { type: "string", description: "Solo con out_of_scope: respuesta amable de 1 frase" },
+          leftover: { type: "string", description: "Si el pedido trae más de una cosa: lo que NO vas a hacer, en pocas palabras (ej. 'cambiar el press'). Omitir si no hay" },
         },
         required: ["intent"],
       },
@@ -58,6 +60,8 @@ function routeTool(canClarify: boolean) {
 }
 
 const OUT_OF_SCOPE_REPLY = "Solo puedo ayudarte a ajustar esta rutina."
+/** Respuesta a una aclaración que no resuelve nada ("no sé, el que quieras"). */
+const VAGUE_ANSWER = /\b(no se|no sé|cualquiera|el que quieras|la que quieras|lo que sea|el que sea|me da igual|da igual|tu eliges|tú eliges)\b/i
 const UNRESOLVED_REPLY = "No pude saber a qué ejercicio te refieres. Vuelve a pedirlo nombrando el ejercicio."
 
 function ensureValidTargets(ids: readonly string[] | null | undefined, content: RoutineContent, names: Record<string, string>): string[] {
@@ -135,8 +139,14 @@ export async function routeRequest(args: {
     return { decision: { kind: "clarify", question, ...(options.length ? { options } : {}) }, usage }
   }
 
+  // Con una aclaración vaga no se elige un ejercicio al azar: ya se preguntó una vez y no se vuelve a preguntar
+  if (input.clarification && VAGUE_ANSWER.test(input.clarification.answer) && INTENTS[r.intent].requiresTargets) {
+    return { decision: { kind: "reply", message: UNRESOLVED_REPLY }, usage }
+  }
+
   const params: IntentParams = {
     intent: r.intent,
+    leftover: r.leftover?.trim() || undefined,
     targetItemIds: ensureValidTargets(r.targetItemIds, content, names),
     avoid: normalizeAvoid(r.avoid),
     direction: r.direction ?? undefined,

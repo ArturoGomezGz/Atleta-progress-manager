@@ -113,7 +113,7 @@ export type RoutineChange = {
 export type EditResult = { content: RoutineContent; changes: RoutineChange[] }
 
 export type EditOptions = {
-  /** exerciseId obtenidos de search_exercises/propose_new_exercise en este turno. Obligatorio para replace/add. */
+  /** exerciseId obtenidos de search_exercises/find_alternatives en este turno. Obligatorio para replace/add. */
   knownExerciseIds: ReadonlySet<string>
   /** id -> nombre, para redactar los resúmenes. Si falta, se usa un nombre genérico. */
   exerciseNames?: Readonly<Record<string, string>>
@@ -188,7 +188,7 @@ function exerciseAt(loc: Location): RoutineExerciseContent {
 
 function requireKnown(exerciseId: string, opts: EditOptions) {
   if (!opts.knownExerciseIds.has(exerciseId)) {
-    throw new RoutineEditError(`El exerciseId ${exerciseId} no salió de search_exercises ni propose_new_exercise en este turno. Busca de nuevo y usa solo ids devueltos.`)
+    throw new RoutineEditError(`El exerciseId ${exerciseId} no salió de search_exercises ni find_alternatives en este turno. Busca de nuevo y usa solo ids devueltos.`)
   }
 }
 
@@ -256,9 +256,8 @@ function applyOne(content: RoutineContent, op: EditOp, opts: EditOptions): Routi
       if (op.notes !== undefined) {
         if (op.notes) ex.notes = op.notes
         else delete ex.notes
-      } else {
-        delete ex.notes // las notas describían el ejercicio anterior
       }
+      // Sin `notes` se conservan las del ejercicio original (H-14: antes se perdían sin avisar)
       const after = { exerciseId: ex.exerciseId, exerciseName: nameOf(opts, ex.exerciseId), sets: structuredClone(ex.sets) }
       return {
         type: op.op, itemId: ex.id, itemKind: "exercise", blockId: loc.parent?.id ?? null,

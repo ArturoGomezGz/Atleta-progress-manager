@@ -6,7 +6,7 @@ import { adjustDifficultySkill, adjustRestSkill } from "../../../src/services/ai
 import { createRuntime } from "../../../src/services/ai-routine-editor/runtime"
 import { content, id, ITEM_DIPS, ITEM_PRESS, ITEM_ROW, ITEM_SQUAT, NAMES, TEAM } from "./helpers"
 
-const run = (c: RoutineContent) => createRuntime({ original: c, names: NAMES, avoid: [], userId: "u", teamId: TEAM, allowFixedKg: false, deps: { async searchExercises() { return [] }, async proposeNewExercise() { return {} } } })
+const run = (c: RoutineContent) => createRuntime({ original: c, names: NAMES, avoid: [], userId: "u", teamId: TEAM, allowFixedKg: false, deps: { async searchExercises() { return [] }, async findAlternativePool() { return { target: null, pool: [] } } } })
 
 const exercise = (c: RoutineContent, itemId: string) => {
   const it = c.items.find((i) => i.id === itemId)

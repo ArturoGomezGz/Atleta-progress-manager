@@ -6,6 +6,7 @@ import type { RoutineContent } from "@atleta/db/schema"
 import type OpenAI from "openai"
 import { z } from "zod"
 import { RoutineEditError } from "../ai-routine-edits"
+import type { FindAlternativesMeta } from "./skills-basic"
 import { skillsToTools, finishTool, FINISH_TOOL_NAME } from "./adapters/openai"
 import type { TweakDeps } from "./deps"
 import { INTENTS, type IntentParams } from "./intents"
@@ -18,13 +19,20 @@ import { getSkill } from "./skills"
 export const AGENT_MAX_TURNS = 6
 const MAX_REPLY_CHARS = 600
 
-export function buildExecutionPrompt(params: IntentParams, input: TweakInput, content: RoutineContent, names: Record<string, string>): string {
+export function buildExecutionPrompt(params: IntentParams, input: TweakInput, content: RoutineContent, names: Record<string, string>, alternatives: Record<string, FindAlternativesMeta> = {}): string {
   const lines: string[] = []
   if (params.intent === "replace_with_alternative") {
     lines.push("EJERCICIO(S) A REEMPLAZAR (json; usa estos ids):", JSON.stringify(describeItemsForModel(content, params.targetItemIds, names)))
     const targets = new Set(params.targetItemIds)
     const others = content.items.flatMap((it) => (it.type === "exercise" ? [it] : it.exercises)).filter((e) => !targets.has(e.id)).map((e) => names[e.exerciseId] ?? "?")
     if (others.length) lines.push("", `Otros ejercicios de la rutina (no repitas): ${others.join(", ")}`)
+    for (const id of params.targetItemIds) {
+      const alt = alternatives[id]
+      if (!alt?.candidates.length) continue
+      const t = alt.target
+      lines.push("", `CANDIDATOS para ${id}${t ? ` (original: patrón ${t.patterns.join("/") || "?"}, músculos ${t.primaryMuscles.join("/") || "?"}, dificultad ${t.difficulty ?? "?"})` : ""}, del mejor al peor (json):`,
+        JSON.stringify(alt.candidates.map((c) => ({ id: c.id, name: c.name, pattern: c.patterns, muscles: c.primaryMuscles, equipment: c.equipment, difficulty: c.difficulty }))))
+    }
   } else {
     lines.push("RUTINA ACTUAL (json; usa estos ids):", JSON.stringify(describeRoutineForModel(content, names)))
     if (params.targetItemIds.length) lines.push("", `ÍTEMS OBJETIVO: ${params.targetItemIds.join(", ")}`)
@@ -53,14 +61,14 @@ export type AgentOutcome = {
   finished: boolean
 }
 
-export async function runAgent(args: { params: IntentParams; input: TweakInput; names: Record<string, string>; rt: TweakRuntime; deps: TweakDeps; log: { info(o: object, m: string): void } }): Promise<AgentOutcome> {
+export async function runAgent(args: { params: IntentParams; input: TweakInput; names: Record<string, string>; rt: TweakRuntime; deps: TweakDeps; log: { info(o: object, m: string): void }; alternatives?: Record<string, FindAlternativesMeta> }): Promise<AgentOutcome> {
   const { params, input, names, rt, deps, log } = args
   const intent = INTENTS[params.intent]
   const exposed = new Set(intent.skillIds)
   const tools = [...skillsToTools(intent.skillIds), finishTool]
   const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
     { role: "system", content: executionSystemPrompt(params.intent) },
-    { role: "user", content: buildExecutionPrompt(params, input, rt.getContent(), names) },
+    { role: "user", content: buildExecutionPrompt(params, input, rt.getContent(), names, args.alternatives) },
   ]
 
   const usage = { input: 0, output: 0 }

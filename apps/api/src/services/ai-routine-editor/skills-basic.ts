@@ -2,10 +2,11 @@
 // ai-routine-edits.ts; el resultado es compacto (resumen del cambio, nunca la rutina completa).
 
 import { z } from "zod"
-import { EXERCISE_GOALS, MAX_BLOCK_ROUNDS, MAX_SETS_PER_EXERCISE, editOpSchema, type EditOp, type EditOpType } from "../ai-routine-edits"
+import { EXERCISE_GOALS, MAX_BLOCK_ROUNDS, RoutineEditError, MAX_SETS_PER_EXERCISE, editOpSchema, type EditOp, type EditOpType } from "../ai-routine-edits"
+import { MAX_ALTERNATIVES, rankAlternatives, type AlternativeCandidate, type AlternativeInfo } from "./alternatives"
 import { matchesAvoid } from "./avoid"
-import { bodyZones, levels, MAX_NEW_EXERCISES, patterns } from "./catalog-constants"
-import { defineSkill, type AnySkill, type JsonSchema, type SkillDef } from "./types"
+import { bodyZones, levels, patterns } from "./catalog-constants"
+import { defineSkill, type AnySkill, type JsonSchema, type SkillDef, type SkillRuntime } from "./types"
 
 const FLAG = "ai_routine_tweaks"
 const REVIEWED = "2026-10-06"
@@ -66,44 +67,44 @@ export const searchExercisesSkill = defineSkill({
   },
 })
 
-const proposeInput = z.object({
-  name:              z.string().min(2).max(80),
-  description:       z.string().max(400),
-  difficulty:        z.enum(levels),
-  movementPatterns:  z.array(z.enum(patterns)).max(4),
-  contraindications: z.string().max(300).nullish(),
-})
+/** Ejercicio (o ejercicio dentro de un bloque) de la rutina con ese id de ítem. */
+function findExerciseItem(content: ReturnType<SkillRuntime["getContent"]>, itemId: string) {
+  for (const it of content.items) {
+    if (it.type === "exercise" && it.id === itemId) return it
+    if (it.type === "block") { const e = it.exercises.find((x) => x.id === itemId); if (e) return e }
+  }
+  return null
+}
 
-export const proposeNewExerciseSkill = defineSkill({
-  id: "propose_new_exercise",
-  name: "Proponer ejercicio nuevo",
-  description: `Crea un ejercicio nuevo en el catálogo del equipo cuando ninguna búsqueda devuelve un equivalente razonable. Máximo ${MAX_NEW_EXERCISES} por tweak.`,
-  category: "catalog", execution: "deterministic", scope: "persist", status: "limited", risk: "medium", mcp: "pending", flag: FLAG, reviewedAt: REVIEWED,
-  notes: "Única escritura del flujo: el ejercicio queda en el catálogo privado del equipo aunque se rechace la propuesta.",
-  inputSchema: proposeInput,
-  parameters: params({
-    name:              { type: "string", description: "Nombre en español" },
-    description:       { type: "string", description: "Ejecución en 1-2 frases" },
-    difficulty:        { type: "string", enum: levels },
-    movementPatterns:  { type: "array", items: { type: "string", enum: patterns } },
-    contraindications: { type: "string" },
-  }, ["name", "description", "difficulty", "movementPatterns"]),
+export type FindAlternativesMeta = { target: AlternativeInfo | null; candidates: AlternativeCandidate[] }
+
+export const findAlternativesSkill = defineSkill({
+  id: "find_alternatives",
+  name: "Buscar alternativas",
+  description: "Devuelve hasta 8 ejercicios equivalentes a uno de la rutina (mismo patrón de movimiento y músculo primario, dificultad no mayor, equipo permitido), ya ordenados del mejor al peor, sin reemplazar nada.",
+  category: "catalog", execution: "deterministic", scope: "read", status: "limited", risk: "low", mcp: "yes", flag: FLAG, reviewedAt: REVIEWED,
+  notes: "Consulta el catálogo por metadatos (patrón, músculo primario, dificultad, equipo), no por nombre: el catálogo está en inglés. Excluye lo ya presente en la rutina y lo evitado (`avoid`); registra los ids devueltos como válidos.",
+  inputSchema: z.object({ itemId: z.string().uuid() }),
+  parameters: params({ itemId: uuidProp("id del ejercicio de la rutina para el que se buscan alternativas") }, ["itemId"]),
   async run(input, rt) {
-    // Un nombre que contiene lo excluido ni se crea: si no, "Fondos en paralelas" evade `no tengo paralelas`
-    if (matchesAvoid({ name: input.name }, rt.avoid)) {
-      return { result: { error: "El nombre contiene algo que el entrenador pidió evitar. Elige otro ejercicio, no lo crees." } }
+    const content = rt.getContent()
+    const item = findExerciseItem(content, input.itemId)
+    if (!item) return { result: { error: "No es un ejercicio de la rutina." }, meta: { target: null, candidates: [] } satisfies FindAlternativesMeta }
+    const { target, pool } = await rt.catalog.alternatives(item.exerciseId)
+    if (!target) return { result: { candidates: [] }, meta: { target: null, candidates: [] } satisfies FindAlternativesMeta }
+
+    const inRoutine = content.items.flatMap((it) => (it.type === "exercise" ? [it] : it.exercises)).map((e) => e.exerciseId)
+    const candidates = rankAlternatives(target, pool, {
+      excludeIds: new Set(inRoutine),
+      excludeNames: inRoutine.map((id) => rt.names[id]).filter((n): n is string => !!n),
+      avoid: rt.avoid,
+      limit: MAX_ALTERNATIVES,
+    })
+    for (const c of candidates) { rt.knownExerciseIds.add(c.id); rt.names[c.id] = c.name }
+    return {
+      result: { candidates: candidates.map((c) => ({ id: c.id, name: c.name, pattern: c.patterns, muscles: c.primaryMuscles, equipment: c.equipment, difficulty: c.difficulty })) },
+      meta: { target, candidates } satisfies FindAlternativesMeta,
     }
-    const created = await rt.catalog.propose(input)
-    if (created.id && created.name) {
-      rt.names[created.id] = created.name
-      // El id solo es válido como destino DESPUÉS de pasar la exclusión (la dependencia real ya lo registró: se retira)
-      if (matchesAvoid({ name: created.name }, rt.avoid)) {
-        rt.knownExerciseIds.delete(created.id)
-        return { result: { error: "Ese ejercicio contiene algo que el entrenador pidió evitar. Elige otro." } }
-      }
-      rt.knownExerciseIds.add(created.id)
-    }
-    return { result: created }
   },
 })
 
@@ -135,22 +136,22 @@ function editSkill(op: EditOpType, def: Pick<SkillDef, "name" | "description" | 
 export const replaceExerciseSkill = editSkill("replace_exercise", {
   name: "Reemplazar ejercicio",
   description: "Cambia el ejercicio de un ítem por otro (id obtenido con search_exercises). Conserva series, descanso, tempo y objetivo salvo que envíes sets.",
-  notes: "El ítem conserva su id; descarta las notas del ejercicio anterior. Exige un exerciseId devuelto por el catálogo en el mismo tweak.",
+  notes: "El ítem conserva su id y sus notas (salvo que se envíen `notes`, y el guardián las descarta si el entrenador no las pidió). Exige un exerciseId devuelto por el catálogo en el mismo tweak.",
   parameters: params({
     itemId: uuidProp("id del ejercicio en el estado actual"),
-    newExerciseId: uuidProp("id devuelto por search_exercises/propose_new_exercise"),
+    newExerciseId: uuidProp("id devuelto por search_exercises/find_alternatives"),
     keepSets: { type: "boolean", description: "Default true. Con false, sets es obligatorio" },
     sets: setsJson,
-    notes: { type: ["string", "null"], description: "Notas nuevas; por defecto se borran las del ejercicio anterior" },
+    notes: { type: ["string", "null"], description: "Solo si el entrenador pidió cambiar las notas; por defecto se conservan las del ejercicio anterior" },
   }, ["itemId", "newExerciseId"]),
 })
 
-export const addExerciseSkill = editSkill("add_exercise", {
+const addExerciseBase = editSkill("add_exercise", {
   name: "Agregar ejercicio",
   description: "Agrega un ejercicio (id obtenido con search_exercises) al nivel superior o dentro de un bloque.",
   notes: "Máximo 20 ítems por rutina y 10 ejercicios por bloque.",
   parameters: params({
-    exerciseId: uuidProp("id devuelto por search_exercises/propose_new_exercise"),
+    exerciseId: uuidProp("id devuelto por search_exercises/find_alternatives"),
     blockId: { type: ["string", "null"], description: "Id del bloque destino; omitir para el nivel superior" },
     position: { type: "integer", description: "0 = primero; omitir para el final" },
     goal: { type: "string", enum: EXERCISE_GOALS },
@@ -160,6 +161,18 @@ export const addExerciseSkill = editSkill("add_exercise", {
     sets: setsJson,
   }, ["exerciseId", "sets"]),
 })
+
+/** add_exercise no repite un ejercicio que ya está en la rutina (H-27), salvo que el entrenador lo pida. */
+export const addExerciseSkill: SkillDef<Record<string, unknown>> = {
+  ...addExerciseBase,
+  run(input, rt) {
+    const present = rt.getContent().items.flatMap((it) => (it.type === "exercise" ? [it] : it.exercises)).some((e) => e.exerciseId === input.exerciseId)
+    if (present && !rt.allowRepeatExercises) {
+      throw new RoutineEditError("Ese ejercicio ya está en la rutina. Elige otro que no esté: no se repiten ejercicios salvo que el entrenador lo pida.")
+    }
+    return addExerciseBase.run!(input, rt)
+  },
+}
 
 export const removeItemSkill = editSkill("remove_item", {
   name: "Quitar ejercicio o bloque",
@@ -209,6 +222,6 @@ export const updateBlockSkill = editSkill("update_block", {
 })
 
 export const BASIC_SKILLS: AnySkill[] = [
-  searchExercisesSkill, proposeNewExerciseSkill,
+  searchExercisesSkill, findAlternativesSkill,
   replaceExerciseSkill, addExerciseSkill, removeItemSkill, moveItemSkill, updateSetsSkill, updateItemFieldsSkill, updateBlockSkill,
 ]

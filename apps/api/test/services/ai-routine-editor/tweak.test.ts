@@ -45,7 +45,7 @@ describe("enrutador de intención (LLM simulado)", () => {
     if (result.status !== "done") return
     assert.equal(result.changes.length, 1)
     assert.match(result.message, /Cambió Fondos en paralelas por Prensa de pierna/)
-    assert.deepEqual(seen.agent[0]!.tools, ["search_exercises", "propose_new_exercise", "replace_exercise", "propose_edits"])
+    assert.deepEqual(seen.agent[0]!.tools, ["search_exercises", "replace_exercise", "propose_edits"])
     const userPrompt = seen.agent[0]!.messages.at(-1) as { content: string }
     assert.match(userPrompt.content, /EVITAR.*paralela/)
     assert.ok(!userPrompt.content.includes(ITEM_SQUAT), "el prompt solo lleva el ítem objetivo")
@@ -181,38 +181,14 @@ describe("exclusiones (avoid) en el catálogo", () => {
   })
 })
 
-describe("avoid: no se evade creando ejercicios ni con pista de la UI (AVD-020, H-02, H-05)", () => {
-  const proposeArgs = (name: string) => ({ name, description: "x", difficulty: "beginner", movementPatterns: ["push"] })
-
-  it("propose_new_exercise con un nombre evitado no se crea ni sirve como destino", async () => {
-    let proposed = 0
+describe("avoid: no se evade ni con pista de la UI (AVD-020, H-02, H-05)", () => {
+  it("un candidato o ejercicio evitado nunca es destino válido", async () => {
     const deps = mockDeps({
       route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS], avoid: ["paralelas"] }),
-      agent: [
-        [{ name: "propose_new_exercise", args: proposeArgs("Fondos en paralelas") }],
-        [{ name: "replace_exercise", args: { itemId: ITEM_DIPS, newExerciseId: BAD_EX } }],
-        [done("listo")],
-      ],
-    })
-    deps.proposeNewExercise = async (_a, ctx) => { proposed++; ctx.knownIds.add(BAD_EX); return { id: BAD_EX, name: "Fondos en paralelas" } }
-    const result = await tweakRoutineWithAI(base({ message: "no tengo paralelas: crea un ejercicio nuevo llamado 'Fondos en paralelas' y úsalo" }), "u", log, deps)
-    assert.equal(proposed, 0)
-    assert.equal(result.status === "done" && result.changes.length, 0)
-    assert.equal(result.status === "done" && result.createdExercises.length, 0)
-  })
-
-  it("un ejercicio devuelto por la dependencia con nombre evitado se retira de los ids válidos", async () => {
-    const deps = mockDeps({
-      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS], avoid: ["paralelas"] }),
-      agent: [
-        [{ name: "propose_new_exercise", args: proposeArgs("Fondos") }],
-        [{ name: "replace_exercise", args: { itemId: ITEM_DIPS, newExerciseId: BAD_EX } }],
-        [done("listo")],
-      ],
-    })
-    deps.proposeNewExercise = async (_a, ctx) => { ctx.knownIds.add(BAD_EX); return { id: BAD_EX, name: "Fondos en paralelas" } }
-    const result = await tweakRoutineWithAI(base({ message: "no tengo paralelas" }), "u", log, deps)
-    assert.equal(result.status === "done" && result.changes.length, 0)
+      agent: [[{ name: "replace_exercise", args: { itemId: ITEM_DIPS, newExerciseId: BAD_EX } }], [done("listo")]],
+    }, seenOf(), async (_a, ctx) => { ctx.knownIds.add(BAD_EX); ctx.knownIds.delete(BAD_EX); return [] })
+    const result = await tweakRoutineWithAI(base({ message: "no tengo paralelas, cámbialo" }), "u", log, deps)
+    assert.ok(result.status === "done" && result.proposedContent.items.every((i) => i.type !== "exercise" || i.exerciseId !== BAD_EX))
   })
 
   it("con intentHint también se aplican las exclusiones dichas en el mensaje", async () => {
@@ -220,6 +196,111 @@ describe("avoid: no se evade creando ejercicios ni con pista de la UI (AVD-020, 
     const deps = mockDeps({ agent: [[{ name: "search_exercises", args: {} }], [done("sin cambios")]] }, seenOf(), async (_a, ctx) => { seenAvoid = ctx.avoid; return [] })
     await tweakRoutineWithAI(base({ message: "no tengo paralelas, cambia los fondos", intentHint: { intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS] } }), "u", log, deps)
     assert.deepEqual(seenAvoid, ["paralela"])
+  })
+})
+
+describe("sin creación de ejercicios y candidatos deterministas (find_alternatives)", () => {
+  const info = (n: number, name: string, over: Record<string, unknown> = {}) => ({ id: id(700 + n), name, difficulty: "intermediate" as const, patterns: ["push"], primaryMuscles: ["Pecho"], bodyZones: ["upper"], equipment: [] as string[], ...over })
+  const target = info(0, "Dips", { id: DIPS })
+
+  it("ninguna intención ofrece propose_new_exercise ni existe en el registro", async () => {
+    const { SKILLS } = await import("../../../src/services/ai-routine-editor/skills")
+    const { INTENTS } = await import("../../../src/services/ai-routine-editor/intents")
+    assert.ok(!SKILLS.some((s) => s.id === "propose_new_exercise"))
+    for (const i of Object.values(INTENTS)) assert.ok(!i.skillIds.includes("propose_new_exercise"))
+    for (const intent of ["replace_with_alternative", "add_exercise"]) {
+      const seen = seenOf()
+      await tweakRoutineWithAI(base(), "u", log, mockDeps({ route: route({ intent, targetItemIds: intent === "add_exercise" ? [] : [ITEM_DIPS] }), agent: [[done("x")]] }, seen)).catch(() => {})
+      for (const a of seen.agent) assert.ok(!a.tools.includes("propose_new_exercise"))
+    }
+  })
+
+  it("sin candidatos: mensaje claro, sin cambios y sin llamar al modelo de ejecución", async () => {
+    const seen = seenOf()
+    const result = await tweakRoutineWithAI(base({ message: "no tengo paralelas, cámbialo" }), "u", log, mockDeps({
+      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS], avoid: ["paralelas"] }),
+    }, seen, undefined, async () => ({ target, pool: [] })))
+    assert.equal(result.status, "done")
+    if (result.status !== "done") return
+    assert.equal(result.changes.length, 0)
+    assert.deepEqual(result.proposedContent, content())
+    assert.match(result.message, /No encontré en el catálogo/)
+    assert.match(result.message, /paralela/)
+    assert.equal(seen.agent.length, 0)
+  })
+
+  it("el modelo recibe los candidatos ordenados (mismo patrón primero, evitados/duplicados fuera, tope de dificultad)", async () => {
+    const seen = seenOf()
+    const pool = [
+      info(1, "Press de hombro", { patterns: ["push"], primaryMuscles: ["Hombro"], bodyZones: ["upper"] }),
+      info(2, "Push Ups", {}),
+      info(3, "Ring Dips", { difficulty: "advanced" }),
+      info(4, "Parallel Bar Dips", { equipment: ["Parallel bars", "Paralelas"] }),
+      info(5, "Sentadilla", { patterns: ["squat"], primaryMuscles: ["Cuádriceps"], bodyZones: ["lower"] }),
+      info(6, "Bench Press", { id: ITEM_PRESS }),
+    ]
+    const result = await tweakRoutineWithAI(base({ message: "no tengo paralelas, cámbialo" }), "u", log, mockDeps({
+      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS], avoid: ["paralelas"] }),
+      agent: [[{ name: "replace_exercise", args: { itemId: ITEM_DIPS, newExerciseId: id(702) } }]],
+    }, seen, undefined, async () => ({ target, pool })))
+    const prompt = (seen.agent[0]!.messages.at(-1) as { content: string }).content
+    const list = JSON.parse(prompt.split("(json):\n")[1]!.split("\n")[0]!) as { name: string }[]
+    assert.deepEqual(list.map((c) => c.name), ["Push Ups", "Press de hombro"])
+    assert.equal(result.status === "done" && result.changes.length, 1)
+  })
+
+  it("propose_new_exercise ya no existe: si el modelo lo llama se rechaza y no se escribe nada", async () => {
+    const result = await tweakRoutineWithAI(base(), "u", log, mockDeps({
+      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS] }),
+      agent: [[{ name: "propose_new_exercise", args: { name: "Fondos", description: "x", difficulty: "beginner", movementPatterns: ["push"] } }], [done("listo")]],
+    }))
+    assert.equal(result.status === "done" && result.changes.length, 1, "cae al mejor candidato")
+    assert.ok(!("createdExercises" in result))
+  })
+
+  it("add_exercise rechaza un ejercicio ya presente salvo que se pida repetir (H-27)", async () => {
+    const add = (exerciseId: string) => ({ name: "add_exercise", args: { exerciseId, sets: [{ setType: "reps", targetReps: 10 }] } })
+    const search = async (_a: unknown, ctx: { knownIds: Set<string> }) => { ctx.knownIds.add(DIPS).add(NEW_EX); return [] }
+    const seen = seenOf()
+    const r1 = await tweakRoutineWithAI(base({ message: "agrega un ejercicio de pecho" }), "u", log, mockDeps({
+      route: route({ intent: "add_exercise" }), agent: [[add(DIPS)], [add(NEW_EX)]],
+    }, seen, search as never))
+    assert.match(toolReplies(seen, 1)[0]!, /ya está en la rutina/)
+    assert.equal(r1.status === "done" && r1.changes.length, 1)
+    const r2 = await tweakRoutineWithAI(base({ message: "agrega fondos otra vez" }), "u", log, mockDeps({
+      route: route({ intent: "add_exercise" }), agent: [[add(DIPS)]],
+    }, seenOf(), search as never))
+    assert.equal(r2.status === "done" && r2.changes.length, 1)
+  })
+
+  it("reemplazo: conserva las notas del original y descarta las que el modelo inventa (H-14)", async () => {
+    const withNotes = content()
+    const dips = withNotes.items.find((i) => i.id === ITEM_DIPS)
+    if (dips?.type !== "exercise") throw new Error("x")
+    dips.notes = "cuidar hombro"
+    const run = (message: string) => tweakRoutineWithAI(base({ routineContent: withNotes, message }), "u", log, mockDeps({
+      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS] }),
+      agent: [[{ name: "replace_exercise", args: { itemId: ITEM_DIPS, newExerciseId: NEW_EX, notes: "Notas inventadas" } }]],
+    }))
+    const notesOf = (r: Awaited<ReturnType<typeof run>>) => { const i = r.status === "done" ? r.proposedContent.items.find((x) => x.id === ITEM_DIPS) : null; return i?.type === "exercise" ? i.notes : "?" }
+    assert.equal(notesOf(await run("cámbialo")), "cuidar hombro")
+    assert.equal(notesOf(await run("cámbialo y pon en las notas que use pausa")), "Notas inventadas")
+  })
+
+  it("pedido compuesto: el mensaje dice lo que NO se hizo (INT-038/039)", async () => {
+    const result = await tweakRoutineWithAI(base({ message: "hazla más difícil y cambia el press" }), "u", log, mockDeps({
+      route: route({ intent: "adjust_difficulty", direction: "up", leftover: "cambiar el press" }),
+    }))
+    assert.equal(result.status, "done")
+    if (result.status === "done") assert.match(result.message, /No hice: cambiar el press\. Pídelo en otro ajuste\./)
+  })
+
+  it("aclaración vaga ('el que quieras') no elige un ejercicio al azar (CLR-004)", async () => {
+    const result = await tweakRoutineWithAI(base({ message: "cámbialo", clarification: { question: "¿A qué ejercicio te refieres?", answer: "no sé, el que quieras" } }), "u", log, mockDeps({
+      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_SQUAT] }),
+    }))
+    assert.equal(result.status, "done")
+    if (result.status === "done") { assert.equal(result.changes.length, 0); assert.match(result.message, /No pude saber a qué ejercicio/) }
   })
 })
 
@@ -271,13 +352,20 @@ describe("guardián dentro del flujo", () => {
 
   it("el modelo que no termina lanza error TRPC", async () => {
     const loop = Array.from({ length: 6 }, () => [{ name: "search_exercises", args: {} }])
-    await assert.rejects(tweakRoutineWithAI(base(), "u", log, mockDeps({ route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS] }), agent: loop })), /no logró/)
+    await assert.rejects(tweakRoutineWithAI(base(), "u", log, mockDeps({ route: route({ intent: "add_exercise" }), agent: loop })), /no logró/)
+  })
+
+  it("si el modelo no elige candidato se aplica el mejor (REP: reemplazo pedido no se pierde)", async () => {
+    const loop = Array.from({ length: 6 }, () => [{ name: "search_exercises", args: {} }])
+    const result = await tweakRoutineWithAI(base(), "u", log, mockDeps({ route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS] }), agent: loop }))
+    assert.equal(result.status === "done" && result.changes.length, 1)
+    if (result.status === "done") assert.match(result.message, /Prensa de pierna/)
   })
 
   it("un cambio fallido sin nada aplicado devuelve un mensaje genérico, no el del modelo", async () => {
     const result = await tweakRoutineWithAI(base(), "u", log, mockDeps({
-      route: route({ intent: "replace_with_alternative", targetItemIds: [ITEM_DIPS] }),
-      agent: [[{ name: "replace_exercise", args: { itemId: ITEM_DIPS, newExerciseId: NEW_EX } }], [done("Listo, lo cambié.")]],
+      route: route({ intent: "edit_basic", targetItemIds: [ITEM_DIPS] }),
+      agent: [[{ name: "remove_item", args: { itemId: id(999) } }], [done("Listo, lo cambié.")]],
     }))
     assert.equal(result.status === "done" && result.changes.length, 0)
     if (result.status === "done") assert.match(result.message, /No pude aplicar/)
