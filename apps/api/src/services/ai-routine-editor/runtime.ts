@@ -4,6 +4,7 @@
 import type { RoutineContent } from "@atleta/db/schema"
 import type { Ctx } from "../ai-routines"
 import { applyEdit, type EditOp, type EditOptions } from "../ai-routine-edits"
+import type { Injury } from "./constraints"
 import type { TweakDeps } from "./deps"
 import type { AppliedOp, CatalogExercise, SkillRuntime } from "./types"
 
@@ -24,6 +25,8 @@ export function createRuntime(args: {
   deps: Pick<TweakDeps, "searchExercises" | "findAlternativePool">
   allowFixedKg: boolean
   allowRepeatExercises?: boolean
+  easier?: boolean
+  injuries?: Injury[]
 }): TweakRuntime {
   const ctx: Ctx = { userId: args.userId, teamId: args.teamId, allowedEquipment: null, knownIds: new Set(), avoid: args.avoid }
   let working = args.original
@@ -43,6 +46,8 @@ export function createRuntime(args: {
     knownExerciseIds: ctx.knownIds,
     avoid: args.avoid,
     allowRepeatExercises: args.allowRepeatExercises,
+    easier: args.easier,
+    injuries: args.injuries,
     getContent: () => working,
     working: () => working,
     editOptions,

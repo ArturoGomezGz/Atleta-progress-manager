@@ -83,7 +83,7 @@ export const findAlternativesSkill = defineSkill({
   name: "Buscar alternativas",
   description: "Devuelve hasta 8 ejercicios equivalentes a uno de la rutina (mismo patrón de movimiento y músculo primario, dificultad no mayor, equipo permitido), ya ordenados del mejor al peor, sin reemplazar nada.",
   category: "catalog", execution: "deterministic", scope: "read", status: "limited", risk: "low", mcp: "yes", flag: FLAG, reviewedAt: REVIEWED,
-  notes: "Consulta el catálogo por metadatos (patrón, músculo primario, dificultad, equipo), no por nombre: el catálogo está en inglés. Excluye lo ya presente en la rutina y lo evitado (`avoid`); registra los ids devueltos como válidos.",
+  notes: "Consulta el catálogo por metadatos (patrón, músculo primario, dificultad, equipo), no por nombre: el catálogo está en inglés. Excluye lo ya presente en la rutina y lo evitado (`avoid`, con equivalentes español→inglés y «sin equipo»); un hold isométrico o un salto solo sustituye a uno de su misma naturaleza; prioriza la misma familia de ejercicio (remo con remo); con «más fácil» exige menor dificultad; descarta ejercicios que cargan una molestia dicha en el mensaje (rodilla, lumbar, hombro, muñeca, codo, tobillo); registra los ids devueltos como válidos.",
   inputSchema: z.object({ itemId: z.string().uuid() }),
   parameters: params({ itemId: uuidProp("id del ejercicio de la rutina para el que se buscan alternativas") }, ["itemId"]),
   async run(input, rt) {
@@ -98,6 +98,8 @@ export const findAlternativesSkill = defineSkill({
       excludeIds: new Set(inRoutine),
       excludeNames: inRoutine.map((id) => rt.names[id]).filter((n): n is string => !!n),
       avoid: rt.avoid,
+      easier: rt.easier,
+      injuries: rt.injuries,
       limit: MAX_ALTERNATIVES,
     })
     for (const c of candidates) { rt.knownExerciseIds.add(c.id); rt.names[c.id] = c.name }

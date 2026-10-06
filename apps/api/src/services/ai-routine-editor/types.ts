@@ -3,6 +3,7 @@
 // en tools de un modelo, y un futuro servidor MCP o adaptador REST podría usar el mismo registro.
 // Fuente de verdad documental: docs/habilidades-ia-rutinas.md (hay una prueba que las mantiene alineadas).
 
+import type { Injury } from "./constraints"
 import type { RoutineContent } from "@atleta/db/schema"
 import type { z } from "zod"
 import type { EditOp, RoutineChange } from "../ai-routine-edits"
@@ -40,6 +41,10 @@ export type SkillRuntime = {
   catalog: CatalogPort
   /** El entrenador pidió explícitamente repetir un ejercicio ya presente (add_exercise). */
   allowRepeatExercises?: boolean
+  /** El entrenador pidió algo más fácil: los reemplazos deben ser estrictamente menos difíciles. */
+  easier?: boolean
+  /** Molestias dichas por el entrenador: se descartan reemplazos que las cargan. */
+  injuries?: Injury[]
   /** Aplica una operación pura sobre el borrador, la registra y devuelve el cambio. Lanza RoutineEditError si no es válida. */
   apply(op: EditOp): RoutineChange
 }

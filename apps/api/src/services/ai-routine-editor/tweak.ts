@@ -11,6 +11,7 @@ import { TRPCError } from "@trpc/server"
 import type { FastifyBaseLogger } from "fastify"
 import { routineContentSchema } from "../routine-content-schema"
 import { runAgent } from "./agent"
+import { detectInjuries, messageWantsEasier } from "./constraints"
 import type { TweakDeps } from "./deps"
 import { tweakInputSchema, type TweakInput, type TweakResult } from "./input"
 import { INTENTS, type IntentParams } from "./intents"
@@ -96,6 +97,8 @@ export async function tweakRoutineWithAI(rawInput: TweakInput, userId: string, l
     original, names, avoid: params.avoid, userId, teamId: input.teamId, deps,
     allowFixedKg: messageMentionsWeights(fullMessage),
     allowRepeatExercises: messageAllowsRepeats(fullMessage),
+    easier: messageWantsEasier(fullMessage),
+    injuries: detectInjuries(fullMessage),
   })
 
   // Candidatos deterministas (find_alternatives): el modelo elige entre ellos; nunca se crean ejercicios
