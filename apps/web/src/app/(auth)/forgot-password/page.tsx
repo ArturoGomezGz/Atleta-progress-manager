@@ -39,7 +39,7 @@ export default function ForgotPasswordPage() {
         {sent ? (
           <div className="space-y-4 text-center">
             <p className="text-sm text-foreground">
-              Si existe una cuenta con ese correo, recibirás un enlace para restablecer tu contraseña.
+              Recibimos tu solicitud. Nos pondremos en contacto contigo para ayudarte a restablecer tu contraseña.
             </p>
             <a href="/login" className="block text-sm text-primary hover:brightness-110 font-medium">
               Volver al inicio de sesión

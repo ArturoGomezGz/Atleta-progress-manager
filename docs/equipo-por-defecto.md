@@ -6,6 +6,10 @@ Un equipo llamado **"Mi equipo"** (`DEFAULT_TEAM_NAME` en `apps/api/src/services
 
 No se precrea ningún entrenamiento: el usuario arma el suyo y elige sus ejercicios. Al crear el equipo también se marca el onboarding del usuario como en curso ([onboarding.md](onboarding.md)), en la misma transacción.
 
+## Plaza de atleta
+
+El auto-entrenamiento ocupa una plaza de atleta (`team.max_athletes`, 1 por defecto): cuentan los miembros con `role = "athlete"` o `self_athlete = true` (`countAthletePlazas`). Con el equipo por defecto el usuario no puede invitar atletas hasta desactivarlo. Activarlo exige plaza libre; desactivarlo siempre se permite. Los equipos existentes que queden sobre el límite no se tocan.
+
 ## Cuándo
 
 La mutación `teams.ensureDefault` la llama el dashboard (`/dashboard`) cuando `teams.list` viene vacío. Cubre registros con correo y con Google, y a usuarios existentes con 0 equipos (lo reciben la próxima vez que entran). Tras crearlo, el dashboard navega a `/teams/<id>/plantillas`.

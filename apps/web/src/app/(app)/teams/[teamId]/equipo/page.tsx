@@ -42,7 +42,7 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
   const selfMember = members?.find((m) => m.userId === session?.user.id)
   const maxAthletes = currentTeam?.team.maxAthletes ?? 1
   const maxCoaches = currentTeam?.team.maxCoaches ?? 1
-  const athleteCount = members?.filter((m) => m.role === "athlete").length ?? 0
+  const athleteCount = members?.filter((m) => m.role === "athlete" || m.selfAthlete).length ?? 0
   const coachCount = members?.filter((m) => m.role === "coach").length ?? 0
   const overLimit = athleteCount > maxAthletes || coachCount > maxCoaches
   const atCapacity = athleteCount >= maxAthletes
@@ -89,6 +89,7 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
         <SelfTrainingSection
           enabled={selfMember.selfAthlete}
           pending={toggleSelfTraining.isPending}
+          noPlaza={!selfMember.selfAthlete && atCapacity}
           onToggle={(enabled) => toggleSelfTraining.mutate({ teamId, enabled })}
         />
       )}
@@ -452,10 +453,11 @@ function MemberRow({
 // ─── Self-training toggle ─────────────────────────────────────────────────────
 
 function SelfTrainingSection({
-  enabled, pending, onToggle,
+  enabled, pending, noPlaza, onToggle,
 }: {
   enabled: boolean
   pending: boolean
+  noPlaza: boolean
   onToggle: (enabled: boolean) => void
 }) {
   return (
@@ -463,13 +465,14 @@ function SelfTrainingSection({
       <div className="space-y-0.5">
         <p className="text-sm font-medium">Auto-entrenamiento</p>
         <p className="text-xs text-muted-foreground max-w-sm">
-          Aparecerás como atleta en tus propios entrenamientos sin cambiar tu rol de entrenador del equipo.
+          Aparecerás como atleta en tus propios entrenamientos sin cambiar tu rol de entrenador del equipo. Ocupa una plaza de atleta.
+          {noPlaza && " No hay plazas disponibles."}
         </p>
       </div>
       <button
         role="switch"
         aria-checked={enabled}
-        disabled={pending}
+        disabled={pending || noPlaza}
         onClick={() => onToggle(!enabled)}
         className={cn(
           "relative shrink-0 w-10 h-6 rounded-full transition-colors disabled:opacity-50",

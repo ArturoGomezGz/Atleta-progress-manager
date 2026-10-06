@@ -65,6 +65,7 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 | `NODE_ENV` | `production` — ya la fija el `Dockerfile` (`ENV NODE_ENV=production`), no hace falta agregarla en Railway. De ella dependen el ocultamiento de errores internos (mensaje/stack) en tRPC (`apps/api/src/trpc.ts`) y el enmascarado de emails/enlaces con token en `apps/api/src/auth.ts` |
 | `RESEND_API_KEY` | API key de Resend |
 | `FROM_EMAIL` | Dirección de envío verificada (ej. `noreply@tudominio.com`) |
+| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`, `TELEGRAM_WEBHOOK_SECRET` | *(Opcional)* Bot de administración mientras no haya dominio en Resend. Crea el bot con @BotFather (token), obtén tu id con @userinfobot (chat id) y define un string aleatorio como secreto. Con ellas, cada registro con correo llega a Telegram con botones Aprobar/Rechazar (aprobar = marcar `email_verified`), y cada solicitud de recuperar contraseña llega con el enlace para que lo reenvíes. La API registra sola el webhook (`BETTER_AUTH_URL/api/telegram/webhook`) al arrancar en producción. Sin ellas se usan correos de Resend. Google no pasa por aquí |
 | `GOOGLE_CLIENT_ID` | *(Opcional)* Client ID del OAuth 2.0 de Google Cloud Console. Sin él, el login con Google se desactiva |
 | `GOOGLE_CLIENT_SECRET` | *(Opcional)* Client Secret del OAuth 2.0 de Google Cloud Console |
 | `SEED_DEMO_DATA` | `true` para sembrar cuentas de prueba + catálogo de ejercicios al arrancar (idempotente). `false` en producción real |
