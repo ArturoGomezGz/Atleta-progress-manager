@@ -11,6 +11,7 @@ Formato: lista separada por comas de **correos o ids de usuario** (sin distingui
 | `FEATURE_EVALUATION_USERS` | `evaluation` | Entrenamientos, asignados e historial de categoría "evaluación" y su registro de series. Sin el flag solo existe "entrenamiento". |
 | `FEATURE_PROGRESS_USERS` | `progress` | Vista Progreso (PRs/RM) y su entrada del menú. Requiere además `evaluation`. |
 | `FEATURE_AI_GENERATOR_USERS` | `ai_generator` | Generador de rutinas con IA. |
+| `FEATURE_AI_ROUTINE_TWEAKS_USERS` | `ai_routine_tweaks` | Chat de ajustes con IA en el editor de plantillas. Requiere además el acceso a la IA de rutinas (`OPENAI_API_KEY` y `ai_generator` / `AI_ROUTINES_*`). |
 | `FEATURE_TEAM_APPEARANCE_USERS` | `team_appearance` | Edición de la apariencia del equipo (logo y color). |
 | `FEATURE_SHARE_LINKS_USERS` | `share_links` | Crear enlaces para compartir rutinas. |
 | `FEATURE_SCHEDULED_SESSIONS_USERS` | `scheduled_sessions` | Programar un asignado para una fecha futura (opción "Programar fecha"). Sin el flag solo se asigna "Ahora". Los programados ya creados siguen visibles y funcionando. |
@@ -32,6 +33,7 @@ Por defecto (sin variables) **todas las claves están apagadas para todos**, inc
 - `evaluation`: `routines.create` (categoría evaluation), `duplicate/get/updateContent/rename/delete` de rutinas de evaluación, `sessions.create` y todas las operaciones sobre sesiones de evaluación (ver, activar, registrar/editar series, completar, cancelar) lanzan `FORBIDDEN`. `routines.list`, `sessions.list`, `sessions.myList` y `sessions.myPending` filtran la evaluación (la app móvil recibe las mismas formas de respuesta).
 - `progress`: todo el router `rms.*` (`FORBIDDEN`). `sessions.athleteRms` no se bloquea: lo usa el entrenamiento con % RM.
 - `ai_generator`: `routines.aiAvailable` devuelve `false` y `routines.generateWithAI` es `FORBIDDEN`. Se conservan las allowlists anteriores `AI_ROUTINES_USERS` / `AI_ROUTINES_TEAM_IDS` (ver `ia-generacion-rutinas.md`) como vía alterna.
+- `ai_routine_tweaks`: `routines.refineWithAI` es `FORBIDDEN` y la barra "¿Qué quieres cambiar de esta rutina?" no aparece en el editor. Independiente de `ai_generator`, pero la API también exige `canUseAiRoutines`.
 - `team_appearance`: `teams.updateBranding` es `FORBIDDEN`. La ruta `/teams/[teamId]/apariencia` ya redirige a Equipo. El `TeamThemeApplicator` **no** se condiciona al flag: así los atletas siguen viendo el tema que un entrenador con flag ya configuró, y un equipo sin tema usa el tema por defecto.
 - `scheduled_sessions`: `sessions.create` con `scheduledDate` es `FORBIDDEN`; desaparece la sección "Cuándo" en Asignar. Los programados existentes, su listado y el inicio por el atleta no cambian.
 - `groups`: todo el router `groups.*` es `FORBIDDEN` y la sección Grupos desaparece de Equipo. Los datos existentes no se borran.

@@ -1,7 +1,10 @@
 "use client"
 
 import { AiRoutineGenerator, type AiRoutineResult } from "@/components/ai-routine-generator"
+import { AiRoutineChat } from "@/components/ai-routine-chat"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
+import { setsSummary, type ItemPreview } from "@/lib/ai-routine-diff"
+import { useFeature } from "@/lib/features"
 import { usePublishTourSignal } from "@/lib/tour-signals"
 import { PageTransition, useRevealAfterEnter } from "@/components/page-transition"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
@@ -43,9 +46,17 @@ import {
 } from "lucide-react"
 import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
-import { createContext, use, useCallback, useContext, useEffect, useRef, useState } from "react"
+import { createContext, use, useCallback, useMemo, useContext, useEffect, useRef, useState } from "react"
 
 const DEFAULT_SUGGESTED_REST_SECONDS = 60
+
+// Propuesta de la IA abierta (vista previa sobre las tarjetas) y ids que destellan tras aceptarla.
+const AiPreviewContext = createContext<{ preview: Map<string, ItemPreview> | null; flash: Set<string> }>({ preview: null, flash: new Set() })
+
+/** Texto con el valor anterior tachado y el nuevo al lado (vista previa de la propuesta). */
+function PreviewDiff({ before, after }: { before: string; after: string }) {
+  return <><s className="text-muted-foreground/70">{before}</s> <ins className="no-underline font-semibold text-primary">{after}</ins></>
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -91,17 +102,6 @@ function draftToSet(d: DraftSet): RoutineSet {
     ...(d.setType === "reps" && d.loadType ? { loadType: d.loadType } : {}),
     ...(d.setType === "reps" && d.loadType && d.loadValue !== "" ? { loadValue: Number(d.loadValue) } : {}),
   }
-}
-
-function setsSummary(sets: RoutineSet[]): string {
-  const n = sets.length
-  if (n === 0) return "Sin series"
-  const first = sets[0]
-  const effort = (s: RoutineSet) =>
-    s.setType === "time" ? (s.targetDurationSeconds ? `${s.targetDurationSeconds}s` : "tiempo libre") : (s.targetReps ? `${s.targetReps}` : "libre")
-  const allSame = sets.every((s) => effort(s) === effort(first) && s.setType === first.setType)
-  if (!allSame) return `${n} serie${n !== 1 ? "s" : ""}`
-  return first.setType === "time" ? `${n} × ${effort(first)}` : `${n} × ${effort(first)} reps`
 }
 
 const uuid = () => crypto.randomUUID()
@@ -262,6 +262,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
   const updateContent                  = trpc.routines.updateContent.useMutation({ onSuccess: () => refetch() })
   const renameRoutine                  = trpc.routines.rename.useMutation({ onSuccess: () => refetch() })
   const { data: aiAvailable }          = trpc.routines.aiAvailable.useQuery({ teamId })
+  const aiTweaksEnabled                = useFeature("ai_routine_tweaks")
   const utils                          = trpc.useUtils()
 
   const [aiOpen, setAiOpen]     = useState(false)
@@ -274,6 +275,12 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     setAiOpen(false)
     if (result.createdExercises.length > 0) utils.exercises.list.invalidate({ teamId })
   }
+
+  // Ajustes con IA: vista previa de la propuesta abierta, tarjetas que destellan al aceptar y nombres de ejercicios recién creados
+  const [aiPreview, setAiPreview] = useState<Map<string, ItemPreview> | null>(null)
+  const [aiFlash, setAiFlash]     = useState<Set<string>>(new Set())
+  const [aiNames, setAiNames]     = useState<Record<string, string>>({})
+  const aiPreviewValue = useMemo(() => ({ preview: aiPreview, flash: aiFlash }), [aiPreview, aiFlash])
 
   const [localContent, setLocalContent] = useState<RoutineContent | null>(null)
   const [dirty, setDirty]               = useState(false)
@@ -325,9 +332,23 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
     ...Object.fromEntries(Object.entries(routineData?.exerciseInfo ?? {}).map(([id, e]) => [id, { name: e.name, youtubeVideoId: e.youtubeVideoId, videoOrientation: e.videoOrientation, zone: e.zone }])),
     ...Object.fromEntries((catalog ?? []).map((e) => [e.id, { name: e.name, youtubeVideoId: e.youtubeVideoId, videoOrientation: e.videoOrientation, zone: deriveBodyZone(e.muscles) }])),
   }
-  const infoFor = (id: string): ExerciseInfo => info[id] ?? { name: "…", youtubeVideoId: null, videoOrientation: "horizontal", zone: null }
+  const infoFor = (id: string): ExerciseInfo => info[id] ?? { name: aiNames[id] ?? "…", youtubeVideoId: null, videoOrientation: "horizontal", zone: null }
   // Se recalcula con cada cambio sin guardar: el entrenador ve cómo se reparte la rutina mientras la arma
   const zoneProfile = zoneProfileFromContent(content, (id) => info[id]?.zone)
+
+  // Aceptar una propuesta de la IA: reemplaza solo el borrador (nada se guarda hasta "Guardar")
+  function applyAiProposal(proposed: RoutineContent, changedIds: string[]) {
+    setLocalContent(proposed)
+    setDirty(true)
+    setOpenExerciseId(null)
+    setAiFlash(new Set(changedIds))
+    setTimeout(() => setAiFlash(new Set()), 1800)
+  }
+  const handleCreatedExercises = useCallback((list: { id: string; name: string }[]) => {
+    setAiNames((cur) => ({ ...cur, ...Object.fromEntries(list.map((e) => [e.id, e.name])) }))
+    utils.exercises.list.invalidate({ teamId })
+  }, [utils, teamId])
+  const showAiChat = showContent && !!routineData && aiTweaksEnabled && !!aiAvailable && routineData.category !== "evaluation" && content.items.length > 0
 
   function mutate(fn: (c: RoutineContent) => RoutineContent) {
     setLocalContent((prev) => fn(prev ?? routineData?.content ?? { v: 1, items: [] }))
@@ -478,7 +499,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
         mostraba fuera de PageTransition y el deslizamiento arrancaba recién al llegar
         la plantilla. Ahora: deslizamiento → esqueleto → ejercicios. */}
     <PageTransition direction="forward" onEntered={onEntered}>
-    <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-16">
+    <div className={cn("max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6 pb-16", showAiChat && "pb-32")}>
       {/* Cabecera fija: ocupa el espacio que dejó el topbar de la app en modo enfocado.
           La única salida de la vista es este botón, que es donde se decide qué hacer
           con los cambios. */}
@@ -564,6 +585,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
       )}
 
       {/* Items */}
+      <AiPreviewContext.Provider value={aiPreviewValue}>
       <DndContext sensors={dndSensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd} onDragCancel={handleDragCancel}>
         <RootDropZone>
           {/* Solo tiene sentido marcar "por dónde empieza" cuando ya hay algo que recorrer;
@@ -595,6 +617,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
                       </div>
                       {!isEvaluation && (
                         <RestRow
+                          itemId={item.id}
                           seconds={item.restSeconds}
                           onAdd={() => updateItem(item.id, { restSeconds: suggestedRest })}
                           onChange={(n) => { updateItem(item.id, { restSeconds: n }); setSuggestedRest(n) }}
@@ -635,6 +658,7 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           {activeDragId ? <DragPreview id={activeDragId} content={content} infoFor={infoFor} /> : null}
         </DragOverlay>
       </DndContext>
+      </AiPreviewContext.Provider>
 
       {/* Add */}
       <div className="flex flex-wrap items-stretch gap-3">
@@ -651,6 +675,18 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
 
     {/* Modales fuera del contenedor que se desliza: un ancestro con `transform` crea un
         nuevo contenedor de posicionamiento y rompe `position: fixed`. */}
+    {showAiChat && (
+      <AiRoutineChat
+        teamId={teamId}
+        routineName={name}
+        content={content}
+        nameOf={(id) => infoFor(id).name}
+        onPreview={setAiPreview}
+        onAccept={applyAiProposal}
+        onCreatedExercises={handleCreatedExercises}
+      />
+    )}
+
     {confirmExit && (
         <div
           className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4"
@@ -939,13 +975,30 @@ function RestSecondsInput({ seconds, onChange }: { seconds: number; onChange: (s
   )
 }
 
-function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
+function RestRow({ itemId, seconds, label = "Descanso", onAdd, onChange, onClear }: {
+  itemId?: string
   seconds?: number
   label?: string
   onAdd: () => void
   onChange: (seconds: number) => void
   onClear: () => void
 }) {
+  const aiRest = useContext(AiPreviewContext).preview?.get(itemId ?? "")?.rest
+  if (aiRest && !aiRest.after && seconds != null) {
+    // La propuesta quita el descanso: se muestra tachado
+    return (
+      <div className="relative z-0 flex items-center gap-1.5 w-fit ml-9 -mt-2.5 pt-2.5 px-2.5 pb-1.5 rounded-b-lg border border-t-0 border-primary/30 bg-primary/10 text-[11px] text-primary outline-dashed outline-[1.5px] outline-offset-1 outline-primary">
+        <PauseIcon className="w-3 h-3 shrink-0" /><span className="font-medium">{label}</span><s className="text-muted-foreground/70">{seconds} seg</s>
+      </div>
+    )
+  }
+  if (seconds == null && aiRest?.after) {
+    return (
+      <div className="relative z-0 flex items-center gap-1.5 w-fit ml-9 -mt-2.5 pt-2.5 px-2.5 pb-1.5 rounded-b-lg border border-t-0 border-primary/30 bg-primary/10 text-[11px] text-primary outline-dashed outline-[1.5px] outline-offset-1 outline-primary">
+        <PauseIcon className="w-3 h-3 shrink-0" /><span className="font-medium">{label}</span><ins className="no-underline font-semibold">{aiRest.after} seg</ins>
+      </div>
+    )
+  }
   if (seconds == null) {
     return (
       <button
@@ -958,10 +1011,10 @@ function RestRow({ seconds, label = "Descanso", onAdd, onChange, onClear }: {
     )
   }
   return (
-    <div className="relative z-0 flex items-center gap-1.5 w-fit max-w-[calc(100%-2.25rem)] ml-9 -mt-2.5 pt-2.5 px-2.5 pb-1.5 rounded-b-lg border border-t-0 border-primary/30 bg-primary/10 text-[11px] text-primary">
+    <div className={cn("relative z-0 flex items-center gap-1.5 w-fit max-w-[calc(100%-2.25rem)] ml-9 -mt-2.5 pt-2.5 px-2.5 pb-1.5 rounded-b-lg border border-t-0 border-primary/30 bg-primary/10 text-[11px] text-primary", aiRest && "outline-dashed outline-[1.5px] outline-offset-1 outline-primary")}>
       <PauseIcon className="w-3 h-3 shrink-0" />
       <span className="shrink-0 font-medium">{label}</span>
-      <RestSecondsInput seconds={seconds} onChange={onChange} />
+      {aiRest ? <span className="shrink-0"><PreviewDiff before={String(aiRest.before)} after={String(aiRest.after)} /></span> : <RestSecondsInput seconds={seconds} onChange={onChange} />}
       <span className="shrink-0">seg</span>
       <button
         type="button"
@@ -1002,6 +1055,9 @@ function ExerciseCard({
   const [meta, setMeta]           = useState({ tempo: item.tempo ?? "", goal: item.goal ?? "", notes: item.notes ?? "" })
   const [quick, setQuick]         = useState({ count: String(item.sets.length || 3), value: "" })
   const [tempoInfo, setTempoInfo] = useState(false)
+  const ai = useContext(AiPreviewContext)
+  const aiPrev = ai.preview?.get(item.id)
+  const aiFlash = ai.flash.has(item.id)
 
   function toggleEditor() {
     // Al abrir, parte de lo que hay guardado; al cerrar no hay nada que descartar
@@ -1051,7 +1107,7 @@ function ExerciseCard({
   const inputCls = "w-full bg-background border border-border rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
 
   return (
-    <div className={cn("relative border border-border rounded-xl overflow-hidden", nested ? "bg-background" : "bg-card/60")}>
+    <div className={cn("relative border border-border rounded-xl overflow-hidden", nested ? "bg-background" : "bg-card/60", aiPrev && "outline-dashed outline-[1.5px] outline-offset-2 outline-primary", aiFlash && "ai-flash")}>
       {info.zone && (
         <div
           className={cn("absolute left-0 inset-y-0 w-1", ZONE_CONFIG[info.zone].bar)}
@@ -1076,10 +1132,12 @@ function ExerciseCard({
           aria-controls={`editor-${item.id}`}
           className="flex-1 min-w-[140px] text-left cursor-pointer"
         >
-          <p className="font-semibold text-sm truncate">{info.name}</p>
+          <p className={cn("font-semibold text-sm truncate", aiPrev?.removed && "line-through text-muted-foreground")}>
+            {aiPrev?.name ? <PreviewDiff before={aiPrev.name.before} after={aiPrev.name.after} /> : info.name}
+          </p>
           <p className="text-xs text-muted-foreground truncate">
             {info.zone && <span className={cn("font-medium", ZONE_CONFIG[info.zone].text)}>{ZONE_CONFIG[info.zone].label} · </span>}
-            {setsSummary(item.sets)}
+            {aiPrev?.sets ? <PreviewDiff before={aiPrev.sets.before} after={`→ ${aiPrev.sets.after}`} /> : setsSummary(item.sets)}
             {item.restSeconds ? ` · descanso ${item.restSeconds}s` : ""}
             {item.notes ? " · con notas" : ""}
           </p>
@@ -1248,12 +1306,16 @@ function BlockCard({
   const exercises = [...item.exercises].sort((a, b) => a.order - b.order)
   const setExercises = (list: RoutineExerciseContent[]) => onUpdate({ exercises: renumber(list) })
   const { setNodeRef: setBlockDropRef } = useDroppable({ id: blockDropId(item.id) })
+  const ai = useContext(AiPreviewContext)
+  const aiPrev = ai.preview?.get(item.id)
 
   return (
     <div
       className={cn(
         "relative border-2 border-primary/30 rounded-xl overflow-hidden bg-primary/5 transition-transform duration-150 ease-out",
         isDropTarget && "scale-[1.015] border-primary/60 shadow-lg shadow-primary/10",
+        aiPrev && "outline-dashed outline-[1.5px] outline-offset-2 outline-primary",
+        ai.flash.has(item.id) && "ai-flash",
       )}
     >
       <CardCornerActions
@@ -1286,7 +1348,7 @@ function BlockCard({
           >
             <MinusIcon className="w-3 h-3" />
           </button>
-          <span className="w-16 text-center font-medium">{item.rounds} vueltas</span>
+          <span className="w-16 text-center font-medium">{aiPrev?.rounds ? <PreviewDiff before={String(aiPrev.rounds.before)} after={`${aiPrev.rounds.after} vueltas`} /> : `${item.rounds} vueltas`}</span>
           <button
             type="button"
             onClick={() => onUpdate({ rounds: Math.min(20, item.rounds + 1) })}
@@ -1337,6 +1399,7 @@ function BlockCard({
                   />
                 </div>
                 <RestRow
+                  itemId={ex.id}
                   seconds={ex.restSeconds}
                   onAdd={() => setExercises(exercises.map((e) => (e.id === ex.id ? { ...e, restSeconds: suggestedRest } : e)))}
                   onChange={(n) => {
