@@ -30,9 +30,10 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
+  // `/api/telegram` es el webhook del bot: lo llama Telegram, sin sesión ni redirecciones.
   // `/trpc` queda fuera: cada procedimiento autoriza por su cuenta (y los de
   // invitado son públicos a propósito). Si pasara por aquí, las llamadas de
   // quien no tiene sesión se redirigirían al login — y las de quien sí la
   // tiene pagarían una consulta de sesión extra por cada petición de datos.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth|trpc).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth|api/telegram|trpc).*)"],
 }
