@@ -47,25 +47,52 @@ crash *antes* de llegar al assert no es solo un bug de UX: es una ruta sin
 comportamiento garantizado (¿niega acceso? ¿revienta con 500?) en el único
 punto que separa equipos entre sí.
 
-**Hallazgo real** — `apps/api/src/routers/sessions.ts:458-491`:
+**Ejemplo histórico (ya resuelto, no re-escalar)** — `apps/api/src/routers/sessions.ts`
+usaba antes `session!.teamId` sin verificar que la fila existiera: si la
+sesión no existía (fila inconsistente o borrada), lanzaba un `TypeError` sin
+control en vez de un `NOT_FOUND`/`FORBIDDEN`, *antes* de la verificación de
+rol. Hoy cada procedimiento que carga la sesión tiene un guard explícito
+antes de usar `session.teamId`:
 ```ts
-const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
-await assertCoach(ctx.session.user.id, session!.teamId)
+const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.id)).limit(1)
+if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+
+const member = await assertMember(userId, session.teamId)
 ```
-Si `session` no existe (fila inconsistente o borrada), `session!.teamId`
-lanza un `TypeError` sin control en vez de un `NOT_FOUND`/`FORBIDDEN` — y
-esto ocurre *antes* de la verificación de rol. `sessions.ts` ya está en
+Ya no queda ningún patrón `x!.` en `apps/api/src/routers/`. Ese ejemplo
+concreto está cerrado.
+
+**Regla a vigilar hacia adelante**: toda fila cuyo `teamId` alimenta a
+`assertCoach`/`assertMember` debe verificarse explícitamente (`if (!x) throw
+new TRPCError({ code: "NOT_FOUND" })`) antes de usarse; nunca con `!`. Un
+patrón nuevo de ese tipo sí es un hallazgo. `sessions.ts` sigue en
 `scripts/quality-agents/config/critical-targets.json`: el agente debe tratar
 sus hallazgos como severidad alta por defecto, no como "uno más entre N
 console.log".
 
 ### 2. Errores crudos expuestos en la superficie de autenticación
 
-`apps/api/src/index.ts:47` — el handler de `/api/auth/*` responde
-`reply.status(500).send({ error: String(err) })` ante cualquier excepción no
-controlada. Es el endpoint de login/signup/reset-password: el primero que se
-prueba desde fuera. Un error de la librería o de Postgres se serializa tal
-cual hacia el cliente.
+El handler de `/api/auth/*` es el endpoint de login/signup/reset-password: el
+primero que se prueba desde fuera. Cualquier error de la librería o de
+Postgres que llegue al cliente tal cual filtra detalles internos.
+
+**Ejemplo histórico (ya resuelto, no re-escalar)** — `apps/api/src/index.ts`
+respondía antes `reply.status(500).send({ error: String(err) })`, serializando
+el error crudo hacia el cliente. Hoy el `catch` registra el error con el
+logger estructurado y devuelve una respuesta genérica con correlación de
+request:
+```ts
+} catch (err) {
+  req.log.error(err, "better-auth handler error")
+  reply.status(500).send({ error: "Internal Server Error", requestId: req.id })
+}
+```
+Ese ejemplo concreto está cerrado.
+
+**Regla a vigilar hacia adelante**: el handler de la superficie de
+autenticación no debe serializar `err`, `String(err)` o `err.message` en la
+respuesta; el detalle va a `req.log`, y al cliente solo un mensaje genérico
+más el `requestId`.
 
 ### 3. Cobertura de pruebas nula sobre autorización y dinero
 
