@@ -21,6 +21,7 @@ export const exerciseContentSchema = z.object({
   restSeconds: z.number().int().positive().optional(),
   goal:        z.enum(["strength","hypertrophy","endurance","power","cardio","recovery"]).optional(),
   notes:       z.string().optional(),
+  perSide:     z.boolean().optional(),
   sets:        z.array(routineSetSchema).min(1),
 }) satisfies z.ZodType<RoutineExerciseContent>
 

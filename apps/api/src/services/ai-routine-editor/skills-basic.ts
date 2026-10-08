@@ -148,6 +148,7 @@ export const addExerciseSkill = editSkill("add_exercise", {
     restSeconds: { type: "integer" },
     tempo: { type: "string", description: "Formato E-P-C-P, ej. 3-1-1-0" },
     notes: { type: "string" },
+    perSide: { type: "boolean", description: "true en unilaterales: reps/tiempo son por cada lado" },
     sets: setsJson,
   }, ["exerciseId", "sets"]),
 })
@@ -178,13 +179,14 @@ export const updateSetsSkill = editSkill("update_sets", {
 
 export const updateItemFieldsSkill = editSkill("update_item_fields", {
   name: "Cambiar campos del ejercicio",
-  description: "Cambia tempo, descanso, objetivo o notas de un ejercicio. null borra el campo; omitirlo lo deja igual.",
+  description: "Cambia tempo, descanso, objetivo, notas o \"por cada lado\" (perSide) de un ejercicio. null borra el campo; omitirlo lo deja igual.",
   parameters: params({
     itemId: uuidProp("id del ejercicio"),
     tempo: { type: ["string", "null"] },
     restSeconds: { type: ["integer", "null"] },
     goal: { type: ["string", "null"], enum: [...EXERCISE_GOALS, null] },
     notes: { type: ["string", "null"] },
+    perSide: { type: ["boolean", "null"], description: "true: reps/tiempo por cada lado (unilateral); false/null lo quita" },
   }, ["itemId"]),
 })
 

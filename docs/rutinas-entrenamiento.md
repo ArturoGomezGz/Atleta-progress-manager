@@ -116,6 +116,7 @@ type RoutineExerciseContent = {
   restSeconds?: number
   goal?: ExerciseGoal
   notes?: string
+  perSide?: boolean            // "Por cada lado": reps/tiempo de cada serie son por lado (ausente = false)
   sets: RoutineSet[]
 }
 

@@ -122,7 +122,7 @@ export default function TrainScreen() {
   const shown = step ? flat[step.kind === "rest" ? step.i + 1 : step.i] ?? position : position
   const shownIdx = shown ? flat.findIndex((f) => f.target.id === shown.target.id) : -1
 
-  const countdown = useSetCountdown(shown?.target.targetDurationSeconds ?? 30, shown?.exercise.exerciseName ?? "")
+  const countdown = useSetCountdown(shown?.target.targetDurationSeconds ?? 30, shown?.exercise.exerciseName ?? "", !!shown?.exercise.perSide)
   const shownTargetId = shown?.target.id
   useEffect(() => {
     setReps(8)
@@ -353,6 +353,14 @@ export default function TrainScreen() {
   } else if (isTime && countdown.phase === "prepare") {
     primary = { label: "Preparando…", icon: Play, tone: "destructive", onPress: () => {}, disabled: true }
     secondary = { label: "Cancelar", icon: X, onPress: countdown.reset }
+  } else if (isTime && countdown.phase === "switch") {
+    // "Por cada lado": pausa corta entre lados; se puede empezar el lado 2 ya
+    primary = { label: "Empezar lado 2", icon: Play, tone: "destructive", onPress: countdown.skipSide }
+    secondary = { label: "Cancelar", icon: X, onPress: countdown.reset }
+  } else if (isTime && countdown.phase === "running" && countdown.onFirstSide) {
+    // Saltar lo que queda del lado 1 lleva al cambio de lado, no termina la serie
+    primary = { label: "Terminar lado 1", icon: Check, tone: "success", onPress: countdown.skipSide }
+    secondary = { label: "Pausar", icon: Pause, onPress: countdown.pause }
   } else if (isTime && countdown.phase === "running") {
     // Se puede saltar lo que queda del tiempo: la serie se guarda completa
     primary = { label: "Terminar ya", icon: Check, tone: "success", onPress: handleComplete, disabled: saving }
@@ -367,7 +375,7 @@ export default function TrainScreen() {
   }
 
   // Firma del paso actual: si cambia mientras se cierra la rutina, la acción ya no aplica
-  const sig = `${stepIdx}|${rest ? "r" : "-"}|${countdown.phase}|${reviewing ? "v" : "-"}|${target.id}`
+  const sig = `${stepIdx}|${rest ? "r" : "-"}|${countdown.phase}|${countdown.side}|${reviewing ? "v" : "-"}|${target.id}`
   footerActions.current = { primary, secondary, sig }
 
   // Con la rutina completa abierta, el botón primero la cierra y la acción corre al terminar la animación

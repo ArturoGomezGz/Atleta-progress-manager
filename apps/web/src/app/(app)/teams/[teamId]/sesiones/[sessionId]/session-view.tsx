@@ -293,6 +293,7 @@ type Exercise = {
   blockName: string | null
   rounds: number
   roundNumber: number | null
+  perSide?: boolean
   targets: SessionSetTarget[]
 }
 type SetRecord = { id: string; setNumber: number; sessionSetTargetId: string | null; reps: number; weightLbs: string; status: "valid" | "invalid" }
@@ -411,7 +412,7 @@ function ExerciseCard({ sessionId, athleteId, exercise, sets, isActive, canRecor
             <TargetSetRow key={target.id} sessionId={sessionId} athleteId={athleteId}
               sessionExerciseId={exercise.id} target={target} recorded={recorded}
               isActive={isActive} canRecord={canRecord} isNext={isNext} isPending={isPending}
-              rmLbs={rmLbs} onUpdate={onUpdate} />
+              rmLbs={rmLbs} perSide={!!exercise.perSide} onUpdate={onUpdate} />
           )
         })}
 
@@ -476,10 +477,10 @@ function EditSetFields({ setId, defaultReps, defaultWeight, onSave, onCancel }:
 
 // ─── Target set row ───────────────────────────────────────────────────────────
 
-function TargetSetRow({ sessionId, athleteId, sessionExerciseId, target, recorded, isActive, canRecord, isNext, isPending, rmLbs, onUpdate }:
-  { sessionId: string; athleteId: string; sessionExerciseId: string; target: SessionSetTarget; recorded: SetRecord | null; isActive: boolean; canRecord: boolean; isNext: boolean; isPending: boolean; rmLbs: string | null; onUpdate: () => void }) {
+function TargetSetRow({ sessionId, athleteId, sessionExerciseId, target, recorded, isActive, canRecord, isNext, isPending, rmLbs, perSide = false, onUpdate }:
+  { sessionId: string; athleteId: string; sessionExerciseId: string; target: SessionSetTarget; recorded: SetRecord | null; isActive: boolean; canRecord: boolean; isNext: boolean; isPending: boolean; rmLbs: string | null; perSide?: boolean; onUpdate: () => void }) {
   const [editing, setEditing] = useState(false)
-  const repsLabel = target.targetReps != null ? `${target.targetReps} reps` : "libre"
+  const repsLabel = (target.targetReps != null ? `${target.targetReps} reps` : "libre") + (perSide ? " por lado" : "")
   const pctLabel  = target.targetPercent != null ? `${target.targetPercent}% RM` : null
   const defaultWeight = target.targetPercent != null && rmLbs != null
     ? (Math.ceil(Number(rmLbs) * Number(target.targetPercent) / 100 * 2) / 2).toFixed(1)

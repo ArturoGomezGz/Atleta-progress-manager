@@ -62,8 +62,8 @@ function TemplatePreviewSheet({
   const exercises = data
     ? (data.content as RoutineContent).items.flatMap((item) =>
         item.type === "exercise"
-          ? [{ id: item.id, exerciseId: item.exerciseId, sets: item.sets }]
-          : item.exercises.map((e) => ({ id: e.id, exerciseId: e.exerciseId, sets: e.sets }))
+          ? [{ id: item.id, exerciseId: item.exerciseId, sets: item.sets, perSide: item.perSide }]
+          : item.exercises.map((e) => ({ id: e.id, exerciseId: e.exerciseId, sets: e.sets, perSide: e.perSide }))
       )
     : []
 
@@ -145,8 +145,8 @@ function TemplatePreviewSheet({
             const hint = (() => {
               if (!firstSet) return null
               if (firstSet.setType === "time" && firstSet.targetDurationSeconds)
-                return `${firstSet.targetDurationSeconds}s`
-              if (firstSet.targetReps) return `${firstSet.targetReps} reps`
+                return `${firstSet.targetDurationSeconds}s${ex.perSide ? " por lado" : ""}`
+              if (firstSet.targetReps) return `${firstSet.targetReps} reps${ex.perSide ? " por lado" : ""}`
               return null
             })()
 

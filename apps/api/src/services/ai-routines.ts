@@ -52,6 +52,7 @@ const aiExerciseSchema = z.object({
   restSeconds: z.number().int().positive().max(600).optional().nullable(),
   tempo:       z.string().regex(/^[0-9X]-[0-9X]-[0-9X]-[0-9X]$/i).optional().nullable(),
   notes:       z.string().max(300).optional().nullable(),
+  perSide:     z.boolean().optional().nullable(),
   sets:        z.array(aiSetSchema).min(1).max(12),
 })
 
@@ -90,6 +91,7 @@ const exerciseJsonSchema = {
     restSeconds: { type: "integer" },
     tempo:       { type: "string", description: "Formato excéntrica-pausa-concéntrica-pausa, ej. 3-1-1-0" },
     notes:       { type: "string", description: "Indicación breve para el atleta, en español" },
+    perSide:     { type: "boolean", description: "true en unilaterales: targetReps/targetDurationSeconds son por cada lado" },
     sets:        { type: "array", items: setJsonSchema },
   },
   required: ["exerciseId", "sets"],
@@ -305,6 +307,7 @@ function toExercise(ex: z.infer<typeof aiExerciseSchema>, order: number): Routin
     ...(ex.restSeconds ? { restSeconds: ex.restSeconds } : {}),
     ...(ex.goal ? { goal: ex.goal } : {}),
     ...(ex.notes ? { notes: ex.notes } : {}),
+    ...(ex.perSide ? { perSide: true } : {}),
     sets: toSets(ex.sets),
   }
 }

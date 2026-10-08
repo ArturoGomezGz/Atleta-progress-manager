@@ -1137,7 +1137,7 @@ function ExerciseCard({
           </p>
           <p className="text-xs text-muted-foreground truncate">
             {info.zone && <span className={cn("font-medium", ZONE_CONFIG[info.zone].text)}>{ZONE_CONFIG[info.zone].label} · </span>}
-            {aiPrev?.sets ? <PreviewDiff before={aiPrev.sets.before} after={`→ ${aiPrev.sets.after}`} /> : setsSummary(item.sets)}
+            {aiPrev?.sets ? <PreviewDiff before={aiPrev.sets.before} after={`→ ${aiPrev.sets.after}`} /> : setsSummary(item.sets, item.perSide)}
             {item.restSeconds ? ` · descanso ${item.restSeconds}s` : ""}
             {item.notes ? " · con notas" : ""}
           </p>
@@ -1202,7 +1202,7 @@ function ExerciseCard({
             ))}
           </div>
 
-          <div className="px-4 py-2 border-t border-border">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2 border-t border-border">
             <button
               onClick={() => changeDrafts([...drafts, defaultDraft(drafts.length + 1, drafts[drafts.length - 1])])}
               className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-primary transition-colors cursor-pointer"
@@ -1210,6 +1210,19 @@ function ExerciseCard({
               <PlusIcon className="w-3.5 h-3.5" />
               Agregar serie (copia la anterior)
             </button>
+            {/* Unilateral: las reps o el tiempo de cada serie son para cada lado. */}
+            <label
+              className="ml-auto flex items-center gap-2 text-xs cursor-pointer"
+              title="Las repeticiones o el tiempo de cada serie se hacen con cada lado (ej. desplantes, isométricos a una pierna)"
+            >
+              <input
+                type="checkbox"
+                checked={!!item.perSide}
+                onChange={(e) => onUpdate({ perSide: e.target.checked || undefined })}
+                className="accent-primary"
+              />
+              Por cada lado
+            </label>
           </div>
 
           {!isEvaluation && (

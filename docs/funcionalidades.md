@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-06.
+> **Última revisión:** 2026-10-08.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -29,6 +29,7 @@ La columna **Verificación** indica de dónde viene el estado:
 | Miembros e invitaciones | Invitar atletas por enlace, ver miembros y roles. | Por confirmar |
 | Auto-entrenamiento | El coach se asigna entrenamientos a sí mismo y los ve en "Hoy". | Por confirmar |
 | Entrenamientos (builder) | Crear y editar entrenamientos con ejercicios individuales y circuitos; series por repeticiones o tiempo; carga fija, % RM o RPE; tempo, descanso, objetivo y notas; reordenar arrastrando. | Probada |
+| Por cada lado (unilaterales) | Casilla "Por cada lado" en cada ejercicio del builder: las repeticiones o el tiempo de cada serie son para cada lado (`perSide` en el contenido, sin migración). Se muestra "12 repeticiones por lado" / "30 segundos por lado" en el builder, el resumen al asignar, el ejecutor web y móvil y el registro del coach. En series por tiempo el ejecutor corre dos temporizadores: lado 1, 5 s de "Cambia de lado" y lado 2; la serie termina al acabar el lado 2. La IA (generador y editor) lo marca en unilaterales y lo conserva al editar. | Por confirmar |
 | Asignar y entrenar ahora | Asignar un entrenamiento a uno o más atletas y comenzarlo en el momento. | Probada |
 | Pestaña Asignados | Lista de lo asignado con atletas y avance completado. | Por confirmar |
 | Hoy (atleta) | Lo que toca hoy, en curso, próximos y terminados; ejecutar el entrenamiento paso a paso. | Por confirmar |
@@ -76,3 +77,4 @@ Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md).
 | RM por atleta | Cálculo y almacenamiento del RM para cargas en % RM; ver [rm-atleta.md](rm-atleta.md). Depende de evaluación. |
 | Capa "Plan" (agrupar entrenamientos) | Fuera de v1 en [rutinas-normales.md](rutinas-normales.md). |
 | Más habilidades del editor de IA | Ajustar a una duración, duplicar/agrupar/separar bloques, restricciones de equipo o lesión, convertir RPE a % RM, crear variantes, y habilidades de cuenta/atletas para un futuro conector MCP; ver [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md). Sin implementar. |
+| Experiencia inmersiva (móvil) | Guía por voz con audífonos y avance automático, sin tocar el teléfono; se habilita sola en entrenamientos que se pueden cronometrar. Será limitada con flag. Ver [experiencia-inmersiva.md](experiencia-inmersiva.md). Sin implementar. |
