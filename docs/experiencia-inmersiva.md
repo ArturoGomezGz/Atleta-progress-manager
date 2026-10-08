@@ -17,7 +17,7 @@ Partiendo del contenido actual de la rutina (`apps/api/src/services/routine-cont
 | Descanso entre series | `restSeconds` por ejercicio, opcional | Exigirlo |
 | Descanso entre ejercicios | No existe por separado | Campo nuevo (o usar `restSeconds` del ejercicio anterior) |
 | Descanso entre rondas de circuito | `restBetweenRoundsSeconds`, opcional | Exigirlo en circuitos |
-| Ejercicios por cada lado | En desarrollo ("Por cada lado") | Dos cronómetros / dos bloques de reps y una transición "cambia de lado" |
+| Ejercicios por cada lado | `perSide` en el ejercicio; dos cronómetros con transición de 5 s | Que la voz anuncie el lado y el cambio |
 | Tiempo de transición (preparar equipo, cambiar de estación) | No existe | Campo nuevo o un valor por defecto |
 | Series por distancia y AMRAP | Existen | No se pueden cronometrar: excluirlas o pedir confirmación manual |
 
@@ -25,7 +25,7 @@ El builder debería indicar si un entrenamiento es "apto para modo inmersivo" y,
 
 ## Funcionalidades de apoyo
 
-- [ ] **Por cada lado** (en desarrollo): reps o tiempo por lado; en tiempo, dos cronómetros seguidos.
+- [x] **Por cada lado**: reps o tiempo por lado; en tiempo, dos cronómetros seguidos (falta probarlo en la app).
 - [ ] Formato de tempo estructurado y validado.
 - [ ] Descanso entre ejercicios y tiempo de transición.
 - [ ] Indicador "apto para modo inmersivo" en el builder.
