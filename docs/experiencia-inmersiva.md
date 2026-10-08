@@ -64,4 +64,12 @@ Cada valor es un entero de 0 a 9 o `X` (explosivo). Ejemplo: `3-1-1-0` → 5 s p
 
 ## Pendiente de definir
 
-1. Voz o sonidos: qué se comunica con sonidos (ritmo, cuenta regresiva, cambio de lado, fin de serie) y qué con voz. Propuesta en discusión: sonidos para todo el ritmo y voz solo para el nombre del ejercicio que sigue, quizá también "última serie".
+1. Sonidos de las fases de cada repetición: falta un aviso al empezar cada pausa (isométrica) y un sonido más reconocible para la fase explosiva (`X`).
+2. Idioma de la voz configurable por el usuario (español o inglés), más adelante.
+
+## Sonidos y voz acordados
+
+- **Fin de descanso y fin de serie por tiempo:** "tic, tic, tic, ta": un tic en cada uno de los últimos 3 s y un "ta" al llegar a cero.
+- **Voz en el descanso:** dice "diez segundos" cuando faltan 10 s para el siguiente ejercicio. Por ahora solo en español.
+- **Voz en la transición:** el nombre del ejercicio que sigue.
+- Prototipo para escucharlos: artefacto "Modo inmersivo: voz o sonidos".
