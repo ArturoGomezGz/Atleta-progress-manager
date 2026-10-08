@@ -12,7 +12,7 @@ Te pones los audífonos con tu música y el entrenamiento te guía por voz paso 
 - **Sin registro de lo realizado.** Se da por hecho lo prescrito; no se capturan reps ni peso reales.
 - **Voz:** dice el nombre del ejercicio y marca el tiempo (cuenta de repeticiones según el tempo, o el cronómetro en series por tiempo). Nada más por ahora.
 - **Música:** se baja su volumen mientras habla la guía (ducking).
-- **Transición fija de 5 s** entre ejercicios y también entre series del mismo ejercicio, sumada al descanso que tenga. No se agrega ningún campo en la base de datos para esto.
+- **Sin transición fija entre series ni entre ejercicios.** Solo hay pausa si la rutina define un descanso. Los únicos 5 s fijos son el cambio de lado en ejercicios "Por cada lado". No se agrega ningún campo en la base de datos.
 - **Función limitada** con feature flag mientras se prueba.
 
 ## Condiciones para habilitarla
@@ -71,5 +71,5 @@ Cada valor es un entero de 0 a 9 o `X` (explosivo). Ejemplo: `3-1-1-0` → 5 s p
 
 - **Fin de descanso y fin de serie por tiempo:** "tic, tic, tic, ta": un tic en cada uno de los últimos 3 s y un "ta" al llegar a cero.
 - **Voz en el descanso:** dice "diez segundos" cuando faltan 10 s para el siguiente ejercicio. Por ahora solo en español.
-- **Voz en la transición:** el nombre del ejercicio que sigue.
+- **Voz con el nombre del ejercicio que sigue:** al empezar el descanso previo; si no hay descanso, al arrancar la serie.
 - Prototipo para escucharlos: artefacto "Modo inmersivo: voz o sonidos".
