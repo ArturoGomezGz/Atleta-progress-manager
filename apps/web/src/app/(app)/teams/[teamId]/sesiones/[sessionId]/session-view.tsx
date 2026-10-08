@@ -2,6 +2,7 @@
 
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
+import { useFeature } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
@@ -18,7 +19,7 @@ import {
   XIcon,
 } from "lucide-react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 // ─── Status config ─────────────────────────────────────────────────────────────
@@ -36,20 +37,24 @@ export function SessionView({ sessionId }: Props) {
   const [selectedAthleteId, setSelectedAthleteId] = useState<string | null>(null)
   const [confirming, setConfirming] = useState<"complete" | "cancel" | null>(null)
   const router = useRouter()
+  const { teamId } = useParams<{ teamId: string }>()
+  const hasEvaluation = useFeature("evaluation")
 
-  const { data: session, refetch: refetchSession } = trpc.sessions.get.useQuery({ id: sessionId }, { refetchInterval: 4000 })
+  const { data: session, refetch: refetchSession, isError } = trpc.sessions.get.useQuery({ id: sessionId }, { refetchInterval: 4000, retry: false })
+  // Una sesión de evaluación sin el flag no existe para este usuario
+  useEffect(() => { if (isError) router.replace(`/teams/${teamId}/rutinas`) }, [isError, router, teamId])
   const completeSession  = trpc.sessions.complete.useMutation({ onSuccess: () => { setConfirming(null); if (session) router.push(`/teams/${session.teamId}/rutinas`) } })
   const cancelSession    = trpc.sessions.cancel.useMutation({ onSuccess: () => { refetchSession(); setConfirming(null) } })
   const activateSession  = trpc.sessions.activate.useMutation({ onSuccess: () => refetchSession() })
   const cancelAthlete    = trpc.sessions.cancelAthlete.useMutation({ onSuccess: () => refetchSession() })
   const reactivateAthlete = trpc.sessions.reactivateAthlete.useMutation({ onSuccess: () => refetchSession() })
 
-  if (!session) return <div className="p-8 text-muted-foreground">Cargando sesión...</div>
+  if (!session) return <div className="p-8 text-muted-foreground">Cargando...</div>
 
   const statusCfg    = STATUS_CONFIG[session.status as keyof typeof STATUS_CONFIG] ?? STATUS_CONFIG.active
   const isActive     = session.status === "active"
   const isScheduled  = session.status === "scheduled"
-  const canRecord    = isActive && session.routineCategory === "evaluation"
+  const canRecord    = isActive && hasEvaluation && session.routineCategory === "evaluation"
   const backHref     = `/teams/${session.teamId}/rutinas`
 
   const activeAthleteId = selectedAthleteId ?? session.athletes.find((a) => a.status === "active")?.athleteId ?? null
@@ -67,7 +72,7 @@ export function SessionView({ sessionId }: Props) {
 
         <div className="flex-1 min-w-0">
           <h2 className="font-semibold text-sm truncate">
-            {session.routineName ?? "Sesión"}
+            {session.routineName ?? "Entrenamiento"}
           </h2>
           <p className="text-xs text-muted-foreground">
             {isScheduled && session.scheduledDate
@@ -117,11 +122,11 @@ export function SessionView({ sessionId }: Props) {
             <div className="flex items-start gap-3 mb-5">
               <AlertTriangleIcon className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
               <div>
-                <p className="font-semibold">{confirming === "complete" ? "¿Completar sesión?" : "¿Cancelar sesión?"}</p>
+                <p className="font-semibold">{confirming === "complete" ? "¿Completar entrenamiento?" : "¿Cancelar entrenamiento?"}</p>
                 <p className="text-sm text-muted-foreground mt-1">
                   {confirming === "complete" && session.routineCategory === "training"
                     ? "Se guardará el progreso de todos los atletas hasta este punto. No se calcularán PRs."
-                    : "Una vez cerrada, la sesión no podrá modificarse."}
+                    : "Una vez cerrada, el entrenamiento no podrá modificarse."}
                 </p>
               </div>
             </div>
@@ -152,7 +157,7 @@ export function SessionView({ sessionId }: Props) {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">
-                Sesión programada para el{" "}
+                Entrenamiento asignado para el{" "}
                 <span className="font-medium text-foreground">
                   {session.scheduledDate
                     ? new Date(session.scheduledDate + "T12:00:00").toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" })
@@ -226,7 +231,7 @@ export function SessionView({ sessionId }: Props) {
               if (activeAthlete?.status === "cancelled") {
                 return (
                   <div className="flex flex-col items-center justify-center h-40 gap-2 text-center">
-                    <p className="text-muted-foreground text-sm">Sesión cancelada para este atleta</p>
+                    <p className="text-muted-foreground text-sm">Entrenamiento cancelado para este atleta</p>
                   </div>
                 )
               }
@@ -254,7 +259,7 @@ export function SessionView({ sessionId }: Props) {
           </button>
           <button onClick={() => setConfirming("complete")}
             className="flex items-center justify-center gap-1.5 flex-[2] py-3 rounded-xl bg-primary text-primary-foreground text-sm font-semibold cursor-pointer">
-            <CheckIcon className="w-4 h-4" /> Completar sesión
+            <CheckIcon className="w-4 h-4" /> Completar entrenamiento
           </button>
         </div>
       )}

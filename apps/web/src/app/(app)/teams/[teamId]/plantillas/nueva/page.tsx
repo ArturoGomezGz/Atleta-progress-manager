@@ -1,12 +1,13 @@
 "use client"
 
 import { PageTransition } from "@/components/page-transition"
+import { useFeature } from "@/lib/features"
 import { markBackNavigation } from "@/lib/page-transition"
 import { getRoutineTypeConfig, type RoutineCategory } from "@/lib/routine-types"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { ChevronLeftIcon } from "lucide-react"
-import { use, useRef, useState } from "react"
+import { use, useState } from "react"
 import { useRouter } from "next/navigation"
 
 export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamId: string }> }) {
@@ -15,7 +16,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
 
   const [name, setName]         = useState("")
   const [category, setCategory] = useState<RoutineCategory>("training")
-  const nameInputRef = useRef<HTMLInputElement>(null)
+  const hasEvaluation = useFeature("evaluation")
 
   const createRoutine = trpc.routines.create.useMutation({
     onSuccess: (r) => router.push(`/teams/${teamId}/plantillas/${r.id}`),
@@ -29,14 +30,12 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    createRoutine.mutate({ teamId, name: name.trim().toLowerCase(), category })
+    createRoutine.mutate({ teamId, name: name.trim().toLowerCase(), category: hasEvaluation ? category : "training" })
   }
 
   return (
-    // Enfocar al terminar el deslizamiento, no al montar: con `autoFocus` el input
-    // se enfoca aún fuera de pantalla y el navegador desplaza <main> (y abre el
-    // teclado en móvil) en plena animación.
-    <PageTransition direction="forward" onEntered={() => nameInputRef.current?.focus({ preventScroll: true })}>
+    // No se enfoca el input solo: en móvil abriría el teclado y taparía la vista.
+    <PageTransition direction="forward">
       <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-6">
         <div className="flex items-center gap-2">
           <button
@@ -51,24 +50,23 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
             className="text-2xl font-bold tracking-wider uppercase"
             style={{ fontFamily: "var(--font-barlow-condensed)" }}
           >
-            Nueva plantilla
+            Nuevo entrenamiento
           </h1>
         </div>
 
-        <form onSubmit={handleSubmit} className="border border-border rounded-xl p-4 space-y-4 bg-card/60">
+        <form onSubmit={handleSubmit} data-tour="new-form" className="border border-border rounded-xl p-4 space-y-4 bg-card/60">
           <div className="space-y-1.5">
             <label htmlFor="new-template-name" className="text-sm font-semibold">Nombre</label>
             <input
               id="new-template-name"
-              ref={nameInputRef}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Nombre de la plantilla"
+              placeholder="Nombre del entrenamiento"
               className="w-full border border-border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
             />
           </div>
 
-          <div className="space-y-1.5">
+          {hasEvaluation && <div className="space-y-1.5" data-tour-block>
             <p className="text-sm font-semibold">Tipo</p>
             <div className="flex gap-2">
               {(["training", "evaluation"] as RoutineCategory[]).map((cat) => {
@@ -91,12 +89,13 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
                 )
               })}
             </div>
-          </div>
+          </div>}
 
           <div className="flex gap-2 justify-end pt-1">
             <button
               type="button"
               onClick={goBack}
+              data-tour-block
               className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer"
             >
               Cancelar

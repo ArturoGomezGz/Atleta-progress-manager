@@ -14,7 +14,7 @@ export function SessionView({ sessionId }: Props) {
   const completeSession = trpc.sessions.complete.useMutation({ onSuccess: () => refetchSession() })
   const cancelSession = trpc.sessions.cancel.useMutation({ onSuccess: () => refetchSession() })
 
-  if (!session) return <div className="p-8 text-muted-foreground">Cargando sesión...</div>
+  if (!session) return <div className="p-8 text-muted-foreground">Cargando...</div>
 
   const activeAthleteId = selectedAthleteId ?? session.athletes.find((a) => a.status === "active")?.athleteId ?? null
   const isActive = session.status === "active"
@@ -23,7 +23,7 @@ export function SessionView({ sessionId }: Props) {
     <div className="flex flex-col h-[calc(100vh-57px)]">
       <div className="border-b px-6 py-3 flex items-center justify-between gap-4">
         <div>
-          <h2 className="font-semibold">Sesión activa</h2>
+          <h2 className="font-semibold">Entrenamiento activo</h2>
           <p className="text-xs text-muted-foreground">
             {new Date(session.startedAt).toLocaleString("es", { dateStyle: "medium", timeStyle: "short" })}
           </p>
@@ -376,7 +376,6 @@ function RecordSetForm({
     <form onSubmit={handleSubmit} className="flex items-center gap-2 flex-wrap">
       <div className="flex items-center gap-1">
         <input
-          autoFocus
           type="number"
           min={0}
           value={reps}

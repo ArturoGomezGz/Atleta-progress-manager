@@ -20,7 +20,8 @@ import { and, asc, count, desc, eq, gte, inArray, isNull, sql } from "drizzle-or
 import { randomBytes } from "node:crypto"
 import { z } from "zod"
 import { flattenContent, targetsForExercise } from "../services/routine-content"
-import { protectedProcedure, publicProcedure, router } from "../trpc"
+import { countAthletePlazas } from "../services/team-setup"
+import { featureProcedure, protectedProcedure, publicProcedure, router } from "../trpc"
 import { assertCoach } from "./teams"
 
 // ─── Códigos ──────────────────────────────────────────────────────────────────
@@ -187,10 +188,7 @@ async function resolveClaimTeam(
   if (existing) return { teamId: shareTeamId, joinedTeam: false, personal: false }
 
   const [teamData] = await tx.select().from(team).where(eq(team.id, shareTeamId)).limit(1)
-  const [{ athleteCount }] = await tx
-    .select({ athleteCount: count() })
-    .from(teamMember)
-    .where(and(eq(teamMember.teamId, shareTeamId), eq(teamMember.role, "athlete")))
+  const athleteCount = await countAthletePlazas(tx, shareTeamId)
 
   if (teamData && athleteCount < teamData.maxAthletes) {
     await tx.insert(teamMember).values({ teamId: shareTeamId, userId, role: "athlete" })
@@ -245,7 +243,7 @@ export const shareRouter = router({
 
   /** Crea el enlace (o devuelve el vigente). Solo rutinas de entrenamiento: las
    *  de evaluación las registra el coach en persona. */
-  createLink: protectedProcedure
+  createLink: featureProcedure("share_links")
     .input(z.object({ routineId: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
       const [r] = await db.select().from(routine).where(eq(routine.id, input.routineId)).limit(1)

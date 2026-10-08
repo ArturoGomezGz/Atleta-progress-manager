@@ -50,15 +50,15 @@ function NewSessionForm() {
 
   return (
     <div className="max-w-lg mx-auto px-6 py-10 space-y-8">
-      <h1 className="text-xl font-semibold">Comenzar rutina</h1>
+      <h1 className="text-xl font-semibold">Comenzar entrenamiento</h1>
 
       <form onSubmit={handleSubmit} className="space-y-8">
         {/* Routine */}
         <section className="space-y-3">
-          <h2 className="text-sm font-medium">Rutina</h2>
+          <h2 className="text-sm font-medium">Entrenamiento</h2>
           {routines?.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              Este equipo no tiene rutinas. Crea una primero.
+              Este equipo no tiene entrenamientos. Crea uno primero.
             </p>
           )}
           <div className="space-y-2">
@@ -119,7 +119,7 @@ function NewSessionForm() {
           disabled={!canSubmit}
           className="w-full bg-primary text-primary-foreground py-2.5 rounded-md text-sm font-medium disabled:opacity-40"
         >
-          {createSession.isPending ? "Iniciando..." : "Comenzar rutina"}
+          {createSession.isPending ? "Iniciando..." : "Comenzar entrenamiento"}
         </button>
       </form>
     </div>

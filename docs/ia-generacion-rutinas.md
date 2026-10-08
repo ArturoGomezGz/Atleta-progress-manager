@@ -1,7 +1,7 @@
 # Generación de rutinas con IA — Guía de planificación
 
 > **Estado:** Feature experimental. Base para el system prompt y el formulario de input.
-> **Fecha:** 2026-09-13
+> **Fecha:** 2026-10-05
 > **Contexto:** El entrenador describe la sesión que quiere; un LLM (OpenAI con tool use) busca ejercicios con `search_exercises`, puede proponer ejercicios con `propose_new_exercise` y devuelve un `RoutineContent` que el entrenador revisa antes de guardar. **Cuanto más completo el input, mejor la rutina.**
 
 ---
@@ -450,6 +450,9 @@ Resultado:
 | Bucle de tools (`search_exercises`, `propose_new_exercise`, `submit_routine`), validación y conversión a `RoutineContent` | `apps/api/src/services/ai-routines.ts` |
 | Endpoints `routines.aiAvailable` y `routines.generateWithAI` | `apps/api/src/routers/routines.ts` |
 | Acceso experimental por allowlist | `apps/api/src/services/feature-access.ts` |
+| Flag por usuario `ai_generator` (`FEATURE_AI_GENERATOR_USERS`) | `apps/api/src/lib/features.ts`, ver `docs/feature-flags.md` |
+| Ajustes (AI Routine Editor): capa pura de ediciones y módulo de enrutador, habilidades y guardián | `apps/api/src/services/ai-routine-edits.ts`, `apps/api/src/services/ai-routine-editor/` (ver §11 y [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md)) |
+| Endpoint `routines.tweakWithAI` | `apps/api/src/routers/routines.ts` |
 | Formulario y panel en el editor de plantillas | `apps/web/src/components/ai-routine-generator.tsx`, `apps/web/src/app/(app)/teams/[teamId]/plantillas/[routineId]/page.tsx` |
 
 Diferencias con esta guía:
@@ -470,3 +473,61 @@ AI_ROUTINES_USERS=coach@ejemplo.com,<user-id>
 ```
 
 Sin coincidencia, el botón no aparece y el endpoint responde `FORBIDDEN`.
+
+---
+
+## 11. Ajustes con IA (AI Routine Editor)
+
+> **Estado:** experimental. Requiere el flag propio `ai_routine_tweaks` (`FEATURE_AI_ROUTINE_TWEAKS_USERS`) además del acceso a IA de rutinas (`OPENAI_API_KEY` y `ai_generator` / `AI_ROUTINES_*`) y ser coach del equipo. UI: `components/ai-routine-editor.tsx` y `lib/ai-routine-diff.ts`. Las habilidades, su estado y cómo gestionarlas viven en [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md).
+
+Un **tweak** es **una sola tarea** sobre la rutina abierta ("cambia X", "hazla más difícil", "sustitúyelo por algo más"). No es una conversación: no hay historial, ni seguimiento, ni memoria; el servidor no guarda estado. El backend **no guarda nada en la rutina**: devuelve una propuesta que el cliente muestra como diff y, si el entrenador acepta, se aplica al borrador y se guarda con `routines.updateContent`. Al aceptar o rechazar, el tweak termina; otro cambio es un tweak nuevo.
+
+### Flujo
+
+1. **Enrutador** (`router.ts`): una llamada barata al modelo clasifica el pedido en una intención (`replace_with_alternative`, `add_exercise`, `edit_basic`, `adjust_difficulty`, `adjust_rest`), los ítems objetivo y los términos a evitar (`avoid`), o decide que falta un dato imprescindible. Las acciones rápidas de la UI mandan `intentHint` y se saltan este paso.
+2. **Aclaración (máx. una).** Salida `needs_info`; el cliente reenvía el mensaje original + `{question, answer}` y el modelo ya no puede volver a preguntar.
+3. **Ejecución.** `adjust_difficulty` y `adjust_rest` son deterministas (sin LLM, pasos pequeños y acotados). Las demás las dirige el modelo con **solo** las herramientas de su intención y un prompt corto; los resultados de las herramientas son un resumen del cambio (no repiten la rutina).
+4. **Guardián de alcance** (`scope-guard.ts`): descarta, antes de armar la propuesta, todo cambio fuera de lo que la intención permite (p. ej. un reemplazo más `update_sets` sobre otros ítems), y lo registra. El mensaje final describe solo lo que quedó aplicado.
+
+### Endpoint
+
+`routines.tweakWithAI` (mutation, `protectedProcedure`). Mismas comprobaciones que `generateWithAI`: `assertCoach(teamId)`, flag `ai_routine_tweaks` y `canUseAiRoutines` (`FORBIDDEN` si no).
+
+| Entrada | Regla |
+|---|---|
+| `teamId` | uuid |
+| `routineContent` | `RoutineContent` actual **con sus ids estables**, validado con el mismo zod de rutinas; 1–30 ítems, ≤ 60 000 caracteres de JSON |
+| `message` | 1–1000 caracteres (se recorta con `trim`) |
+| `clarification` | opcional `{question, answer}` (≤ 300 caracteres c/u): la respuesta a la pregunta de este mismo tweak |
+| `intentHint` | opcional `{intent, targetItemIds?, direction?, knob?, seconds?}`: acción rápida de la UI; si no alcanza (p. ej. reemplazo sin ítem objetivo) se usa el enrutador |
+
+Ya no existen `history` ni `context` (nivel, limitaciones, equipamiento, RM): quedan fuera de alcance hasta decidir cómo se declaran de forma persistente. Sin RM registrados no se admite `percent_rm`; `fixed_kg` solo si el mensaje trae pesos (`kg`, `lb`, `libras`…) o ya existía ese valor.
+
+Salida (unión):
+
+- `{ status: "needs_info", question, options? }`
+- `{ status: "done", message, proposedContent, changes[], createdExercises[] }`
+  - `message`: describe lo aplicado (máx. 600 caracteres). Sin cambios, `proposedContent` es igual a la entrada.
+  - `changes[]`: un registro por operación aplicada `{ type, itemId, itemKind, blockId, summary, before, after }`. El `itemId` es estable entre `routineContent` y `proposedContent`, así que la UI compara por id y usa `changes` como texto.
+  - `createdExercises`: ejercicios creados con `propose_new_exercise` (máx. 2; privados del equipo; quedan en el catálogo aunque se rechace la propuesta; única escritura del flujo).
+
+### Exclusiones dentro del mensaje (`avoid`)
+
+"No tengo paralelas", "sin barra", "nada de saltos": el enrutador extrae términos y `search_exercises` excluye (sin acentos ni mayúsculas, tolerando plurales) todo ejercicio cuyo **nombre o equipamiento** los contenga; un id excluido tampoco es válido como destino de un reemplazo. Solo valen para ese tweak: no son memoria.
+
+### Seguridad y alcance
+
+- Mismas reglas de §5 en lo que aplica (contraindicaciones, notas de dolor, no inventar pesos). Las cargas se hacen cumplir en código (la edición se rechaza), no solo en el prompt.
+- Límites de `adjust_difficulty`: una sola palanca por pasada (intensidad, volumen o descanso), RPE 5–9 con máximo 2 ejercicios en RPE ≥ 9, % RM 40–95, series 2–6, rondas 2–8, descanso 15–600 s. Nunca agrega, quita ni reemplaza ejercicios.
+- Prompts en `ai-routine-editor/prompts.ts` (enrutador y uno corto por intención); tratan el texto del entrenador como datos.
+- Las operaciones puras viven en `ai-routine-edits.ts` (`applyEdit`, `applyEdits`): sin DB ni red, atómicas, validan el resultado con el zod de `RoutineContent` y rechazan ids inexistentes, `exerciseId` no obtenidos del catálogo en el tweak, bloques vacíos, anidar bloques y operaciones sin efecto. Máximos: 20 ítems, 10 ejercicios por bloque, 12 series por ejercicio.
+
+### Límites y costos
+
+- Modelo `gpt-4o-mini` para el enrutador y la ejecución, `temperature` 0.2, máx. 6 turnos del agente. Un tweak determinista cuesta una sola llamada (el enrutador, o ninguna con `intentHint`); el agente termina en cuanto el cambio pedido está aplicado.
+- Límite por usuario: **20 peticiones por 10 minutos** (`TOO_MANY_REQUESTS`), en memoria por proceso (`lib/rate-limit.ts`); con varias instancias de la API cada una cuenta aparte.
+- Consumo en consola con prefijo `[ai-routines]`: `tweak turno`, `tweak aclaración`, `tweak éxito` (intención, origen `router`/`hint`, tokens, turnos, nº de ediciones, **`dropped`** cambios descartados por el guardián, ejercicios creados), `tweak cambios fuera de alcance descartados` y `tweak sin resultado`.
+
+### Pruebas
+
+`pnpm --filter @atleta/api test` (`node --test` vía tsx; `apps/api/test/`): capa de ediciones, entrada, enrutador con LLM simulado, ronda de aclaración, `avoid`, planificadores deterministas, guardián de alcance (incluye el caso de producción: reemplazo + `update_sets` sueltos) y que el registro de habilidades coincida con [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md). No se ha verificado el comportamiento real de `gpt-4o-mini` con enrutador y herramientas: probar en testing antes de abrirlo a usuarios.

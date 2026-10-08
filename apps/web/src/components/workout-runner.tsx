@@ -424,7 +424,7 @@ export function RoutinePreview({
       {children}
 
       <div className="space-y-2">
-        <h1 className="text-3xl font-bold leading-tight">{sc(progress.routineName ?? "Rutina")}</h1>
+        <h1 className="text-3xl font-bold leading-tight">{sc(progress.routineName ?? "Entrenamiento")}</h1>
         <p className="text-base text-muted-foreground flex items-center gap-2">
           <CalendarIcon className="w-5 h-5" />
           {exerciseCount} ejercicios · {total} series en total
@@ -435,7 +435,7 @@ export function RoutinePreview({
         {intro ?? (
           <>
             Antes de empezar, puedes tocar cada ejercicio para <strong>ver el video</strong> de cómo se hace.
-            Cuando estés listo, pulsa <strong>Empezar rutina</strong>.
+            Cuando estés listo, pulsa <strong>Empezar entrenamiento</strong>.
           </>
         )}
       </div>
@@ -464,11 +464,12 @@ export function RoutinePreview({
         <div className="max-w-xl mx-auto">
           <button
             onClick={onStart}
+            data-tour="run-start"
             disabled={starting}
             className="w-full flex items-center justify-center gap-3 min-h-16 rounded-2xl bg-primary text-primary-foreground font-bold text-xl cursor-pointer disabled:opacity-50 active:scale-[0.98] transition-transform"
           >
             <PlayIcon className="w-6 h-6 fill-current" />
-            {starting ? "Preparando…" : "Empezar rutina"}
+            {starting ? "Preparando…" : "Empezar entrenamiento"}
           </button>
           {error && <p className="text-base text-destructive text-center mt-2">{error}</p>}
         </div>
@@ -647,7 +648,7 @@ export function WorkoutRunner({
           <ArrowLeftIcon className="w-5 h-5" /> {rest ? "Volver al descanso" : "Volver al ejercicio"}
         </button>
         <div>
-          <h1 className="text-3xl font-bold">{sc(progress.routineName ?? "Rutina")}</h1>
+          <h1 className="text-3xl font-bold">{sc(progress.routineName ?? "Entrenamiento")}</h1>
           <p className="text-base text-muted-foreground mt-1">{done} de {total} series hechas</p>
         </div>
         <div className="space-y-3">
@@ -945,7 +946,7 @@ function ExecutionFooter({
           onClick={onShowOverview}
           className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl text-base font-medium text-muted-foreground hover:text-foreground hover:bg-muted/40 cursor-pointer"
         >
-          <ListIcon className="w-5 h-5" /> Ver toda la rutina
+          <ListIcon className="w-5 h-5" /> Ver todo el entrenamiento
         </button>
       </div>
     </div>
@@ -1210,7 +1211,7 @@ export function WorkoutCelebration({
         <CheckCircleIcon className="w-14 h-14 text-emerald-500" />
       </div>
       <div className="space-y-2">
-        <h1 className="text-4xl font-bold">¡Rutina terminada!</h1>
+        <h1 className="text-4xl font-bold">¡Entrenamiento terminado!</h1>
         <p className="text-xl text-muted-foreground">
           Hiciste {exercises} ejercicios y {sets} series. ¡Excelente trabajo!
         </p>
@@ -1238,7 +1239,7 @@ export function WorkoutSummary({
       {back && <BackLink href={back.href} label={back.label} />}
 
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold">{sc(progress.routineName ?? "Rutina")}</h1>
+        <h1 className="text-3xl font-bold">{sc(progress.routineName ?? "Entrenamiento")}</h1>
         <p className="text-base text-muted-foreground">
           {sc(new Date(progress.startedAt).toLocaleString("es", { dateStyle: "full", timeStyle: "short" }))}
         </p>
@@ -1247,7 +1248,7 @@ export function WorkoutSummary({
       {note}
 
       {isCancelled ? (
-        <div className="rounded-2xl border border-border bg-muted/30 p-4 text-base">Esta rutina fue cancelada por tu entrenador.</div>
+        <div className="rounded-2xl border border-border bg-muted/30 p-4 text-base">Este entrenamiento fue cancelado por tu entrenador.</div>
       ) : validSets > 0 && (
         <div className="flex items-center gap-3 p-4 border border-emerald-500/30 bg-emerald-500/10 rounded-2xl">
           <CheckCircleIcon className="w-6 h-6 text-emerald-500 shrink-0" />

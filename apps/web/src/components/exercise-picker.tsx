@@ -164,6 +164,7 @@ function ExercisePickerSheet({ exercises, value, onSelect, onClose }: {
         role="dialog"
         aria-modal="true"
         aria-label="Agregar ejercicio"
+        data-tour="exercise-picker"
         className={cn(
           "fixed z-50 bg-background flex flex-col",
           // Móvil: hoja desde abajo, casi toda la pantalla. Altura fija (no max-h): con pocos

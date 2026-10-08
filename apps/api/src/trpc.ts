@@ -2,6 +2,7 @@ import { TRPCError, initTRPC } from "@trpc/server"
 import type { CreateFastifyContextOptions } from "@trpc/server/adapters/fastify"
 import { fromNodeHeaders } from "better-auth/node"
 import { auth } from "./auth"
+import { assertFeature, type FeatureKey } from "./lib/features"
 
 export async function createContext({ req }: CreateFastifyContextOptions) {
   const session = await auth.api.getSession({
@@ -44,3 +45,10 @@ export const protectedProcedure = t.procedure.use(({ ctx, next }) => {
   if (!ctx.session) throw new TRPCError({ code: "UNAUTHORIZED" })
   return next({ ctx: { session: ctx.session } })
 })
+
+// Requires a valid session and the feature flag enabled for that user
+export const featureProcedure = (key: FeatureKey) =>
+  protectedProcedure.use(({ ctx, next }) => {
+    assertFeature(ctx.session.user, key)
+    return next()
+  })

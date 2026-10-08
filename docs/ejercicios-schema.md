@@ -308,7 +308,7 @@ Cada resultado es un paquete denso de señales escaneables:
 
 ## 10. Sistema de color por zona corporal
 
-Cada zona tiene un color que se usa en toda la app: ejercicios, plantillas, sesiones y rutinas del atleta. La idea es que una rutina se entienda **por su color**, no solo por su nombre.
+Cada zona tiene un color que se usa en toda la app: ejercicios, entrenamientos, asignados y "Hoy" del atleta. La idea es que un entrenamiento se entienda **por su color**, no solo por su nombre.
 
 | Zona | Color | Tailwind (en uso) | Hex de referencia | Lógica |
 |---|---|---|---|---|
@@ -339,7 +339,7 @@ La API devuelve el perfil ya calculado (`zoneProfile`) en `routines.list`, `sess
 
 | Vista | Qué muestra |
 |---|---|
-| Plantillas, Sesiones (coach), Mis rutinas (atleta), selector de plantilla en Nueva sesión | Franja vertical en el borde de cada tarjeta, dividida en proporción, + leyenda con porcentajes |
+| Entrenamientos y Asignados (coach), Hoy (atleta), selector de entrenamiento al Asignar | Franja vertical en el borde de cada tarjeta, dividida en proporción, + leyenda con porcentajes |
 | Editor de plantilla | Barra horizontal fija bajo el título, en vivo; franja y etiqueta de zona en cada ejercicio |
 | Detalle de sesión (coach) | Barra + leyenda en la cabecera |
 | Catálogo de ejercicios, explorar, selector de ejercicios | Barra lateral y etiqueta de zona por ejercicio (ya existía) |

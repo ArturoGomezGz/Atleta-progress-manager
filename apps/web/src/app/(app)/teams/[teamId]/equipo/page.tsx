@@ -1,6 +1,7 @@
 "use client"
 
 import { useSession } from "@/lib/auth"
+import { useFeature } from "@/lib/features"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import {
@@ -16,13 +17,16 @@ import {
   UsersIcon,
   XIcon,
 } from "lucide-react"
+import Link from "next/link"
 import { use, useState } from "react"
 import { useRouter } from "next/navigation"
+import { NewTeamForm } from "../../../new-team-form"
 
 export default function EquipoPage({ params }: { params: Promise<{ teamId: string }> }) {
   const { teamId } = use(params)
   const router = useRouter()
   const { data: session } = useSession()
+  const hasGroups = useFeature("groups")
   const [deleteDialog, setDeleteDialog] = useState<null | "confirm" | "warn">(null)
 
   const { data: teams } = trpc.teams.list.useQuery()
@@ -38,7 +42,7 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
   const selfMember = members?.find((m) => m.userId === session?.user.id)
   const maxAthletes = currentTeam?.team.maxAthletes ?? 1
   const maxCoaches = currentTeam?.team.maxCoaches ?? 1
-  const athleteCount = members?.filter((m) => m.role === "athlete").length ?? 0
+  const athleteCount = members?.filter((m) => m.role === "athlete" || m.selfAthlete).length ?? 0
   const coachCount = members?.filter((m) => m.role === "coach").length ?? 0
   const overLimit = athleteCount > maxAthletes || coachCount > maxCoaches
   const atCapacity = athleteCount >= maxAthletes
@@ -47,6 +51,8 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
   return (
     <div className="max-w-2xl mx-auto px-6 py-8 space-y-6">
       <h1 className="text-xl font-semibold">Equipo</h1>
+
+      <TeamSwitcher teams={teams ?? []} activeTeamId={teamId} />
 
       {isCoach && overLimit && (
         <div className="flex items-start gap-3 border border-amber-500/40 bg-amber-500/8 rounded-lg px-4 py-3 text-sm">
@@ -83,11 +89,12 @@ export default function EquipoPage({ params }: { params: Promise<{ teamId: strin
         <SelfTrainingSection
           enabled={selfMember.selfAthlete}
           pending={toggleSelfTraining.isPending}
+          noPlaza={!selfMember.selfAthlete && atCapacity}
           onToggle={(enabled) => toggleSelfTraining.mutate({ teamId, enabled })}
         />
       )}
 
-      <GruposSection teamId={teamId} isCoach={!!isCoach} />
+      {hasGroups && <GruposSection teamId={teamId} isCoach={!!isCoach} />}
 
       {isCoach && (
         <div className="pt-4 border-t border-border">
@@ -446,10 +453,11 @@ function MemberRow({
 // ─── Self-training toggle ─────────────────────────────────────────────────────
 
 function SelfTrainingSection({
-  enabled, pending, onToggle,
+  enabled, pending, noPlaza, onToggle,
 }: {
   enabled: boolean
   pending: boolean
+  noPlaza: boolean
   onToggle: (enabled: boolean) => void
 }) {
   return (
@@ -457,13 +465,14 @@ function SelfTrainingSection({
       <div className="space-y-0.5">
         <p className="text-sm font-medium">Auto-entrenamiento</p>
         <p className="text-xs text-muted-foreground max-w-sm">
-          Aparecerás como atleta en tus propias sesiones sin cambiar tu rol de entrenador del equipo.
+          Aparecerás como atleta en tus propios entrenamientos sin cambiar tu rol de entrenador del equipo. Ocupa una plaza de atleta.
+          {noPlaza && " No hay plazas disponibles."}
         </p>
       </div>
       <button
         role="switch"
         aria-checked={enabled}
-        disabled={pending}
+        disabled={pending || noPlaza}
         onClick={() => onToggle(!enabled)}
         className={cn(
           "relative shrink-0 w-10 h-6 rounded-full transition-colors disabled:opacity-50",
@@ -517,7 +526,6 @@ function GruposSection({ teamId, isCoach }: { teamId: string; isCoach: boolean }
               className="flex gap-2"
             >
               <input
-                autoFocus
                 value={newGroupName}
                 onChange={(e) => setNewGroupName(e.target.value)}
                 placeholder="Nombre del grupo"
@@ -623,10 +631,78 @@ function GruposSection({ teamId, isCoach }: { teamId: string; isCoach: boolean }
 
         {groups?.length === 0 && (
           <p className="text-sm text-muted-foreground text-center py-8 border rounded-lg">
-            Sin grupos todavía.{isCoach ? " Crea uno para asignar rutinas a varios atletas a la vez." : ""}
+            Sin grupos todavía.{isCoach ? " Crea uno para asignar entrenamientos a varios atletas a la vez." : ""}
           </p>
         )}
       </div>
+    </div>
+  )
+}
+
+type TeamEntry = { team: { id: string; name: string; logoDataUrl?: string | null }; role: string }
+
+function TeamAvatar({ name, logoDataUrl }: { name: string; logoDataUrl?: string | null }) {
+  if (logoDataUrl) {
+    return <img src={logoDataUrl} alt={name} className="w-8 h-8 rounded-md object-cover overflow-hidden shrink-0" />
+  }
+  const initials = name.split(" ").filter(Boolean).map((w) => w[0]).join("").slice(0, 2).toUpperCase()
+  return (
+    <div className="w-8 h-8 rounded-md bg-primary/20 text-primary text-xs font-bold flex items-center justify-center shrink-0 tracking-wide">
+      {initials}
+    </div>
+  )
+}
+
+function TeamSwitcher({ teams, activeTeamId }: { teams: TeamEntry[]; activeTeamId: string }) {
+  const [creating, setCreating] = useState(false)
+
+  // Con un solo equipo no hay nada que elegir: solo se ofrece crear otro
+  if (teams.length <= 1) {
+    return creating ? (
+      <NewTeamForm onCancel={() => setCreating(false)} className="space-y-2 max-w-xs" />
+    ) : (
+      <button
+        onClick={() => setCreating(true)}
+        className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors cursor-pointer"
+      >
+        <PlusIcon className="w-3.5 h-3.5" />
+        Crear otro equipo
+      </button>
+    )
+  }
+
+  return (
+    <div className="flex gap-3 overflow-x-auto pb-1">
+      {teams.map(({ team, role }) => (
+        <Link
+          key={team.id}
+          href={`/teams/${team.id}/equipo`}
+          aria-current={team.id === activeTeamId ? "page" : undefined}
+          className={cn(
+            "w-36 shrink-0 border rounded-lg p-3 space-y-2 transition-colors",
+            team.id === activeTeamId ? "border-primary bg-primary/10" : "border-border hover:bg-muted/60",
+          )}
+        >
+          <TeamAvatar name={team.name} logoDataUrl={team.logoDataUrl} />
+          <div className="min-w-0">
+            <p className="text-sm font-medium truncate">{team.name}</p>
+            <p className="text-xs text-muted-foreground">{role === "coach" ? "Coach" : "Atleta"}</p>
+          </div>
+        </Link>
+      ))}
+      {creating ? (
+        <div className="w-48 shrink-0 border border-border rounded-lg p-3">
+          <NewTeamForm onCancel={() => setCreating(false)} />
+        </div>
+      ) : (
+        <button
+          onClick={() => setCreating(true)}
+          className="w-36 shrink-0 border border-dashed border-border rounded-lg p-3 flex flex-col items-center justify-center gap-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
+        >
+          <PlusIcon className="w-4 h-4" />
+          Nuevo equipo
+        </button>
+      )}
     </div>
   )
 }
