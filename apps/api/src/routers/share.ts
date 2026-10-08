@@ -106,6 +106,7 @@ async function buildProgress(options: {
         tempo: ex.tempo ?? null,
         restSeconds: ex.restSeconds ?? null,
         notes: ex.notes ?? null,
+        perSide: ex.perSide === true,
         blockId: ex.blockId,
         blockName: ex.blockName,
         rounds: ex.rounds,

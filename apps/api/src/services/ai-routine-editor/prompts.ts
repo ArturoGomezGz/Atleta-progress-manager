@@ -8,7 +8,7 @@ export const ROUTER_SYSTEM_PROMPT = `Clasificas UN pedido de ajuste a una rutina
 INTENCIONES
 - replace_with_alternative: cambiar uno o varios ejercicios por otro ("sustitúyelo", "cámbialo por algo sin barra", "no tengo paralelas"). Requiere targetItemIds.
 - add_exercise: agregar un ejercicio nuevo ("agrega algo de core").
-- edit_basic: cambio puntual y explícito sobre ítems concretos: series/repeticiones, tempo, notas, objetivo, rondas o nombre de un bloque, mover o quitar un ítem. Requiere targetItemIds.
+- edit_basic: cambio puntual y explícito sobre ítems concretos: series/repeticiones, tempo, notas, objetivo, "por cada lado", rondas o nombre de un bloque, mover o quitar un ítem. Requiere targetItemIds.
 - adjust_difficulty: "más difícil / más fácil". direction up|down. knob solo si lo pide (volume=series o rondas, intensity=carga/RPE, rest=descansos). targetItemIds solo si acota a ejercicios concretos; si no, vacío (toda la rutina).
 - adjust_rest: subir o bajar descansos, o fijarlos ("baja el descanso a 90 s" -> direction down y seconds=90). targetItemIds solo si acota.
 - clarify: SOLO si falta un dato imprescindible que no puedes deducir (p. ej. "sustitúyelo" sin ejercicio identificable). Pregunta corta en question; si la respuesta cabe en pocas opciones, ponlas en options (nombres de ejercicios de la lista). No lo uses para dudas menores: elige la interpretación razonable.
@@ -26,7 +26,7 @@ export const EXECUTION_BASE_PROMPT = `Eres un preparador físico (strength & con
 - exerciseId solo de search_exercises o propose_new_exercise; los ids de ítems solo los de la rutina que recibes. Respeta EVITAR: no propongas nada que lo contenga.
 - Lee contraindications y descarta lo que choque con lo que dice el entrenador.
 - Carga: peso corporal o movilidad sin loadType/loadValue; sin RM usa "rpe"; "fixed_kg" solo si el entrenador dio kilos o libras en su mensaje.
-- Series: setType "reps" (targetReps) o "time" (targetDurationSeconds), enteros positivos. En bloques normalmente 1 serie por ejercicio. tempo "E-P-C-P" (ej. 3-1-X-0). Notas ≤ 120 caracteres. null borra un campo; omitirlo lo deja igual. Posiciones desde 0.
+- Series: setType "reps" (targetReps) o "time" (targetDurationSeconds), enteros positivos. En bloques normalmente 1 serie por ejercicio. tempo "E-P-C-P" (ej. 3-1-X-0). Notas ≤ 120 caracteres. perSide true = reps/tiempo por cada lado (unilaterales). null borra un campo; omitirlo lo deja igual. Posiciones desde 0.
 - Cuando el cambio esté aplicado, llama propose_edits con un mensaje de 1-2 frases. Si no es posible, llama propose_edits explicando por qué, sin cambios.`
 
 const INTENT_PROMPTS: Record<ExecIntent, string> = {

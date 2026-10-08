@@ -11,7 +11,7 @@ import { feedback } from "@/lib/feedback"
 import { colors, radiusLg } from "@/lib/theme"
 import type { TrainView } from "@/lib/train-view"
 import { formatClock, type WorkoutExercise, type WorkoutTarget } from "@/lib/workout"
-import { explainTempo, formatDuration, isTimeTarget } from "@/lib/workout-text"
+import { explainTempo, formatDuration, isTimeTarget, PER_SIDE_SUFFIX } from "@/lib/workout-text"
 import { Info, Minus, Pause, Play, Plus, Repeat, Square, Timer } from "lucide-react-native"
 import { useState } from "react"
 import { Pressable, StyleSheet, View } from "react-native"
@@ -40,7 +40,8 @@ export function SetExecution({
   const hasVideo = !!exercise.youtubeVideoId
   const phase = reviewing ? "idle" : countdown.phase
 
-  const alert = isTime && (phase === "prepare" || phase === "finished")
+  const perSide = !!exercise.perSide
+  const alert = isTime && (phase === "prepare" || phase === "switch" || phase === "finished")
   const running = isTime && (phase === "running" || phase === "paused")
 
   const video = hasVideo ? (
@@ -101,22 +102,39 @@ export function SetExecution({
         <TargetCard alert={alert} running={running} done={reviewing}>
           <Text size={18} weight="semibold" color={alert ? colors.destructive : running ? colors.success : colors.primary} center>
             Serie {target.setNumber} de {exercise.targets.length}{reviewing ? " · hecha" : ""}
+            {perSide && isTime && !reviewing
+              ? ` · ${phase === "switch" ? "cambia de lado" : phase === "finished" ? "ambos lados" : `lado ${countdown.side} de 2`}`
+              : ""}
           </Text>
           {(h) => {
             const big = Math.max(44, Math.min(110, Math.round(h * 0.4)))
             return (
               <>
                 {isTime ? (
-                  <CountdownFace phase={phase} value={reviewing ? formatClock(target.targetDurationSeconds ?? 30) : countdown.value} size={big} />
+                  <View style={{ alignItems: "center" }}>
+                    <CountdownFace phase={phase} value={reviewing ? formatClock(target.targetDurationSeconds ?? 30) : countdown.value} size={big} />
+                    {perSide && (
+                      <Text size={15} color={colors.mutedForeground} center>
+                        {formatDuration(target.targetDurationSeconds ?? 30)} {PER_SIDE_SUFFIX}
+                      </Text>
+                    )}
+                  </View>
                 ) : freeReps ? (
                   <View style={{ gap: 6 }}>
-                    <Text size={15} color={colors.mutedForeground} center>Haz las que puedas y anota cuántas fueron:</Text>
+                    <Text size={15} color={colors.mutedForeground} center>
+                      {perSide ? "Haz las que puedas con cada lado y anota cuántas fueron por lado:" : "Haz las que puedas y anota cuántas fueron:"}
+                    </Text>
                     <RepsStepper value={reps} onChange={onRepsChange} disabled={reviewing} size={Math.min(big, 76)} />
                   </View>
                 ) : (
                   <View style={{ alignItems: "center" }}>
                     <Text heading size={big} center tabular style={{ lineHeight: Math.round(big * 1.02) }}>{target.targetReps}</Text>
-                    <Text size={22} center>{target.targetReps === 1 ? "repetición" : "repeticiones"}</Text>
+                    <Text size={22} center>
+                      {target.targetReps === 1 ? "repetición" : "repeticiones"}{perSide ? ` ${PER_SIDE_SUFFIX}` : ""}
+                    </Text>
+                    {perSide && h > 190 && (
+                      <Text size={14} color={colors.mutedForeground} center>Lado 1 y luego lado 2, sin descanso entre lados</Text>
+                    )}
                   </View>
                 )}
                 {weight !== "" && (

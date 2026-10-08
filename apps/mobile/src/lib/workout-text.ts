@@ -23,22 +23,32 @@ export function isTimeTarget(t: TargetLike) {
   return t.setType === "time"
 }
 
-/** "10 repeticiones", "30 segundos" o "Las que puedas" */
-export function describeTarget(t: TargetLike): string {
-  if (isTimeTarget(t)) return t.targetDurationSeconds ? formatDuration(t.targetDurationSeconds) : "El tiempo que puedas"
-  if (t.targetReps == null) return "Las repeticiones que puedas"
-  return t.targetReps === 1 ? "1 repetición" : `${t.targetReps} repeticiones`
+/** Sufijo de los ejercicios "Por cada lado" (unilaterales). */
+export const PER_SIDE_SUFFIX = "por lado"
+
+/** "10 repeticiones", "30 segundos" o "Las que puedas"; con `perSide`, "10 repeticiones por lado". */
+export function describeTarget(t: TargetLike, perSide = false): string {
+  const base = isTimeTarget(t)
+    ? (t.targetDurationSeconds ? formatDuration(t.targetDurationSeconds) : "El tiempo que puedas")
+    : t.targetReps == null
+      ? "Las repeticiones que puedas"
+      : t.targetReps === 1 ? "1 repetición" : `${t.targetReps} repeticiones`
+  return perSide ? `${base} ${PER_SIDE_SUFFIX}` : base
 }
 
-/** Resumen del ejercicio: "3 series de 10 repeticiones" */
-export function summarizeTargets(targets: TargetLike[]): string {
+/** Resumen del ejercicio: "3 series de 10 repeticiones" (o "... por lado" con `perSide`). */
+export function summarizeTargets(targets: TargetLike[], perSide = false): string {
   const n = targets.length
   if (n === 0) return "Sin series"
   const series = n === 1 ? "1 serie" : `${n} series`
-  const first = describeTarget(targets[0]).toLowerCase()
+  const first = describeTarget(targets[0], perSide).toLowerCase()
   const allSame = targets.every((t) => describeTarget(t) === describeTarget(targets[0]))
-  return allSame ? `${series} de ${first}` : series
+  if (allSame) return `${series} de ${first}`
+  return perSide ? `${series} ${PER_SIDE_SUFFIX}` : series
 }
+
+/** Pausa entre el lado 1 y el lado 2 en series por tiempo "Por cada lado". */
+export const SIDE_SWITCH_SECONDS = 5
 
 /** Tempo "3-1-2-0" → instrucciones legibles */
 export function explainTempo(tempo: string): string | null {

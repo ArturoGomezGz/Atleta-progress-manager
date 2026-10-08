@@ -26,6 +26,8 @@ export type RoutineExerciseContent = {
   restSeconds?: number
   goal?: ExerciseGoal
   notes?: string
+  /** "Por cada lado": reps/tiempo de cada serie aplican a cada lado (unilateral). Ausente = false. */
+  perSide?: boolean
   sets: RoutineSet[]
 }
 

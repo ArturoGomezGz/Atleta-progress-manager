@@ -5,8 +5,13 @@ import type { RoutineContent, RoutineExerciseContent, RoutineItemBlock, RoutineS
 
 export type AiChangeRecord = { itemId: string; summary: string }
 
-/** Resumen corto de las series de un ejercicio: "4 × 6 reps", "3 × 45s", "3 series". */
-export function setsSummary(sets: RoutineSet[]): string {
+/** Resumen corto de las series de un ejercicio: "4 × 6 reps", "3 × 45s", "3 series"; con `perSide`, "… por lado". */
+export function setsSummary(sets: RoutineSet[], perSide = false): string {
+  const base = setsSummaryBase(sets)
+  return perSide && sets.length > 0 ? `${base} por lado` : base
+}
+
+function setsSummaryBase(sets: RoutineSet[]): string {
   const n = sets.length
   if (n === 0) return "Sin series"
   const first = sets[0]
@@ -61,7 +66,9 @@ function outOfOrder(ids: string[], pos: Map<string, number>): Set<string> {
 const REP_SECONDS = 40
 
 function exerciseSeconds(ex: RoutineExerciseContent): number {
-  const work = ex.sets.reduce((t, s) => t + (s.setType === "time" ? (s.targetDurationSeconds ?? 30) : REP_SECONDS), 0)
+  // "Por cada lado" hace cada serie dos veces (lado 1 y lado 2).
+  const sides = ex.perSide ? 2 : 1
+  const work = ex.sets.reduce((t, s) => t + (s.setType === "time" ? (s.targetDurationSeconds ?? 30) : REP_SECONDS), 0) * sides
   return work + ex.sets.length * (ex.restSeconds ?? 0)
 }
 
@@ -134,7 +141,7 @@ export function diffRoutine(
   const describe = (f: Flat): string => {
     if (f.kind === "block") return `Circuito ${f.block.name || ""} · ${f.block.rounds} vueltas`.replace("  ", " ")
     const rest = f.ex.restSeconds ? ` · descanso ${f.ex.restSeconds}s` : ""
-    return `${nameOf(f.ex.exerciseId)} · ${setsSummary(f.ex.sets)}${rest}`
+    return `${nameOf(f.ex.exerciseId)} · ${setsSummary(f.ex.sets, f.ex.perSide)}${rest}`
   }
   const titleOf = (f: Flat) => (f.kind === "block" ? f.block.name || "Circuito" : nameOf(f.ex.exerciseId))
 
@@ -164,8 +171,8 @@ export function diffRoutine(
     if (old.kind === "exercise" && now.kind === "exercise") {
       const n0 = nameOf(old.ex.exerciseId), n1 = nameOf(now.ex.exerciseId)
       if (old.ex.exerciseId !== now.ex.exerciseId) p.name = { before: n0, after: n1 }
-      const s0 = setsSummary(old.ex.sets), s1 = setsSummary(now.ex.sets)
-      if (JSON.stringify(old.ex.sets) !== JSON.stringify(now.ex.sets)) p.sets = { before: s0, after: s1 !== s0 ? s1 : `${s1} (con otras cargas)` }
+      const s0 = setsSummary(old.ex.sets, old.ex.perSide), s1 = setsSummary(now.ex.sets, now.ex.perSide)
+      if (JSON.stringify(old.ex.sets) !== JSON.stringify(now.ex.sets) || !!old.ex.perSide !== !!now.ex.perSide) p.sets = { before: s0, after: s1 !== s0 ? s1 : `${s1} (con otras cargas)` }
       if ((old.ex.restSeconds ?? null) !== (now.ex.restSeconds ?? null)) p.rest = { before: old.ex.restSeconds ?? null, after: now.ex.restSeconds ?? null }
     } else if (old.kind === "block" && now.kind === "block") {
       if (old.block.rounds !== now.block.rounds) p.rounds = { before: old.block.rounds, after: now.block.rounds }
