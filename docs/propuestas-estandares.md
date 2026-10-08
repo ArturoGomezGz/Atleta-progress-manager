@@ -11,6 +11,102 @@ bórralo de este archivo en el mismo commit que lo resuelve.
 
 ---
 
+## 2026-10-08
+
+**Resultado de esta corrida:** 29 hallazgos en `.quality-reports/*.json` (15
+"high", 14 "medium"), generados sobre `master` en `cb3608b`. El
+`software-standards-agent` descartó los 29 como falsos positivos o código
+de bajo riesgo fuera de la ruta de requests, y no propuso ningún fix
+mecánico nuevo. **No se creó ninguna rama `standards-fix/*` ni PR.**
+
+### P1 (pendiente de decisión humana, repetido desde 2026-09-30/10-02): sin tests sobre autorización/aislamiento por equipo
+
+**Archivos:** `apps/api/src/routers/teams.ts` (`assertMember` línea 185,
+`assertCoach` línea 195, `assertAthleteInTeam` línea 202), más
+`apps/api/src/routers/sessions.ts`, `apps/api/src/routers/rms.ts`,
+`apps/api/src/trpc.ts`, `apps/api/src/services/report-trigger.ts`,
+`apps/api/src/services/ai-reports.ts` (los 6 archivos de
+`critical-targets.json`).
+
+**Problema, sin cambios respecto a la corrida anterior:** las tres
+funciones que separan equipos no tienen ninguna prueba, y los 8 archivos
+`.test.ts` que sí existen en `apps/api/test/` solo corren a mano — ningún
+workflow en `.github/workflows/` los ejecuta. Ejemplo concreto: si un
+refactor de `assertMember` pierde `eq(teamMember.teamId, teamId)` al
+combinar condiciones con `and(...)`, cualquier coach de *algún* equipo pasa
+`assertCoach`/`assertAthleteInTeam` sobre *cualquier* equipo, y nada lo
+detecta hoy (no hay gateway central, no hay pruebas, no hay CI).
+
+**Decisión humana requerida antes de implementar:** cómo levantar Postgres
+para la prueba (el riesgo vive en el `WHERE` SQL, así que un `db` mockeado
+no lo detecta). Opciones evaluadas esta corrida:
+- **PGlite** (`@electric-sql/pglite`, Postgres en WASM, sin Docker) —
+  requiere confirmar que las migraciones de `packages/db` corren ahí e
+  inyectar el cliente (ya hay precedente: `countAthletePlazas(tx, teamId)`
+  en `apps/api/src/services/team-setup.ts:15` recibe el cliente como
+  parámetro en vez de importar `db` a nivel de módulo).
+- **Postgres como `services:` en GitHub Actions** — más fiel a producción,
+  más dependencia de entorno.
+- **Solo `node:test` con `mock.module`** — barato pero no cubre el `WHERE`;
+  no se recomienda como única red.
+
+También falta decidir si un workflow nuevo corre `pnpm --filter api test`
+en `pull_request` y si bloquea el merge.
+
+**Cobertura mínima sugerida una vez decidido** (una rama por función, nunca
+todo junto): `assertMember` — miembro de A recibe la fila; mismo usuario
+pidiendo `teamId` de B recibe `FORBIDDEN`; `userId` inexistente recibe
+`FORBIDDEN`. `assertCoach` — `role:"athlete"` recibe `FORBIDDEN`; coach de A
+pidiendo B recibe `FORBIDDEN` (caso multi-tenant clave). `assertAthleteInTeam`
+— atleta del equipo recibe la fila; coach con `selfAthlete=true` recibe la
+fila; coach con `selfAthlete=false` o atleta de otro equipo recibe
+`NOT_FOUND` (no `FORBIDDEN`, para no revelar existencia).
+
+**Nota operativa:** estos hallazgos de `unit-test-gap-finder` van a seguir
+saliendo idénticos cada día mientras P1 no se resuelva; no son una
+regresión nueva. P2 (contraseña por defecto en `reset-password.ts`) y P3
+(sin rate limiting en `share.preview`), registrados el 2026-10-02, siguen
+abiertos y no aparecen en esta entrada porque los agentes automáticos no
+los vuelven a reportar; ver esa sección para el detalle.
+
+### Descartados en esta corrida
+
+- Las 7 non-null assertions (`!`) reportadas como "high" en
+  `error-flow-audit.json` (`rms.ts:37`, `ai-routine-editor/scope-guard.ts:30`
+  ×3, `ai-routine-editor/agent.ts:88-90`, `ai-routine-editor/tweak.ts:96`,
+  `ai-routines.ts:217`): verificadas una por una en el código, todas tienen
+  el valor garantizado por una comprobación previa en la misma función o
+  expresión. Ninguna toca autorización ni datos de otro equipo.
+- Los 14 hallazgos de `logging-audit.json` más los duplicados en
+  `error-flow-audit.json`: arranque/migraciones antes de que exista el
+  logger de Fastify, el script de CLI `reset-password.ts` (6 hallazgos, su
+  salida es para la terminal de un admin), el aviso de configuración de
+  `telegram.ts:67`, el error boundary del tutorial en el navegador
+  (`tour-overlay.tsx:522`), y `auth.ts:25,27` (la rama con el enlace
+  completo solo corre fuera de producción, donde `NODE_ENV=production` está
+  fijo en el `Dockerfile`). Ninguno está dentro de la atención de un
+  request real.
+- Los dos "hallazgos reales" que cita `docs/estandares-calidad.md` en las
+  categorías 1 (`sessions.ts:458-491`) y 2 (`index.ts:47`) ya no existen en
+  el código actual — ver nota de mantenimiento abajo.
+
+### Nota de mantenimiento para `docs/estandares-calidad.md`
+
+El `software-standards-agent` encontró el documento desactualizado en tres
+puntos (no se pudo corregir desde esa sesión por no tener permisos de
+escritura):
+
+1. Categoría 1: el ejemplo de `sessions.ts:458-491` con `session!.teamId` ya
+   está corregido en el código.
+2. Categoría 2: `index.ts:47` ya no expone `String(err)`; responde
+   `{ error: "Internal Server Error", requestId }` y registra con `req.log`.
+3. Categoría 7: el documento menciona el autofill de `exercises.ts` como
+   parte de `critical-targets.json`, pero no aparece ahí; y `share.ts` (la
+   única superficie sin autenticación) tampoco está en la lista. Falta
+   decidir si se agregan ambos.
+
+---
+
 ## 2026-10-02
 
 **Resultado de esta corrida:** 22 hallazgos en `.quality-reports/*.json` (10
