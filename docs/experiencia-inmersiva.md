@@ -12,7 +12,7 @@ Te pones los audífonos con tu música y el entrenamiento te guía por voz paso 
 - **Sin registro de lo realizado.** Se da por hecho lo prescrito; no se capturan reps ni peso reales.
 - **Voz:** dice el nombre del ejercicio y marca el tiempo (cuenta de repeticiones según el tempo, o el cronómetro en series por tiempo). Nada más por ahora.
 - **Música:** se baja su volumen mientras habla la guía (ducking).
-- **Transición fija de 5 s entre ejercicios**, sumada al descanso que tenga. No se agrega ningún campo en la base de datos para esto.
+- **Transición fija de 5 s** entre ejercicios y también entre series del mismo ejercicio, sumada al descanso que tenga. No se agrega ningún campo en la base de datos para esto.
 - **Función limitada** con feature flag mientras se prueba.
 
 ## Condiciones para habilitarla
@@ -42,7 +42,7 @@ Formato `B-P-S-P`: cuatro valores separados por guiones, en segundos.
 
 Cada valor es un entero de 0 a 9 o `X` (explosivo). Ejemplo: `3-1-1-0` → 5 s por repetición.
 
-- Duración de una repetición = suma de las cuatro fases (`X` cuenta como 1 s, por definir).
+- Duración de una repetición = suma de las cuatro fases (`X` = explosivo, cuenta como 1 s).
 - Duración de la serie = reps × duración de la repetición (×2 más 5 s si es por lado).
 - El builder valida el formato al guardar; ya existe `explainTempo` en `workout-text.ts`, que acepta este formato.
 - Tempos viejos en texto libre que no cumplan el formato siguen guardados, pero el entrenamiento no será apto hasta corregirlos.
@@ -64,6 +64,4 @@ Cada valor es un entero de 0 a 9 o `X` (explosivo). Ejemplo: `3-1-1-0` → 5 s p
 
 ## Pendiente de definir
 
-1. ¿Cuánto dura `X` (explosivo)? Propuesta: 1 s.
-2. Entre series del mismo ejercicio sin descanso, ¿se pasa directo o también hay 5 s?
-3. Detalle exacto de lo que dice la voz (por ejemplo, si anuncia el número de serie o el peso).
+1. Voz o sonidos: qué se comunica con sonidos (ritmo, cuenta regresiva, cambio de lado, fin de serie) y qué con voz. Propuesta en discusión: sonidos para todo el ritmo y voz solo para el nombre del ejercicio que sigue, quizá también "última serie".
