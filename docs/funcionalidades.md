@@ -77,3 +77,4 @@ Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md).
 | RM por atleta | Cálculo y almacenamiento del RM para cargas en % RM; ver [rm-atleta.md](rm-atleta.md). Depende de evaluación. |
 | Capa "Plan" (agrupar entrenamientos) | Fuera de v1 en [rutinas-normales.md](rutinas-normales.md). |
 | Más habilidades del editor de IA | Ajustar a una duración, duplicar/agrupar/separar bloques, restricciones de equipo o lesión, convertir RPE a % RM, crear variantes, y habilidades de cuenta/atletas para un futuro conector MCP; ver [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md). Sin implementar. |
+| Experiencia inmersiva (móvil) | Guía por voz con audífonos y avance automático, sin tocar el teléfono; se habilita sola en entrenamientos que se pueden cronometrar. Será limitada con flag. Ver [experiencia-inmersiva.md](experiencia-inmersiva.md). Sin implementar. |

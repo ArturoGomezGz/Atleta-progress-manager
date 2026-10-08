@@ -2,46 +2,68 @@
 
 > **Estado:** Planeada (en definición). **Última revisión:** 2026-10-08.
 
-Te pones los audífonos con tu música y el entrenamiento te guía por voz paso a paso: qué ejercicio sigue, cuándo empezar, el ritmo de cada repetición, cuánto llevas de descanso y cuándo volver. La idea es no tener que ver el teléfono.
+Te pones los audífonos con tu música y el entrenamiento te guía por voz paso a paso: qué ejercicio sigue, el ritmo de cada repetición, cuánto llevas de descanso y cuándo volver. No hay que tocar el teléfono en ningún momento.
 
-No todos los entrenamientos podrán usarla: solo los que tengan todo lo necesario para que la guía sea exacta (ver "Requisitos de un entrenamiento").
+## Decisiones tomadas
 
-## Requisitos de un entrenamiento
+- **Solo móvil (Android).** No habrá versión web.
+- **No es un tipo de rutina nuevo.** El builder no cambia: cualquier entrenamiento que cumpla las condiciones (abajo) muestra en la app móvil la opción "Experiencia inmersiva". Si no las cumple, la opción no aparece.
+- **Avance automático.** Al terminar las repeticiones o el tiempo, la guía pasa sola al descanso y a lo siguiente. El atleta nunca marca "terminé".
+- **Sin registro de lo realizado.** Se da por hecho lo prescrito; no se capturan reps ni peso reales.
+- **Voz:** dice el nombre del ejercicio y marca el tiempo (cuenta de repeticiones según el tempo, o el cronómetro en series por tiempo). Nada más por ahora.
+- **Música:** se baja su volumen mientras habla la guía (ducking).
+- **Transición fija de 5 s entre ejercicios**, sumada al descanso que tenga. No se agrega ningún campo en la base de datos para esto.
+- **Función limitada** con feature flag mientras se prueba.
 
-Partiendo del contenido actual de la rutina (`apps/api/src/services/routine-content-schema.ts`):
+## Condiciones para habilitarla
 
-| Requisito | Hoy | Falta |
-|---|---|---|
-| Cada serie por tiempo tiene duración | `targetDurationSeconds` existe | Exigirlo |
-| Cada serie por repeticiones se puede cronometrar | `targetReps` + `tempo` (texto libre, opcional) | Un formato de tempo validado (p. ej. `3-1-1-0`) y obligatorio, o una duración por repetición |
-| Descanso entre series | `restSeconds` por ejercicio, opcional | Exigirlo |
-| Descanso entre ejercicios | No existe por separado | Campo nuevo (o usar `restSeconds` del ejercicio anterior) |
-| Descanso entre rondas de circuito | `restBetweenRoundsSeconds`, opcional | Exigirlo en circuitos |
-| Ejercicios por cada lado | `perSide` en el ejercicio; dos cronómetros con transición de 5 s | Que la voz anuncie el lado y el cambio |
-| Tiempo de transición (preparar equipo, cambiar de estación) | No existe | Campo nuevo o un valor por defecto |
-| Series por distancia y AMRAP | Existen | No se pueden cronometrar: excluirlas o pedir confirmación manual |
+Un entrenamiento es apto si **todas** sus series se pueden cronometrar:
 
-El builder debería indicar si un entrenamiento es "apto para modo inmersivo" y, si no, qué le falta.
+| Tipo de serie | Condición |
+|---|---|
+| Por tiempo | Tiene `targetDurationSeconds` |
+| Por repeticiones | Tiene `targetReps` y el ejercicio tiene un tempo válido (formato estándar, abajo) |
+| Por distancia o AMRAP | No apta: si hay alguna, el entrenamiento no se habilita |
+
+Los descansos **no** son obligatorios: si un ejercicio no tiene `restSeconds` (o un circuito no tiene `restBetweenRoundsSeconds`), simplemente no hay descanso.
+
+Los ejercicios "Por cada lado" (`perSide`) cuentan doble: lado 1, cambio de lado de 5 s y lado 2.
+
+## Tempo estandarizado
+
+Formato `B-P-S-P`: cuatro valores separados por guiones, en segundos.
+
+| Posición | Fase |
+|---|---|
+| 1 | Bajada (excéntrica) |
+| 2 | Pausa abajo |
+| 3 | Subida (concéntrica) |
+| 4 | Pausa arriba |
+
+Cada valor es un entero de 0 a 9 o `X` (explosivo). Ejemplo: `3-1-1-0` → 5 s por repetición.
+
+- Duración de una repetición = suma de las cuatro fases (`X` cuenta como 1 s, por definir).
+- Duración de la serie = reps × duración de la repetición (×2 más 5 s si es por lado).
+- El builder valida el formato al guardar; ya existe `explainTempo` en `workout-text.ts`, que acepta este formato.
+- Tempos viejos en texto libre que no cumplan el formato siguen guardados, pero el entrenamiento no será apto hasta corregirlos.
+
+## Consideraciones técnicas (móvil)
+
+- **Voz:** `expo-speech` y sonidos cortos (cuenta regresiva 3-2-1, marca por repetición).
+- **Ducking:** modo de audio que baje la música de otras apps mientras habla la guía.
+- **Pantalla apagada:** la guía debe seguir con la pantalla bloqueada (servicio en primer plano en Android). Los temporizadores ya se calculan por hora de fin, así que no se desfasan en segundo plano.
+- **Feature flag en móvil:** hoy la app móvil no usa funciones limitadas ([mobile.md](mobile.md)); hay que leer el flag desde la API.
 
 ## Funcionalidades de apoyo
 
 - [x] **Por cada lado**: reps o tiempo por lado; en tiempo, dos cronómetros seguidos (falta probarlo en la app).
-- [ ] Formato de tempo estructurado y validado.
-- [ ] Descanso entre ejercicios y tiempo de transición.
-- [ ] Indicador "apto para modo inmersivo" en el builder.
+- [ ] Tempo estandarizado y validado en el builder.
+- [ ] Cálculo de "apto para experiencia inmersiva" (compartido, usado por la app móvil).
+- [ ] Feature flag `immersive` y su lectura en la app móvil.
+- [ ] Reproductor inmersivo en móvil (voz, ducking, avance automático, pantalla bloqueada).
 
-## Consideraciones técnicas
+## Pendiente de definir
 
-- **Voz:** texto a voz (`expo-speech` en móvil, Web Speech API en web) y sonidos cortos (cuenta regresiva 3-2-1, beep por repetición).
-- **Música:** bajar el volumen de la música mientras habla la guía (ducking). En Android es posible; en web no se puede controlar la música de otras apps.
-- **Pantalla apagada:** la guía debe seguir con la pantalla bloqueada; en Android requiere servicio en primer plano. En web solo con la pantalla encendida (Wake Lock).
-- **Control sin ver el teléfono:** botones de los audífonos (pausa, siguiente) mediante Media Session.
-- **Prioridad:** la app móvil es el destino natural; la web sería secundaria.
-
-## Preguntas abiertas
-
-1. ¿Al terminar las repeticiones la guía avanza sola o espera confirmación (botón de audífonos o toque)?
-2. ¿Se registra lo realmente hecho (reps, peso) durante la sesión o al final?
-3. ¿Qué dice la voz en cada momento y con qué detalle (peso, notas del coach, número de serie)?
-4. ¿Móvil primero, o también web desde el inicio?
-5. ¿Es una función limitada (flag) mientras se prueba?
+1. ¿Cuánto dura `X` (explosivo)? Propuesta: 1 s.
+2. Entre series del mismo ejercicio sin descanso, ¿se pasa directo o también hay 5 s?
+3. Detalle exacto de lo que dice la voz (por ejemplo, si anuncia el número de serie o el peso).
