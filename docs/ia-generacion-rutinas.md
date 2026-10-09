@@ -243,7 +243,7 @@ FORMATO DE SALIDA (RoutineContent)
 24. Usa setType "reps" o "time". "distance" y "amrap" solo si el entrenador lo pide.
 25. Enteros positivos en restSeconds, targetReps, targetDurationSeconds, targetDistanceMeters. Si el descanso es 0, omite restSeconds.
 26. tempo con formato "E-P-C-P" (ej. "3-1-X-0"); omítelo si no aporta.
-27. notes: breves (≤ 120 caracteres), en español, con claves técnicas o de seguridad; para EMOM/AMRAP explica el formato.
+27. notes: breves (≤ 120 caracteres), en español, con claves técnicas o de seguridad; para EMOM/AMRAP explica el formato. Unilaterales (zancadas, búlgara, plancha lateral): "perSide": true en vez de escribirlo en notes; targetReps/targetDurationSeconds son por cada lado.
 28. Los campos "id" pueden ir como placeholder; el servidor asigna UUIDs.
 29. Añade un nombre de rutina corto y una justificación de 2–4 frases (objetivo, estructura, supuestos tomados por falta de datos).
 ```
@@ -354,7 +354,7 @@ Estimación: calentamiento ~8 min · sentadilla ~20 min · RDL ~10 min · acceso
           "order": 0,
           "goal": "hypertrophy",
           "restSeconds": 30,
-          "notes": "8 por pierna",
+          "perSide": true,
           "sets": [{ "setNumber": 1, "setType": "reps", "targetReps": 8, "loadType": "rpe", "loadValue": 8 }]
         },
         {
@@ -363,7 +363,7 @@ Estimación: calentamiento ~8 min · sentadilla ~20 min · RDL ~10 min · acceso
           "order": 1,
           "goal": "endurance",
           "restSeconds": 60,
-          "notes": "30 s por lado",
+          "perSide": true,
           "sets": [{ "setNumber": 1, "setType": "time", "targetDurationSeconds": 30 }]
         }
       ]

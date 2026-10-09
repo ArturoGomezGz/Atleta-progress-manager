@@ -2,7 +2,7 @@
 
 import type { RoutineContent } from "@atleta/db/schema"
 
-type ExerciseLike = { id: string; exerciseId: string; goal?: string; tempo?: string; restSeconds?: number; notes?: string; sets: unknown[] }
+type ExerciseLike = { id: string; exerciseId: string; goal?: string; tempo?: string; restSeconds?: number; notes?: string; perSide?: boolean; sets: unknown[] }
 
 function exerciseView(ex: ExerciseLike, names: Record<string, string>) {
   return {
@@ -12,6 +12,7 @@ function exerciseView(ex: ExerciseLike, names: Record<string, string>) {
     tempo: ex.tempo,
     restSeconds: ex.restSeconds,
     notes: ex.notes,
+    perSide: ex.perSide || undefined,
     sets: ex.sets.map((s) => {
       const { setNumber: _n, ...rest } = s as Record<string, unknown>
       return rest

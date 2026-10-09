@@ -295,3 +295,45 @@ describe("update_sets conserva la carga al cambiar el número de series", () => 
     assert.equal(it.sets[1]!.loadType, undefined)
   })
 })
+
+describe("applyEdits: por cada lado (perSide)", () => {
+  it("el esquema del contenido acepta perSide opcional y rechaza valores no booleanos", () => {
+    const content = fixture()
+    const plank = content.items[2]!
+    if (plank.type !== "block") throw new Error("fixture")
+    plank.exercises[1]!.perSide = true
+    assert.equal(routineContentSchema.safeParse(content).success, true)
+    assert.equal(routineContentSchema.safeParse(fixture()).success, true, "sin perSide sigue siendo válido")
+    ;(plank.exercises[1] as unknown as Record<string, unknown>).perSide = "sí"
+    assert.equal(routineContentSchema.safeParse(content).success, false)
+  })
+
+  it("update_item_fields marca perSide y con false lo quita del contenido", () => {
+    const on = applyEdit(fixture(), { op: "update_item_fields", itemId: ITEM_SQUAT, perSide: true }, baseOpts)
+    const item = on.content.items[0]!
+    assert.equal(item.type === "exercise" && item.perSide, true)
+    assert.deepEqual(on.changes[0]!.after, { perSide: true })
+    assert.match(on.changes[0]!.summary, /por cada lado/)
+
+    const off = applyEdit(on.content, { op: "update_item_fields", itemId: ITEM_SQUAT, perSide: false }, baseOpts)
+    const item2 = off.content.items[0]!
+    assert.equal(item2.type === "exercise" && "perSide" in item2, false)
+    fails(() => applyEdit(fixture(), { op: "update_item_fields", itemId: ITEM_SQUAT, perSide: false }, baseOpts), /no cambia/)
+  })
+
+  it("add_exercise guarda perSide y otras ediciones lo conservan", () => {
+    const sets = [{ setType: "time" as const, targetDurationSeconds: 30 }]
+    const added = applyEdit(fixture(), { op: "add_exercise", exerciseId: NEW_EX, perSide: true, sets }, baseOpts)
+    const ex = added.content.items.find((i) => i.id === id(900))!
+    assert.equal(ex.type === "exercise" && ex.perSide, true)
+
+    const withSide = applyEdit(fixture(), { op: "update_item_fields", itemId: ITEM_SQUAT, perSide: true }, baseOpts).content
+    const edited = applyEdits(withSide, [
+      { op: "update_sets", itemId: ITEM_SQUAT, sets: [{ setType: "reps", targetReps: 12 }] },
+      { op: "replace_exercise", itemId: ITEM_SQUAT, newExerciseId: NEW_EX },
+      { op: "move_item", itemId: ITEM_SQUAT, toPosition: 1 },
+    ], baseOpts)
+    const moved = edited.content.items.find((i) => i.id === ITEM_SQUAT)!
+    assert.equal(moved.type === "exercise" && moved.perSide, true)
+  })
+})

@@ -1,6 +1,7 @@
 import { Text } from "@/components/text"
 import { computeMomentum, DAY_LABELS, type MomentumDay } from "@/lib/momentum"
 import { colors, radiusLg } from "@/lib/theme"
+import { Check } from "lucide-react-native"
 import { useMemo } from "react"
 import { StyleSheet, View } from "react-native"
 
@@ -27,7 +28,9 @@ export function MomentumTracker({ completedAt }: { completedAt: string[] }) {
         <View style={[styles.between, { marginTop: 16 }]}>
           {m.weekDays.map((d, i) => (
             <View key={i} style={{ alignItems: "center", gap: 8 }}>
-              <View style={[styles.dot, d.count > 0 ? styles.dotDone : d.future ? styles.dotFuture : null]} />
+              <View style={[styles.dot, d.count > 0 ? styles.dotDone : d.future ? styles.dotFuture : null]}>
+                {d.count > 0 && <Check size={16} color={colors.primaryForeground} strokeWidth={3.2} />}
+              </View>
               <Text size={12} color={colors.mutedForeground}>{DAY_LABELS[i]}</Text>
             </View>
           ))}
@@ -83,7 +86,7 @@ const styles = StyleSheet.create({
   fill: { height: 6, borderRadius: 3, backgroundColor: colors.primary },
   between: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   eyebrow: { textTransform: "uppercase", letterSpacing: 0.6 },
-  dot: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.secondary },
+  dot: { width: 28, height: 28, borderRadius: 14, backgroundColor: colors.secondary, alignItems: "center", justifyContent: "center" },
   dotDone: { backgroundColor: colors.primary },
   dotFuture: { backgroundColor: "transparent", borderWidth: 2, borderStyle: "dashed", borderColor: colors.border },
   cell: { width: 18, height: 18, borderRadius: 4 },

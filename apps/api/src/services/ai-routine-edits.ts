@@ -52,6 +52,8 @@ export const editOpSchema = z.discriminatedUnion("op", [
     restSeconds: z.number().int().positive().max(600).nullish(),
     tempo:       tempoSchema.nullish(),
     notes:       z.string().max(300).nullish(),
+    /** true: reps/tiempo de cada serie son por cada lado (unilateral). */
+    perSide:     z.boolean().nullish(),
     sets:        setsInputSchema,
   }),
   z.object({
@@ -80,6 +82,8 @@ export const editOpSchema = z.discriminatedUnion("op", [
     restSeconds: z.number().int().positive().max(600).nullish(),
     goal:        z.enum(EXERCISE_GOALS).nullish(),
     notes:       z.string().max(300).nullish(),
+    /** true marca "por cada lado"; false o null lo quita. */
+    perSide:     z.boolean().nullish(),
   }),
   z.object({
     op:     z.literal("update_block"),
@@ -244,12 +248,12 @@ function describeSets(sets: RoutineSet[]): string {
 }
 
 const FIELD_LABELS: Record<string, string> = {
-  tempo: "tempo", restSeconds: "descanso", goal: "objetivo", notes: "notas",
+  tempo: "tempo", restSeconds: "descanso", goal: "objetivo", notes: "notas", perSide: "por cada lado",
   rounds: "rondas", name: "nombre", restBetweenRoundsSeconds: "descanso entre rondas",
 }
 
 function fmt(v: unknown): string {
-  return v == null ? "(vacío)" : typeof v === "string" ? `"${v}"` : String(v)
+  return v == null ? "(vacío)" : typeof v === "string" ? `"${v}"` : typeof v === "boolean" ? (v ? "sí" : "no") : String(v)
 }
 
 // ─── Aplicación de una operación ─────────────────────────────────────────────
@@ -296,6 +300,7 @@ function applyOne(content: RoutineContent, op: EditOp, opts: EditOptions): Routi
         ...(op.restSeconds ? { restSeconds: op.restSeconds } : {}),
         ...(op.goal ? { goal: op.goal } : {}),
         ...(op.notes ? { notes: op.notes } : {}),
+        ...(op.perSide ? { perSide: true } : {}),
         sets: buildSets(op.sets, opts),
       }
       if (parent) parent.exercises.splice(position, 0, ex)
@@ -381,11 +386,12 @@ function applyOne(content: RoutineContent, op: EditOp, opts: EditOptions): Routi
       const before: Record<string, unknown> = {}
       const after: Record<string, unknown> = {}
       const parts: string[] = []
-      for (const key of ["tempo", "restSeconds", "goal", "notes"] as const) {
+      for (const key of ["tempo", "restSeconds", "goal", "notes", "perSide"] as const) {
         const value = op[key]
         if (value === undefined) continue
-        const current = ex[key] ?? null
-        const next = value ?? null
+        // perSide solo se guarda cuando es true: false equivale a ausente.
+        const current = key === "perSide" ? (ex.perSide ? true : null) : (ex[key] ?? null)
+        const next = key === "perSide" ? (value ? true : null) : (value ?? null)
         if (current === next) continue
         before[key] = current
         after[key] = next

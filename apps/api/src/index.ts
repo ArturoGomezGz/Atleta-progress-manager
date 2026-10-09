@@ -76,7 +76,7 @@ async function main() {
 
   // En desarrollo no hay URL pública: el webhook solo se registra en producción
   if (process.env.NODE_ENV === "production") {
-    registerTelegramWebhook(process.env.BETTER_AUTH_URL).catch((err) =>
+    registerTelegramWebhook(process.env.BETTER_AUTH_URL).then((ok) => ok && app.log.info("webhook de Telegram registrado")).catch((err) =>
       app.log.error(err, "no se pudo registrar el webhook de Telegram"),
     )
   }

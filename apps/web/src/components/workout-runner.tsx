@@ -10,7 +10,7 @@
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
 import { useFullscreenWhileMounted } from "@/lib/fullscreen-mode"
 import { cn } from "@/lib/utils"
-import { describeTarget, explainTempo, formatDuration, isTimeTarget, summarizeTargets } from "@/lib/workout-text"
+import { describeTarget, explainTempo, formatDuration, isTimeTarget, PER_SIDE_SUFFIX, SIDE_SWITCH_SECONDS, summarizeTargets } from "@/lib/workout-text"
 import {
   ArrowLeftIcon,
   CalendarIcon,
@@ -65,6 +65,8 @@ export type WorkoutExercise = {
   tempo: string | null
   restSeconds: number | null
   notes: string | null
+  /** "Por cada lado": reps/tiempo de cada serie son para cada lado. */
+  perSide?: boolean
   blockId: string | null
   blockName: string | null
   rounds: number
@@ -240,7 +242,7 @@ function ExerciseOverviewCard({
         <div className="flex-1 min-w-0 space-y-1 py-0.5">
           <p className="text-sm text-muted-foreground">Ejercicio {index + 1}</p>
           <p className="text-lg font-semibold leading-snug">{exercise.exerciseName}</p>
-          <p className="text-base">{summarizeTargets(exercise.targets)}</p>
+          <p className="text-base">{summarizeTargets(exercise.targets, exercise.perSide)}</p>
           {exercise.blockName && (
             <p className="text-sm text-primary flex items-center gap-1">
               <RepeatIcon className="w-4 h-4" /> {exercise.blockName}
@@ -378,7 +380,7 @@ function CircuitOverviewCard({
               )}
               <div className="flex-1 min-w-0 space-y-1 py-0.5">
                 <p className="text-base font-semibold leading-snug">{ex.exerciseName}</p>
-                <p className="text-base">{summarizeTargets(ex.targets)}</p>
+                <p className="text-base">{summarizeTargets(ex.targets, ex.perSide)}</p>
                 {ex.notes && (
                   <p className="text-sm text-muted-foreground flex gap-1.5">
                     <MessageSquareIcon className="w-4 h-4 mt-0.5 shrink-0" /> {ex.notes}
@@ -751,7 +753,8 @@ function SetExecution({
   const [saving, setSaving] = useState(false)
   const [failed, setFailed] = useState(false)
 
-  const timerPreparing = isTime && timerPhase === "prepare"
+  const perSide = !!exercise.perSide
+  const timerPreparing = isTime && (timerPhase === "prepare" || timerPhase === "switch")
   const timerRunning = isTime && (timerPhase === "running" || timerPhase === "paused")
   const timerFinished = isTime && timerPhase === "finished"
   const timerAlert = timerPreparing || timerFinished
@@ -854,16 +857,24 @@ function SetExecution({
               seconds={target.targetDurationSeconds ?? 30}
               phase={timerPhase}
               onPhaseChange={setTimerPhase}
+              perSide={perSide}
             />
           ) : freeReps ? (
             <div className="space-y-2">
-              <p className="text-base text-muted-foreground">Haz las que puedas y anota cuántas fueron:</p>
+              <p className="text-base text-muted-foreground">
+                {perSide ? "Haz las que puedas con cada lado y anota cuántas fueron por lado:" : "Haz las que puedas y anota cuántas fueron:"}
+              </p>
               <RepsStepper value={reps} onChange={setReps} />
             </div>
           ) : (
             <p>
               <span className="block text-7xl font-bold leading-none tabular-nums">{target.targetReps}</span>
-              <span className="block text-2xl mt-1">{target.targetReps === 1 ? "repetición" : "repeticiones"}</span>
+              <span className="block text-2xl mt-1">
+                {target.targetReps === 1 ? "repetición" : "repeticiones"}{perSide && ` ${PER_SIDE_SUFFIX}`}
+              </span>
+              {perSide && (
+                <span className="block text-base text-muted-foreground mt-2">Lado 1 y luego lado 2, sin descanso entre lados</span>
+              )}
             </p>
           )}
 
@@ -977,17 +988,22 @@ function RepsStepper({ value, onChange }: { value: number; onChange: (v: number)
   )
 }
 
-type CountdownPhase = "idle" | "prepare" | "running" | "paused" | "finished"
+// "switch": pausa corta entre el lado 1 y el lado 2 de una serie "Por cada lado".
+type CountdownPhase = "idle" | "prepare" | "running" | "paused" | "switch" | "finished"
 
 function TimeCountdown({
-  seconds, phase, onPhaseChange,
+  seconds, phase, onPhaseChange, perSide = false,
 }: {
   seconds: number
   phase: CountdownPhase
   onPhaseChange: (phase: CountdownPhase) => void
+  /** Corre dos temporizadores seguidos (lado 1, cambio de lado, lado 2). */
+  perSide?: boolean
 }) {
   const [prepareLeft, setPrepareLeft] = useState(3)
   const [left, setLeft] = useState(seconds)
+  const [side, setSide] = useState<1 | 2>(1)
+  const [switchLeft, setSwitchLeft] = useState(SIDE_SWITCH_SECONDS)
 
   useEffect(() => {
     if (phase !== "prepare") return
@@ -1008,18 +1024,41 @@ function TimeCountdown({
     const id = setInterval(() => {
       setLeft((prev) => {
         if (prev <= 1) {
-          onPhaseChange("finished")
-          vibrate([300, 150, 300])
+          if (perSide && side === 1) {
+            // Termina el lado 1: pausa corta para cambiar de lado y sigue solo.
+            setSwitchLeft(SIDE_SWITCH_SECONDS)
+            onPhaseChange("switch")
+            vibrate([200, 100, 200])
+          } else {
+            onPhaseChange("finished")
+            vibrate([300, 150, 300])
+          }
           return 0
         }
         return prev - 1
       })
     }, 1000)
     return () => clearInterval(id)
-  }, [phase, onPhaseChange])
+  }, [phase, onPhaseChange, perSide, side])
+
+  useEffect(() => {
+    if (phase !== "switch") return
+    if (switchLeft <= 1) {
+      const id = setTimeout(() => {
+        setSide(2)
+        setLeft(seconds)
+        onPhaseChange("running")
+        vibrate(120)
+      }, 1000)
+      return () => clearTimeout(id)
+    }
+    const id = setTimeout(() => setSwitchLeft((prev) => prev - 1), 1000)
+    return () => clearTimeout(id)
+  }, [phase, switchLeft, seconds, onPhaseChange])
 
   function handleStart() {
     setPrepareLeft(3)
+    setSide(1)
     onPhaseChange("prepare")
   }
 
@@ -1031,15 +1070,26 @@ function TimeCountdown({
     onPhaseChange("idle")
     setPrepareLeft(3)
     setLeft(seconds)
+    setSide(1)
+    setSwitchLeft(SIDE_SWITCH_SECONDS)
   }
 
-  const isPreparing = phase === "prepare"
+  const isSwitching = phase === "switch"
+  const isPreparing = phase === "prepare" || isSwitching
   const isRunning = phase === "running" || phase === "paused"
   const finished = phase === "finished"
   const started = phase !== "idle"
 
   return (
     <div className="space-y-3">
+      {perSide && (
+        <p className="text-lg font-semibold" aria-live="polite">
+          {isSwitching ? "Cambia de lado" : finished ? "Ambos lados listos" : `Lado ${side} de 2`}
+          <span className="block text-base font-normal text-muted-foreground">
+            {formatDuration(seconds)} {PER_SIDE_SUFFIX}
+          </span>
+        </p>
+      )}
       <div
         className={cn(
           "rounded-2xl py-5 transition-colors duration-700",
@@ -1056,14 +1106,16 @@ function TimeCountdown({
             finished && "text-destructive",
           )}
         >
-          {isPreparing
+          {isSwitching
+            ? switchLeft
+            : isPreparing
             ? prepareLeft
             : Math.floor(left / 60) > 0
               ? `${Math.floor(left / 60)}:${String(left % 60).padStart(2, "0")}`
               : left}
         </span>
         <span className="block text-2xl mt-1">
-          {isPreparing ? "prepárate…" : finished ? "¡Tiempo!" : "segundos"}
+          {isSwitching ? "cambia de lado…" : isPreparing ? "prepárate…" : finished ? "¡Tiempo!" : "segundos"}
         </span>
       </div>
       <div className="flex justify-center gap-3">
@@ -1268,7 +1320,7 @@ export function WorkoutSummary({
                     <div key={s.id} className={cn("flex items-center gap-4 px-4 py-3 text-base", s.status === "invalid" && "opacity-50")}>
                       <span className="text-muted-foreground w-20 shrink-0">Serie {s.setNumber}</span>
                       <span className="font-semibold">
-                        {target && isTimeTarget(target) ? describeTarget(target) : `${s.reps} repeticiones`}
+                        {target && isTimeTarget(target) ? describeTarget(target, ex.perSide) : `${s.reps} repeticiones${ex.perSide ? ` ${PER_SIDE_SUFFIX}` : ""}`}
                       </span>
                       {Number(s.weightLbs) > 0 && <span className="text-muted-foreground">{s.weightLbs} lbs</span>}
                     </div>

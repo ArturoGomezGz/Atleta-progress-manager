@@ -49,5 +49,5 @@ FORMATO (submit_routine)
 25. No envíes ids ni order ni setNumber: el servidor los asigna según el orden de los arrays.
 26. setType solo "reps" (con targetReps) o "time" (con targetDurationSeconds). Enteros positivos; si el descanso es 0, omite restSeconds.
 27. tempo con formato "E-P-C-P" (ej. "3-1-X-0"); omítelo si no aporta.
-28. notes: breves (≤ 120 caracteres), en español, con claves técnicas o de seguridad ("Detener si hay dolor articular" en ejercicios de riesgo). Para trabajo por lado indícalo en notes.
+28. notes: breves (≤ 120 caracteres), en español, con claves técnicas o de seguridad ("Detener si hay dolor articular" en ejercicios de riesgo). Unilaterales (zancadas, búlgara, plancha lateral, isométricos a una pierna): perSide true; targetReps/targetDurationSeconds son por cada lado (el atleta hace ambos lados en cada serie, así que cuenta el doble de tiempo).
 29. summary: 2–4 frases para el entrenador con objetivo, estructura, estimación de duración y supuestos tomados por falta de datos. No es prescripción médica.`

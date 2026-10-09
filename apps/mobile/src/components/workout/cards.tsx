@@ -56,7 +56,7 @@ export function ExerciseCard({ exercise, index, highlight, showProgress = true, 
         <View style={{ flex: 1, gap: 2 }}>
           <Text size={14} color={colors.mutedForeground}>Ejercicio {index + 1}</Text>
           <Text size={18} weight="semibold">{exercise.exerciseName}</Text>
-          <Text size={16}>{summarizeTargets(exercise.targets)}</Text>
+          <Text size={16}>{summarizeTargets(exercise.targets, exercise.perSide)}</Text>
         </View>
       </View>
       {(exercise.notes || (showProgress && done > 0)) && (
@@ -131,7 +131,7 @@ export function CircuitCard({ blockName, rounds, exercises, allExercises, curren
             )}
             <View style={{ flex: 1, gap: 2 }}>
               <Text size={16} weight="semibold">{ex.exerciseName}</Text>
-              <Text size={16}>{summarizeTargets(ex.targets)}</Text>
+              <Text size={16}>{summarizeTargets(ex.targets, ex.perSide)}</Text>
               {ex.notes && <Notes notes={ex.notes} small />}
               {showProgress && <DoneLine done={done} total={total} small />}
             </View>

@@ -240,6 +240,7 @@ export const sessionsRouter = router({
             tempo: meta?.tempo ?? null,
             restSeconds: meta?.restSeconds ?? null,
             notes: meta?.notes ?? null,
+            perSide: meta?.perSide === true,
             blockId: meta?.blockId ?? null,
             blockName: meta?.blockName ?? null,
             rounds: meta?.rounds ?? 1,
@@ -419,6 +420,7 @@ export const sessionsRouter = router({
             blockName: meta?.blockName ?? null,
             rounds: meta?.rounds ?? 1,
             roundNumber: meta?.roundNumber ?? null,
+            perSide: meta?.perSide === true,
             targets,
           }
         }),

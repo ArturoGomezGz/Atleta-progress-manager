@@ -20,6 +20,14 @@ muestra historial. Por ahora solo Android.
     pueden silenciar), vibración (`expo-haptics`) y una notificación del sistema si
     el descanso o una serie por tiempo termina con la app en segundo plano
     (`expo-notifications`, canal "Temporizador de entrenamiento").
+  - Celebración al terminar la rutina (`src/components/workout/finish-celebration.tsx`,
+    ~2,5 s): un anillo se llena con las series hechas, vuela al punto de hoy de la
+    tarjeta "Esta semana" y la racha cuenta +1. Usa `sessions.myMomentum` (se invalida
+    al completar la sesión) con `lib/momentum.ts`: "antes" = historial sin la sesión
+    recién terminada, "después" = con ella. Todo es transform/opacity (más el
+    `strokeDashoffset` del anillo) con Reanimated en el hilo de UI. Un toque salta al
+    final; con movimiento reducido solo hay un fundido de 250 ms. Hápticos: Light al
+    terminar, Success al cerrar el anillo, Medium al aterrizar hoy.
   - Mismas fuentes (Inter y Barlow Condensed) y colores que la web.
   - Videos de los ejercicios (`src/components/workout/video.tsx`): miniatura en
     las tarjetas con "Ver cómo se hace" (video a pantalla completa con la
