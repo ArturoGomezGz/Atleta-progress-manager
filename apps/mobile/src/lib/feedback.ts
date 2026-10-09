@@ -73,6 +73,15 @@ export const feedback = {
     play("alarm")
     Vibration.vibrate([0, 300, 150, 300])
   },
+  /** Se terminó la rutina: sonido de arranque y toque suave; la celebración añade el resto. */
+  finish() {
+    play("go")
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {})
+  },
+  /** Aterriza el día de hoy en la semana. */
+  land() {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {})
+  },
   /** Serie guardada. */
   setDone() {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {})

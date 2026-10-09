@@ -6,6 +6,7 @@
 // aviso del sistema si el descanso termina con la app en segundo plano.
 import { Button } from "@/components/button"
 import { Text } from "@/components/text"
+import { FinishCelebration } from "@/components/workout/finish-celebration"
 import { PrimaryAction, SecondaryAction, type ActionTone } from "@/components/workout/action-button"
 import { RestTimer } from "@/components/workout/rest-timer"
 import { RoutineDrop } from "@/components/workout/routine-drop"
@@ -28,7 +29,7 @@ import { isTimeTarget } from "@/lib/workout-text"
 import { useKeepAwake } from "expo-keep-awake"
 import { router, useLocalSearchParams } from "expo-router"
 import {
-  ArrowLeft, ArrowRight, Check, CheckCircle, ChevronDown, ChevronUp, Columns2, MessageSquare, Pause, Play,
+  ArrowLeft, ArrowRight, Check, ChevronDown, ChevronUp, Columns2, MessageSquare, Pause, Play,
   RotateCcw, Rows2, SkipForward, Volume2, VolumeX, X,
 } from "lucide-react-native"
 import { useCallback, useEffect, useRef, useState } from "react"
@@ -61,6 +62,7 @@ export default function TrainScreen() {
   const { data: rms } = trpc.sessions.athleteRms.useQuery({ sessionId: id, athleteId: userId }, { enabled: !!userId })
   const recordSet = trpc.sessions.recordSet.useMutation()
   const complete = trpc.sessions.completeMySession.useMutation({
+    onSuccess: () => utils.sessions.myMomentum.invalidate(),
     onSettled: () => utils.sessions.myPending.invalidate(),
   })
 
@@ -227,8 +229,7 @@ export default function TrainScreen() {
     if (!finished || !progress || completedFor.current === progress.id) return
     completedFor.current = progress.id
     endRest()
-    feedback.go()
-    feedback.setDone()
+    // El sonido y los hápticos del cierre los maneja la celebración
     if (progress.status === "active") complete.mutate({ sessionId: progress.id })
   }, [finished, progress, complete, endRest])
 
@@ -251,23 +252,20 @@ export default function TrainScreen() {
   if (finished) {
     const exerciseCount = groupForPreview(progress.exercises)
       .reduce((n, g) => n + (g.kind === "circuit" ? g.exercises.length : 1), 0)
+    // Sin llamada a completeMySession y ya completa: se terminó antes de abrir esta pantalla
+    const alreadyCompleted = progress.status === "completed" && complete.isIdle
     return (
-      <SafeAreaView style={styles.celebration}>
-        <View style={styles.bigCheck}><CheckCircle size={60} color={colors.success} /></View>
-        <View style={{ gap: 8 }}>
-          <Text heading size={44} center>¡Rutina terminada!</Text>
-          <Text size={20} center color={colors.mutedForeground}>
-            Hiciste {exerciseCount} {exerciseCount === 1 ? "ejercicio" : "ejercicios"} y {done} series. ¡Excelente trabajo!
-          </Text>
-        </View>
-        <Button
-          label="Volver a mis rutinas"
-          icon={ArrowLeft}
-          size="lg"
-          style={{ alignSelf: "stretch" }}
-          onPress={() => router.dismissTo("/")}
-        />
-      </SafeAreaView>
+      <FinishCelebration
+        exerciseCount={exerciseCount}
+        setCount={done}
+        completion={{
+          settled: alreadyCompleted || complete.isSuccess || complete.isError,
+          completedAt: complete.data?.completedAt ? new Date(complete.data.completedAt).toISOString() : null,
+          alreadyCompleted,
+          failed: complete.isError,
+        }}
+        onBack={() => router.dismissTo("/")}
+      />
     )
   }
 
@@ -574,9 +572,4 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.warningBorder, padding: 20, gap: 12,
   },
   notesHeader: { flexDirection: "row", alignItems: "center", gap: 8 },
-  celebration: { flex: 1, alignItems: "center", justifyContent: "center", gap: 32, padding: 24, backgroundColor: colors.background },
-  bigCheck: {
-    width: 112, height: 112, borderRadius: 56, backgroundColor: colors.successSoft,
-    borderWidth: 2, borderColor: "rgba(16,185,129,0.4)", alignItems: "center", justifyContent: "center",
-  },
 })
