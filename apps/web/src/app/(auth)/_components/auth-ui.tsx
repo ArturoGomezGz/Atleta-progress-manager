@@ -1,5 +1,6 @@
 "use client"
 
+import { AtletaMark } from "@/components/atleta-mark"
 import { ChevronDown, Mail } from "lucide-react"
 import { useId, type ReactNode } from "react"
 
@@ -20,6 +21,7 @@ export function AuthShell({ tagline, title, children }: { tagline: string; title
     <div className="auth-shell relative min-h-dvh isolate overflow-hidden bg-background flex flex-col items-center px-5 pt-16 pb-6 sm:justify-center sm:pt-6">
       <div className="auth-bg" aria-hidden="true" />
       <header className="flex flex-col items-center gap-3 text-center">
+        <AtletaMark className="w-16 h-16 sm:w-20 sm:h-20" />
         <p
           className="auth-wordmark font-extrabold text-6xl sm:text-8xl leading-[0.9] tracking-[0.06em] text-foreground"
           style={{ fontFamily: "var(--font-heading)" }}

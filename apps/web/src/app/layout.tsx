@@ -1,6 +1,6 @@
 import { ThemeProvider } from "@/lib/theme-provider"
 import { TRPCProvider } from "@/lib/trpc/client"
-import type { Metadata } from "next"
+import type { Metadata, Viewport } from "next"
 import { Barlow_Condensed, Inter } from "next/font/google"
 import "./globals.css"
 
@@ -20,6 +20,10 @@ const barlowCondensed = Barlow_Condensed({
 export const metadata: Metadata = {
   title: "Atleta",
   description: "Gestión de entrenamientos para entrenadores y atletas",
+}
+
+export const viewport: Viewport = {
+  themeColor: "#07090d",
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

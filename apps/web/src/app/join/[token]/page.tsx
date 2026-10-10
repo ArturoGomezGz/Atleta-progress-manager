@@ -1,8 +1,9 @@
 "use client"
 
+import { AtletaMark } from "@/components/atleta-mark"
 import { useSession } from "@/lib/auth"
 import { trpc } from "@/lib/trpc/client"
-import { CheckCircleIcon, DumbbellIcon, LoaderCircleIcon } from "lucide-react"
+import { CheckCircleIcon, LoaderCircleIcon } from "lucide-react"
 import { useParams, useRouter } from "next/navigation"
 import { useEffect, useRef } from "react"
 
@@ -111,7 +112,7 @@ function WelcomeState({
             className="w-16 h-16 rounded-2xl object-cover overflow-hidden"
           />
         ) : alreadyMember ? (
-          <DumbbellIcon className="w-12 h-12 text-primary" />
+          <AtletaMark className="w-14 h-14" />
         ) : (
           <CheckCircleIcon className="w-12 h-12 text-primary" />
         )}

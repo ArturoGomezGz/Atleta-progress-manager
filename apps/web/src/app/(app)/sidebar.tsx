@@ -1,6 +1,7 @@
 "use client"
 
 import React from "react"
+import { AtletaMark } from "@/components/atleta-mark"
 import { useFeatures } from "@/lib/features"
 import { useTourSignal } from "@/lib/tour-signals"
 import { trpc } from "@/lib/trpc/client"
@@ -108,9 +109,7 @@ export function Sidebar() {
       {/* Logo / App name */}
       <div className="px-4 py-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-7 h-7 rounded-lg bg-primary/15 border border-primary/20 flex items-center justify-center shrink-0">
-            <DumbbellIcon className="w-3.5 h-3.5 text-primary" />
-          </div>
+          <AtletaMark className="w-7 h-7 shrink-0" />
           <span
             className="font-bold text-base tracking-widest uppercase text-foreground"
             style={{ fontFamily: "var(--font-barlow-condensed)" }}
