@@ -3,6 +3,8 @@ name: android-apk
 # APK de prueba de apps/mobile, apuntando a la API de testing. Se publica como
 # pre-release de GitHub para descargarlo directo en el teléfono.
 # Firmado con la llave de depuración: sirve para instalar a mano, no para la tienda.
+# Es una app distinta a la de producción (APP_VARIANT=testing: com.atleta.app.testing, "Atleta Test"),
+# así que se instalan las dos a la vez en el mismo teléfono.
 
 on:
   push:
@@ -22,6 +24,7 @@ concurrency:
 
 env:
   EXPO_PUBLIC_API_URL: https://api-testing-94f1.up.railway.app
+  APP_VARIANT: testing
 
 jobs:
   build:

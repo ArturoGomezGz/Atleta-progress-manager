@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-09.
+> **Última revisión:** 2026-10-10.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -67,7 +67,7 @@ Pendientes ya detectados en el producto:
 
 ## App móvil (Android)
 
-Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md). Solo para el atleta: ver entrenamientos pendientes y ejecutarlos. No usa las funciones limitadas.
+Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md). Solo para el atleta: ver entrenamientos pendientes y ejecutarlos. No usa las funciones limitadas. La app de testing (`Atleta Test`, `com.atleta.app.testing`) se instala junto a la de producción.
 
 ## Planeadas
 
