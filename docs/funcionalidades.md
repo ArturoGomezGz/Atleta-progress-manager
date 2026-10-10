@@ -23,7 +23,7 @@ La columna **Verificación** indica de dónde viene el estado:
 | Función | Qué hace | Verificación |
 |---|---|---|
 | Registro e inicio de sesión | Correo y contraseña, y Google si está configurado. Con el bot de Telegram configurado, las cuentas nuevas quedan en revisión hasta que el administrador las aprueba con un botón, y la recuperación de contraseña le llega al administrador como enlace para reenviar (sin Telegram, se usan correos de Resend). Google entra directo, sin aprobación. En testing se omite todo con `AUTO_VERIFY_EMAIL`. Ver [deploy.md](deploy.md). | Por confirmar |
-| Identidad de marca (icono) | Anillo PR como icono de la app: favicon, icono iOS, manifest para instalar en Android y logo en login, registro, sidebar y pantallas públicas. | Por confirmar |
+| Identidad de marca (icono) | Anillo PR como icono de la app: favicon, icono iOS, icono de la app Android, manifest para instalar en Android y logo en login, registro, sidebar y pantallas públicas. | Por confirmar |
 | Equipo por defecto | Cada usuario nuevo recibe "Mi equipo", donde es coach y tiene el auto-entrenamiento activado, que ocupa una plaza de atleta ([equipo-por-defecto.md](equipo-por-defecto.md)). | Por confirmar |
 | Onboarding de usuarios nuevos | Tutorial guiado y bloqueante (spotlight con flecha): solo se puede hacer clic donde indica, hasta crear su primer entrenamiento, asignárselo, hacerlo y conocer Explorar. Se puede omitir siempre y reiniciar con el botón "?". Solo para quien recibe el equipo por defecto ([onboarding.md](onboarding.md)). | Por confirmar |
 | Equipos | Crear equipos, cambiar entre ellos desde la sección Equipo, eliminar equipo. | Por confirmar |
@@ -68,7 +68,7 @@ Pendientes ya detectados en el producto:
 
 ## App móvil (Android)
 
-Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md). Solo para el atleta: ver entrenamientos pendientes y ejecutarlos. No usa las funciones limitadas. La app de testing (`Atleta Test`, `com.atleta.app.testing`) se instala junto a la de producción.
+Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md). Solo para el atleta: ver entrenamientos pendientes y ejecutarlos. No usa las funciones limitadas. La app de testing (`Atleta Test`, `com.atleta.app.testing`) se instala junto a la de producción y su icono lleva una franja ámbar «TESTING» sobre el mismo logo.
 
 ## Planeadas
 

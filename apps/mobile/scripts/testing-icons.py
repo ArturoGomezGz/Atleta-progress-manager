@@ -31,21 +31,33 @@ def band(img: Image.Image, top: float, bottom: float, width_ratio: float, text: 
     d.text(((x0 + x1) / 2, (y0 + y1) / 2), "TESTING", font=font, fill=ink, anchor="mm")
 
 
+def lift(img: Image.Image, scale: float, cy: float, bg=None) -> Image.Image:
+    """Encoge el logo y lo sube para que la franja de abajo no lo tape. cy = centro vertical (proporción)."""
+    w, h = img.size
+    small = img.resize((round(w * scale), round(h * scale)), Image.LANCZOS)
+    out = bg.copy() if bg else Image.new("RGBA", img.size, (0, 0, 0, 0))
+    out.alpha_composite(small, ((w - small.width) // 2, round(h * cy - small.height / 2)))
+    return out
+
+
 def main():
     OUT.mkdir(exist_ok=True)
 
     # Ícono completo (1024): franja ancha abajo
-    icon = Image.open(ASSETS / "icon.png").convert("RGBA")
+    # Se arma con el fondo y la capa frontal del adaptivo (mismo logo) para que el logo suba sin dejar costura
+    icon = Image.open(ASSETS / "android-icon-background.png").convert("RGBA").resize((1024, 1024), Image.LANCZOS)
+    fg_big = Image.open(ASSETS / "android-icon-foreground.png").convert("RGBA").resize((1024, 1024), Image.LANCZOS)
+    icon.alpha_composite(lift(fg_big, 0.9, 0.43))
     band(icon, 0.80, 0.93, 0.78)
     icon.convert("RGB").save(OUT / "icon.png")
 
     # Capa frontal del ícono adaptivo (512): la máscara de Android recorta a ~66 %, la franja queda dentro
-    fg = Image.open(ASSETS / "android-icon-foreground.png").convert("RGBA")
+    fg = lift(Image.open(ASSETS / "android-icon-foreground.png").convert("RGBA"), 0.78, 0.42)
     band(fg, 0.69, 0.78, 0.46)
     fg.save(OUT / "android-icon-foreground.png")
 
     # Monocromo (íconos temáticos de Android 13+): solo alfa; la franja sólida con el texto vaciado
-    mono = Image.open(ASSETS / "android-icon-monochrome.png").convert("RGBA")
+    mono = lift(Image.open(ASSETS / "android-icon-monochrome.png").convert("RGBA"), 0.78, 0.42)
     mw, mh = mono.size
     layer = Image.new("RGBA", mono.size, (0, 0, 0, 0))
     band(layer, 0.69, 0.79, 0.50, fill=(255, 255, 255, 255), ink=(0, 0, 0, 0))
