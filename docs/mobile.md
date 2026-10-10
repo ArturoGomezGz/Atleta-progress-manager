@@ -71,13 +71,30 @@ El registro y la verificación de correo siguen en la web.
 
 El workflow `.github/workflows/android-apk.yml` compila un APK apuntando a la API
 de testing y lo publica como pre-release de GitHub (`android-preview-<n>`). Corre
-en cada push a `master` que toque `apps/mobile`, o a mano desde Actions. Va firmado con la llave de depuración: sirve para instalar a mano, no
+en cada push a `testing` que toque `apps/mobile`, o a mano desde Actions (el de
+producción sale de `master`, ver `android-apk-production.yml`). Va firmado con la llave de depuración: sirve para instalar a mano, no
 para la tienda. Para que el login funcione, la API de testing debe tener los
 cambios de la app desplegados.
 
+### Testing y producción a la vez en el teléfono
+
+Son dos apps distintas, así que se pueden instalar juntas (cada una con su sesión y sus datos):
+
+| | Identificador | Nombre | Ícono | API |
+|---|---|---|---|---|
+| Producción | `com.atleta.app` | Atleta | `assets/` | producción |
+| Testing | `com.atleta.app.testing` | Atleta Test | `assets/testing/` (franja ámbar «TESTING») | testing |
+
+`app.config.ts` parte de `app.json` y, con `APP_VARIANT=testing` (lo define el workflow
+`android-apk.yml`), cambia identificador, nombre e íconos. El esquema `atleta` es el
+mismo en ambas: la API lo valida contra `trustedOrigins` y la app no usa enlaces
+profundos. Los íconos de testing se generan con `python3 apps/mobile/scripts/testing-icons.py`
+a partir de los de `assets/`; hay que volver a correrlo cuando cambien. Los íconos
+actuales son los de la plantilla de Expo (provisionales).
+
 Alternativa con EAS: `eas.json` tiene el perfil `preview`, que genera un APK instalable:
 `npx eas-cli@latest build --platform android --profile preview`
-(requiere cuenta de Expo). El paquete Android es `com.atleta.app`.
+(requiere cuenta de Expo). El paquete Android de producción es `com.atleta.app`.
 
 ## Deploys
 

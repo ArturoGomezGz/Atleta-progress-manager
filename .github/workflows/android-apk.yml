@@ -1,12 +1,16 @@
 name: android-apk
 
-# APK de prueba de apps/mobile, apuntando a la API de testing. Se publica como
-# pre-release de GitHub para descargarlo directo en el teléfono.
+# APK de prueba de apps/mobile, apuntando a la API de testing. Se compila en cada push a
+# `testing` (la rama que despliega la API de testing) que toque la app, o a mano desde Actions.
+# Se publica como pre-release de GitHub para descargarlo directo en el teléfono.
+# El APK de producción sale de android-apk-production.yml, desde `master`.
 # Firmado con la llave de depuración: sirve para instalar a mano, no para la tienda.
+# Es una app distinta a la de producción (APP_VARIANT=testing: com.atleta.app.testing, "Atleta Test"),
+# así que se instalan las dos a la vez en el mismo teléfono.
 
 on:
   push:
-    branches: [master]
+    branches: [testing]
     paths:
       - "apps/mobile/**"
       - "pnpm-lock.yaml"
@@ -22,6 +26,7 @@ concurrency:
 
 env:
   EXPO_PUBLIC_API_URL: https://api-testing-94f1.up.railway.app
+  APP_VARIANT: testing
 
 jobs:
   build:
