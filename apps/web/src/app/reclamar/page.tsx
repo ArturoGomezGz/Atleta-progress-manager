@@ -4,6 +4,7 @@
 // el entrenamiento anónimo que guardó el navegador se convierte en una sesión
 // real de su historial. Llegan aquí desde /register?redirect=/reclamar.
 
+import { AtletaMark } from "@/components/atleta-mark"
 import { clearGuestWorkout, readGuestWorkout } from "@/lib/guest-workout"
 import { trpc } from "@/lib/trpc/client"
 import { CheckCircleIcon, DumbbellIcon, LoaderCircleIcon } from "lucide-react"
@@ -100,7 +101,10 @@ export default function ClaimPage() {
 function Screen({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-dvh flex items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm">{children}</div>
+      <div className="w-full max-w-sm space-y-6">
+        <AtletaMark className="w-14 h-14 mx-auto" />
+        {children}
+      </div>
     </div>
   )
 }
