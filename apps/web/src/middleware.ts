@@ -35,5 +35,7 @@ export const config = {
   // invitado son públicos a propósito). Si pasara por aquí, las llamadas de
   // quien no tiene sesión se redirigirían al login — y las de quien sí la
   // tiene pagarían una consulta de sesión extra por cada petición de datos.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|api/auth|api/telegram|trpc).*)"],
+  // Iconos y manifest de la app (`icon.svg`, `apple-icon.png`, `manifest.webmanifest`, `icons/`)
+  // se piden sin sesión: el navegador los descarga también en el login.
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|manifest.webmanifest|icons/|api/auth|api/telegram|trpc).*)"],
 }

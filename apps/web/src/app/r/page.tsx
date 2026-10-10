@@ -3,7 +3,7 @@
 // Entrada por código para quien recibió la rutina dictada o por mensaje
 // ("entra a atleta y pon ABCD2345") en vez del enlace completo.
 
-import { DumbbellIcon } from "lucide-react"
+import { AtletaMark } from "@/components/atleta-mark"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
@@ -24,7 +24,7 @@ export default function EnterCodePage() {
     <div className="min-h-dvh flex items-center justify-center px-4 bg-background">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center space-y-2">
-          <DumbbellIcon className="w-12 h-12 text-primary mx-auto" />
+          <AtletaMark className="w-14 h-14 mx-auto" />
           <h1 className="text-2xl font-bold" style={{ fontFamily: "var(--font-space-grotesk)" }}>Atleta</h1>
           <p className="text-base text-muted-foreground">
             Escribe el código que te dio tu entrenador para empezar el entrenamiento.

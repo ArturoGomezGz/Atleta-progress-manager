@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-09.
+> **Última revisión:** 2026-10-10.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -23,6 +23,7 @@ La columna **Verificación** indica de dónde viene el estado:
 | Función | Qué hace | Verificación |
 |---|---|---|
 | Registro e inicio de sesión | Correo y contraseña, y Google si está configurado. Con el bot de Telegram configurado, las cuentas nuevas quedan en revisión hasta que el administrador las aprueba con un botón, y la recuperación de contraseña le llega al administrador como enlace para reenviar (sin Telegram, se usan correos de Resend). Google entra directo, sin aprobación. En testing se omite todo con `AUTO_VERIFY_EMAIL`. Ver [deploy.md](deploy.md). | Por confirmar |
+| Identidad de marca (icono) | Anillo PR como icono de la app: favicon, icono iOS, manifest para instalar en Android y logo en login, registro, sidebar y pantallas públicas. | Por confirmar |
 | Equipo por defecto | Cada usuario nuevo recibe "Mi equipo", donde es coach y tiene el auto-entrenamiento activado, que ocupa una plaza de atleta ([equipo-por-defecto.md](equipo-por-defecto.md)). | Por confirmar |
 | Onboarding de usuarios nuevos | Tutorial guiado y bloqueante (spotlight con flecha): solo se puede hacer clic donde indica, hasta crear su primer entrenamiento, asignárselo, hacerlo y conocer Explorar. Se puede omitir siempre y reiniciar con el botón "?". Solo para quien recibe el equipo por defecto ([onboarding.md](onboarding.md)). | Por confirmar |
 | Equipos | Crear equipos, cambiar entre ellos desde la sección Equipo, eliminar equipo. | Por confirmar |

@@ -1,5 +1,6 @@
 "use client"
 
+import { AtletaMark } from "@/components/atleta-mark"
 import { useSearchParams } from "next/navigation"
 import { Suspense } from "react"
 
@@ -12,6 +13,7 @@ function VerifyEmailContent() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-sm space-y-6 p-8 border border-border rounded-xl shadow-xl bg-card text-center">
+        <AtletaMark className="w-14 h-14 mx-auto" />
         <div className="space-y-2">
           <h1 className="text-2xl font-bold text-foreground" style={{ fontFamily: "var(--font-space-grotesk)" }}>
             Estamos revisando tu cuenta
