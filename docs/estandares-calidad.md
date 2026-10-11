@@ -47,30 +47,45 @@ crash *antes* de llegar al assert no es solo un bug de UX: es una ruta sin
 comportamiento garantizado (¿niega acceso? ¿revienta con 500?) en el único
 punto que separa equipos entre sí.
 
-**Hallazgo real** — `apps/api/src/routers/sessions.ts:458-491`:
+**Estado actual** — `apps/api/src/routers/sessions.ts`: resuelto. El hallazgo
+original (`session!.teamId` / `as!.sessionId` sin verificar que la fila
+existiera, lo que lanzaba un `TypeError` sin control *antes* de la
+verificación de rol) ya no existe: el archivo no contiene ninguna aserción
+non-null (`!.`), y cada procedimiento que carga una sesión o un
+`athleteSession` la verifica explícitamente antes del assert, p. ej.:
 ```ts
-const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
-await assertCoach(ctx.session.user.id, session!.teamId)
+const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+await assertCoach(ctx.session.user.id, session.teamId)
 ```
-Si `session` no existe (fila inconsistente o borrada), `session!.teamId`
-lanza un `TypeError` sin control en vez de un `NOT_FOUND`/`FORBIDDEN` — y
-esto ocurre *antes* de la verificación de rol. `sessions.ts` ya está en
+(el mismo patrón aplica en el helper `loadSetForCoach` con `if (!row)`). El
+patrón a vigilar sigue siendo el mismo: cualquier `!.` o acceso a una fila
+posiblemente vacía *antes* de `assertCoach`/`assertMember` deja la ruta sin
+comportamiento garantizado. `sessions.ts` ya está en
 `scripts/quality-agents/config/critical-targets.json`: el agente debe tratar
 sus hallazgos como severidad alta por defecto, no como "uno más entre N
 console.log".
 
 ### 2. Errores crudos expuestos en la superficie de autenticación
 
-`apps/api/src/index.ts:47` — el handler de `/api/auth/*` responde
-`reply.status(500).send({ error: String(err) })` ante cualquier excepción no
-controlada. Es el endpoint de login/signup/reset-password: el primero que se
-prueba desde fuera. Un error de la librería o de Postgres se serializa tal
-cual hacia el cliente.
+**Resuelto.** `apps/api/src/index.ts:47-50` — el `catch` del handler de
+`/api/auth/*` ya no serializa la excepción hacia el cliente: loguea con
+`req.log.error(err, "better-auth handler error")` y responde
+`reply.status(500).send({ error: "Internal Server Error", requestId: req.id })`.
+Además, las respuestas 5xx que devuelve better-auth sin lanzar excepción se
+registran con `req.log.error` (línea 44). Se mantiene la categoría porque es
+el endpoint de login/signup/reset-password, el primero que se prueba desde
+fuera: cualquier regresión que vuelva a exponer `String(err)` o el mensaje
+de un error de la librería o de Postgres al cliente debe tratarse como
+prioritaria.
 
 ### 3. Cobertura de pruebas nula sobre autorización y dinero
 
-0 archivos `.test`/`.spec` en todo el monorepo. `unit-test-gap-finder` ya lo
-señala mecánicamente; el porqué priorizado aquí es:
+Hoy hay 9 archivos `.test` en el monorepo, todos en `apps/api/test/`
+(`clients/workout-text`, `lib/rate-limit`, `services/telegram`,
+`services/ai-routine-edits` y 5 de `services/ai-routine-editor/`); ningún otro
+paquete tiene tests. Ninguno cubre autorización ni dinero.
+`unit-test-gap-finder` ya lo señala mecánicamente; el porqué priorizado aquí es:
 - `assertCoach`/`assertMember` — toda la separación multi-tenant depende de
   dos funciones sin un solo test.
 - El flujo de reclamo de invitado (`share.claim`) — fusiona datos anónimos
