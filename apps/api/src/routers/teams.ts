@@ -208,3 +208,14 @@ export async function assertAthleteInTeam(athleteId: string, teamId: string) {
   if (!member) throw new TRPCError({ code: "NOT_FOUND" })
   return member
 }
+
+// Regla pura: el coach ve a cualquier atleta del equipo; un atleta solo a sí mismo
+export function canViewAthlete({ role, userId, athleteId }: { role: string; userId: string; athleteId: string }): boolean {
+  return role === "coach" || athleteId === userId
+}
+
+export async function assertCanViewAthlete(userId: string, teamId: string, athleteId: string) {
+  const member = await assertMember(userId, teamId)
+  if (!canViewAthlete({ role: member.role, userId, athleteId })) throw new TRPCError({ code: "FORBIDDEN" })
+  return assertAthleteInTeam(athleteId, teamId)
+}
