@@ -4,14 +4,13 @@ import { and, desc, eq } from "drizzle-orm"
 import { z } from "zod"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { featureProcedure, router } from "../trpc"
-import { assertAthleteInTeam, assertCoach, assertMember } from "./teams"
+import { assertAthleteInTeam, assertCanViewAthlete, assertCoach } from "./teams"
 
 export const rmsRouter = router({
   listByAthlete: featureProcedure("progress")
     .input(z.object({ teamId: z.string().uuid(), athleteId: z.string() }))
     .query(async ({ ctx, input }) => {
-      await assertMember(ctx.session.user.id, input.teamId)
-      await assertAthleteInTeam(input.athleteId, input.teamId)
+      await assertCanViewAthlete(ctx.session.user.id, input.teamId, input.athleteId)
 
       const allRms = await db
         .select({
@@ -72,8 +71,7 @@ export const rmsRouter = router({
       exerciseId: z.string().uuid(),
     }))
     .query(async ({ ctx, input }) => {
-      await assertMember(ctx.session.user.id, input.teamId)
-      await assertAthleteInTeam(input.athleteId, input.teamId)
+      await assertCanViewAthlete(ctx.session.user.id, input.teamId, input.athleteId)
       const [report] = await db
         .select({
           content: exerciseProgressReport.content,
@@ -94,8 +92,7 @@ export const rmsRouter = router({
   reportStatuses: featureProcedure("progress")
     .input(z.object({ teamId: z.string().uuid(), athleteId: z.string() }))
     .query(async ({ ctx, input }) => {
-      await assertMember(ctx.session.user.id, input.teamId)
-      await assertAthleteInTeam(input.athleteId, input.teamId)
+      await assertCanViewAthlete(ctx.session.user.id, input.teamId, input.athleteId)
       const reports = await db
         .select({
           exerciseId: exerciseProgressReport.exerciseId,
@@ -141,8 +138,7 @@ export const rmsRouter = router({
       exerciseId: z.string().uuid(),
     }))
     .mutation(async ({ ctx, input }) => {
-      await assertMember(ctx.session.user.id, input.teamId)
-      await assertAthleteInTeam(input.athleteId, input.teamId)
+      await assertCanViewAthlete(ctx.session.user.id, input.teamId, input.athleteId)
       await db
         .update(exerciseProgressReport)
         .set({ seenAt: new Date() })
@@ -157,7 +153,7 @@ export const rmsRouter = router({
   athletes: featureProcedure("progress")
     .input(z.object({ teamId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      await assertMember(ctx.session.user.id, input.teamId)
+      await assertCoach(ctx.session.user.id, input.teamId)
       return db
         .select({ id: user.id, name: user.name, email: user.email })
         .from(teamMember)
