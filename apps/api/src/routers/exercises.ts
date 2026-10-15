@@ -18,6 +18,7 @@ import OpenAI from "openai"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach } from "./teams"
 import { resolveYoutube } from "../services/youtube"
+import { sanitizeAutofillResult } from "./exercise-autofill"
 
 // Se crea bajo demanda: sin OPENAI_API_KEY la API arranca igual y solo falla el autocompletado
 let openaiClient: OpenAI | null = null
@@ -43,6 +44,18 @@ const movementPatternSchema = z.enum([
 const muscleInputSchema = z.object({
   muscleId: z.string().uuid(),
   role: z.enum(["primary", "secondary"]),
+})
+
+// Respuesta de la herramienta fill_exercise del autocompletado con IA
+const autofillResultSchema = z.object({
+  difficulty: difficultySchema,
+  movementPatterns: z.array(movementPatternSchema),
+  suitableFor: suitableForSchema.nullable(),
+  muscles: z.array(z.object({
+    muscleId: z.string(),
+    role: z.enum(["primary", "secondary"]),
+  })),
+  equipment: z.array(z.string()),
 })
 
 // ── Helper: attach muscles + equipment to a list of exercises ─────────────────
@@ -449,7 +462,7 @@ export const exercisesRouter = router({
       name: z.string().min(1),
       description: z.string().optional(),
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const [muscleGroups, muscles, equipmentCatalog] = await Promise.all([
         db.select().from(muscleGroup).orderBy(asc(muscleGroup.name)),
         db.select().from(muscle).orderBy(asc(muscle.name)),
@@ -542,13 +555,34 @@ Rules:
         throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "No response from AI" })
       }
 
-      return JSON.parse(toolCall.function.arguments) as {
-        difficulty: "beginner" | "intermediate" | "advanced"
-        movementPatterns: string[]
-        suitableFor: "warmup" | "evaluation" | null
-        muscles: { muscleId: string; role: "primary" | "secondary" }[]
-        equipment: string[]
+      let parsedJson: unknown
+      try {
+        parsedJson = JSON.parse(toolCall.function.arguments)
+      } catch {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "La IA devolvió una respuesta inválida. Intenta de nuevo." })
       }
+      const parsed = autofillResultSchema.safeParse(parsedJson)
+      if (!parsed.success) {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "La IA devolvió una respuesta inválida. Intenta de nuevo." })
+      }
+      const raw = parsed.data
+
+      const validMuscleIds = new Set(muscles.map((m) => m.id))
+      const validEquipmentIds = new Set(equipmentCatalog.map((e) => e.id))
+      const result = sanitizeAutofillResult(raw, validMuscleIds, validEquipmentIds)
+
+      if (raw.muscles.length !== result.muscles.length || raw.equipment.length !== result.equipment.length) {
+        ctx.log.warn(
+          {
+            droppedMuscles: raw.muscles.length - result.muscles.length,
+            droppedEquipment: raw.equipment.length - result.equipment.length,
+            model: "gpt-4o-mini",
+          },
+          "[autofill] IDs fuera de catálogo descartados",
+        )
+      }
+
+      return result
     }),
 
   // ── Explore / Save ────────────────────────────────────────────────────────
