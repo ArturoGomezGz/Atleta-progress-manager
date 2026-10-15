@@ -116,22 +116,26 @@ export async function attachDetails(exercises: (typeof exercise.$inferSelect)[])
   }))
 }
 
-// Helper: replace junction rows for an exercise (delete + insert)
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+// Helper: replace junction rows for an exercise (delete + insert).
+// Must run inside a transaction so a failed insert rolls back the deletes.
 async function replaceJunctions(
+  tx: Tx,
   exerciseId: string,
   muscles: { muscleId: string; role: "primary" | "secondary" }[],
   equipmentIds: string[],
 ) {
-  await db.delete(exerciseMuscle).where(eq(exerciseMuscle.exerciseId, exerciseId))
-  await db.delete(exerciseEquipment).where(eq(exerciseEquipment.exerciseId, exerciseId))
+  await tx.delete(exerciseMuscle).where(eq(exerciseMuscle.exerciseId, exerciseId))
+  await tx.delete(exerciseEquipment).where(eq(exerciseEquipment.exerciseId, exerciseId))
 
   if (muscles.length > 0) {
-    await db.insert(exerciseMuscle).values(
+    await tx.insert(exerciseMuscle).values(
       muscles.map((m) => ({ exerciseId, muscleId: m.muscleId, role: m.role })),
     )
   }
   if (equipmentIds.length > 0) {
-    await db.insert(exerciseEquipment).values(
+    await tx.insert(exerciseEquipment).values(
       equipmentIds.map((equipmentId) => ({ exerciseId, equipmentId })),
     )
   }
@@ -326,26 +330,29 @@ export const exercisesRouter = router({
         await assertCoach(userId, input.teamId)
       }
 
-      const [newExercise] = await db
-        .insert(exercise)
-        .values({
-          name: input.name,
-          description: input.description,
-          difficulty: input.difficulty,
-          movementPatterns: input.movementPatterns,
-          suitableFor: input.suitableFor ?? null,
-          contraindications: input.contraindications,
-          youtubeVideoId: input.youtubeVideoId,
-          youtubeTitle: input.youtubeTitle,
-          videoOrientation: input.videoOrientation,
-          isPublic: input.isPublic,
-          ownerUserId: input.ownerType === "user" ? userId : null,
-          ownerTeamId: input.ownerType === "team" ? input.teamId : null,
-          createdBy: userId,
-        })
-        .returning()
+      const newExercise = await db.transaction(async (tx) => {
+        const [created] = await tx
+          .insert(exercise)
+          .values({
+            name: input.name,
+            description: input.description,
+            difficulty: input.difficulty,
+            movementPatterns: input.movementPatterns,
+            suitableFor: input.suitableFor ?? null,
+            contraindications: input.contraindications,
+            youtubeVideoId: input.youtubeVideoId,
+            youtubeTitle: input.youtubeTitle,
+            videoOrientation: input.videoOrientation,
+            isPublic: input.isPublic,
+            ownerUserId: input.ownerType === "user" ? userId : null,
+            ownerTeamId: input.ownerType === "team" ? input.teamId : null,
+            createdBy: userId,
+          })
+          .returning()
 
-      await replaceJunctions(newExercise.id, input.muscles, input.equipment)
+        await replaceJunctions(tx, created.id, input.muscles, input.equipment)
+        return created
+      })
 
       const [enriched] = await attachDetails([newExercise])
       return enriched
@@ -382,31 +389,35 @@ export const exercisesRouter = router({
         throw new TRPCError({ code: "FORBIDDEN" })
       }
 
-      const [updated] = await db
-        .update(exercise)
-        .set({
-          ...(input.name !== undefined && { name: input.name }),
-          ...(input.description !== undefined && { description: input.description }),
-          ...(input.difficulty !== undefined && { difficulty: input.difficulty }),
-          ...(input.movementPatterns !== undefined && { movementPatterns: input.movementPatterns }),
-          ...(input.suitableFor !== undefined && { suitableFor: input.suitableFor }),
-          ...(input.contraindications !== undefined && { contraindications: input.contraindications }),
-          ...(input.youtubeVideoId !== undefined && { youtubeVideoId: input.youtubeVideoId }),
-          ...(input.youtubeTitle !== undefined && { youtubeTitle: input.youtubeTitle }),
-          ...(input.videoOrientation !== undefined && { videoOrientation: input.videoOrientation }),
-          ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
-          updatedAt: new Date(),
-        })
-        .where(eq(exercise.id, input.id))
-        .returning()
+      const updated = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .update(exercise)
+          .set({
+            ...(input.name !== undefined && { name: input.name }),
+            ...(input.description !== undefined && { description: input.description }),
+            ...(input.difficulty !== undefined && { difficulty: input.difficulty }),
+            ...(input.movementPatterns !== undefined && { movementPatterns: input.movementPatterns }),
+            ...(input.suitableFor !== undefined && { suitableFor: input.suitableFor }),
+            ...(input.contraindications !== undefined && { contraindications: input.contraindications }),
+            ...(input.youtubeVideoId !== undefined && { youtubeVideoId: input.youtubeVideoId }),
+            ...(input.youtubeTitle !== undefined && { youtubeTitle: input.youtubeTitle }),
+            ...(input.videoOrientation !== undefined && { videoOrientation: input.videoOrientation }),
+            ...(input.isPublic !== undefined && { isPublic: input.isPublic }),
+            updatedAt: new Date(),
+          })
+          .where(eq(exercise.id, input.id))
+          .returning()
 
-      if (input.muscles !== undefined || input.equipment !== undefined) {
-        await replaceJunctions(
-          updated.id,
-          input.muscles ?? [],
-          input.equipment ?? [],
-        )
-      }
+        if (input.muscles !== undefined || input.equipment !== undefined) {
+          await replaceJunctions(
+            tx,
+            row.id,
+            input.muscles ?? [],
+            input.equipment ?? [],
+          )
+        }
+        return row
+      })
 
       const [enriched] = await attachDetails([updated])
       return enriched
