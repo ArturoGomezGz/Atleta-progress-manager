@@ -19,6 +19,7 @@ import { TRPCError } from "@trpc/server"
 import { and, asc, count, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm"
 import { randomBytes } from "node:crypto"
 import { z } from "zod"
+import { assertShareRate } from "../lib/share-rate-limit"
 import { flattenContent, targetsForExercise } from "../services/routine-content"
 import { countAthletePlazas } from "../services/team-setup"
 import { featureProcedure, protectedProcedure, publicProcedure, router } from "../trpc"
@@ -400,7 +401,8 @@ export const shareRouter = router({
   /** Vista previa de la rutina antes de empezar. No crea nada. */
   preview: publicProcedure
     .input(z.object({ code: codeSchema }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      assertShareRate(ctx.ip)
       const share = await findActiveShare(input.code)
       const progress = await buildProgress({
         content: share.routineContent,
@@ -421,7 +423,8 @@ export const shareRouter = router({
   /** Empieza el entrenamiento. Devuelve el token que el navegador guarda. */
   start: publicProcedure
     .input(z.object({ code: codeSchema }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      assertShareRate(ctx.ip)
       const share = await findActiveShare(input.code)
 
       const [{ recent }] = await db
