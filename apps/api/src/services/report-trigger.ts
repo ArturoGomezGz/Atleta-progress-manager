@@ -33,6 +33,15 @@ export async function triggerExerciseReport(params: {
     history: [...history].reverse(),
   })
 
+  // Si llegó un RM más nuevo mientras se generaba el reporte, su propio disparo escribirá el reporte correcto
+  const [latest] = await db
+    .select({ id: athleteExerciseRm.id })
+    .from(athleteExerciseRm)
+    .where(and(eq(athleteExerciseRm.athleteId, athleteId), eq(athleteExerciseRm.exerciseId, exerciseId)))
+    .orderBy(desc(athleteExerciseRm.recordedAt))
+    .limit(1)
+  if (latest?.id !== history[0].id) return
+
   await db
     .insert(exerciseProgressReport)
     .values({ athleteId, exerciseId, teamId, content, reportSource: "ai", seenAt: null, generatedAt: new Date(), triggerRmId })
