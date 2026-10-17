@@ -10,16 +10,11 @@ function getGenai() {
 
 export type RmEntry = { rmLbs: string; recordedAt: Date | string; source: "auto" | "manual" }
 
-export async function generateExerciseProgressReport(input: {
-  exerciseName: string
-  current: RmEntry
-  history: RmEntry[]
-}): Promise<string> {
+export function buildProgressPrompt(input: { exerciseName: string; current: RmEntry; history: RmEntry[] }): string {
   const { exerciseName, current, history } = input
   const previousEntry = history.length >= 2 ? history[history.length - 2] : null
-  const pctChange = previousEntry
-    ? (((Number(current.rmLbs) - Number(previousEntry.rmLbs)) / Number(previousEntry.rmLbs)) * 100).toFixed(1)
-    : null
+  const prev = previousEntry ? Number(previousEntry.rmLbs) : 0
+  const pctChange = prev > 0 ? (((Number(current.rmLbs) - prev) / prev) * 100).toFixed(1) : null
 
   const historyLines = history
     .map((h) => {
@@ -35,6 +30,16 @@ ${historyLines}
 
 PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateString("es", { dateStyle: "long" })})`
 
+  return prompt
+}
+
+export async function generateExerciseProgressReport(input: {
+  exerciseName: string
+  current: RmEntry
+  history: RmEntry[]
+}): Promise<string> {
+  const prompt = buildProgressPrompt(input)
+
   const model = getGenai().getGenerativeModel({ model: "gemini-2.5-flash" })
   const result = await model.generateContent({
     contents: [{ role: "user", parts: [{ text: prompt }] }],
@@ -42,5 +47,7 @@ PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateStri
     generationConfig: { maxOutputTokens: 250, thinkingConfig: { thinkingBudget: 0 } } as any,
   })
 
-  return result.response.text().trim()
+  const text = result.response.text().trim()
+  if (text.length === 0) throw new Error("Gemini devolvió un reporte vacío")
+  return text
 }
