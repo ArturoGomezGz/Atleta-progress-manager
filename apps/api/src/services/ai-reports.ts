@@ -42,5 +42,7 @@ PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateStri
     generationConfig: { maxOutputTokens: 250, thinkingConfig: { thinkingBudget: 0 } } as any,
   })
 
-  return result.response.text().trim()
+  const text = result.response.text().trim()
+  if (!text) throw new Error("respuesta vacía de Gemini")
+  return text
 }
