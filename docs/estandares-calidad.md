@@ -47,30 +47,33 @@ crash *antes* de llegar al assert no es solo un bug de UX: es una ruta sin
 comportamiento garantizado (¿niega acceso? ¿revienta con 500?) en el único
 punto que separa equipos entre sí.
 
-**Hallazgo real** — `apps/api/src/routers/sessions.ts:458-491`:
-```ts
-const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
-await assertCoach(ctx.session.user.id, session!.teamId)
-```
-Si `session` no existe (fila inconsistente o borrada), `session!.teamId`
-lanza un `TypeError` sin control en vez de un `NOT_FOUND`/`FORBIDDEN` — y
-esto ocurre *antes* de la verificación de rol. `sessions.ts` ya está en
+**Hallazgo anterior (corregido, verificado 2026-10-19)** — en
+`apps/api/src/routers/sessions.ts` se usaba `session!.teamId` antes de
+`assertCoach`, lo que lanzaba un `TypeError` sin control en vez de un
+`NOT_FOUND`/`FORBIDDEN` si la fila no existía. Hoy cada procedimiento hace
+`if (!session) throw new TRPCError({ code: "NOT_FOUND" })` antes del assert y
+no quedan non-null assertions de ese tipo. Sin hallazgos conocidos
+actualmente en esta categoría. `sessions.ts` sigue en
 `scripts/quality-agents/config/critical-targets.json`: el agente debe tratar
 sus hallazgos como severidad alta por defecto, no como "uno más entre N
 console.log".
 
 ### 2. Errores crudos expuestos en la superficie de autenticación
 
-`apps/api/src/index.ts:47` — el handler de `/api/auth/*` responde
-`reply.status(500).send({ error: String(err) })` ante cualquier excepción no
-controlada. Es el endpoint de login/signup/reset-password: el primero que se
-prueba desde fuera. Un error de la librería o de Postgres se serializa tal
-cual hacia el cliente.
+**Hallazgo anterior (corregido, verificado 2026-10-19)** — el handler de
+`/api/auth/*` en `apps/api/src/index.ts` respondía
+`reply.status(500).send({ error: String(err) })`, serializando errores de la
+librería o de Postgres hacia el cliente en el endpoint de
+login/signup/reset-password. Hoy loguea el error con `req.log.error` y
+responde `{ error: "Internal Server Error", requestId }`. Sin hallazgos
+conocidos actualmente en esta categoría.
 
 ### 3. Cobertura de pruebas nula sobre autorización y dinero
 
-0 archivos `.test`/`.spec` en todo el monorepo. `unit-test-gap-finder` ya lo
-señala mecánicamente; el porqué priorizado aquí es:
+Actualizado 2026-10-19: ya no es "0 archivos `.test`/`.spec`" — existen
+pruebas en `apps/api/test/` (servicios de IA, `rate-limit`, `telegram`,
+`workout-text`), pero ninguna cubre todavía los puntos de abajo.
+`unit-test-gap-finder` lo señala mecánicamente; el porqué priorizado aquí es:
 - `assertCoach`/`assertMember` — toda la separación multi-tenant depende de
   dos funciones sin un solo test.
 - El flujo de reclamo de invitado (`share.claim`) — fusiona datos anónimos
