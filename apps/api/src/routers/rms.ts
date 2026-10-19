@@ -45,7 +45,7 @@ export const rmsRouter = router({
       teamId: z.string().uuid(),
       athleteId: z.string(),
       exerciseId: z.string().uuid(),
-      rmLbs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Peso inválido"),
+      rmLbs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Peso inválido").refine((v) => Number(v) > 0, "Peso inválido"),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)

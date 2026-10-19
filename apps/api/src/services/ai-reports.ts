@@ -10,6 +10,15 @@ function getGenai() {
 
 export type RmEntry = { rmLbs: string; recordedAt: Date | string; source: "auto" | "manual" }
 
+// Devuelve null (tratado como "primer registro") si no hay RM previo, si es <= 0 o si el resultado no es finito
+export function computePctChange(currentRmLbs: string, previousRmLbs: string | null | undefined): string | null {
+  if (previousRmLbs == null) return null
+  const previous = Number(previousRmLbs)
+  if (!(previous > 0)) return null
+  const pct = ((Number(currentRmLbs) - previous) / previous) * 100
+  return Number.isFinite(pct) ? pct.toFixed(1) : null
+}
+
 export async function generateExerciseProgressReport(input: {
   exerciseName: string
   current: RmEntry
@@ -17,9 +26,7 @@ export async function generateExerciseProgressReport(input: {
 }): Promise<string> {
   const { exerciseName, current, history } = input
   const previousEntry = history.length >= 2 ? history[history.length - 2] : null
-  const pctChange = previousEntry
-    ? (((Number(current.rmLbs) - Number(previousEntry.rmLbs)) / Number(previousEntry.rmLbs)) * 100).toFixed(1)
-    : null
+  const pctChange = computePctChange(current.rmLbs, previousEntry?.rmLbs)
 
   const historyLines = history
     .map((h) => {
