@@ -42,5 +42,18 @@ PR actual: ${current.rmLbs} lbs (${new Date(current.recordedAt).toLocaleDateStri
     generationConfig: { maxOutputTokens: 250, thinkingConfig: { thinkingBudget: 0 } } as any,
   })
 
-  return result.response.text().trim()
+  return validateReportText(result.response.text(), result.response.candidates?.[0]?.finishReason)
+}
+
+export const MIN_REPORT_LENGTH = 20
+
+// Evita que una respuesta vacía o truncada de Gemini sobrescriba el reporte anterior del atleta
+export function validateReportText(raw: string, finishReason?: string): string {
+  const text = raw.trim()
+  if (text.length < MIN_REPORT_LENGTH) {
+    throw new Error(
+      `Respuesta de Gemini vacía o demasiado corta (${text.length} caracteres, mínimo ${MIN_REPORT_LENGTH}; finishReason: ${finishReason ?? "desconocido"})`,
+    )
+  }
+  return text
 }
