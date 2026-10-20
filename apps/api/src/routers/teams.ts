@@ -1,4 +1,4 @@
-import { db } from "@atleta/db/client"
+import { db, type DB } from "@atleta/db/client"
 import { team, teamInvite, teamMember, user } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
 import { and, eq, gt, or } from "drizzle-orm"
@@ -182,8 +182,8 @@ export const teamsRouter = router({
 })
 
 // Helpers — shared with other routers via re-export
-export async function assertMember(userId: string, teamId: string) {
-  const [member] = await db
+export async function assertMember(userId: string, teamId: string, tx: Pick<DB, "select"> = db) {
+  const [member] = await tx
     .select()
     .from(teamMember)
     .where(and(eq(teamMember.userId, userId), eq(teamMember.teamId, teamId)))
@@ -192,15 +192,15 @@ export async function assertMember(userId: string, teamId: string) {
   return member
 }
 
-export async function assertCoach(userId: string, teamId: string) {
-  const member = await assertMember(userId, teamId)
+export async function assertCoach(userId: string, teamId: string, tx: Pick<DB, "select"> = db) {
+  const member = await assertMember(userId, teamId, tx)
   if (member.role !== "coach") throw new TRPCError({ code: "FORBIDDEN" })
   return member
 }
 
 // NOT_FOUND (no FORBIDDEN) para no revelar si el atleta existe en otro equipo
-export async function assertAthleteInTeam(athleteId: string, teamId: string) {
-  const [member] = await db
+export async function assertAthleteInTeam(athleteId: string, teamId: string, tx: Pick<DB, "select"> = db) {
+  const [member] = await tx
     .select()
     .from(teamMember)
     .where(and(eq(teamMember.userId, athleteId), eq(teamMember.teamId, teamId), or(eq(teamMember.role, "athlete"), eq(teamMember.selfAthlete, true))))
