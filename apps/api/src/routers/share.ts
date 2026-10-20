@@ -19,6 +19,7 @@ import { TRPCError } from "@trpc/server"
 import { and, asc, count, desc, eq, gte, inArray, isNull, sql } from "drizzle-orm"
 import { randomBytes } from "node:crypto"
 import { z } from "zod"
+import { createRateLimiter } from "../lib/rate-limit"
 import { flattenContent, targetsForExercise } from "../services/routine-content"
 import { countAthletePlazas } from "../services/team-setup"
 import { featureProcedure, protectedProcedure, publicProcedure, router } from "../trpc"
@@ -50,6 +51,11 @@ const tokenSchema = z.string().length(48).regex(/^[a-f0-9]+$/)
 // Tope de entrenamientos por enlace y hora: evita que un enlace público sea
 // usado para inflar la base de datos. Muy por encima de cualquier uso real.
 const MAX_STARTS_PER_HOUR = 300
+
+// Límite por IP compartido entre `preview` y `start`: sin él, ambos sirven de
+// oráculo para probar códigos a fuerza bruta (el tope de arriba solo cuenta
+// enlaces que ya existen).
+const previewLimiter = createRateLimiter({ max: 30, windowMs: 60_000 })
 
 // ─── Forma de los datos que consume el ejecutor de rutinas ────────────────────
 //
@@ -400,7 +406,9 @@ export const shareRouter = router({
   /** Vista previa de la rutina antes de empezar. No crea nada. */
   preview: publicProcedure
     .input(z.object({ code: codeSchema }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      const r = previewLimiter.hit(ctx.ip)
+      if (!r.ok) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Demasiados intentos. Espera un momento." })
       const share = await findActiveShare(input.code)
       const progress = await buildProgress({
         content: share.routineContent,
@@ -421,7 +429,9 @@ export const shareRouter = router({
   /** Empieza el entrenamiento. Devuelve el token que el navegador guarda. */
   start: publicProcedure
     .input(z.object({ code: codeSchema }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const r = previewLimiter.hit(ctx.ip)
+      if (!r.ok) throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Demasiados intentos. Espera un momento." })
       const share = await findActiveShare(input.code)
 
       const [{ recent }] = await db
