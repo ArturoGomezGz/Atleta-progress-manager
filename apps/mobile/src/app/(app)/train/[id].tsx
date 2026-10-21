@@ -145,6 +145,7 @@ export default function TrainScreen() {
   const restMs = useRemainingMs(rest?.endAt ?? null)
   const restSeconds = restMs == null ? null : Math.ceil(restMs / 1000)
   useSecondTicks(restSeconds, (s) => {
+    if (s === 5) feedback.duck()
     if (s >= 1 && s <= 3) feedback.tick()
     if (s === 0) feedback.timeUp()
   })
@@ -347,7 +348,7 @@ export default function TrainScreen() {
     countdown.start()
   }
 
-  autoActionsRef.current = { start: startTimer, complete: handleComplete }
+  autoActionsRef.current = { start: () => { setVideoPlaying(false); countdown.start({ immediate: true }) }, complete: handleComplete }
 
   // ─── Botones del pie ───
   const isLast = shownIdx >= 0 && shownIdx === flat.length - 1

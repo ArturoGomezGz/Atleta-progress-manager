@@ -791,7 +791,9 @@ function SetExecution({
   useEffect(() => {
     if (!autoContinue || !isTime || autoStarted.current) return
     autoStarted.current = true
-    setTimerPhase("prepare")
+    // Sin la cuenta "prepárate": el tiempo corre en el mismo instante en que termina el descanso
+    setTimerPhase("running")
+    vibrate(120)
   }, [autoContinue, isTime])
   useEffect(() => {
     if (!autoContinue || !timerFinished || autoCompleted.current) return

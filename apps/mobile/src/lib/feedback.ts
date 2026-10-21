@@ -11,6 +11,8 @@ const sources = {
   tick: require("../../assets/sounds/tick.wav"),
   go: require("../../assets/sounds/go.wav"),
   alarm: require("../../assets/sounds/rest_end.wav"),
+  // Silencio: solo sirve para tener el audio activo y que la música del atleta baje de volumen
+  silence: require("../../assets/sounds/silence.wav"),
 }
 type Sound = keyof typeof sources
 
@@ -24,7 +26,42 @@ export function prepareSounds() {
     tick: createAudioPlayer(sources.tick),
     go: createAudioPlayer(sources.go),
     alarm: createAudioPlayer(sources.alarm),
+    silence: createAudioPlayer(sources.silence),
   }
+}
+
+// ─── Bajar la música antes de los pitidos ──────────────────────────────────────
+
+const DUCK_MAX_MS = 7000
+const DUCK_RELEASE_MS = 1200
+let duckTimer: ReturnType<typeof setTimeout> | null = null
+
+function setInterruption(mode: "mixWithOthers" | "duckOthers") {
+  setAudioModeAsync({ playsInSilentMode: true, interruptionMode: mode, shouldPlayInBackground: false }).catch(() => {})
+}
+
+/** Baja el volumen de la música del atleta (la nuestra sigue sonando normal). */
+function duckMusic() {
+  if (!soundOn || !players) return
+  setInterruption("duckOthers")
+  players.silence.seekTo(0).then(() => players?.silence.play()).catch(() => {})
+  if (duckTimer) clearTimeout(duckTimer)
+  duckTimer = setTimeout(restoreMusic, DUCK_MAX_MS)
+}
+
+/** Devuelve la música a su volumen. */
+function restoreMusic() {
+  if (duckTimer) clearTimeout(duckTimer)
+  duckTimer = null
+  try { players?.silence.pause() } catch { /* ya detenido */ }
+  setInterruption("mixWithOthers")
+}
+
+/** Con un respiro tras el último pitido, para que no se corte encima de él. */
+function restoreMusicSoon() {
+  if (!duckTimer) return
+  clearTimeout(duckTimer)
+  duckTimer = setTimeout(restoreMusic, DUCK_RELEASE_MS)
 }
 
 function play(sound: Sound) {
@@ -63,14 +100,20 @@ export const feedback = {
     play("tick")
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {})
   },
+  /** Faltan 5 segundos: baja la música para que se distingan los pitidos que vienen. */
+  duck() {
+    duckMusic()
+  },
   /** Arranca el tiempo de una serie por tiempo. */
   go() {
     play("go")
+    restoreMusicSoon()
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy).catch(() => {})
   },
   /** Se acabó el tiempo (descanso o serie por tiempo). */
   timeUp() {
     play("alarm")
+    restoreMusicSoon()
     Vibration.vibrate([0, 300, 150, 300])
   },
   /** Se terminó la rutina: sonido de arranque y toque suave; la celebración añade el resto. */
