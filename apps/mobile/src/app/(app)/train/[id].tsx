@@ -233,6 +233,28 @@ export default function TrainScreen() {
     if (progress.status === "active") complete.mutate({ sessionId: progress.id })
   }, [finished, progress, complete, endRest])
 
+  // Con "Continuar automáticamente": el tiempo arranca solo al llegar a la serie (tras el descanso)
+  // y la serie se guarda sola al acabar, lo que dispara el siguiente descanso. Una vez por serie,
+  // para que "Cancelar" o "Reiniciar" no lo vuelvan a lanzar.
+  const autoActionsRef = useRef<{ start: () => void; complete: () => void }>({ start: () => {}, complete: () => {} })
+  const autoStartedFor = useRef<string | null>(null)
+  const autoDoneFor = useRef<string | null>(null)
+  const autoTargetId = shown?.target.id
+  const autoIsTime = !!shown && isTimeTarget(shown.target)
+  const autoPhase = countdown.phase
+  useEffect(() => {
+    if (!autoContinue || rest || reviewing || !autoIsTime || autoPhase !== "idle" || !autoTargetId) return
+    if (autoStartedFor.current === autoTargetId) return
+    autoStartedFor.current = autoTargetId
+    autoActionsRef.current.start()
+  }, [autoContinue, rest, reviewing, autoIsTime, autoPhase, autoTargetId])
+  useEffect(() => {
+    if (!autoContinue || rest || reviewing || !autoIsTime || autoPhase !== "finished" || !autoTargetId) return
+    if (autoDoneFor.current === autoTargetId) return
+    autoDoneFor.current = autoTargetId
+    autoActionsRef.current.complete()
+  }, [autoContinue, rest, reviewing, autoIsTime, autoPhase, autoTargetId])
+
   if (isLoading) {
     return <View style={styles.center}><ActivityIndicator color={colors.primary} size="large" /></View>
   }
@@ -324,6 +346,8 @@ export default function TrainScreen() {
     setVideoPlaying(false)
     countdown.start()
   }
+
+  autoActionsRef.current = { start: startTimer, complete: handleComplete }
 
   // ─── Botones del pie ───
   const isLast = shownIdx >= 0 && shownIdx === flat.length - 1
