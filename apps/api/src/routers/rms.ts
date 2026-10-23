@@ -45,7 +45,9 @@ export const rmsRouter = router({
       teamId: z.string().uuid(),
       athleteId: z.string(),
       exerciseId: z.string().uuid(),
-      rmLbs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Peso inválido"),
+      // numeric(6,2) en DB: máximo 9999.99; 0 rompe el % de cambio del reporte de progreso
+      rmLbs: z.string().regex(/^\d+(\.\d{1,2})?$/, "Peso inválido")
+        .refine((v) => Number(v) > 0 && Number(v) <= 9999.99, "Peso inválido"),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
