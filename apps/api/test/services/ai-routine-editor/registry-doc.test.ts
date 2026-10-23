@@ -83,6 +83,7 @@ describe("coherencia del registro", () => {
         assert.ok(skill, `${intent.id}: ${id} no existe`)
         assert.equal(skill!.flag, "ai_routine_tweaks")
         assert.ok(skill!.parameters, `${intent.id}: ${id} sin parameters`)
+        assert.ok(isRunnable(skill!) && skill!.inputSchema, `${intent.id}: ${id} no es ejecutable`)
       }
     }
   })
