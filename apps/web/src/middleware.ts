@@ -4,7 +4,9 @@ import { NextResponse, type NextRequest } from "next/server"
 
 // `/r` son las rutinas compartidas por enlace: se entrenan sin cuenta.
 // La cuenta se pide al terminar, en /reclamar, que sí exige sesión.
-const PUBLIC_PATHS = ["/login", "/register", "/verify-email", "/forgot-password", "/reset-password", "/r"]
+// `/oauth/consent` (conector MCP) llega con una query firmada que se perdería en un redirect
+// al login; la sesión la exige better-auth al consentir.
+const PUBLIC_PATHS = ["/login", "/register", "/verify-email", "/forgot-password", "/reset-password", "/r", "/oauth"]
 
 function isPublic(pathname: string) {
   return PUBLIC_PATHS.some((p) => pathname === p || pathname.startsWith(`${p}/`))
@@ -37,5 +39,6 @@ export const config = {
   // tiene pagarían una consulta de sesión extra por cada petición de datos.
   // Iconos y manifest de la app (`icon.svg`, `apple-icon.png`, `manifest.webmanifest`, `icons/`)
   // se piden sin sesión: el navegador los descarga también en el login.
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|manifest.webmanifest|icons/|api/auth|api/telegram|trpc).*)"],
+  // `.well-known` es el discovery OAuth del conector MCP (lo piden los clientes, sin sesión).
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|apple-icon.png|manifest.webmanifest|icons/|api/auth|api/telegram|trpc|\\.well-known).*)"],
 }

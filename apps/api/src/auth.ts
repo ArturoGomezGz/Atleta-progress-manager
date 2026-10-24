@@ -1,9 +1,12 @@
 import { db } from "@atleta/db/client"
 import * as schema from "@atleta/db/schema"
+import { oauthProvider } from "@better-auth/oauth-provider"
 import { betterAuth } from "better-auth"
 import { drizzleAdapter } from "better-auth/adapters/drizzle"
 import { Resend } from "resend"
 import { createRateLimiter } from "./lib/rate-limit"
+import { OAUTH_ACCESS_TOKEN_PREFIX, OAUTH_CLIENT_SECRET_PREFIX, OAUTH_REFRESH_TOKEN_PREFIX } from "./mcp/auth"
+import { OAUTH_SCOPES, mcpResourceUrl, webUrl } from "./mcp/config"
 import { mobileOrigin } from "./services/mobile-origin"
 import { notifyNewSignup, notifyPasswordReset, telegramEnabled } from "./services/telegram"
 
@@ -56,6 +59,11 @@ export const auth = betterAuth({
       session: schema.session,
       account: schema.account,
       verification: schema.verification,
+      // Servidor de autorización OAuth del conector MCP (@better-auth/oauth-provider)
+      oauthClient: schema.oauthClient,
+      oauthAccessToken: schema.oauthAccessToken,
+      oauthRefreshToken: schema.oauthRefreshToken,
+      oauthConsent: schema.oauthConsent,
     },
   }),
   emailAndPassword: {
@@ -108,7 +116,41 @@ export const auth = betterAuth({
         },
       }
     : {},
-  plugins: [mobileOrigin()],
+  plugins: [
+    mobileOrigin(),
+    // Servidor de autorización OAuth 2.1 para el conector MCP (Claude, ChatGPT…). Issuer:
+    // `${BETTER_AUTH_URL}/api/auth` (origen web). Consentimiento obligatorio, solo PKCE S256,
+    // registro dinámico público (los conectores no tienen client secret) y tokens opacos
+    // hasheados, para que revocar sea inmediato. Ver docs/mcp.md ("Autenticación").
+    oauthProvider({
+      loginPage: `${webUrl()}/login`,
+      consentPage: `${webUrl()}/oauth/consent`,
+      scopes: [...OAUTH_SCOPES],
+      clientRegistrationDefaultScopes: [...OAUTH_SCOPES],
+      allowDynamicClientRegistration: true,
+      allowUnauthenticatedClientRegistration: true,
+      // El login muestra qué app pide acceso antes de iniciar sesión (con la query firmada)
+      allowPublicClientPrelogin: true,
+      grantTypes: ["authorization_code", "refresh_token"],
+      validAudiences: [mcpResourceUrl(), `${mcpResourceUrl()}/`],
+      disableJwtPlugin: true,
+      accessTokenExpiresIn: 3600,
+      refreshTokenExpiresIn: 30 * 86400,
+      prefix: {
+        opaqueAccessToken: OAUTH_ACCESS_TOKEN_PREFIX,
+        refreshToken: OAUTH_REFRESH_TOKEN_PREFIX,
+        clientSecret: OAUTH_CLIENT_SECRET_PREFIX,
+      },
+      // Los usuarios no administran clientes OAuth (create/update/delete/rotate/list): solo
+      // existe el registro dinámico. Además el proxy de app.ts responde 404 a esas rutas.
+      clientPrivileges: ({ action }) => action === "read",
+      // Límites propios del plugin (better-auth solo los aplica en producción)
+      rateLimit: {
+        register: { window: 3600, max: 20 },
+        token: { window: 60, max: 30 },
+      },
+    }),
+  ],
   trustedOrigins: [
     process.env.WEB_URL ?? "http://localhost:3000",
     "atleta://",
