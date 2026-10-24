@@ -9,6 +9,7 @@ Lo que ve la persona usa estos nombres. Los nombres internos no cambian.
 | Mis rutinas | **Hoy** | Lo que me toca hacer (atleta, y coach con auto-entrenamiento). |
 | Rutinas (grupo del menú) | **Entrenamientos** | Una sola entrada del menú del coach, con dos pestañas: "Mis entrenamientos" y "Asignados". |
 | Mis ejercicios | **Ejercicios** | Catálogo de ejercicios. |
+| — (nuevo) | **Plan de entrenamiento** | Varias semanas (1–16) de entrenamientos por día. Al programarlo a atletas desde una fecha se crea un asignado por entrenamiento. Interno: `training_plan`, `plans.*`. Hoy solo existe por el conector MCP (flag `training_plans`). En textos visibles se dice "plan" o "plan de entrenamiento". |
 
 "Rutina" ya no se usa como sinónimo en textos visibles: se dice "entrenamiento".
 
