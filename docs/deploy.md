@@ -71,8 +71,15 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 | `SEED_DEMO_DATA` | `true` para sembrar cuentas de prueba + catálogo de ejercicios al arrancar (idempotente). `false` en producción real |
 | `GEMINI_API_KEY` | *(Opcional)* Reportes de progreso con IA |
 | `OPENAI_API_KEY` | *(Opcional)* Botón "Completar con IA" al crear ejercicios |
+| `API_PUBLIC_URL` | URL pública de **esta API** (ej. `https://api-production-85b2.up.railway.app`). Obligatoria para el conector MCP: con ella se arman la URL del conector (`<API>/mcp`) y el Protected Resource Metadata. Ver [mcp.md](./mcp.md) |
+| `MCP_RESOURCE_URL` | *(Opcional)* Identificador del recurso OAuth y URL del conector. Por defecto `${API_PUBLIC_URL}/mcp` |
+| `MCP_ALLOWED_ORIGINS` | *(Opcional)* Orígenes de navegador permitidos en `/mcp` además de `WEB_URL`, separados por comas (ej. `http://localhost:6274` para MCP Inspector). Cualquier otro `Origin` recibe 403 |
+| `FEATURE_MCP_USERS` | Allowlist del flag `mcp` (conector MCP y página "Conectar IA"). Ver [feature-flags.md](./feature-flags.md) |
+| `FEATURE_TRAINING_PLANS_USERS` | Allowlist del flag `training_plans` (planes multi-semana; requiere `scheduled_sessions`) |
 
 > **Videos:** ya no se usa Cloudflare Stream (se eliminaron `CF_ACCOUNT_ID` y `CF_STREAM_API_TOKEN`). Los ejercicios guardan el ID de un video de YouTube; no hay almacenamiento ni costo por video.
+
+> **Conector MCP (OAuth):** el servidor de autorización es better-auth, con issuer `${BETTER_AUTH_URL}/api/auth` (el **web**). Los clientes de IA leen su metadata en `<WEB>/.well-known/oauth-authorization-server/api/auth`, que el web reenvía a la API con el rewrite `/.well-known/:path*` de `apps/web/next.config.ts`; el endpoint `/mcp` y su metadata (`/.well-known/oauth-protected-resource/mcp`) se sirven directo en la API. No hay variables nuevas en Vercel.
 
 > **`BETTER_AUTH_URL` debe ser la URL del web, no de la API.** El web proxea `/api/auth/*` hacia la API. El estado OAuth se almacena en una cookie del dominio web — si el callback apunta directamente a la API (diferente dominio), la cookie no existe y Google devuelve `state_mismatch`. Apuntando al web, el callback pasa por el proxy y la cookie está disponible.
 
@@ -261,6 +268,8 @@ Para solicitar verificación: Google Cloud Console → OAuth consent screen → 
 - [ ] `WEB_URL` en Railway (API) — URL del web de producción
 - [ ] `NEXT_PUBLIC_API_URL` en Vercel (Web) — URL de la API en Railway
 - [ ] `ANTHROPIC_API_KEY` en Railway (API)
+- [ ] `API_PUBLIC_URL` en Railway (API) — URL pública de la API (conector MCP)
+- [ ] `FEATURE_MCP_USERS` en Railway (API) — si el conector MCP se habilita
 
 ### Resend
 - [ ] Dominio verificado en Resend
@@ -278,3 +287,4 @@ Para solicitar verificación: Google Cloud Console → OAuth consent screen → 
 - [ ] Email de verificación llega y el link redirige al dashboard
 - [ ] Login con Google funciona
 - [ ] Reset de contraseña funciona
+- [ ] Conector MCP: `<WEB>/.well-known/oauth-authorization-server/api/auth` y `<API>/.well-known/oauth-protected-resource/mcp` responden JSON (el `issuer` debe ser exactamente `<WEB>/api/auth`), `POST <API>/mcp` sin token responde 401 con `WWW-Authenticate`, y un cliente (MCP Inspector o Claude) completa el login y el consentimiento (checklist en [mcp.md](./mcp.md))

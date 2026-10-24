@@ -1,12 +1,14 @@
 // Construcción de la app Fastify (sin migraciones ni listen): la usan index.ts y los
 // tests de integración (listen en un puerto libre). Registra CORS, el proxy de
-// better-auth (/api/auth/*), el webhook de Telegram y tRPC.
+// better-auth (/api/auth/*), el webhook de Telegram, el conector MCP (/mcp y /.well-known/*,
+// ver mcp/http.ts) y tRPC.
 
 import cors from "@fastify/cors"
 import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify"
 import { fromNodeHeaders } from "better-auth/node"
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify"
 import { auth } from "./auth"
+import { corsOptionsFor, registerMcpHttp, type McpHttpOptions } from "./mcp/http"
 import { appRouter } from "./routers"
 import { accountActions } from "./services/account-approval"
 import { handleTelegramUpdate, isValidWebhookSecret } from "./services/telegram"
@@ -32,14 +34,17 @@ export function isDeniedAuthPath(url: string): boolean {
   return AUTH_DENYLIST.some((re) => re.test(path))
 }
 
-export async function buildApp(opts: { logger?: FastifyServerOptions["logger"] } = {}): Promise<FastifyInstance> {
+export async function buildApp(
+  opts: { logger?: FastifyServerOptions["logger"]; /** Dependencias del conector MCP (tests). */ mcp?: McpHttpOptions } = {},
+): Promise<FastifyInstance> {
   // maxParamLength: tRPC agrupa varios procedimientos en la ruta (/trpc/a,b,c…); con el
   // límite por defecto de Fastify (100) las páginas con muchas consultas reciben 404
   const app = Fastify({ logger: opts.logger ?? true, maxParamLength: 5000 })
 
+  // CORS por ruta: la web (WEB_URL, con cookies) en general; /mcp y /.well-known/* aceptan
+  // además MCP_ALLOWED_ORIGINS, sin cookies (ver corsOptionsFor en mcp/http.ts)
   await app.register(cors, {
-    origin: process.env.WEB_URL ?? "http://localhost:3000",
-    credentials: true,
+    delegator: (req, callback) => callback(null, corsOptionsFor(req.url)),
   })
 
   // OAuth (p. ej. /oauth2/token) usa application/x-www-form-urlencoded: se guarda el
@@ -83,6 +88,9 @@ export async function buildApp(opts: { logger?: FastifyServerOptions["logger"] }
     }
     return reply.status(200).send()
   })
+
+  // Conector MCP: POST /mcp, Protected Resource Metadata y metadata del servidor de autorización
+  await registerMcpHttp(app, opts.mcp)
 
   // tRPC routes
   await app.register(fastifyTRPCPlugin, {

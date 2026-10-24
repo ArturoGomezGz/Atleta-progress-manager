@@ -1,10 +1,13 @@
 "use client"
 
 import { authClient, signOut, useSession } from "@/lib/auth"
+import { useFeature } from "@/lib/features"
 import { useTheme } from "@/lib/theme-provider"
-import { BadgeCheckIcon, LogOutIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
+import { BadgeCheckIcon, ChevronRightIcon, LogOutIcon, MonitorIcon, MoonIcon, SunIcon } from "lucide-react"
+import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
+import { Group, Row, ghostButtonClass, inputClass } from "./settings-ui"
 
 const THEME_OPTIONS = [
   { value: "light" as const,  icon: SunIcon,     label: "Claro"   },
@@ -13,33 +16,6 @@ const THEME_OPTIONS = [
 ]
 
 const MIN_PASSWORD_LENGTH = 8
-
-const inputClass =
-  "w-full bg-background border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
-
-const ghostButtonClass =
-  "border border-border rounded-lg px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted/60 transition-colors cursor-pointer"
-
-function Group({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="space-y-2">
-      <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</h2>
-      <div className="border border-border rounded-xl bg-card divide-y divide-border">{children}</div>
-    </section>
-  )
-}
-
-function Row({ title, description, children }: { title: string; description?: string; children?: React.ReactNode }) {
-  return (
-    <div className="flex items-center gap-3 px-4 py-3.5">
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-foreground">{title}</p>
-        {description && <p className="text-sm text-muted-foreground">{description}</p>}
-      </div>
-      {children}
-    </div>
-  )
-}
 
 function PasswordField({
   id, label, value, onChange, autoComplete, show,
@@ -179,6 +155,7 @@ function initialsOf(name: string) {
 export default function SettingsPage() {
   const { data: session } = useSession()
   const router = useRouter()
+  const mcpEnabled = useFeature("mcp")
 
   async function handleSignOut() {
     await signOut()
@@ -223,6 +200,17 @@ export default function SettingsPage() {
       <Group title="Seguridad">
         <PasswordRow />
       </Group>
+
+      {mcpEnabled && (
+        <Group title="Integraciones">
+          <Row title="Conectar IA (MCP)" description="Usa Atleta desde Claude, ChatGPT y otros asistentes de IA.">
+            <Link href="/settings/conectar-ia" className={`${ghostButtonClass} flex items-center gap-1`}>
+              Configurar
+              <ChevronRightIcon className="w-4 h-4" />
+            </Link>
+          </Row>
+        </Group>
+      )}
 
       <Group title="Sesión">
         <Row title="Cerrar sesión" description="Salir en este dispositivo.">
