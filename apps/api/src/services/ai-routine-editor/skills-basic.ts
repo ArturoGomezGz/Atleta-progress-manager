@@ -78,8 +78,8 @@ export const proposeNewExerciseSkill = defineSkill({
   id: "propose_new_exercise",
   name: "Proponer ejercicio nuevo",
   description: `Crea un ejercicio nuevo en el catálogo del equipo cuando ninguna búsqueda devuelve un equivalente razonable. Máximo ${MAX_NEW_EXERCISES} por tweak.`,
-  category: "catalog", execution: "deterministic", scope: "persist", status: "limited", risk: "medium", mcp: "pending", flag: FLAG, reviewedAt: REVIEWED,
-  notes: "Única escritura del flujo: el ejercicio queda en el catálogo privado del equipo aunque se rechace la propuesta.",
+  category: "catalog", execution: "deterministic", scope: "persist", status: "limited", risk: "medium", mcp: "yes", flag: FLAG, reviewedAt: "2026-10-24",
+  notes: "Única escritura del flujo: el ejercicio queda en el catálogo privado del equipo aunque se rechace la propuesta. En MCP es `create_exercise` (scope atleta:write, 10 por hora).",
   inputSchema: proposeInput,
   parameters: params({
     name:              { type: "string", description: "Nombre en español" },

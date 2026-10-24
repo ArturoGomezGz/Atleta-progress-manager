@@ -1,7 +1,7 @@
 import { db } from "@atleta/db/client"
 import { exercise, routine, type RoutineContent } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, eq, inArray } from "drizzle-orm"
+import { and, eq, inArray, isNull } from "drizzle-orm"
 import { z } from "zod"
 import { aiRoutineInputSchema, generateRoutineWithAI } from "../services/ai-routines"
 import { createTweakDeps } from "../services/ai-routine-editor/deps-real"
@@ -11,7 +11,9 @@ import { routineContentSchema } from "../services/routine-content-schema"
 import { exerciseZones, zoneProfiles } from "../services/body-zones"
 import { assertExercisesVisible } from "../services/exercise-visibility"
 import { canUseAiRoutines } from "../services/feature-access"
+import { assertRoutineLimits } from "../services/routine-content-input"
 import { assertFeature, hasFeature } from "../lib/features"
+import { ErrorDetails } from "../mcp/errors"
 import { createRateLimiter } from "../lib/rate-limit"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
@@ -62,6 +64,31 @@ async function assertNewExercisesVisible(
   await assertExercisesVisible(added, ctx)
 }
 
+// Concurrencia optimista: bloquea la fila (SELECT … FOR UPDATE) dentro de la transacción y, si
+// el cliente indicó la versión que leyó (`expectedUpdatedAt`), exige que siga siendo la actual.
+// Si no coincide falla con CONFLICT y devuelve el updatedAt vigente en `details` (herramientas MCP).
+type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
+
+const expectedUpdatedAtSchema = z.string().datetime({ offset: true }).optional()
+
+async function lockRoutine(tx: Tx, id: string, expectedUpdatedAt: string | undefined) {
+  const [r] = await tx.select().from(routine).where(eq(routine.id, id)).limit(1).for("update")
+  if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+  return {
+    routine: r,
+    // Se comprueba después de los permisos para no revelar nada a quien no puede editarla
+    assertVersion() {
+      if (expectedUpdatedAt !== undefined && r.updatedAt.getTime() !== Date.parse(expectedUpdatedAt)) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "La rutina cambió desde que la leíste.",
+          cause: new ErrorDetails({ updatedAt: r.updatedAt.toISOString() }),
+        })
+      }
+    },
+  }
+}
+
 // Las rutinas de evaluación solo se pueden ver/tocar con el flag `evaluation`
 function assertRoutineFeature(user: { id: string; email: string }, category: "evaluation" | "training") {
   if (category === "evaluation") assertFeature(user, "evaluation")
@@ -75,13 +102,20 @@ export const routinesRouter = router({
       teamId:   z.string().uuid(),
       name:     z.string().min(1),
       category: z.enum(["evaluation", "training"]).default("training"),
+      // Opcional (herramientas MCP): la rutina nace con contenido en vez de vacía
+      content:  routineContentSchema.optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
       if (input.category === "evaluation") assertFeature(ctx.session.user, "evaluation")
+      const content = input.content ?? { v: 1 as const, items: [] }
+      if (input.content) {
+        assertRoutineLimits(content)
+        await assertNewExercisesVisible(null, content, { userId: ctx.session.user.id, teamId: input.teamId })
+      }
       const [r] = await db
         .insert(routine)
-        .values({ ...input, createdBy: ctx.session.user.id, content: { v: 1, items: [] } })
+        .values({ teamId: input.teamId, name: input.name, category: input.category, createdBy: ctx.session.user.id, content })
         .returning()
       return r
     }),
@@ -111,10 +145,13 @@ export const routinesRouter = router({
     .input(z.object({
       teamId:   z.string().uuid(),
       category: z.enum(["evaluation", "training"]).optional(),
+      // Las archivadas quedan fuera salvo que se pidan
+      includeArchived: z.boolean().optional(),
     }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
       const conditions = [eq(routine.teamId, input.teamId)]
+      if (!input.includeArchived) conditions.push(isNull(routine.archivedAt))
       // Sin el flag las rutinas de evaluación quedan ocultas (no se borran)
       if (!hasFeature(ctx.session.user, "evaluation")) {
         if (input.category === "evaluation") return []
@@ -154,24 +191,47 @@ export const routinesRouter = router({
       return { ...r, exerciseNames: nameById, exerciseInfo }
     }),
 
+  // `expectedUpdatedAt` (opcional): concurrencia optimista, CONFLICT si la rutina cambió desde esa
+  // versión. `name` (opcional) renombra en la misma escritura (update_routine del MCP).
   updateContent: protectedProcedure
     .input(z.object({
       id:      z.string().uuid(),
       content: routineContentSchema,
+      name:    z.string().min(1).optional(),
+      expectedUpdatedAt: expectedUpdatedAtSchema,
     }))
+    .mutation(async ({ ctx, input }) => {
+      return db.transaction(async (tx) => {
+        const { routine: r, assertVersion } = await lockRoutine(tx, input.id, input.expectedUpdatedAt)
+        await assertCoach(ctx.session.user.id, r.teamId)
+        assertRoutineFeature(ctx.session.user, r.category)
+        assertVersion()
+        await assertNewExercisesVisible(r.content, input.content, { userId: ctx.session.user.id, teamId: r.teamId })
+
+        const [updated] = await tx
+          .update(routine)
+          .set({ content: input.content, ...(input.name !== undefined && { name: input.name }), updatedAt: new Date() })
+          .where(eq(routine.id, input.id))
+          .returning()
+        return updated!
+      })
+    }),
+
+  // Archivar (sale de routines.list y no se puede asignar) o restaurar (`archived: false`)
+  archive: protectedProcedure
+    .input(z.object({ id: z.string().uuid(), archived: z.boolean().default(true) }))
     .mutation(async ({ ctx, input }) => {
       const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
       assertRoutineFeature(ctx.session.user, r.category)
-      await assertNewExercisesVisible(r.content, input.content, { userId: ctx.session.user.id, teamId: r.teamId })
-
+      const now = new Date()
       const [updated] = await db
         .update(routine)
-        .set({ content: input.content, updatedAt: new Date() })
+        .set({ archivedAt: input.archived ? (r.archivedAt ?? now) : null, updatedAt: now })
         .where(eq(routine.id, input.id))
         .returning()
-      return updated
+      return updated!
     }),
 
   aiAvailable: protectedProcedure
@@ -213,18 +273,20 @@ export const routinesRouter = router({
     }),
 
   rename: protectedProcedure
-    .input(z.object({ id: z.string().uuid(), name: z.string().min(1) }))
+    .input(z.object({ id: z.string().uuid(), name: z.string().min(1), expectedUpdatedAt: expectedUpdatedAtSchema }))
     .mutation(async ({ ctx, input }) => {
-      const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
-      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
-      await assertCoach(ctx.session.user.id, r.teamId)
-      assertRoutineFeature(ctx.session.user, r.category)
-      const [updated] = await db
-        .update(routine)
-        .set({ name: input.name, updatedAt: new Date() })
-        .where(eq(routine.id, input.id))
-        .returning()
-      return updated
+      return db.transaction(async (tx) => {
+        const { routine: r, assertVersion } = await lockRoutine(tx, input.id, input.expectedUpdatedAt)
+        await assertCoach(ctx.session.user.id, r.teamId)
+        assertRoutineFeature(ctx.session.user, r.category)
+        assertVersion()
+        const [updated] = await tx
+          .update(routine)
+          .set({ name: input.name, updatedAt: new Date() })
+          .where(eq(routine.id, input.id))
+          .returning()
+        return updated!
+      })
     }),
 
   delete: protectedProcedure

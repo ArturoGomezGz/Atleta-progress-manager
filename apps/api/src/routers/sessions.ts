@@ -266,11 +266,19 @@ export const sessionsRouter = router({
       }
     }),
 
+  // Filtros opcionales (los usa la herramienta MCP list_assignments; la web solo manda category/athleteId):
+  // `from`/`to` sobre la fecha de la sesión (programada o, sin fecha, el día en que se creó, en UTC),
+  // `status` de la sesión, `planAssignmentId` y `limit` (sin límite por defecto).
   list: protectedProcedure
     .input(z.object({
       teamId:    z.string().uuid(),
       category:  z.enum(["evaluation", "training"]).optional(),
       athleteId: z.string().optional(),
+      from:      z.string().date().optional(),
+      to:        z.string().date().optional(),
+      status:    z.array(z.enum(["scheduled", "active", "completed", "cancelled"])).min(1).optional(),
+      planAssignmentId: z.string().uuid().optional(),
+      limit:     z.number().int().min(1).max(500).optional(),
     }))
     .query(async ({ ctx, input }) => {
       const member = await assertMember(ctx.session.user.id, input.teamId)
@@ -281,6 +289,11 @@ export const sessionsRouter = router({
         conditions.push(eq(routine.category, "training"))
       }
       if (input.category) conditions.push(eq(routine.category, input.category))
+      const sessionDate = sql`coalesce(${trainingSession.scheduledDate}, (${trainingSession.startedAt} at time zone 'UTC')::date)`
+      if (input.from) conditions.push(sql`${sessionDate} >= ${input.from}::date`)
+      if (input.to) conditions.push(sql`${sessionDate} <= ${input.to}::date`)
+      if (input.status) conditions.push(inArray(trainingSession.status, input.status))
+      if (input.planAssignmentId) conditions.push(eq(trainingSession.planAssignmentId, input.planAssignmentId))
 
       const columns = {
         id: trainingSession.id,
@@ -289,27 +302,19 @@ export const sessionsRouter = router({
         scheduledDate: trainingSession.scheduledDate,
         routineId: trainingSession.routineId,
         routineName: routine.name,
+        planAssignmentId: trainingSession.planAssignmentId,
         content: trainingSession.content,
       }
 
       // Filtrar por atleta: la sesión solo aparece si ese atleta está asignado a ella
-      if (input.athleteId) {
-        conditions.push(eq(athleteSession.athleteId, input.athleteId))
-        return withAssignedAthletes(member.role === "coach", await withZoneProfiles(await db
-          .select(columns)
-          .from(trainingSession)
-          .innerJoin(routine, eq(trainingSession.routineId, routine.id))
-          .innerJoin(athleteSession, eq(athleteSession.sessionId, trainingSession.id))
-          .where(and(...conditions))
-          .orderBy(desc(trainingSession.startedAt))))
-      }
-
-      return withAssignedAthletes(member.role === "coach", await withZoneProfiles(await db
-        .select(columns)
-        .from(trainingSession)
-        .innerJoin(routine, eq(trainingSession.routineId, routine.id))
+      const base = db.select(columns).from(trainingSession).innerJoin(routine, eq(trainingSession.routineId, routine.id))
+      if (input.athleteId) conditions.push(eq(athleteSession.athleteId, input.athleteId))
+      const filtered = (input.athleteId ? base.innerJoin(athleteSession, eq(athleteSession.sessionId, trainingSession.id)) : base)
         .where(and(...conditions))
-        .orderBy(desc(trainingSession.startedAt))))
+        // Las de un mismo createMany comparten startedAt: desempata la fecha programada
+        .orderBy(desc(trainingSession.startedAt), sql`${trainingSession.scheduledDate} desc nulls first`)
+      const rows = await (input.limit ? filtered.limit(input.limit) : filtered)
+      return withAssignedAthletes(member.role === "coach", await withZoneProfiles(rows))
     }),
 
   create: protectedProcedure

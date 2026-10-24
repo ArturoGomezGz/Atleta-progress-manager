@@ -1,5 +1,7 @@
 // Runtime de un tweak: el borrador que se va editando, las operaciones aplicadas (para el guardián de
-// alcance) y el acceso al catálogo. Implementa SkillRuntime sin depender de OpenAI.
+// alcance) y el acceso al catálogo. Implementa SkillRuntime sin depender de OpenAI. También lo usa el
+// adaptador MCP (adapters/mcp.ts), donde el coach dirige: admite % RM y kg, y los ids de ejercicio
+// del input ya validados como visibles llegan precargados en `knownExerciseIds`.
 
 import type { RoutineContent } from "@atleta/db/schema"
 import type { Ctx } from "../ai-routines"
@@ -23,8 +25,12 @@ export function createRuntime(args: {
   teamId: string
   deps: Pick<TweakDeps, "searchExercises" | "proposeNewExercise">
   allowFixedKg: boolean
+  /** Admite loadType percent_rm. Default false: el tweak no recibe RM (`context`). */
+  allowPercentRm?: boolean
+  /** exerciseId que ya se pueden usar en add/replace sin pasar por search_exercises. */
+  knownExerciseIds?: Iterable<string>
 }): TweakRuntime {
-  const ctx: Ctx = { userId: args.userId, teamId: args.teamId, allowedEquipment: null, knownIds: new Set(), created: [], avoid: args.avoid }
+  const ctx: Ctx = { userId: args.userId, teamId: args.teamId, allowedEquipment: null, knownIds: new Set(args.knownExerciseIds ?? []), created: [], avoid: args.avoid }
   let working = args.original
   const applied: AppliedOp[] = []
 
@@ -32,7 +38,7 @@ export function createRuntime(args: {
     knownExerciseIds: ctx.knownIds,
     exerciseNames: args.names,
     allowFixedKg: args.allowFixedKg,
-    allowPercentRm: false, // sin RM registrados no se admite percent_rm (el tweak no recibe `context`)
+    allowPercentRm: args.allowPercentRm ?? false, // en el tweak no hay RM registrados (no recibe `context`)
   })
 
   return {
