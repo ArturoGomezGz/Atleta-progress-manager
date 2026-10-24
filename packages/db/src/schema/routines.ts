@@ -64,4 +64,6 @@ export const routine = pgTable("routine", {
   content:   jsonb("content").$type<RoutineContent>().notNull().default({ v: 1, items: [] } as RoutineContent),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
+  // Archivada: sale de las listas por defecto y no se puede asignar; se puede restaurar
+  archivedAt: timestamp("archived_at"),
 })

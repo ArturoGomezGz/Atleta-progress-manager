@@ -18,6 +18,7 @@ import OpenAI from "openai"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach } from "./teams"
 import { resolveYoutube } from "../services/youtube"
+import { canViewExercise, memberTeamIds } from "../services/exercise-visibility"
 
 // Se crea bajo demanda: sin OPENAI_API_KEY la API arranca igual y solo falla el autocompletado
 let openaiClient: OpenAI | null = null
@@ -170,14 +171,11 @@ export const exercisesRouter = router({
       const [ex] = await db.select().from(exercise).where(eq(exercise.id, input.id)).limit(1)
       if (!ex) throw new TRPCError({ code: "NOT_FOUND" })
 
-      // Visibility check
-      const canView =
-        ex.isPublic ||
-        ex.ownerUserId === null ||
-        ex.ownerUserId === userId ||
-        ex.ownerTeamId !== null
-
-      if (!canView) throw new TRPCError({ code: "FORBIDDEN" })
+      // Visible si es del sistema, público, propio o de uno de los equipos del usuario
+      // (antes bastaba con que tuviera equipo dueño: cualquiera veía los privados de otros equipos)
+      if (!canViewExercise(ex, { userId, teamIds: await memberTeamIds(userId) })) {
+        throw new TRPCError({ code: "FORBIDDEN" })
+      }
 
       const [enriched] = await attachDetails([ex])
       return enriched

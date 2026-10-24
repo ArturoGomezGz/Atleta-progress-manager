@@ -1,7 +1,7 @@
 import { db } from "@atleta/db/client"
 import { equipment, exercise, type RoutineContent, type RoutineExerciseContent, type RoutineSet } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, arrayContains, eq, ilike, inArray, isNull, or } from "drizzle-orm"
+import { and, arrayContains, eq, ilike, inArray } from "drizzle-orm"
 import type { FastifyBaseLogger } from "fastify"
 import type OpenAI from "openai"
 import { z } from "zod"
@@ -9,6 +9,7 @@ import { attachDetails, getOpenAI } from "../routers/exercises"
 import { bodyZones, levels, MAX_NEW_EXERCISES, patterns } from "./ai-routine-editor/catalog-constants"
 import { matchesAvoid } from "./ai-routine-editor/avoid"
 import { AI_ROUTINE_SYSTEM_PROMPT } from "./ai-routines-prompt"
+import { exerciseVisibilityWhere } from "./exercise-visibility"
 
 export const AI_MODEL = "gpt-4o-mini"
 const MAX_TURNS = 16
@@ -180,16 +181,9 @@ export type Ctx = {
   avoid?: string[]
 }
 
+// La IA solo ve el catálogo del equipo de la rutina (no los demás equipos del usuario)
 function visibleTo(ctx: Ctx) {
-  return and(
-    isNull(exercise.deletedAt),
-    or(
-      and(isNull(exercise.ownerUserId), isNull(exercise.ownerTeamId)),
-      eq(exercise.isPublic, true),
-      eq(exercise.ownerTeamId, ctx.teamId),
-      eq(exercise.ownerUserId, ctx.userId),
-    ),
-  )
+  return exerciseVisibilityWhere({ userId: ctx.userId, teamIds: [ctx.teamId] })
 }
 
 const searchArgsSchema = z.object({

@@ -9,6 +9,7 @@ import { tweakInputSchema } from "../services/ai-routine-editor/input"
 import { tweakRoutineWithAI } from "../services/ai-routine-editor/tweak"
 import { routineContentSchema } from "../services/routine-content-schema"
 import { exerciseZones, zoneProfiles } from "../services/body-zones"
+import { assertExercisesVisible } from "../services/exercise-visibility"
 import { canUseAiRoutines } from "../services/feature-access"
 import { assertFeature, hasFeature } from "../lib/features"
 import { createRateLimiter } from "../lib/rate-limit"
@@ -45,6 +46,20 @@ function cloneRoutineContent(content: RoutineContent): RoutineContent {
           },
     ),
   }
+}
+
+// Cada ejercicio que el contenido nuevo agrega (no estaba en el anterior) debe ser visible
+// para quien edita; así no se pueden referenciar ejercicios privados de otro equipo (y
+// filtrar su información por routines.get). Los que ya estaban se respetan aunque hoy no
+// sean visibles (p. ej. un ejercicio borrado después). `previous` null = rutina nueva.
+async function assertNewExercisesVisible(
+  previous: RoutineContent | null,
+  next: RoutineContent,
+  ctx: { userId: string; teamId: string },
+) {
+  const before = new Set(previous ? extractExerciseIds(previous) : [])
+  const added = extractExerciseIds(next).filter((id) => !before.has(id))
+  await assertExercisesVisible(added, ctx)
 }
 
 // Las rutinas de evaluación solo se pueden ver/tocar con el flag `evaluation`
@@ -149,6 +164,7 @@ export const routinesRouter = router({
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
       assertRoutineFeature(ctx.session.user, r.category)
+      await assertNewExercisesVisible(r.content, input.content, { userId: ctx.session.user.id, teamId: r.teamId })
 
       const [updated] = await db
         .update(routine)

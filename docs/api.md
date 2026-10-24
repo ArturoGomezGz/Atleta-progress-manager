@@ -68,6 +68,7 @@ La autorización de rol (coach/atleta) se verifica dentro de cada procedimiento.
 | `sessions.myPending` | query | Sesiones pendientes del atleta en todos sus equipos (activas y de entrenamiento programadas), sin fecha primero. La usa la app Android. | Usuario autenticado |
 | `sessions.list` | query | Sesiones del equipo. Filtros opcionales: `category` y `athleteId` (solo sesiones donde ese atleta está asignado). | Miembro del equipo |
 | `sessions.create` | mutation | Iniciar sesión: hace snapshot de la rutina y enrolla atletas. | Coach del equipo |
+| `sessions.createMany` | mutation | Igual que `create` para varias fechas a la vez (una sesión por fecha, máx. 60 fechas y 50 atletas, en una transacción). Solo las fechas futuras exigen `scheduled_sessions`. | Coach del equipo |
 | `sessions.get` | query | Sesión con ejercicios (snapshot) y atletas. | Miembro del equipo |
 | `sessions.athleteSets` | query | Todas las series de un atleta en la sesión. | Miembro del equipo |
 | `sessions.recordSet` | mutation | Registrar una serie para un atleta. | Coach del equipo |
