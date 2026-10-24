@@ -1,10 +1,11 @@
-// Herramientas MCP de planes de entrenamiento multi-semana (flag `training_plans`) y el
-// prompt `planificar_mesociclo`. Cada herramienta llama al router plans.* con el caller
-// del usuario (mismas reglas de rol y flag que la web). Ver docs/mcp.md, "Planes".
+// Herramientas MCP de planes de entrenamiento multi-semana (flag `training_plans`), el
+// prompt `planificar_mesociclo`, la plantilla de resource atleta://planes/{planId} y el tipo
+// "plan:<uuid>" de search/fetch. Todo llama al router plans.* con el caller del usuario
+// (mismas reglas de rol y flag que la web). Ver docs/mcp.md, "Planes".
 
-import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { TRPCError } from "@trpc/server"
+import { type McpServer, ResourceTemplate } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { z } from "zod"
+import { normalizeText } from "../../services/ai-routine-editor/avoid"
 import {
   MAX_PLAN_WEEKS,
   MAX_PLAN_WORKOUTS,
@@ -16,9 +17,11 @@ import {
   planUpdateShape,
 } from "../../services/training-plan-input"
 import { resolveTeamId } from "../context"
-import { ErrorDetails, McpToolError } from "../errors"
+import { McpToolError } from "../errors"
+import { toResourceError } from "../resources"
 import { isToolAvailable, registerAtletaTool } from "../tool"
 import type { McpToolContext } from "../types"
+import { addSearchFetchProvider, webUrl, type FetchResult, type SearchResult } from "./search-fetch"
 
 const FEATURE = "training_plans" as const
 const teamIdInput = z.string().uuid().optional().describe("Equipo; si se omite, el único donde eres coach")
@@ -26,15 +29,6 @@ const teamIdInput = z.string().uuid().optional().describe("Equipo; si se omite, 
 const CALENDAR_RULES =
   "Calendario: weekday ISO (1 = lunes … 7 = domingo); la semana 1 es la semana lunes–domingo que contiene startDate; " +
   "fecha = lunes de esa semana + (semana − 1)·7 + (weekday − 1). Los huecos antes de startDate, antes de hoy (UTC) o sin rutina se omiten y se reportan en skipped."
-
-/** CONFLICT de plans.update con el mensaje propio del plan (el genérico menciona get_routine). */
-function planConflict(err: unknown): never {
-  if (err instanceof TRPCError && err.code === "CONFLICT") {
-    const details = err.cause instanceof ErrorDetails ? err.cause.details : undefined
-    throw new McpToolError("CONFLICT", `${err.message} Vuelve a leerlo con get_plan y reintenta con su updatedAt.`, details)
-  }
-  throw err
-}
 
 export function registerPlanTools(server: McpServer, ctx: McpToolContext): void {
   registerAtletaTool(server, ctx, {
@@ -95,7 +89,7 @@ export function registerPlanTools(server: McpServer, ctx: McpToolContext): void 
     feature: FEATURE,
     annotations: { destructiveHint: true },
     input: planUpdateShape,
-    run: (args, c) => c.caller.plans.update(args).catch(planConflict),
+    run: (args, c) => c.caller.plans.update(args),
   })
 
   registerAtletaTool(server, ctx, {
@@ -153,6 +147,95 @@ export function registerPlanTools(server: McpServer, ctx: McpToolContext): void 
   })
 
   registerPlanPrompt(server, ctx)
+  registerPlanDocuments(server, ctx)
+}
+
+// ─── search / fetch y resource atleta://planes/{planId} ──────────────────────
+
+const MAX_TEAMS_SEARCHED = 10
+const WEEKDAYS = ["lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo"]
+const STATUS_LABEL: Record<string, string> = { draft: "borrador", active: "activo", archived: "archivado", cancelled: "cancelada" }
+
+type PlanView = Awaited<ReturnType<McpToolContext["caller"]["plans"]["get"]>>
+
+const planUrl = (teamId: string) => `${webUrl()}/teams/${teamId}`
+
+/** Planes no archivados de los equipos del usuario cuyo nombre u objetivo contiene la consulta. */
+async function searchPlans(query: string, ctx: McpToolContext): Promise<SearchResult[]> {
+  const needle = normalizeText(query)
+  const teams = (await ctx.caller.teams.list()).slice(0, MAX_TEAMS_SEARCHED)
+  const perTeam = await Promise.all(
+    teams.map(async (t) => {
+      const { plans } = await ctx.caller.plans.list({ teamId: t.team.id, includeArchived: false })
+      return plans
+        .filter((p) => !needle || normalizeText(`${p.name} ${p.goal ?? ""}`).includes(needle))
+        .map((p) => ({
+          id: `plan:${p.planId}`,
+          title: teams.length > 1 ? `${p.name} — ${t.team.name}` : p.name,
+          url: planUrl(t.team.id),
+          updatedAt: Date.parse(p.updatedAt),
+        }))
+    }),
+  )
+  return perTeam.flat().sort((a, b) => b.updatedAt - a.updatedAt).map(({ updatedAt: _u, ...r }) => r)
+}
+
+/** Texto legible de un plan (semanas, días, rutinas y asignaciones) para fetch. */
+function planText(p: PlanView): string {
+  const lines = [`# ${p.name}`, ""]
+  if (p.goal) lines.push(`Objetivo: ${p.goal}`)
+  lines.push(`${p.weeks} semana${p.weeks === 1 ? "" : "s"} · estado: ${STATUS_LABEL[p.status] ?? p.status}`)
+  if (p.description) lines.push("", p.description)
+  for (const w of p.schedule) {
+    const title = [w.name, w.focus].filter(Boolean).join(" — ")
+    lines.push("", `## Semana ${w.week}${title ? `: ${title}` : ""}`)
+    if (w.notes) lines.push(w.notes)
+    if (w.days.length === 0) lines.push("(sin entrenamientos)")
+    for (const d of w.days) {
+      const workouts = d.workouts.map((x) => `${x.routineName ?? "(rutina eliminada)"}${x.notes ? ` (${x.notes})` : ""}`)
+      lines.push(`- ${WEEKDAYS[d.weekday - 1] ?? d.weekday}: ${workouts.join("; ")}`)
+    }
+  }
+  if (p.assignments.length > 0) {
+    lines.push("", "## Asignaciones")
+    for (const a of p.assignments) {
+      const athletes = a.athletes.map((x) => x.name).join(", ") || "—"
+      lines.push(`- Desde ${a.startDate} (${STATUS_LABEL[a.status] ?? a.status}): ${athletes}; ${a.sessions.completed}/${a.sessions.total} sesiones completadas`)
+    }
+  }
+  return lines.join("\n")
+}
+
+async function fetchPlan(id: string, ctx: McpToolContext): Promise<FetchResult> {
+  const p = await ctx.caller.plans.get({ planId: id })
+  return {
+    id: `plan:${p.planId}`,
+    title: p.name,
+    text: planText(p),
+    url: planUrl(p.teamId),
+    metadata: { type: "plan", teamId: p.teamId, status: p.status, weeks: p.weeks, updatedAt: p.updatedAt },
+  }
+}
+
+function registerPlanDocuments(server: McpServer, ctx: McpToolContext) {
+  if (!isToolAvailable(ctx, { scope: "atleta:read", feature: FEATURE })) return
+
+  addSearchFetchProvider(server, { kind: "plan", search: searchPlans, fetch: fetchPlan })
+
+  server.registerResource(
+    "plan",
+    new ResourceTemplate("atleta://planes/{planId}", { list: undefined }),
+    { title: "Plan de entrenamiento", description: "Un plan por id, con el mismo JSON que get_plan.", mimeType: "application/json" },
+    async (uri, variables) => {
+      const planId = String(Array.isArray(variables.planId) ? variables.planId[0] : variables.planId)
+      try {
+        const plan = await ctx.caller.plans.get({ planId })
+        return { contents: [{ uri: uri.href, mimeType: "application/json", text: JSON.stringify(plan) }] }
+      } catch (err) {
+        throw toResourceError(err, ctx)
+      }
+    },
+  )
 }
 
 // ─── Prompt planificar_mesociclo ──────────────────────────────────────────────

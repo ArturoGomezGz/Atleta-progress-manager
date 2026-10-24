@@ -37,7 +37,7 @@ export function addSearchFetchProvider(server: McpServer, provider: SearchFetchP
   extraProviders.set(server, [...(extraProviders.get(server) ?? []), provider])
 }
 
-const webUrl = () => (process.env.WEB_URL ?? "http://localhost:3000").replace(/\/$/, "")
+export const webUrl = () => (process.env.WEB_URL ?? "http://localhost:3000").replace(/\/$/, "")
 
 // ─── Rutinas ──────────────────────────────────────────────────────────────────
 
@@ -137,7 +137,7 @@ export function registerSearchFetchTools(server: McpServer, ctx: McpToolContext)
     name: "search",
     title: "Buscar",
     description:
-      "Busca por nombre rutinas de tus equipos y ejercicios del catálogo (y planes si están disponibles). Devuelve ids del tipo \"routine:<uuid>\" o \"exercise:<uuid>\" para leer con fetch.",
+      "Busca por nombre rutinas de tus equipos y ejercicios del catálogo (y planes si están disponibles). Devuelve ids del tipo \"routine:<uuid>\", \"exercise:<uuid>\" o \"plan:<uuid>\" para leer con fetch.",
     scope: "atleta:read",
     input: { query: z.string().max(120) },
     async run(args, ctx) {
@@ -154,12 +154,12 @@ export function registerSearchFetchTools(server: McpServer, ctx: McpToolContext)
   registerAtletaTool(server, ctx, {
     name: "fetch",
     title: "Leer documento",
-    description: "Lee el documento completo de un id devuelto por search (\"routine:<uuid>\", \"exercise:<uuid>\"…) como texto.",
+    description: "Lee el documento completo de un id devuelto por search (\"routine:<uuid>\", \"exercise:<uuid>\", \"plan:<uuid>\"…) como texto.",
     scope: "atleta:read",
     input: { id: z.string().max(80) },
     async run(args, ctx) {
       const m = ID_RE.exec(args.id.trim())
-      if (!m) throw new McpToolError("INVALID_INPUT", "El id debe tener la forma \"routine:<uuid>\" o \"exercise:<uuid>\" (tal como lo devuelve search).")
+      if (!m) throw new McpToolError("INVALID_INPUT", "El id debe tener la forma \"<tipo>:<uuid>\" (p. ej. \"routine:<uuid>\"), tal como lo devuelve search.")
       const kind = m[1]!.toLowerCase()
       const id = m[2]!.toLowerCase()
       if (kind === "routine") return fetchRoutine(id, ctx)

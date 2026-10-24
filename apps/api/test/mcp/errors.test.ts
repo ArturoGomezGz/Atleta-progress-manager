@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { TRPCError } from "@trpc/server"
 import { z } from "zod"
-import { ErrorDetails, McpToolError, toToolError } from "../../src/mcp/errors"
+import { ErrorDetails, McpToolError, ROUTINE_CONFLICT_HINT, toToolError } from "../../src/mcp/errors"
 import { RoutineEditError } from "../../src/services/ai-routine-edits"
 
 function body(err: unknown, opts?: { production?: boolean; requestId?: string }) {
@@ -29,11 +29,27 @@ describe("toToolError", () => {
     assert.match(body(new TRPCError({ code: "FORBIDDEN" })).message, /whoami/)
   })
 
-  it("CONFLICT sugiere releer y expone los details de la causa", () => {
-    const e = body(new TRPCError({ code: "CONFLICT", message: "La rutina cambió.", cause: new ErrorDetails({ updatedAt: "2026-01-01T00:00:00.000Z" }) }))
+  it("CONFLICT añade la pista de la causa y expone solo sus details", () => {
+    const e = body(new TRPCError({ code: "CONFLICT", message: "La rutina cambió.", cause: new ErrorDetails({ updatedAt: "2026-01-01T00:00:00.000Z" }, { hint: ROUTINE_CONFLICT_HINT }) }))
     assert.equal(e.code, "CONFLICT")
-    assert.match(e.message, /get_routine/)
+    assert.equal(e.message, `La rutina cambió. ${ROUTINE_CONFLICT_HINT}`)
     assert.deepEqual(e.details, { updatedAt: "2026-01-01T00:00:00.000Z" })
+
+    const plan = body(new TRPCError({ code: "CONFLICT", message: "El plan cambió.", cause: new ErrorDetails({ updatedAt: "x" }, { hint: "Vuelve a leerlo con get_plan." }) }))
+    assert.equal(plan.message, "El plan cambió. Vuelve a leerlo con get_plan.")
+    assert.doesNotMatch(plan.message, /get_routine/)
+  })
+
+  it("CONFLICT sin pista sugiere releer sin nombrar una herramienta", () => {
+    for (const err of [
+      new TRPCError({ code: "CONFLICT" }),
+      new TRPCError({ code: "CONFLICT", message: "Ya cambió.", cause: new ErrorDetails({ updatedAt: "x" }) }),
+    ]) {
+      const e = body(err)
+      assert.equal(e.code, "CONFLICT")
+      assert.match(e.message, /Vuelve a leerlo y reintenta/)
+      assert.doesNotMatch(e.message, /get_\w+/)
+    }
   })
 
   it("ZodError (directo o como causa de BAD_REQUEST) → INVALID_INPUT con 3 issues como máximo", () => {

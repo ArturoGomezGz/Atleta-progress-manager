@@ -34,13 +34,20 @@ export class McpToolError extends Error {
 
 /**
  * Datos extra para el cliente adjuntos a un TRPCError como `cause`, p. ej.
- * `new TRPCError({ code: "CONFLICT", message, cause: new ErrorDetails({ updatedAt }) })`.
- * Solo se exponen como `details`; no deben contener nada sensible.
+ * `new TRPCError({ code: "CONFLICT", message, cause: new ErrorDetails({ updatedAt }, { hint: "Vuelve a leerla con get_routine y reintenta." }) })`.
+ * `details` se expone tal cual (no debe contener nada sensible); `hint` es la acción sugerida
+ * que la capa MCP añade al mensaje (el mensaje de tRPC, el que ve la web, no cambia).
  */
 export class ErrorDetails extends Error {
-  constructor(readonly details: Record<string, unknown>) {
+  readonly hint?: string
+
+  constructor(
+    readonly details: Record<string, unknown>,
+    opts: { hint?: string } = {},
+  ) {
     super("details")
     this.name = "ErrorDetails"
+    this.hint = opts.hint
   }
 }
 
@@ -55,12 +62,20 @@ function zodMessage(err: ZodError): { message: string; details: Record<string, u
   }
 }
 
+/** Pista de los CONFLICT de rutina (routines.updateContent/rename y las herramientas de edición). */
+export const ROUTINE_CONFLICT_HINT = "Vuelve a leerla con get_routine y reintenta."
+
+// Acción sugerida cuando el error no trae su propia pista (ErrorDetails.hint)
+const DEFAULT_HINT: Partial<Record<McpErrorCode, string>> = {
+  CONFLICT: "Vuelve a leerlo y reintenta con su updatedAt actual.",
+}
+
 // Mensaje por defecto (con la acción sugerida) cuando el error no trae uno de negocio
 const DEFAULT_MESSAGE: Record<McpErrorCode, string> = {
   FORBIDDEN: "No tienes permiso para esta acción. Revisa el equipo y tu rol con whoami.",
   NOT_FOUND: "No se encontró el recurso. Verifica el id (búscalo con la herramienta de listado correspondiente).",
   BAD_REQUEST: "La solicitud no es válida.",
-  CONFLICT: "La rutina cambió desde que la leíste.",
+  CONFLICT: "El recurso cambió desde que lo leíste.",
   RATE_LIMITED: "Demasiadas solicitudes seguidas. Espera un momento y reintenta.",
   INVALID_INPUT: "Argumentos inválidos.",
   AMBIGUOUS_TEAM: "Perteneces a varios equipos: indica teamId.",
@@ -95,10 +110,10 @@ export function describeToolError(err: unknown, opts: { requestId?: string; prod
     if (code) {
       // Sin mensaje de negocio tRPC usa el propio código como mensaje
       const own = err.message && err.message !== err.code ? err.message : null
-      let message = own ?? DEFAULT_MESSAGE[code]
-      if (code === "CONFLICT") message = `${message} Vuelve a leerla con get_routine y reintenta.`
-      const details = err.cause instanceof ErrorDetails ? err.cause.details : undefined
-      return { code, message, ...(details && { details }) }
+      const extra = err.cause instanceof ErrorDetails ? err.cause : undefined
+      const hint = extra?.hint ?? DEFAULT_HINT[code]
+      const message = [own ?? DEFAULT_MESSAGE[code], hint].filter(Boolean).join(" ")
+      return { code, message, ...(extra && { details: extra.details }) }
     }
   }
 

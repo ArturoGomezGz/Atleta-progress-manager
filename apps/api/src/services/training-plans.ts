@@ -31,7 +31,7 @@ import { assertCoach, assertMember } from "../routers/teams"
 import { assertExercisesVisible } from "./exercise-visibility"
 import { computePlanCalendar, type PlanCalendarSkip } from "./plan-calendar"
 import { normalizeRoutineContent } from "./routine-content-input"
-import { flattenContent } from "./routine-content"
+import { cloneRoutineContent, flattenContent } from "./routine-content"
 import { assertAssignableAthletes, createAssignedSessions, type Tx } from "./session-assign"
 import {
   MAX_PLAN_WORKOUTS,
@@ -68,23 +68,6 @@ async function loadPlan(planId: string): Promise<PlanRow> {
 function nextUpdatedAt(previous?: Date): Date {
   const now = new Date()
   return previous && now.getTime() <= previous.getTime() ? new Date(previous.getTime() + 1) : now
-}
-
-// Mismo criterio que routines.duplicate: ids nuevos para cada ítem/ejercicio, porque
-// RoutineExerciseContent.id lo referencia athleteSetCompletion.routineExerciseId.
-function cloneRoutineContent(content: RoutineContent): RoutineContent {
-  return {
-    ...content,
-    items: content.items.map((item) =>
-      item.type === "exercise"
-        ? { ...item, id: crypto.randomUUID(), sets: item.sets.map((s) => ({ ...s })) }
-        : {
-            ...item,
-            id: crypto.randomUUID(),
-            exercises: item.exercises.map((e) => ({ ...e, id: crypto.randomUUID(), sets: e.sets.map((s) => ({ ...s })) })),
-          },
-    ),
-  }
 }
 
 type PreparedRoutine = { key: string; name: string; content: RoutineContent }
@@ -359,7 +342,7 @@ export async function updatePlan(actor: PlanActor, input: PlanUpdateInput) {
       throw new TRPCError({
         code: "CONFLICT",
         message: "El plan cambió desde que lo leíste.",
-        cause: new ErrorDetails({ updatedAt: plan.updatedAt.toISOString() }),
+        cause: new ErrorDetails({ updatedAt: plan.updatedAt.toISOString() }, { hint: "Vuelve a leerlo con get_plan y reintenta con su updatedAt." }),
       })
     }
 

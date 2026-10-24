@@ -47,7 +47,7 @@ Todo error vuelve como resultado `isError: true` con `content[0].text = "<CODE>:
 | `TRPCError` `FORBIDDEN` / `UNAUTHORIZED` | `FORBIDDEN` |
 | `TRPCError` `NOT_FOUND` | `NOT_FOUND` |
 | `TRPCError` `BAD_REQUEST` / `PRECONDITION_FAILED`, `RoutineEditError` | `BAD_REQUEST` |
-| `TRPCError` `CONFLICT` | `CONFLICT` ("Vuelve a leerla con get_routine y reintenta") |
+| `TRPCError` `CONFLICT` | `CONFLICT` + la pista de la causa (`ErrorDetails.hint`, p. ej. "Vuelve a leerla con get_routine y reintenta"); sin pista, "Vuelve a leerlo y reintenta con su updatedAt actual" |
 | `TRPCError` `TOO_MANY_REQUESTS`, límites propios | `RATE_LIMITED` (`details.retryAfterSeconds`) |
 | `ZodError` (o `BAD_REQUEST` con `ZodError` como causa) | `INVALID_INPUT` (3 issues como máximo) |
 | Equipo implícito ambiguo | `AMBIGUOUS_TEAM` (`details.teams`) |
@@ -178,7 +178,9 @@ y decisiones en [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md) §5.
 **search / fetch** (forma que espera ChatGPT): `search` busca por nombre en las rutinas de los equipos del
 usuario y en el catálogo visible; `fetch` devuelve la rutina o el ejercicio como texto, con `url` a la web.
 Otros módulos pueden sumar tipos de id con `addSearchFetchProvider(server, {kind, search?, fetch})`
-(`tools/search-fetch.ts`), p. ej. `plan:<uuid>`.
+(`tools/search-fetch.ts`); el módulo de planes suma `plan:<uuid>` (con `training_plans`): `search` busca por
+nombre u objetivo en los planes no archivados de los equipos del usuario y `fetch` devuelve el plan como texto
+(semanas, días, rutinas y asignaciones).
 
 ## Resources y prompts (Paquete C)
 
@@ -190,7 +192,8 @@ Resources (`mcp/resources.ts`, solo con `atleta:read`):
 | `atleta://guia/programacion` | Markdown: RPE / % RM / kg, tempo E-P-C-P, perSide, objetivos, circuitos, límites seguros de `difficulty.ts`, calendario (semana lunes–domingo) y "confirma antes de escribir" |
 | `atleta://rutinas/{routineId}` | JSON igual a `get_routine` (outline); errores como `"<CÓDIGO>: mensaje"` |
 
-La plantilla `atleta://planes/{planId}` y el prompt `planificar_mesociclo` pertenecen a planes.
+La plantilla `atleta://planes/{planId}` (JSON igual a `get_plan`, con `training_plans`) y el prompt
+`planificar_mesociclo` los registra el módulo de planes (`tools/plans.ts`).
 
 Prompts (`mcp/prompts.ts`; argumentos de texto):
 
@@ -308,8 +311,8 @@ cualquier rol).
 Notas:
 - `schedule_plan` sin `dryRun` cuenta para el límite de asignaciones (`limiters.schedule`, 20 por hora,
   compartido con `assign_routine`). Pasarlo devuelve `RATE_LIMITED`. `dryRun` no cuenta.
-- El `CONFLICT` de `update_plan` sugiere releer con `get_plan`: la herramienta reemplaza el mensaje genérico
-  de `errors.ts`, que menciona `get_routine`.
+- El `CONFLICT` de `update_plan` sugiere releer con `get_plan`: lo lleva `plans.update` como pista
+  (`ErrorDetails.hint`), que `errors.ts` añade al mensaje.
 - Las reglas cruzadas (key inexistente o repetida, semana fuera del plan, sin cambios) las valida el schema del
   router y vuelven como `INVALID_INPUT`.
 

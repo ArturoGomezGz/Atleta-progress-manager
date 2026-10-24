@@ -12,8 +12,9 @@ import { exerciseZones, zoneProfiles } from "../services/body-zones"
 import { assertExercisesVisible } from "../services/exercise-visibility"
 import { canUseAiRoutines } from "../services/feature-access"
 import { assertRoutineLimits } from "../services/routine-content-input"
+import { cloneRoutineContent } from "../services/routine-content"
 import { assertFeature, hasFeature } from "../lib/features"
-import { ErrorDetails } from "../mcp/errors"
+import { ErrorDetails, ROUTINE_CONFLICT_HINT } from "../mcp/errors"
 import { createRateLimiter } from "../lib/rate-limit"
 import { protectedProcedure, router } from "../trpc"
 import { assertCoach, assertMember } from "./teams"
@@ -31,23 +32,6 @@ function extractExerciseIds(content: RoutineContent): string[] {
       ? [item.exerciseId]
       : item.exercises.map((e) => e.exerciseId),
   )
-}
-
-// Clona el contenido de una rutina generando nuevos ids para cada item/ejercicio,
-// ya que RoutineExerciseContent.id es referenciado por athleteSetCompletion.routineExerciseId.
-function cloneRoutineContent(content: RoutineContent): RoutineContent {
-  return {
-    ...content,
-    items: content.items.map((item) =>
-      item.type === "exercise"
-        ? { ...item, id: crypto.randomUUID(), sets: item.sets.map((s) => ({ ...s })) }
-        : {
-            ...item,
-            id: crypto.randomUUID(),
-            exercises: item.exercises.map((e) => ({ ...e, id: crypto.randomUUID(), sets: e.sets.map((s) => ({ ...s })) })),
-          },
-    ),
-  }
 }
 
 // Cada ejercicio que el contenido nuevo agrega (no estaba en el anterior) debe ser visible
@@ -82,7 +66,7 @@ async function lockRoutine(tx: Tx, id: string, expectedUpdatedAt: string | undef
         throw new TRPCError({
           code: "CONFLICT",
           message: "La rutina cambió desde que la leíste.",
-          cause: new ErrorDetails({ updatedAt: r.updatedAt.toISOString() }),
+          cause: new ErrorDetails({ updatedAt: r.updatedAt.toISOString() }, { hint: ROUTINE_CONFLICT_HINT }),
         })
       }
     },

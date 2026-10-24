@@ -64,3 +64,23 @@ export function targetsForExercise(sets: RoutineSet[]) {
     targetPercent: s.loadType === "percent_rm" && s.loadValue != null ? String(s.loadValue) : null,
   }))
 }
+
+/**
+ * Copia el contenido de una rutina con ids nuevos para cada ítem y ejercicio de circuito
+ * (lo usan routines.duplicate y duplicate_plan con copyRoutines). Los ids no se pueden
+ * reutilizar porque athleteSetCompletion.routineExerciseId referencia RoutineExerciseContent.id.
+ */
+export function cloneRoutineContent(content: RoutineContent): RoutineContent {
+  return {
+    ...content,
+    items: content.items.map((item) =>
+      item.type === "exercise"
+        ? { ...item, id: crypto.randomUUID(), sets: item.sets.map((s) => ({ ...s })) }
+        : {
+            ...item,
+            id: crypto.randomUUID(),
+            exercises: item.exercises.map((e) => ({ ...e, id: crypto.randomUUID(), sets: e.sets.map((s) => ({ ...s })) })),
+          },
+    ),
+  }
+}

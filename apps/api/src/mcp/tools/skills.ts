@@ -21,7 +21,7 @@ import { createRuntime } from "../../services/ai-routine-editor/runtime"
 import { proposeNewExercise, searchExercises } from "../../services/ai-routines"
 import { exerciseVisibilityWhere, memberTeamIds } from "../../services/exercise-visibility"
 import { assertRoutineLimits } from "../../services/routine-content-input"
-import { ErrorDetails, McpToolError } from "../errors"
+import { ErrorDetails, McpToolError, ROUTINE_CONFLICT_HINT } from "../errors"
 import { registerAtletaTool } from "../tool"
 import type { McpToolContext } from "../types"
 
@@ -43,7 +43,7 @@ export async function loadRoutineForEdit(ctx: McpToolContext, routineId: string,
     throw new TRPCError({
       code: "CONFLICT",
       message: "La rutina cambió desde que la leíste.",
-      cause: new ErrorDetails({ updatedAt: routine.updatedAt.toISOString() }),
+      cause: new ErrorDetails({ updatedAt: routine.updatedAt.toISOString() }, { hint: ROUTINE_CONFLICT_HINT }),
     })
   }
   return { routine, expected: expectedUpdatedAt ?? routine.updatedAt.toISOString() }

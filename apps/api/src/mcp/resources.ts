@@ -101,7 +101,7 @@ Confirma con el usuario antes de guardar, asignar o archivar. Resume qué vas a 
 `
 }
 
-function toResourceError(err: unknown, ctx: McpToolContext): McpError {
+export function toResourceError(err: unknown, ctx: McpToolContext): McpError {
   const e = describeToolError(err, { requestId: ctx.requestId })
   return new McpError(ErrorCode.InvalidParams, `${e.code}: ${e.message}`, { code: e.code, ...(e.details && { details: e.details }) })
 }

@@ -12,6 +12,7 @@ import { TRPCError } from "@trpc/server"
 import type { FastifyBaseLogger } from "fastify"
 import type { McpScope, McpToolContext } from "../../src/mcp/types"
 import { callerFor, catalogExerciseIds, createFixtures, signUp, type Fixtures, type FixtureUser } from "./fixtures"
+import { mcpClientFor } from "./mcp-inmemory"
 import { integrationSkip, startTestServer, type TestServer } from "./setup"
 
 // Usuarios propios de esta suite: con mcp + scheduled_sessions pero sin training_plans, y
@@ -343,6 +344,42 @@ describe("planes de entrenamiento (MCP + plans.*)", { skip: integrationSkip }, (
     const plain = await call(client, "duplicate_plan", { planId: created.planId, name: "Sin copiar rutinas" })
     assert.deepEqual(plain.createdRoutines, [])
     assert.equal(await count("routine"), routinesBefore + 1)
+  })
+
+  it("servidor completo: search encuentra planes, fetch lee plan:<uuid> y el resource atleta://planes/{planId}", async () => {
+    const a = await mcpClientFor(fx.users.coachA)
+    const b = await mcpClientFor(fx.users.coachB)
+    try {
+      const created = await a.ok<Structured>("create_plan", {
+        name: "Bloque buscable de potencia",
+        goal: "Potencia",
+        weeks: 2,
+        routines: [routineInput("P", exerciseIds[0]!)],
+        workouts: [{ week: 1, weekday: 2, routineKey: "P" }, { week: 2, weekday: 4, routineKey: "P" }],
+      })
+      const docId = `plan:${created.planId}`
+
+      const found = await a.ok<{ results: { id: string; title: string; url: string }[] }>("search", { query: "buscable de POTENCIA" })
+      const hit = found.results.find((r) => r.id === docId)
+      assert.ok(hit, JSON.stringify(found.results))
+      assert.equal(hit.title, "Bloque buscable de potencia")
+
+      const doc = await a.ok<Structured>("fetch", { id: docId })
+      assert.equal(doc.title, "Bloque buscable de potencia")
+      assert.match(doc.text, /## Semana 1\n- martes: Rutina P/)
+      assert.match(doc.text, /## Semana 2\n- jueves: Rutina P/)
+      assert.equal(doc.metadata.type, "plan")
+
+      const resource = await a.client.readResource({ uri: `atleta://planes/${created.planId}` })
+      assert.deepEqual(JSON.parse((resource.contents[0] as { text: string }).text), await a.ok("get_plan", { planId: created.planId }))
+
+      // El coach de otro equipo no lo encuentra ni lo lee
+      assert.ok(!(await b.ok<{ results: { id: string }[] }>("search", { query: "buscable" })).results.some((r) => r.id === docId))
+      assert.equal((await b.fail("fetch", { id: docId })).code, "FORBIDDEN")
+      await assert.rejects(b.client.readResource({ uri: `atleta://planes/${created.planId}` }), /FORBIDDEN/)
+    } finally {
+      await Promise.all([a.close(), b.close()])
+    }
   })
 
   it("multi-tenant: el coach B no ve, edita ni programa planes de A; A no programa a atletas ajenos", async () => {

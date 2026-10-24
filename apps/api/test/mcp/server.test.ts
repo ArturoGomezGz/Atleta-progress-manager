@@ -8,15 +8,16 @@ import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js"
 import type { RoutineContent } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
 import type { FastifyBaseLogger } from "fastify"
-import type { FeatureKey } from "../../src/lib/features"
+import { FEATURES, type FeatureKey } from "../../src/lib/features"
 import { createRateLimiter } from "../../src/lib/rate-limit"
-import { ErrorDetails } from "../../src/mcp/errors"
+import { ErrorDetails, ROUTINE_CONFLICT_HINT } from "../../src/mcp/errors"
 import { createMcpServer, MCP_INSTRUCTIONS } from "../../src/mcp/server"
 import type { AppCaller, McpScope, McpToolContext } from "../../src/mcp/types"
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`
 const TEAM = id(1)
 const ROUTINE = id(9)
+const PLAN = id(20)
 const SQUAT = id(101)
 const ITEM = id(11)
 const ITEM2 = id(12)
@@ -99,6 +100,19 @@ const WRITE_TOOLS = [
   "replace_exercise", "add_exercise", "remove_item", "move_item", "update_sets", "update_item_fields", "update_block", "adjust_difficulty", "adjust_rest",
   "assign_routine", "cancel_assignment",
 ]
+// Solo con el flag training_plans
+const PLAN_READ_TOOLS = ["list_plans", "get_plan"]
+const PLAN_WRITE_TOOLS = ["create_plan", "update_plan", "duplicate_plan", "schedule_plan", "cancel_plan_assignment"]
+
+const planView = () => ({
+  planId: PLAN, teamId: TEAM, name: "Mesociclo de fuerza", description: null, goal: "Fuerza máxima", weeks: 2, status: "draft",
+  createdAt: UPDATED.toISOString(), updatedAt: UPDATED.toISOString(),
+  schedule: [
+    { week: 1, name: "Acumulación", focus: null, notes: null, days: [{ weekday: 1, workouts: [{ workoutId: id(21), position: 0, routineId: ROUTINE, routineName: "Fuerza", notes: null }] }] },
+    { week: 2, name: null, focus: null, notes: null, days: [] },
+  ],
+  assignments: [],
+})
 
 describe("createMcpServer", () => {
   it("publica instructions en español", async () => {
@@ -160,7 +174,7 @@ describe("createMcpServer", () => {
     const client = await connect(makeCtx({
       overrides: {
         "routines.get": () => { throw new TRPCError({ code: "NOT_FOUND" }) },
-        "routines.rename": () => { throw new TRPCError({ code: "CONFLICT", message: "La rutina cambió desde que la leíste.", cause: new ErrorDetails({ updatedAt: UPDATED.toISOString() }) }) },
+        "routines.rename": () => { throw new TRPCError({ code: "CONFLICT", message: "La rutina cambió desde que la leíste.", cause: new ErrorDetails({ updatedAt: UPDATED.toISOString() }, { hint: ROUTINE_CONFLICT_HINT }) }) },
       },
     }))
     const nf = await client.callTool({ name: "get_routine", arguments: { routineId: ROUTINE } })
@@ -289,5 +303,61 @@ describe("createMcpServer", () => {
     assert.deepEqual(r.features, ["mcp", "evaluation"])
     assert.deepEqual(r.scopes, ["atleta:read", "atleta:write"])
     assert.equal(r.limits.maxItems, 20)
+  })
+})
+
+describe("createMcpServer con todos los flags", () => {
+  const allFlags = (scopes?: McpScope[], calls?: Call[]) =>
+    makeCtx({ features: [...FEATURES], scopes, calls, overrides: { "plans.get": () => planView() } })
+
+  it("con todos los scopes publica exactamente las herramientas esperadas, sin nombres repetidos", async () => {
+    const client = await connect(allFlags())
+    const { tools } = await client.listTools()
+    const names = tools.map((t) => t.name)
+    assert.equal(new Set(names).size, names.length)
+    assert.deepEqual([...names].sort(), [...READ_TOOLS, ...WRITE_TOOLS, ...PLAN_READ_TOOLS, ...PLAN_WRITE_TOOLS].sort())
+    for (const t of tools) assert.equal(t.annotations?.readOnlyHint, [...READ_TOOLS, ...PLAN_READ_TOOLS].includes(t.name), `${t.name}: readOnlyHint`)
+    for (const name of ["update_plan", "cancel_plan_assignment"]) assert.equal(tools.find((t) => t.name === name)!.annotations?.destructiveHint, true, name)
+
+    const prompts = (await client.listPrompts()).prompts.map((p) => p.name).sort()
+    assert.deepEqual(prompts, ["ajustar_entrenamiento", "crear_entrenamiento", "planificar_mesociclo", "revisar_adherencia"])
+    const templates = (await client.listResourceTemplates()).resourceTemplates.map((t) => t.uriTemplate).sort()
+    assert.deepEqual(templates, ["atleta://planes/{planId}", "atleta://rutinas/{routineId}"])
+  })
+
+  it("con solo atleta:read no aparece ninguna herramienta W y las de plan responden INSUFFICIENT_SCOPE", async () => {
+    const calls: Call[] = []
+    const client = await connect(allFlags(["atleta:read"], calls))
+    const { tools } = await client.listTools()
+    assert.deepEqual(tools.map((t) => t.name).sort(), [...READ_TOOLS, ...PLAN_READ_TOOLS].sort())
+    for (const t of tools) assert.equal(t.annotations?.readOnlyHint, true, `${t.name}: readOnlyHint`)
+    for (const name of [...WRITE_TOOLS, ...PLAN_WRITE_TOOLS]) {
+      const r = await client.callTool({ name, arguments: {} })
+      assert.equal(errorOf(r).code, "INSUFFICIENT_SCOPE", name)
+    }
+    assert.equal(calls.length, 0)
+    assert.deepEqual((await client.listPrompts()).prompts.map((p) => p.name), ["revisar_adherencia"])
+  })
+
+  it("fetch acepta plan:<uuid> y el resource atleta://planes/{planId} devuelve el JSON de get_plan", async () => {
+    const client = await connect(allFlags())
+    const r = await client.callTool({ name: "fetch", arguments: { id: `plan:${PLAN}` } })
+    assert.equal(r.isError, undefined, JSON.stringify(r.content))
+    const doc = data<{ id: string; title: string; text: string; url: string; metadata: Record<string, unknown> }>(r)
+    assert.equal(doc.id, `plan:${PLAN}`)
+    assert.equal(doc.title, "Mesociclo de fuerza")
+    assert.match(doc.text, /Objetivo: Fuerza máxima/)
+    assert.match(doc.text, /## Semana 1: Acumulación\n- lunes: Fuerza/)
+    assert.match(doc.text, /## Semana 2\n\(sin entrenamientos\)/)
+    assert.deepEqual(doc.metadata, { type: "plan", teamId: TEAM, status: "draft", weeks: 2, updatedAt: UPDATED.toISOString() })
+
+    const getPlan = data(await client.callTool({ name: "get_plan", arguments: { planId: PLAN } }))
+    const resource = await client.readResource({ uri: `atleta://planes/${PLAN}` })
+    assert.deepEqual(JSON.parse((resource.contents[0] as { text: string }).text), getPlan)
+
+    // Sin el flag no hay tipo "plan" ni plantilla de resource
+    const noPlans = await connect(makeCtx())
+    assert.equal(errorOf(await noPlans.callTool({ name: "fetch", arguments: { id: `plan:${PLAN}` } })).code, "NOT_FOUND")
+    await assert.rejects(noPlans.readResource({ uri: `atleta://planes/${PLAN}` }))
   })
 })
