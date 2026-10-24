@@ -517,6 +517,13 @@ Notas:
     corre `runMigrations()` y levanta `buildApp()`.
   - `fixtures.ts → createFixtures()`: coach A (todos los flags) con su equipo y un atleta, coach B con otro
     equipo y un usuario sin flags; las cuentas se registran por HTTP y lo demás con el caller de cada usuario.
+  - QA: `e2e-agent.itest.ts` (un agente completo por HTTP: OAuth → descubrimiento → rutinas y herramientas
+    atómicas → asignar → plan 6×4 → schedule_plan → el atleta con su token → cancelar → search/fetch →
+    refresh → revokeApp), `adversarial.itest.ts` (IDOR en todas las herramientas con ids, atleta con
+    escrituras, entradas malformadas, concurrencia, calendario, HTTP, regresión web y calidad de esquemas y
+    respuestas) y `production.itest.ts` (`NODE_ENV=production`: INTERNAL sin detalles, logs sin tokens ni
+    contenido, límite del registro dinámico). Los casos que hoy reproducen un bug conocido van con
+    `{ todo: "BUG-N: …" }`: no ponen la suite en rojo y pasan a verde cuando se corrige.
   - CI: `.github/workflows/api-tests.yml` (typecheck, unitarias e integración con un servicio `postgres:16`).
 
 ### Checklist manual en testing
