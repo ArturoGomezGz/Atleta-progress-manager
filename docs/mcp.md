@@ -101,11 +101,113 @@ _Pendiente: consentimiento obligatorio, PKCE S256, DCR, denylist del proxy, Orig
 
 ## Herramientas (Paquete C)
 
-_Pendiente: catálogo de herramientas (cuenta, catálogo, rutinas, habilidades, asignados, search/fetch)._
+Código en `apps/api/src/mcp/tools/*.ts`; vistas compactas en `mcp/format.ts`. Cada herramienta llama a los
+procedimientos tRPC con el caller del usuario (mismas reglas que la web). `createMcpServer` (`mcp/server.ts`)
+publica además `instructions` en español con el flujo recomendado y la regla "confirma con el usuario antes de
+guardar, asignar, cancelar o archivar".
+
+**Convenciones**
+- `teamId?`: si se omite se usa el único equipo donde el usuario es coach (en lecturas de miembro, su único
+  equipo); si hay varios, `AMBIGUOUS_TEAM` con la lista.
+- Fechas `YYYY-MM-DD`; "hoy" es UTC (lo devuelve `whoami.today`).
+- Toda escritura sobre una rutina devuelve `updatedAt` (ISO) para encadenarlo como `expectedUpdatedAt`.
+- R = scope `atleta:read`, W = `atleta:write`. Sin el scope la herramienta no aparece en `tools/list` y, si se
+  llama igual, responde `INSUFFICIENT_SCOPE`. Anotaciones: `readOnlyHint` en las R, `destructiveHint` en las que
+  borran, archivan o cancelan, `openWorldHint: false` en todas.
+- Toda W cuenta para el límite de escrituras (30/min por usuario); `create_exercise` (10/h) y `assign_routine`
+  (20/h) tienen además el suyo. Pasarlo devuelve `RATE_LIMITED` con `details.retryAfterSeconds`.
+
+| Herramienta | Scope / rol | Entrada | Salida |
+|---|---|---|---|
+| `whoami` | R | `{}` | `{user{id,name,email}, teams[{teamId,name,role,selfAthlete}], defaultTeamId, features[], scopes[], today, limits{maxItems,maxBlockExercises,maxSets,maxPlanWeeks}}` |
+| `list_athletes` | R, coach | `{teamId?}` | `{teamId, athletes[{athleteId,name,role,selfAthlete}], groups?[{groupId,name,athleteIds}]}`; sin correos; `groups` solo con el flag `groups` |
+| `search_exercises` | R, miembro | `{teamId?, query?≤80, movementPattern?, bodyZone?, difficulty?, warmupOnly?, avoid?≤8}` | `{teamId, results[≤12]{id,name,difficulty,patterns,equipment,primaryMuscles,warmup?,contraindications?}}` |
+| `get_exercises` | R | `{teamId?, ids[1..30]}` | `{exercises[{id,name,description,difficulty,patterns,equipment,muscles,contraindications,videoUrl}], notFound[]}` |
+| `create_exercise` | W, coach | `{teamId?, name 2..80, description≤400, difficulty, movementPatterns[≤4], contraindications?}` | `{id, name, teamId, existed}` (si ya hay uno visible con ese nombre lo devuelve) |
+| `list_routines` | R, miembro | `{teamId?, category?, query?, includeArchived?, limit?≤100=50}` | `{teamId, total, routines[{id,name,category,updatedAt,archived,itemCount,exerciseCount}]}` (más reciente primero) |
+| `get_routine` | R | `{routineId, format?: "outline" o "detail"}` | `{id,teamId,name,category,updatedAt,archived,itemCount,exerciseCount}` + `items` (outline) o `content` + `exerciseNames` (detail) |
+| `create_routine` | W, coach | `{teamId?, name 1..120, category?="training", content?: RoutineContentInput}` | `{routineId, teamId, name, updatedAt, itemCount}` |
+| `update_routine` | W, coach | `{routineId, expectedUpdatedAt, name?, content?}` (al menos uno) | `{routineId, name, updatedAt, itemCount}`; `CONFLICT` |
+| `edit_routine` | W, coach | `{routineId, expectedUpdatedAt?, ops[1..25]}` (operaciones `{op, …}` del editor) | `{routineId, updatedAt, changes[{type,itemId,summary}]}`; atómica |
+| `add_exercise`, `replace_exercise`, `remove_item`, `move_item`, `update_sets`, `update_item_fields`, `update_block`, `adjust_difficulty`, `adjust_rest` | W, coach | `{routineId, expectedUpdatedAt?}` + la entrada de la habilidad | `{routineId, updatedAt, saved, result, message?, changes[]}` |
+| `duplicate_routine` | W, coach | `{routineId, name?}` | `{routineId, name, updatedAt}` |
+| `archive_routine` | W, coach, destructiva | `{routineId, archived?=true}` | `{routineId, archived, updatedAt}` |
+| `assign_routine` | W, coach | `{routineId, athleteIds[1..50], dates?[1..60]}` | `{routineId, teamId, athleteIds, sessions[{sessionId,date,status}]}` |
+| `list_assignments` | R, miembro | `{teamId?, athleteId?, from?, to?, status?[], planAssignmentId?, limit?≤100=50}` | `{teamId, today, assignments[{sessionId,routineId,routineName,scheduledDate,startedAt,status,planAssignmentId,athletes?}]}` |
+| `cancel_assignment` | W, coach, destructiva | `{sessionId, athleteId?}` | `{sessionId, cancelled: "session" o "athlete"}` |
+| `search` | R | `{query}` | `{results[{id,title,url}]}` con ids `routine:<uuid>` / `exercise:<uuid>` |
+| `fetch` | R | `{id}` | `{id, title, text, url, metadata}` |
+
+Las herramientas de planes (`list_plans`, `get_plan`, `create_plan`, `update_plan`, `duplicate_plan`,
+`schedule_plan`, `cancel_plan_assignment`) se describen en "Planes de entrenamiento".
+
+**Rutinas**
+- `get_routine` "outline" da elementos legibles (`position` desde 0, `id` del elemento, `exerciseId`, nombre y
+  series resumidas como "3 × 8 reps @ RPE 7"); "detail" da `content` exactamente en el formato de entrada
+  (`toContentInput`), listo para modificar y enviar a `update_routine`, conservando los ids.
+- Las ediciones guardan directamente (no hay borrador). `expectedUpdatedAt` es obligatorio en `update_routine`
+  y opcional en `edit_routine` y las habilidades: si no coincide con la rutina falla con `CONFLICT`
+  (`details.updatedAt` = versión vigente) antes de editar; sin él se usa el `updatedAt` recién leído.
+  `routines.updateContent` vuelve a comprobarlo con la fila bloqueada (`SELECT … FOR UPDATE`), así que dos
+  escrituras simultáneas con la misma versión no se pisan: una gana y la otra recibe `CONFLICT`.
+- `edit_routine` aplica todas las operaciones sobre una copia (`applyEdits`) y guarda una sola vez; si una falla
+  responde `BAD_REQUEST` con "Operación N (op): …" y `details.opIndex`, sin cambiar nada.
+- Los `exerciseId` nuevos (en `create_routine`, `update_routine`, `add_exercise`, `replace_exercise`,
+  `edit_routine`) deben ser visibles para el usuario (sistema, públicos, propios o de sus equipos): si no,
+  `BAD_REQUEST`. En el conector se admiten `percent_rm` y `fixed_kg` (el coach dirige).
+- Archivar saca la rutina de `list_routines` (salvo `includeArchived`) y `assign_routine` la rechaza
+  (`BAD_REQUEST`); lo ya asignado no cambia. `archive_routine` con `archived: false` la restaura.
+- Sin el flag `evaluation` el campo `category` solo admite `"training"` (el JSON Schema lo refleja) y las
+  rutinas de evaluación no se ven.
+
+**Habilidades del editor.** Las nueve herramientas de edición y ajuste se generan del registro de habilidades
+(`services/ai-routine-editor/adapters/mcp.ts`): mismo nombre que la habilidad, misma descripción y mismo zod
+(incluido el `refine` de `adjust_rest`). Se ejecutan con `createRuntime` sobre la rutina guardada; una
+compuesta sin margen no escribe (`saved: false`). No exigen `ai_routine_tweaks` (no hay LLM interno). Detalle
+y decisiones en [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md) §5.
+
+**Asignados**
+- `assign_routine` toma el equipo de la rutina. Sin `dates` crea una sesión disponible ya
+  (`sessions.create`); con `dates`, una por fecha en una transacción (`sessions.createMany`): hoy o antes queda
+  activa y las futuras programadas, que requieren `scheduled_sessions`. Atletas de otro equipo → `BAD_REQUEST`.
+- `list_assignments`: el coach ve los atletas de cada sesión y puede filtrar por `athleteId`; un atleta solo
+  consulta sus propias sesiones (se ignora `athleteId`) y sin la lista de atletas.
+- `cancel_assignment` cancela la sesión entera; con `athleteId`, solo a ese atleta (como en la web, solo en
+  sesiones de evaluación; en entrenamiento → `BAD_REQUEST`).
+
+**search / fetch** (forma que espera ChatGPT): `search` busca por nombre en las rutinas de los equipos del
+usuario y en el catálogo visible; `fetch` devuelve la rutina o el ejercicio como texto, con `url` a la web.
+Otros módulos pueden sumar tipos de id con `addSearchFetchProvider(server, {kind, search?, fetch})`
+(`tools/search-fetch.ts`), p. ej. `plan:<uuid>`.
 
 ## Resources y prompts (Paquete C)
 
-_Pendiente._
+Resources (`mcp/resources.ts`, solo con `atleta:read`):
+
+| URI | Contenido |
+|---|---|
+| `atleta://guia/contenido-rutina` | Markdown: formato de `RoutineContentInput` con ejemplo y su JSON Schema (`zod-to-json-schema`) |
+| `atleta://guia/programacion` | Markdown: RPE / % RM / kg, tempo E-P-C-P, perSide, objetivos, circuitos, límites seguros de `difficulty.ts`, calendario (semana lunes–domingo) y "confirma antes de escribir" |
+| `atleta://rutinas/{routineId}` | JSON igual a `get_routine` (outline); errores como `"<CÓDIGO>: mensaje"` |
+
+La plantilla `atleta://planes/{planId}` y el prompt `planificar_mesociclo` pertenecen a planes.
+
+Prompts (`mcp/prompts.ts`; argumentos de texto):
+
+| Prompt | Argumentos | Flujo |
+|---|---|---|
+| `crear_entrenamiento` | `objetivo`, `duracion_minutos?`, `nivel?`, `equipamiento?` | whoami → guías → search_exercises (con `avoid`) → propuesta en texto → confirmación → create_routine |
+| `ajustar_entrenamiento` | `routine_id`, `cambio` | get_routine → herramienta más acotada (o edit_routine) → confirmación → guardar con `expectedUpdatedAt` (reintentar si `CONFLICT`) |
+| `revisar_adherencia` | `athlete_id?`, `desde?` | whoami / list_athletes → list_assignments → resumen por atleta, sin modificar nada |
+
+Los dos primeros solo se ofrecen con `atleta:write`.
+
+**Pruebas de este paquete.** Unitarias: `test/mcp/server.test.ts` (`createMcpServer` completo con un caller
+falso: scopes, flags, errores, edición atómica, resources y prompts), `test/mcp/format.test.ts` y
+`test/services/ai-routine-editor/mcp-adapter.test.ts`. Integración: `tools-routines`, `tools-assignments` y
+`multitenant.itest.ts`, con `test/integration/mcp-inmemory.ts → mcpClientFor(user)`: el `Client` del SDK
+conectado por `InMemoryTransport` a `createMcpServer` con un contexto real (principal del usuario,
+`createMcpCaller`, flags reales y limitadores inyectables), sin pasar por `/mcp`.
 
 ## Planes de entrenamiento (Paquete D)
 

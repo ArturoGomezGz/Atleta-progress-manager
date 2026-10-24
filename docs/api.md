@@ -53,20 +53,22 @@ La autorización de rol (coach/atleta) se verifica dentro de cada procedimiento.
 
 | Procedimiento | Tipo | Descripción | Autorización |
 |---|---|---|---|
-| `routines.create` | mutation | Crear rutina en un equipo. | Coach del equipo |
-| `routines.list` | query | Rutinas de un equipo. | Miembro del equipo |
-| `routines.get` | query | Rutina con sus ejercicios (incluye nombre del ejercicio). | Miembro del equipo |
-| `routines.addExercise` | mutation | Agregar ejercicio a la rutina con targets. | Coach del equipo |
-| `routines.updateExercise` | mutation | Actualizar sets/reps/peso objetivo de un ejercicio. | Coach del equipo |
-| `routines.removeExercise` | mutation | Eliminar ejercicio de la rutina. | Coach del equipo |
+| `routines.create` | mutation | Crear rutina en un equipo. `content` opcional (la usa el conector MCP): se validan los límites (20 elementos, 10 por circuito, 12 series) y que cada ejercicio sea visible para quien crea (`BAD_REQUEST` si no). | Coach del equipo |
+| `routines.duplicate` | mutation | Copia una rutina con ids nuevos (`name` opcional). | Coach del equipo |
+| `routines.list` | query | Rutinas de un equipo. Filtro `category`; las archivadas solo con `includeArchived: true`. | Miembro del equipo |
+| `routines.get` | query | Rutina con nombres e información de sus ejercicios (`exerciseNames`, `exerciseInfo`) y `archivedAt`. | Miembro del equipo |
+| `routines.updateContent` | mutation | Guarda el contenido completo (y opcionalmente `name`). Cada ejercicio **nuevo** debe ser visible (`BAD_REQUEST`). Con `expectedUpdatedAt` (ISO) aplica concurrencia optimista: bloquea la fila (`SELECT … FOR UPDATE`) y, si su `updatedAt` ya no es ese, falla con `CONFLICT`. Sin él se comporta como siempre (la web). | Coach del equipo |
+| `routines.rename` | mutation | Cambia el nombre; acepta `expectedUpdatedAt` igual que `updateContent`. | Coach del equipo |
+| `routines.archive` | mutation | `{id, archived = true}`: archiva (sale de `list` y no se puede asignar con `sessions.create`/`createMany`) o restaura con `archived: false`. Lo ya asignado no cambia. | Coach del equipo |
 | `routines.delete` | mutation | Eliminar rutina completa. | Coach del equipo |
+| `routines.aiAvailable` / `generateWithAI` / `tweakWithAI` | query / mutation | Generación y ajustes con IA (ver [ia-generacion-rutinas.md](ia-generacion-rutinas.md)). | Miembro / Coach del equipo |
 
 ### `sessions`
 
 | Procedimiento | Tipo | Descripción | Autorización |
 |---|---|---|---|
 | `sessions.myPending` | query | Sesiones pendientes del atleta en todos sus equipos (activas y de entrenamiento programadas), sin fecha primero. La usa la app Android. | Usuario autenticado |
-| `sessions.list` | query | Sesiones del equipo. Filtros opcionales: `category` y `athleteId` (solo sesiones donde ese atleta está asignado). | Miembro del equipo |
+| `sessions.list` | query | Sesiones del equipo (con `planAssignmentId` y, para el coach, los atletas asignados). Filtros opcionales: `category`, `athleteId` (solo sesiones donde ese atleta está asignado), `from`/`to` (fecha programada o, sin fecha, el día UTC en que se creó), `status[]`, `planAssignmentId` y `limit` (1–500; sin límite por defecto). | Miembro del equipo |
 | `sessions.create` | mutation | Iniciar sesión: hace snapshot de la rutina y enrolla atletas. | Coach del equipo |
 | `sessions.createMany` | mutation | Igual que `create` para varias fechas a la vez (una sesión por fecha, máx. 60 fechas y 50 atletas, en una transacción). Solo las fechas futuras exigen `scheduled_sessions`. | Coach del equipo |
 | `sessions.get` | query | Sesión con ejercicios (snapshot) y atletas. | Miembro del equipo |
@@ -128,4 +130,5 @@ tRPC usa los códigos estándar de `TRPCError`:
 | `FORBIDDEN` | Sin el rol requerido (no es coach, no es miembro) |
 | `NOT_FOUND` | Recurso no existe |
 | `BAD_REQUEST` | Operación no válida (ej. registrar serie en sesión no activa) |
+| `CONFLICT` | Concurrencia optimista: `routines.updateContent` / `rename` con un `expectedUpdatedAt` que ya no es el `updatedAt` de la rutina. El error lleva el `updatedAt` vigente como causa (el conector MCP lo devuelve en `details.updatedAt`); hay que volver a leer la rutina y reintentar |
 | `TOO_MANY_REQUESTS` | Enlace compartido con demasiados entrenamientos en la última hora |
