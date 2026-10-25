@@ -47,25 +47,42 @@ crash *antes* de llegar al assert no es solo un bug de UX: es una ruta sin
 comportamiento garantizado (¿niega acceso? ¿revienta con 500?) en el único
 punto que separa equipos entre sí.
 
-**Hallazgo real** — `apps/api/src/routers/sessions.ts:458-491`:
+**Resuelto** (verificado 2026-10-03) — el hallazgo original
+(`session!.teamId` sobre una fila posiblemente inexistente, antes de
+`assertCoach`) ya no existe: `apps/api/src/routers/sessions.ts` no tiene
+ninguna non-null assertion. Cada procedimiento que carga una sesión por id
+valida la fila antes del assert, p. ej. en `activate`:
 ```ts
-const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
-await assertCoach(ctx.session.user.id, session!.teamId)
+const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.id)).limit(1)
+if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+
+const member = await assertMember(userId, session.teamId)
 ```
-Si `session` no existe (fila inconsistente o borrada), `session!.teamId`
-lanza un `TypeError` sin control en vez de un `NOT_FOUND`/`FORBIDDEN` — y
-esto ocurre *antes* de la verificación de rol. `sessions.ts` ya está en
-`scripts/quality-agents/config/critical-targets.json`: el agente debe tratar
-sus hallazgos como severidad alta por defecto, no como "uno más entre N
-console.log".
+y `loadSetForCoach` hace lo mismo con
+`if (!row) throw new TRPCError({ code: "NOT_FOUND" })` antes de
+`assertCoach(user.id, row.teamId)`. El criterio sigue vigente para código
+nuevo: `sessions.ts` está en
+`scripts/quality-agents/config/critical-targets.json`, así que el agente
+debe tratar sus hallazgos como severidad alta por defecto, no como "uno más
+entre N console.log".
 
 ### 2. Errores crudos expuestos en la superficie de autenticación
 
-`apps/api/src/index.ts:47` — el handler de `/api/auth/*` responde
-`reply.status(500).send({ error: String(err) })` ante cualquier excepción no
-controlada. Es el endpoint de login/signup/reset-password: el primero que se
-prueba desde fuera. Un error de la librería o de Postgres se serializa tal
+El handler de `/api/auth/*` (`apps/api/src/index.ts`) es el endpoint de
+login/signup/reset-password: el primero que se prueba desde fuera. Si ante
+una excepción no controlada respondiera con el error crudo (p. ej.
+`String(err)`), un error de la librería o de Postgres se serializaría tal
 cual hacia el cliente.
+
+**Resuelto** (verificado 2026-10-03) — el `catch` del handler ya no expone
+el error; lo registra con el logger estructurado y devuelve un mensaje
+genérico con el id de request para correlacionar:
+```ts
+req.log.error(err, "better-auth handler error")
+reply.status(500).send({ error: "Internal Server Error", requestId: req.id })
+```
+Además, las respuestas 5xx que devuelve `better-auth` se registran con
+`req.log.error({ status: response.status, body: text }, "better-auth 5xx")`.
 
 ### 3. Cobertura de pruebas nula sobre autorización y dinero
 
@@ -101,8 +118,18 @@ mantener esa misma disciplina.
 
 ### 6. Logging sin correlación de request
 
-`console.*` detectado en 6 archivos, mezclado de forma inconsistente con el
-logger estructurado de Fastify (`req.log`, ver `index.ts`). Dado que el
+`console.*` detectado en 4 archivos (verificado 2026-10-03), fuera del
+logger estructurado de Fastify (`req.log`, ver `index.ts`):
+- `apps/api/src/index.ts` — arranque y migraciones (antes de que exista el
+  logger de Fastify) y el `catch` fatal de `main()`.
+- `apps/api/src/auth.ts` — `console.warn` cuando el envío de email está
+  deshabilitado (`RESEND_API_KEY` ausente).
+- `apps/api/src/reset-password.ts` — script CLI de soporte, no corre dentro
+  de un request.
+- `apps/web/src/components/tour/tour-overlay.tsx` — `componentDidCatch` del
+  tutorial, en el cliente.
+
+Dado que el
 flujo de sesión permite "múltiples atletas, múltiples coaches editando sin
 flujo lineal" por diseño, reconstruir qué pasó (p. ej. "se perdió una serie")
 sin un `requestId` trazable de extremo a extremo es prácticamente imposible.
