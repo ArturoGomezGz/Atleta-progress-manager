@@ -8,7 +8,8 @@
 // Orden de las comprobaciones de POST /mcp (hook onRequest, antes de leer el cuerpo):
 //   Origin (anti DNS-rebinding) → token (401 + WWW-Authenticate) → scopes (403) → flag `mcp`
 //   (403, JSON-RPC -32001) → tasa por usuario (429 + Retry-After). Luego Fastify parsea el
-//   cuerpo (máx. 256 KB → 413) y el handler entrega la request al transporte del SDK.
+//   cuerpo (máx. 256 KB → 413), el handler rechaza los batches JSON-RPC (400, -32600) y entrega
+//   la request al transporte del SDK.
 // Logs: una línea por request ("[mcp] request") y los fallos de auth con warn y solo el
 // motivo; nunca tokens, argumentos ni contenido. Ver docs/mcp.md ("Seguridad").
 
@@ -136,7 +137,6 @@ function rpcError(reply: FastifyReply, status: number, code: number, message: st
 }
 
 function rpcMethodOf(body: unknown): string | undefined {
-  if (Array.isArray(body)) return "batch"
   const method = (body as { method?: unknown } | null)?.method
   return typeof method === "string" ? method.slice(0, 64) : undefined
 }
@@ -190,6 +190,13 @@ export async function registerMcpHttp(app: FastifyInstance, opts: McpHttpOptions
   app.post("/mcp", { bodyLimit: MCP_BODY_LIMIT, onRequest: guard }, async (req, reply) => {
     const principal = principals.get(req.raw)
     if (!principal) return rpcError(reply, 401, -32000, "Se requiere autenticación")
+
+    // Batches JSON-RPC: MCP 2025-06-18 los eliminó y un batch contaría como 1 request para el
+    // limitador por usuario (10 llamadas por el precio de una). Se rechazan antes del transporte.
+    if (Array.isArray(req.body)) {
+      req.log.warn({ mcp: { reason: "batch_not_supported", ...principalLog(principal) } }, "[mcp] request rechazada")
+      return rpcError(reply, 400, -32600, "Batch JSON-RPC no soportado: envía un solo mensaje JSON-RPC por POST (MCP 2025-06-18 eliminó los batches)")
+    }
 
     const started = Date.now()
     const rpcMethod = rpcMethodOf(req.body)

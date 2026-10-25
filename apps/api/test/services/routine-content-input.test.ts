@@ -2,7 +2,7 @@ import assert from "node:assert/strict"
 import { describe, it } from "node:test"
 import { TRPCError } from "@trpc/server"
 import { ZodError } from "zod"
-import type { RoutineContent } from "@atleta/db/schema"
+import type { RoutineContent, RoutineExerciseContent } from "@atleta/db/schema"
 import {
   assertRoutineLimits,
   MAX_CONTENT_JSON_CHARS,
@@ -100,9 +100,37 @@ describe("normalizeRoutineContent", () => {
     assert.equal(bad("fixed_kg", 1001), true)
   })
 
-  it("rechaza campos desconocidos y tempo mal formado", () => {
+  it("rechaza campos desconocidos", () => {
     assert.equal(routineContentInputSchema.safeParse({ items: [{ type: "exercise", exerciseId: EX_A, order: 0, sets: [{ setType: "reps" }] }] }).success, false)
-    assert.equal(routineContentInputSchema.safeParse({ items: [{ type: "exercise", exerciseId: EX_A, tempo: "3120", sets: [{ setType: "reps" }] }] }).success, false)
+  })
+
+  it("acepta los mismos valores que la web: tempo libre, notas largas, reps, tiempo y descanso sin tope", () => {
+    const c = normalizeRoutineContent({
+      items: [
+        { type: "exercise", exerciseId: EX_A, tempo: "31X0", restSeconds: 900, notes: "n".repeat(400), sets: [{ setType: "reps", targetReps: 300 }, { setType: "time", targetDurationSeconds: 5400 }] },
+        { type: "exercise", exerciseId: EX_A, tempo: "lento", sets: [{ setType: "reps" }] },
+        { type: "block", name: "c".repeat(80), rounds: 3, restBetweenRoundsSeconds: 900, exercises: [{ exerciseId: EX_A, sets: [{ setType: "reps", targetReps: 5 }] }] },
+      ],
+    })
+    const [first, second] = c.items as RoutineExerciseContent[]
+    assert.equal(first!.tempo, "31X0")
+    assert.equal(first!.restSeconds, 900)
+    assert.equal(first!.notes!.length, 400)
+    assert.equal(first!.sets[0]!.targetReps, 300)
+    assert.equal(second!.tempo, "lento", "un tempo fuera del formato E-P-C-P se guarda tal cual")
+    // Siguen rechazándose los valores que routineContentSchema tampoco acepta
+    for (const sets of [[{ setType: "reps", targetReps: 0 }], [{ setType: "reps", targetReps: 2.5 }]]) {
+      assert.equal(routineContentInputSchema.safeParse({ items: [{ type: "exercise", exerciseId: EX_A, sets }] }).success, false)
+    }
+    assert.equal(routineContentInputSchema.safeParse({ items: [{ type: "exercise", exerciseId: EX_A, restSeconds: 0, sets: [{ setType: "reps" }] }] }).success, false)
+  })
+
+  it("ida y vuelta de contenido guardado por la web (routineContentSchema) con valores grandes", () => {
+    const web: RoutineContent = {
+      v: 1,
+      items: [{ type: "exercise", id: EX_A.replace(/.$/, "9"), exerciseId: EX_A, order: 0, tempo: "31X0", restSeconds: 900, notes: "n".repeat(400), sets: [{ setNumber: 1, setType: "reps", targetReps: 300 }] }],
+    }
+    assert.deepEqual(normalizeRoutineContent(toContentInput(web), { newId: () => { throw new Error("no debe generar ids") } }), web)
   })
 
   it("aplica los límites: 21 ítems, 11 en bloque, 13 series, rondas", () => {

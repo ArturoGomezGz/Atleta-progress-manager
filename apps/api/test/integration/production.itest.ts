@@ -38,9 +38,20 @@ describe("conector MCP en modo producción", { skip: integrationSkip }, () => {
     const { token } = await insertPat(fx.users.coachA.id)
     const [ex] = await catalogExerciseIds(1)
     const c = await connectMcp(base, token)
+    const { db } = await import("@atleta/db/client")
+    const insert = db.insert
     try {
-      // Un NUL en el nombre hace fallar a Postgres → INTERNAL
-      const r = await c.callTool({ name: "create_routine", arguments: { name: "MARCADOR-SECRETO-1\u0000" } })
+      // Un fallo inesperado de Postgres al insertar → INTERNAL (se simula: el NUL, que antes lo
+      // provocaba, ahora es INVALID_INPUT). El mensaje imita el de Postgres para ver que no se filtra.
+      db.insert = (() => {
+        throw new Error('insert en postgres falló: invalid byte sequence for encoding "UTF8": 0x00')
+      }) as unknown as typeof db.insert
+      let r: Awaited<ReturnType<typeof c.callTool>>
+      try {
+        r = await c.callTool({ name: "create_routine", arguments: { name: "MARCADOR-SECRETO-1" } })
+      } finally {
+        db.insert = insert
+      }
       assert.equal(r.isError, true)
       const error = (r.structuredContent as { error: { code: string; message: string; details?: { requestId?: string } } }).error
       assert.equal(error.code, "INTERNAL")
@@ -87,16 +98,36 @@ describe("conector MCP en modo producción", { skip: integrationSkip }, () => {
     assert.equal(statuses[20], 429)
   })
 
-  it("el límite del registro dinámico no se evade rotando X-Forwarded-For", { todo: "BUG-12: better-auth toma la IP del primer valor de X-Forwarded-For (lo controla el cliente) y sin ese header no limita: llamando directo a la API se registran clientes sin límite" }, async () => {
-    const statuses: number[] = []
-    for (let i = 0; i < 25; i++) {
-      const res = await fetch(`${server.baseUrl}/api/auth/oauth2/register`, {
+  it("el límite del registro dinámico no se evade rotando X-Forwarded-For", async () => {
+    const spam = (url: string, xff: string) =>
+      fetch(`${url}/api/auth/oauth2/register`, {
         method: "POST",
-        headers: { "content-type": "application/json", "x-forwarded-for": `198.51.100.${i}` },
+        headers: { "content-type": "application/json", "x-forwarded-for": xff },
         body: JSON.stringify({ client_name: "spam", redirect_uris: ["http://127.0.0.1:1/cb"], token_endpoint_auth_method: "none" }),
       })
-      statuses.push(res.status)
+
+    // Producción (TRUST_PROXY por defecto = 1, como en Railway): el edge agrega la IP real al
+    // final de X-Forwarded-For; lo que el cliente pone antes no cuenta
+    const behindEdge: number[] = []
+    for (let i = 0; i < 25; i++) behindEdge.push((await spam(server.baseUrl, `198.51.100.${i}, 203.0.113.50`)).status)
+    assert.deepEqual(behindEdge.slice(0, 20), Array(20).fill(200))
+    assert.ok(behindEdge.slice(20).every((s) => s === 429), `rotar el primer valor evadió el límite: ${behindEdge.join(",")}`)
+
+    // Sin proxy delante (TRUST_PROXY=false): X-Forwarded-For se ignora y cuenta la IP del socket.
+    // Antes, sin header better-auth no limitaba y con header lo elegía el cliente.
+    const { buildApp } = await import("../../src/app")
+    process.env.TRUST_PROXY = "false"
+    const direct = await buildApp({ logger: false })
+    delete process.env.TRUST_PROXY
+    await direct.listen({ port: 0, host: "127.0.0.1" })
+    try {
+      const addr = direct.server.address()
+      const url = `http://127.0.0.1:${typeof addr === "object" && addr ? addr.port : 0}`
+      const statuses: number[] = []
+      for (let i = 0; i < 25; i++) statuses.push((await spam(url, `198.51.100.${i}`)).status)
+      assert.ok(statuses.includes(429), "25 registros desde 'IPs' distintas pasaron sin límite")
+    } finally {
+      await direct.close()
     }
-    assert.ok(statuses.includes(429), "25 registros desde 'IPs' distintas pasaron sin límite")
   })
 })

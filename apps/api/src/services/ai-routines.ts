@@ -1,10 +1,11 @@
 import { db } from "@atleta/db/client"
 import { equipment, exercise, type RoutineContent, type RoutineExerciseContent, type RoutineSet } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, arrayContains, eq, ilike, inArray } from "drizzle-orm"
+import { and, arrayContains, eq, inArray } from "drizzle-orm"
 import type { FastifyBaseLogger } from "fastify"
 import type OpenAI from "openai"
 import { z } from "zod"
+import { containsText, equalsIgnoringCase } from "../lib/text-search"
 import { attachDetails, getOpenAI } from "../routers/exercises"
 import { bodyZones, levels, MAX_NEW_EXERCISES, patterns } from "./ai-routine-editor/catalog-constants"
 import { matchesAvoid } from "./ai-routine-editor/avoid"
@@ -201,7 +202,7 @@ export async function searchExercises(raw: unknown, ctx: Ctx) {
     .from(exercise)
     .where(and(
       visibleTo(ctx),
-      args.query ? ilike(exercise.name, `%${args.query.trim()}%`) : undefined,
+      args.query?.trim() ? containsText(exercise.name, args.query) : undefined,
       args.movementPattern ? arrayContains(exercise.movementPatterns, [args.movementPattern]) : undefined,
       args.difficulty ? eq(exercise.difficulty, args.difficulty) : undefined,
       args.warmupOnly ? eq(exercise.suitableFor, "warmup") : undefined,
@@ -243,7 +244,7 @@ export async function proposeNewExercise(raw: unknown, ctx: Ctx) {
   const [existing] = await db
     .select({ id: exercise.id, name: exercise.name })
     .from(exercise)
-    .where(and(visibleTo(ctx), ilike(exercise.name, name)))
+    .where(and(visibleTo(ctx), equalsIgnoringCase(exercise.name, name)))
     .limit(1)
   if (existing) {
     ctx.knownIds.add(existing.id)

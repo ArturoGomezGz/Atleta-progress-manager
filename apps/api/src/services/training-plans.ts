@@ -488,9 +488,46 @@ export type ScheduledPlanSession = {
   status?: "scheduled" | "active"
 }
 
+/** Pista de un schedule_plan repetido (CONFLICT con el assignmentId existente). */
+export const DUPLICATE_SCHEDULE_HINT =
+  "Si es un reintento, el plan ya quedó programado: revísalo con get_plan. Para reprogramarlo, cancela antes esa asignación con cancel_plan_assignment."
+
 /**
- * Aplica el plan a atletas desde `startDate`. Con `dryRun` solo calcula (no escribe);
- * si no, crea en una transacción la asignación y una sesión por hueco programable.
+ * Asignación activa del plan con la misma fecha de inicio y exactamente los mismos atletas
+ * (un reintento de schedule_plan), o null. Los atletas de una asignación son los de sus sesiones.
+ */
+async function findDuplicateAssignment(tx: Tx | typeof db, planId: string, startDate: string, athleteIds: string[]): Promise<string | null> {
+  const candidates = await tx
+    .select({ id: trainingPlanAssignment.id })
+    .from(trainingPlanAssignment)
+    .where(and(eq(trainingPlanAssignment.planId, planId), eq(trainingPlanAssignment.startDate, startDate), eq(trainingPlanAssignment.status, "active")))
+  if (candidates.length === 0) return null
+  const rows = await tx
+    .selectDistinct({ assignmentId: trainingSession.planAssignmentId, athleteId: athleteSession.athleteId })
+    .from(athleteSession)
+    .innerJoin(trainingSession, eq(trainingSession.id, athleteSession.sessionId))
+    .where(inArray(trainingSession.planAssignmentId, candidates.map((c) => c.id)))
+  const wanted = [...new Set(athleteIds)].sort().join(",")
+  for (const c of candidates) {
+    const athletes = rows.filter((r) => r.assignmentId === c.id).map((r) => r.athleteId).sort().join(",")
+    if (athletes === wanted) return c.id
+  }
+  return null
+}
+
+function duplicateConflict(assignmentId: string) {
+  return new TRPCError({
+    code: "CONFLICT",
+    message: `Este plan ya está programado para esos mismos atletas desde esa fecha (asignación ${assignmentId}); no se creó otra.`,
+    cause: new ErrorDetails({ assignmentId }, { hint: DUPLICATE_SCHEDULE_HINT }),
+  })
+}
+
+/**
+ * Aplica el plan a atletas desde `startDate`. Con `dryRun` solo calcula (no escribe) e indica en
+ * `duplicateOf` si ya existe esa misma programación; si no, crea en una transacción la asignación
+ * y una sesión por hueco programable. Una asignación activa del mismo plan, con la misma fecha de
+ * inicio y los mismos atletas → CONFLICT con su assignmentId (idempotencia ante reintentos).
  */
 export async function schedulePlan(actor: PlanActor, input: PlanScheduleInput, opts: { today: string }) {
   const plan = await loadPlan(input.planId)
@@ -530,7 +567,9 @@ export async function schedulePlan(actor: PlanActor, input: PlanScheduleInput, o
     skipped: skippedList,
   })
 
-  if (input.dryRun) return result(null, sessions, skipped)
+  if (input.dryRun) {
+    return { ...result(null, sessions, skipped), duplicateOf: await findDuplicateAssignment(db, plan.id, input.startDate, athleteIds) }
+  }
 
   if (entries.length === 0) {
     throw badRequest("Ningún entrenamiento del plan cae en una fecha programable (desde la fecha de inicio y desde hoy). Revisa startDate con dryRun.")
@@ -539,6 +578,11 @@ export async function schedulePlan(actor: PlanActor, input: PlanScheduleInput, o
   if (entries.some((e) => e.date > opts.today)) assertFeature(actor, "scheduled_sessions")
 
   return db.transaction(async (tx) => {
+    // Bloquea el plan: dos schedule_plan idénticos simultáneos se serializan y el segundo ve el duplicado
+    await tx.select({ id: trainingPlan.id }).from(trainingPlan).where(eq(trainingPlan.id, plan.id)).for("update")
+    const duplicate = await findDuplicateAssignment(tx, plan.id, input.startDate, athleteIds)
+    if (duplicate) throw duplicateConflict(duplicate)
+
     const [assignment] = await tx
       .insert(trainingPlanAssignment)
       .values({ planId: plan.id, teamId: plan.teamId, assignedBy: actor.id, startDate: input.startDate })

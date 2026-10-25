@@ -3,8 +3,8 @@
 // HTTP (batch, Origin/CORS, cuerpo, tipos de contenido), regresión de la web y calidad de lo que
 // recibe el LLM (esquemas publicados, mensajes de error, tamaño de las respuestas).
 //
-// Las pruebas que hoy descubren un bug están marcadas con `{ todo: "BUG-N: …" }` (node:test no las
-// cuenta como fallo); el detalle de cada bug está en el reporte de QA.
+// Las pruebas de los bugs del reporte de QA (BUG-1 a BUG-13) ya no son `todo`: cada una verifica
+// su corrección. Un bug nuevo se puede marcar con `{ todo: "BUG-N: …" }` hasta corregirlo.
 
 import assert from "node:assert/strict"
 import { after, before, describe, it } from "node:test"
@@ -374,9 +374,11 @@ describe("QA adversarial del conector MCP", { skip: integrationSkip }, () => {
       ["kg negativos", "create_routine", { name: "x", content: { items: [item({ sets: { count: 1, setType: "reps", loadType: "fixed_kg", loadValue: -20 } })] } }],
       ["reps 0", "create_routine", { name: "x", content: { items: [item({ sets: { count: 1, setType: "reps", targetReps: 0 } })] } }],
       ["13 series", "create_routine", { name: "x", content: { items: [item({ sets: { count: 13, setType: "reps" } })] } }],
-      ["descanso 601", "create_routine", { name: "x", content: { items: [item({ restSeconds: 601 })] } }],
-      ["tempo inválido", "create_routine", { name: "x", content: { items: [item({ tempo: "lento" })] } }],
-      ["notas de 301", "create_routine", { name: "x", content: { items: [item({ notes: "n".repeat(301) })] } }],
+      // Descanso, tempo y notas aceptan lo mismo que la web (BUG-2): sin tope, texto libre; solo
+      // se rechaza lo que routineContentSchema tampoco acepta
+      ["descanso 0", "create_routine", { name: "x", content: { items: [item({ restSeconds: 0 })] } }],
+      ["tempo numérico", "create_routine", { name: "x", content: { items: [item({ tempo: 3120 })] } }],
+      ["notas no texto", "create_routine", { name: "x", content: { items: [item({ notes: ["n"] })] } }],
       ["campo extra anidado", "create_routine", { name: "x", content: { items: [item({ weight: 100 })] } }],
       ["circuito de 1 ronda", "create_routine", { name: "x", content: { items: [{ type: "block", rounds: 1, exercises: [{ exerciseId: ex[0], sets: { count: 1, setType: "reps" } }] }] } }],
       ["circuito vacío", "create_routine", { name: "x", content: { items: [{ type: "block", rounds: 2, exercises: [] }] } }],
@@ -408,7 +410,7 @@ describe("QA adversarial del conector MCP", { skip: integrationSkip }, () => {
     assert.equal(back.content.items[0].notes, notes)
   })
 
-  it("caracteres NUL en textos → INVALID_INPUT, no INTERNAL", { todo: "BUG-4: \\u0000 llega a Postgres y responde INTERNAL (filtra el error de Postgres fuera de producción)" }, async () => {
+  it("caracteres NUL en textos → INVALID_INPUT, no INTERNAL", async () => {
     for (const [tool, args] of [
       ["create_routine", { name: "a\u0000b" }],
       ["create_routine", { name: "ok", content: { items: [{ type: "exercise", exerciseId: ex[0], sets: { count: 1, setType: "reps" }, notes: "x\u0000" }] } }],
@@ -419,17 +421,17 @@ describe("QA adversarial del conector MCP", { skip: integrationSkip }, () => {
     }
   })
 
-  it("surrogates sueltos en notas → INVALID_INPUT, no INTERNAL", { todo: "BUG-5: '\\uD800' en content rompe el jsonb de Postgres (INTERNAL)" }, async () => {
+  it("surrogates sueltos en notas → INVALID_INPUT, no INTERNAL", async () => {
     const e = await coachA.fail("create_routine", { name: "ok", content: { items: [{ type: "exercise", exerciseId: ex[0], sets: { count: 1, setType: "reps" }, notes: "x\uD800y" }] } })
     assert.equal(e.code, "INVALID_INPUT", `${e.code}: ${e.message}`)
   })
 
-  it("fetch con un id con forma de uuid pero inválido → INVALID_INPUT/NOT_FOUND, no INTERNAL", { todo: "BUG-6: fetch('exercise:' + 36 guiones) pasa ID_RE y Postgres falla (INTERNAL)" }, async () => {
+  it("fetch con un id con forma de uuid pero inválido → INVALID_INPUT/NOT_FOUND, no INTERNAL", async () => {
     const e = await coachA.fail("fetch", { id: `exercise:${"-".repeat(36)}` })
     assert.ok(["INVALID_INPUT", "NOT_FOUND"].includes(e.code), `${e.code}: ${e.message}`)
   })
 
-  it("un campo desconocido en el nivel superior se rechaza (no se descarta en silencio)", { todo: "BUG-7: el wrapper usa z.object no estricto: un typo como expectedUpdatedAT se ignora y la edición se guarda sin control de versión" }, async () => {
+  it("un campo desconocido en el nivel superior se rechaza (no se descarta en silencio)", async () => {
     const current = await coachA.ok<S>("get_routine", { routineId: A.routineId })
     const old = new Date(Date.parse(current.updatedAt) - 60_000).toISOString()
     const r = await coachA.call("update_item_fields", { routineId: A.routineId, expectedUpdatedAT: old, itemId: A.itemId, notes: "typo" })
@@ -487,14 +489,30 @@ describe("QA adversarial del conector MCP", { skip: integrationSkip }, () => {
     }
   })
 
-  it("schedule_plan repetido (reintento del agente) no duplica las sesiones del atleta", { todo: "BUG-3: un segundo schedule_plan idéntico crea otra asignación con las mismas fechas y atletas, sin aviso ni idempotencia" }, async () => {
+  it("schedule_plan repetido (reintento del agente) no duplica las sesiones del atleta", async () => {
     const p = await coachA.ok<S>("create_plan", { name: "Reintento", weeks: 1, workouts: [{ week: 1, weekday: 7, routineId: A.routineId }] })
     const args = { planId: p.planId, athleteIds: [fx.users.athleteA.id], startDate: today }
-    await coachA.ok("schedule_plan", args)
+    const first = await coachA.ok<S>("schedule_plan", args)
     const second = await coachA.call("schedule_plan", args)
     const plan = await coachA.ok<S>("get_plan", { planId: p.planId })
     const active = plan.assignments.filter((a: S) => a.status === "active")
     assert.ok(second.isError || active.length === 1, `asignaciones activas duplicadas: ${active.length}`)
+    // CONFLICT con el assignmentId existente y la pista de qué hacer
+    const e = (second.structuredContent as { error: ToolError }).error
+    assert.equal(e.code, "CONFLICT")
+    assert.equal(e.details?.assignmentId, first.assignmentId)
+    assert.match(e.message, /cancel_plan_assignment/)
+    assert.match(e.message, /get_plan/)
+    // dryRun lo avisa sin escribir
+    const dry = await coachA.ok<S>("schedule_plan", { ...args, dryRun: true })
+    assert.equal(dry.duplicateOf, first.assignmentId)
+    // Otros atletas u otra fecha no son duplicados
+    assert.equal((await coachA.ok<S>("schedule_plan", { ...args, startDate: addDays(today, 7), dryRun: true })).duplicateOf, null)
+    // Tras cancelar la asignación se puede volver a programar
+    await coachA.ok("cancel_plan_assignment", { assignmentId: first.assignmentId })
+    assert.equal((await coachA.ok<S>("schedule_plan", { ...args, dryRun: true })).duplicateOf, null)
+    const again = await coachA.ok<S>("schedule_plan", args)
+    await coachA.ok("cancel_plan_assignment", { assignmentId: again.assignmentId })
   })
 
   // ─── 6. Calendario ──────────────────────────────────────────────────────────
@@ -541,7 +559,7 @@ describe("QA adversarial del conector MCP", { skip: integrationSkip }, () => {
 
   // ─── 7. HTTP: batch, Origin/CORS, cuerpo, content-type ──────────────────────
 
-  it("un batch JSON-RPC no evade el límite de requests por usuario", { todo: "BUG-1: /mcp acepta batches (incluso con protocolo 2025-06-18) y el limitador cuenta 1 request por batch" }, async () => {
+  it("un batch JSON-RPC no evade el límite de requests por usuario", async () => {
     const [{ buildApp }, { createRateLimiter }] = await Promise.all([import("../../src/app"), import("../../src/lib/rate-limit")])
     const app = await buildApp({ logger: false, mcp: { limiters: { request: createRateLimiter({ max: 2, windowMs: 60_000 }) } } })
     await app.listen({ port: 0, host: "127.0.0.1" })
@@ -554,6 +572,14 @@ describe("QA adversarial del conector MCP", { skip: integrationSkip }, () => {
       const body = await res.text()
       const executed = res.status === 200 && body.startsWith("[") ? (JSON.parse(body) as { result?: unknown }[]).filter((r) => r.result).length : 0
       assert.ok(executed <= 2, `se ejecutaron ${executed} llamadas con un límite de 2 requests`)
+      // Los batches se rechazan con un error JSON-RPC claro (MCP 2025-06-18 los eliminó)
+      assert.equal(res.status, 400)
+      const error = (JSON.parse(body) as { error: { code: number; message: string } }).error
+      assert.equal(error.code, -32600)
+      assert.match(error.message, /[Bb]atch/)
+      // Una request suelta sigue funcionando
+      const single = await postMcp(url, batch[0], { authorization: `Bearer ${token}`, "mcp-protocol-version": "2025-06-18" })
+      assert.equal(single.status, 200)
     } finally {
       await app.close()
     }
@@ -654,7 +680,7 @@ describe("QA adversarial del conector MCP", { skip: integrationSkip }, () => {
     }
   })
 
-  it("tools/list sin $ref (algunos clientes no resuelven referencias)", { todo: "BUG-11: 12 herramientas publican $ref internos (zod-to-json-schema con $refStrategy por defecto); usar $refStrategy: 'none'" }, async () => {
+  it("tools/list sin $ref (algunos clientes no resuelven referencias)", async () => {
     const c = await httpClient()
     try {
       const withRefs = (await c.listTools()).tools.filter((t) => JSON.stringify(t.inputSchema).includes("$ref")).map((t) => t.name)
@@ -689,32 +715,32 @@ describe("QA adversarial del conector MCP", { skip: integrationSkip }, () => {
     assert.deepEqual((inv.details?.issues as S[])[0]!.path, "workouts.0.weekday")
   })
 
-  it("mensajes de validación en español y específicos (sin 'Invalid input' genérico)", { todo: "BUG-8: los mensajes de zod llegan en inglés y las uniones (sets) solo dicen 'Invalid input'" }, async () => {
+  it("mensajes de validación en español y específicos (sin 'Invalid input' genérico)", async () => {
     const e1 = await coachA.fail("get_routine", { routineId: "x" })
     assert.doesNotMatch(e1.message, /Invalid uuid/)
     const e2 = await coachA.fail("create_routine", { name: "x", content: { items: [{ type: "exercise", exerciseId: ex[0], sets: { count: 1, setType: "reps", loadType: "rpe", loadValue: null } }] } })
     assert.doesNotMatch(e2.message, /Invalid input/)
   })
 
-  it("búsqueda de ejercicios sin distinguir acentos (los LLM escriben 'flexión')", { todo: "BUG-9: search_exercises/search usan ilike: 'flexión' no encuentra 'Flexion' (riesgo 12 del diseño)" }, async () => {
+  it("búsqueda de ejercicios sin distinguir acentos (los LLM escriben 'flexión')", async () => {
     const plain = await coachA.ok<S>("search_exercises", { query: "flexion" })
     assert.ok(plain.results.length > 0, "precondición: hay ejercicios 'flexion'")
     const accented = await coachA.ok<S>("search_exercises", { query: "flexión" })
     assert.ok(accented.results.length > 0)
   })
 
-  it("search trata % y _ como texto (no como comodines de LIKE)", { todo: "BUG-10: search('%') devuelve ejercicios cualquiera (ilike sin escapar)" }, async () => {
+  it("search trata % y _ como texto (no como comodines de LIKE)", async () => {
     const r = await coachA.ok<S>("search", { query: "%" })
     assert.deepEqual(r.results.filter((x: S) => x.id.startsWith("exercise:")), [])
   })
 
-  it("create_exercise compara el nombre literal (no como patrón LIKE)", { todo: "BUG-13: proposeNewExercise usa ilike(name, name): '%%' o 'Press_banca' devuelven otro ejercicio existente como existed: true" }, async () => {
+  it("create_exercise compara el nombre literal (no como patrón LIKE)", async () => {
     const r = await coachA.call("create_exercise", { name: "%%", description: "x", difficulty: "beginner", movementPatterns: ["core"] })
     const sc = r.structuredContent as S
     assert.ok(r.isError || sc.name === "%%", `devolvió otro ejercicio: ${JSON.stringify(sc)}`)
   })
 
-  it("round-trip get_routine detail → update_routine funciona con rutinas creadas en la web", { todo: "BUG-2: la web guarda valores fuera de los límites MCP (tempo libre, notas > 300, reps > 200, descanso > 600) y update_routine rechaza el contenido que el propio get_routine devolvió" }, async () => {
+  it("round-trip get_routine detail → update_routine funciona con rutinas creadas en la web", async () => {
     const web = fx.callers.coachA
     const r = await web.routines.create({ teamId: fx.teams.a.id, name: "Hecha en la web" })
     await web.routines.updateContent({

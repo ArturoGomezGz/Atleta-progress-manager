@@ -6,7 +6,11 @@
 //   - el `id` de ejercicios y bloques es opcional (se genera si falta o se repite;
 //     conservarlo mantiene estable el vínculo con athleteSetCompletion.routineExerciseId);
 //   - admite el atajo `sets: { count: 3, setType: "reps", targetReps: 10 }`;
-//   - acota cada campo (RPE 1–10, %RM 1–120, descanso 1–600 s, notas ≤ 300, tempo E-P-C-P).
+//   - acepta en cada campo lo mismo que routineContentSchema (lo que guarda la web): enteros
+//     positivos sin tope en reps/tiempo/distancia/descanso y textos libres en tempo, notas y nombre
+//     del circuito, para que el contenido de una rutina hecha en la web (get_routine "detail")
+//     vuelva a entrar tal cual por update_routine. Solo la carga tiene cota por tipo (RPE 1–10,
+//     %RM 1–120, kg ≤ 1000) y el tamaño se acota con los límites de estructura y de JSON.
 // normalizeRoutineContent la convierte a RoutineContent y la valida con routineContentSchema;
 // toContentInput es la inversa (formato "detail" de get_routine). Ver docs/mcp.md.
 
@@ -21,26 +25,25 @@ export { MAX_BLOCK_EXERCISES, MAX_BLOCK_ROUNDS, MAX_ITEMS, MAX_SETS_PER_EXERCISE
 /** Tamaño máximo del contenido serializado (JSON) que acepta la entrada. */
 export const MAX_CONTENT_JSON_CHARS = 60_000
 export const MIN_BLOCK_ROUNDS = 2
-export const MAX_REST_SECONDS = 600
-export const MAX_NOTES_CHARS = 300
-export const MAX_BLOCK_NAME_CHARS = 60
 
 // Cota de loadValue según loadType
 const LOAD_BOUNDS = {
   rpe:        { min: 1, max: 10, label: "RPE" },
   percent_rm: { min: 1, max: 120, label: "%RM" },
-  fixed_kg:   { min: 0.5, max: 1000, label: "kg" },
+  fixed_kg:   { min: 0, max: 1000, label: "kg" },
 } as const
 
+// Tempo con el formato recomendado: se normaliza a mayúsculas ("3-1-x-0" → "3-1-X-0"). Cualquier
+// otro texto (la web lo guarda libre, p. ej. "31X0" o "lento") se conserva tal cual.
 const TEMPO_RE = /^[0-9X]-[0-9X]-[0-9X]-[0-9X]$/i
 
 // ─── Schemas ──────────────────────────────────────────────────────────────────
 
 const setFields = {
   setType:               z.enum(["reps", "time", "distance", "amrap"]),
-  targetReps:            z.number().int().min(1).max(200).optional(),
-  targetDurationSeconds: z.number().int().min(1).max(3600).optional(),
-  targetDistanceMeters:  z.number().int().min(1).max(100_000).optional(),
+  targetReps:            z.number().int().min(1).optional(),
+  targetDurationSeconds: z.number().int().min(1).optional(),
+  targetDistanceMeters:  z.number().int().min(1).optional(),
   loadType:              z.enum(["rpe", "percent_rm", "fixed_kg"]).optional(),
   loadValue:             z.number().positive().optional(),
 }
@@ -76,10 +79,10 @@ const exerciseFields = {
   id:          z.string().uuid().optional(),
   exerciseId:  z.string().uuid(),
   sets:        routineSetsInputSchema,
-  restSeconds: z.number().int().min(1).max(MAX_REST_SECONDS).optional(),
-  tempo:       z.string().regex(TEMPO_RE, "Tempo con formato E-P-C-P, p. ej. 3-1-2-0 (X = explosivo)").optional(),
+  restSeconds: z.number().int().min(1).optional().describe("Segundos de descanso después del ejercicio (habitual 30–300)"),
+  tempo:       z.string().optional().describe("Recomendado E-P-C-P, p. ej. 3-1-2-0 (X = explosivo)"),
   goal:        z.enum(EXERCISE_GOALS).optional(),
-  notes:       z.string().max(MAX_NOTES_CHARS).optional(),
+  notes:       z.string().optional().describe("Indicación breve para el atleta"),
   perSide:     z.boolean().optional(),
 }
 
@@ -91,9 +94,9 @@ export const routineItemInputSchema = z.discriminatedUnion("type", [
     .object({
       type:   z.literal("block"),
       id:     z.string().uuid().optional(),
-      name:   z.string().max(MAX_BLOCK_NAME_CHARS).optional(),
+      name:   z.string().optional(),
       rounds: z.number().int().min(MIN_BLOCK_ROUNDS).max(MAX_BLOCK_ROUNDS),
-      restBetweenRoundsSeconds: z.number().int().min(1).max(MAX_REST_SECONDS).optional(),
+      restBetweenRoundsSeconds: z.number().int().min(1).optional(),
       exercises: z.array(routineExerciseInputSchema).min(1).max(MAX_BLOCK_EXERCISES),
     })
     .strict(),
@@ -151,7 +154,7 @@ export function normalizeRoutineContent(raw: RoutineContentInput, opts: { newId?
       id: idFor(e.id),
       exerciseId: e.exerciseId,
       order,
-      ...(e.tempo !== undefined && { tempo: e.tempo.toUpperCase() }),
+      ...(e.tempo !== undefined && { tempo: TEMPO_RE.test(e.tempo) ? e.tempo.toUpperCase() : e.tempo }),
       ...(e.restSeconds !== undefined && { restSeconds: e.restSeconds }),
       ...(e.goal !== undefined && { goal: e.goal }),
       ...(notes && { notes }),

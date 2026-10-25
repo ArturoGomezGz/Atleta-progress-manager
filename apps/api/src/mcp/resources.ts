@@ -46,9 +46,10 @@ Lo aceptan \`create_routine\` y \`update_routine\` (campo \`content\`). \`get_ro
 - \`exerciseId\`: id devuelto por \`search_exercises\` (o \`create_exercise\`).
 - \`id\` (opcional) en ejercicios y bloques: consérvalo al reescribir una rutina (sale de \`get_routine\`) para no perder el historial del atleta; si falta se genera.
 - \`sets\`: lista de 1 a ${MAX_SETS_PER_EXERCISE} series, o el atajo \`{ "count": 3, "setType": "reps", "targetReps": 10 }\`.
-  - \`setType\`: \`reps\` (\`targetReps\` 1–200), \`time\` (\`targetDurationSeconds\` 1–3600), \`distance\` (\`targetDistanceMeters\` 1–100 000) o \`amrap\`.
+  - \`setType\`: \`reps\` (\`targetReps\`), \`time\` (\`targetDurationSeconds\`), \`distance\` (\`targetDistanceMeters\`) o \`amrap\`; los objetivos son enteros ≥ 1.
   - Carga opcional: \`loadType\` \`rpe\` (1–10), \`percent_rm\` (1–120) o \`fixed_kg\` (≤ 1000) con \`loadValue\`. \`loadValue\` exige \`loadType\`; sin carga = peso corporal.
-- \`restSeconds\` 1–600 · \`tempo\` "E-P-C-P" (excéntrica-pausa-concéntrica-pausa, \`X\` = explosivo, p. ej. "3-1-1-0") · \`goal\` ${EXERCISE_GOALS.map((g) => `\`${g}\``).join(", ")} · \`notes\` ≤ 300 caracteres (indicación para el atleta) · \`perSide: true\` en unilaterales (reps/tiempo por cada lado).
+- \`restSeconds\` (entero ≥ 1, en segundos) · \`tempo\` recomendado "E-P-C-P" (excéntrica-pausa-concéntrica-pausa, \`X\` = explosivo, p. ej. "3-1-1-0"; en ese formato se guarda en mayúsculas, cualquier otro texto se guarda tal cual) · \`goal\` ${EXERCISE_GOALS.map((g) => `\`${g}\``).join(", ")} · \`notes\` (indicación breve para el atleta) · \`perSide: true\` en unilaterales (reps/tiempo por cada lado).
+- Los valores aceptan lo mismo que el editor de la web, así que el \`content\` de \`get_routine\` (\`format: "detail"\`) siempre se puede reenviar a \`update_routine\` (salvo que la rutina exceda los límites de tamaño de arriba).
 - No se aceptan campos desconocidos. El JSON completo no puede pasar de ${MAX_CONTENT_JSON_CHARS} caracteres.
 
 ## Ejemplo

@@ -7,8 +7,9 @@
 import { db } from "@atleta/db/client"
 import { exercise } from "@atleta/db/schema"
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { and, ilike, inArray } from "drizzle-orm"
+import { and, inArray } from "drizzle-orm"
 import { z } from "zod"
+import { containsText } from "../../lib/text-search"
 import { attachDetails } from "../../routers/exercises"
 import { normalizeText } from "../../services/ai-routine-editor/avoid"
 import { exerciseVisibilityWhere, memberTeamIds } from "../../services/exercise-visibility"
@@ -96,7 +97,7 @@ async function searchExercisesByName(query: string, ctx: McpToolContext): Promis
   const rows = await db
     .select({ id: exercise.id, name: exercise.name })
     .from(exercise)
-    .where(and(exerciseVisibilityWhere(scope), ilike(exercise.name, `%${q}%`)))
+    .where(and(exerciseVisibilityWhere(scope), containsText(exercise.name, q)))
     .orderBy(exercise.name)
     .limit(10)
   return rows.map((e) => ({ id: `exercise:${e.id}`, title: e.name, url: scope.catalogUrl }))
@@ -130,7 +131,8 @@ async function fetchExercise(id: string, ctx: McpToolContext): Promise<FetchResu
 
 // ─── Registro ─────────────────────────────────────────────────────────────────
 
-const ID_RE = /^([a-z_]+):([0-9a-f-]{36})$/i
+const ID_RE = /^([a-z_]+):(.+)$/i
+const uuidSchema = z.string().uuid()
 
 export function registerSearchFetchTools(server: McpServer, ctx: McpToolContext): void {
   registerAtletaTool(server, ctx, {
@@ -162,6 +164,10 @@ export function registerSearchFetchTools(server: McpServer, ctx: McpToolContext)
       if (!m) throw new McpToolError("INVALID_INPUT", "El id debe tener la forma \"<tipo>:<uuid>\" (p. ej. \"routine:<uuid>\"), tal como lo devuelve search.")
       const kind = m[1]!.toLowerCase()
       const id = m[2]!.toLowerCase()
+      // Un uuid mal formado (p. ej. 36 guiones) llegaba a Postgres y respondía INTERNAL
+      if (!uuidSchema.safeParse(id).success) {
+        throw new McpToolError("INVALID_INPUT", `El id "${kind}:…" no lleva un uuid válido. Usa el id tal como lo devuelve search.`)
+      }
       if (kind === "routine") return fetchRoutine(id, ctx)
       if (kind === "exercise") return fetchExercise(id, ctx)
       const provider = (extraProviders.get(server) ?? []).find((p) => p.kind === kind)

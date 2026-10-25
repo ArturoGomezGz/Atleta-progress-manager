@@ -31,10 +31,10 @@ multi-semana. Está detrás del flag `mcp` (ver `feature-flags.md`); los planes,
 | Archivo | Qué es |
 |---|---|
 | `types.ts` | `McpScope` (`atleta:read` \| `atleta:write`), `McpPrincipal`, `AppCaller`, `McpToolContext`, `McpLimiters` |
-| `tool.ts` | `registerAtletaTool(server, ctx, def)`: no registra si falta el scope o el flag; revalida el scope en el handler; valida con zod (`INVALID_INPUT`); límite de escrituras; una línea de log por llamada; errores con `toToolError` |
+| `tool.ts` | `registerAtletaTool(server, ctx, def)`: no registra si falta el scope o el flag; revalida el scope en el handler; valida con zod en un objeto **estricto** (un campo desconocido es `INVALID_INPUT`, no se descarta) y rechaza textos con `\u0000` o surrogates sueltos (`INVALID_INPUT`; Postgres no los guarda); límite de escrituras; una línea de log por llamada; errores con `toToolError`. Genera el JSON Schema publicado sin `$ref` (`publishedInputSchema`) |
 | `errors.ts` | `toToolError`, `McpToolError`, `ErrorDetails` (datos extra como `cause` de un `TRPCError`) |
 | `context.ts` | `callerSession`, `createMcpCaller`, `resolveTeamId` (equipo implícito o `AMBIGUOUS_TEAM`) |
-| `server.ts` | `createMcpServer(ctx)`: registra `tools/*`, `resources.ts` y `prompts.ts` |
+| `server.ts` | `createMcpServer(ctx)`: registra `tools/*`, `resources.ts` y `prompts.ts`; en `tools/list` publica el `inputSchema` sin `$ref` de `tool.ts` (algunos clientes no resuelven referencias) |
 | `tools/*.ts` | `registerAccountTools`, `registerCatalogTools`, `registerRoutineTools`, `registerSkillTools`, `registerAssignmentTools`, `registerSearchFetchTools`, `registerPlanTools` |
 
 ### Errores de herramientas
@@ -49,12 +49,20 @@ Todo error vuelve como resultado `isError: true` con `content[0].text = "<CODE>:
 | `TRPCError` `BAD_REQUEST` / `PRECONDITION_FAILED`, `RoutineEditError` | `BAD_REQUEST` |
 | `TRPCError` `CONFLICT` | `CONFLICT` + la pista de la causa (`ErrorDetails.hint`, p. ej. "Vuelve a leerla con get_routine y reintenta"); sin pista, "Vuelve a leerlo y reintenta con su updatedAt actual" |
 | `TRPCError` `TOO_MANY_REQUESTS`, límites propios | `RATE_LIMITED` (`details.retryAfterSeconds`) |
-| `ZodError` (o `BAD_REQUEST` con `ZodError` como causa) | `INVALID_INPUT` (3 issues como máximo) |
+| `ZodError` (o `BAD_REQUEST` con `ZodError` como causa) | `INVALID_INPUT` (3 issues como máximo, en español y con la ruta del campo) |
+| Campo desconocido en el nivel superior, texto con `\u0000` o surrogates sueltos | `INVALID_INPUT` |
 | Equipo implícito ambiguo | `AMBIGUOUS_TEAM` (`details.teams`) |
 | Falta `atleta:write` | `INSUFFICIENT_SCOPE` |
 | Cualquier otro | `INTERNAL` (sin mensaje interno en producción; `details.requestId`) |
 
 Nunca se loguean tokens, argumentos ni contenido: solo `{ kind, userId, clientId|tokenId, tool, teamId?, ms, ok, code? }`.
+
+Mensajes de `INVALID_INPUT` (`issueMessageEs` en `errors.ts`): `Argumentos inválidos: <ruta>: <mensaje>; … Corrige
+los campos y reintenta.`, con `details.issues[{path, message}]`. Los issues comunes de zod se traducen
+(`invalid_type` → "es obligatorio" / "se esperaba número y llegó texto", `too_small`/`too_big`, uuid, fecha ISO,
+regex, enum con sus opciones, `unrecognized_keys` con el nombre del campo); los mensajes propios del schema se
+conservan. Una unión que falla (p. ej. `sets`, lista o atajo `{ count }`) se aplana al issue más profundo de sus
+alternativas, en vez del genérico "Invalid input".
 
 ### Contenido de rutina (`routine-content-input.ts`)
 
@@ -62,10 +70,14 @@ Entrada sin `id` obligatorio, sin `order` ni `setNumber`, con el atajo `sets: { 
 `normalizeRoutineContent(input)` genera ids (conserva los válidos no repetidos), numera, expande `count` y
 valida con `routineContentSchema`; `toContentInput(content)` es la inversa (formato que `update_routine` acepta).
 
-Límites: 20 elementos, 10 ejercicios por circuito, 12 series por ejercicio, rondas 2–20, JSON ≤ 60 000
-caracteres. Por campo: reps 1–200, tiempo 1–3600 s, distancia 1–100 000 m, RPE 1–10, %RM 1–120, kg ≤ 1000
-(`loadValue` exige `loadType`), descanso 1–600 s, notas ≤ 300, nombre de circuito ≤ 60, tempo `E-P-C-P`
-(`[0-9X]`).
+Límites de tamaño: 20 elementos, 10 ejercicios por circuito, 12 series por ejercicio, rondas 2–20, JSON ≤ 60 000
+caracteres. Por campo acepta lo mismo que `routineContentSchema` (lo que guarda el editor web), para que el
+`content` de `get_routine` `detail` de una rutina hecha en la web vuelva a entrar por `update_routine`: reps,
+tiempo, distancia y descanso son enteros ≥ 1 sin tope; `tempo`, `notes` y el nombre del circuito son texto libre
+(un tempo con formato `E-P-C-P`, `[0-9X]`, se guarda en mayúsculas; cualquier otro, tal cual). La carga sí se
+acota por tipo: RPE 1–10, %RM 1–120, kg > 0 y ≤ 1000 (`loadValue` exige `loadType`). Una rutina web que pase
+los límites de tamaño (p. ej. más de 20 elementos o de 12 series) sigue sin poder reescribirse entera con
+`update_routine`: se edita con las herramientas atómicas o en la web.
 
 ### Reglas de seguridad corregidas en A
 
@@ -219,7 +231,11 @@ los handlers como `extra.authInfo` (`clientId`, `scopes`, `extra.{kind,userId,to
 - **Tasa**: 120 requests/min por usuario en `/mcp` (429 + `Retry-After`), antes de leer el cuerpo; escrituras y
   herramientas costosas con sus limitadores (ver "Contexto de herramientas"); crear PAT 10/día. El plugin limita
   `/oauth2/register` (20/h) y `/oauth2/token` (30/min) por IP; better-auth solo aplica límites en producción. Todo en
-  memoria por instancia.
+  memoria por instancia. La IP es `req.ip` de Fastify según `TRUST_PROXY` (1 salto por defecto en producción, el
+  edge de Railway): el proxy `/api/auth/*` reescribe `X-Forwarded-For` con ese valor, así que rotar el header no
+  evade el límite (ver [deploy.md](./deploy.md#ip-del-cliente-y-trust_proxy)).
+- **Sin batches JSON-RPC**: un cuerpo que es un arreglo responde 400 (`-32600`) antes del transporte. MCP 2025-06-18
+  eliminó los batches y, aceptándolos, un batch contaba como una sola request para el límite por usuario.
 - **Revocación**: `mcp.revokeApp` borra access tokens, refresh tokens y consentimiento de ese usuario y cliente (el
   siguiente request → 401); `oauth_client.disabled = true` invalida todos sus tokens; `mcp.revokeToken` para PAT.
 - **Logs**: una línea por request (`[mcp] request` con `kind, userId, clientId|tokenId, rpcMethod, ms, ok, status`) y
@@ -238,6 +254,7 @@ Los errores de la capa HTTP son JSON-RPC `{ jsonrpc: "2.0", error: { code, messa
 | 401 | Sin token, token inválido, revocado, vencido o de un cliente deshabilitado (`WWW-Authenticate`) | -32000 |
 | 403 | Origin no permitido; token sin scopes de Atleta (`insufficient_scope`) | -32000 |
 | 403 | Usuario sin el flag `mcp` ("El conector MCP aún no está disponible para tu cuenta") | **-32001** |
+| 400 | Batch JSON-RPC (el cuerpo es un arreglo): "Batch JSON-RPC no soportado…" | **-32600** |
 | 405 | `GET` / `DELETE /mcp` (`Allow: POST`) | -32000 |
 | 413 | Cuerpo de más de 256 KB (Fastify) | — |
 | 429 | Más de 120 requests/min del usuario (`Retry-After`) | -32000 |
@@ -276,7 +293,7 @@ guardar, asignar, cancelar o archivar".
 | `list_athletes` | R, coach | `{teamId?}` | `{teamId, athletes[{athleteId,name,role,selfAthlete}], groups?[{groupId,name,athleteIds}]}`; sin correos; `groups` solo con el flag `groups` |
 | `search_exercises` | R, miembro | `{teamId?, query?≤80, movementPattern?, bodyZone?, difficulty?, warmupOnly?, avoid?≤8}` | `{teamId, results[≤12]{id,name,difficulty,patterns,equipment,primaryMuscles,warmup?,contraindications?}}` |
 | `get_exercises` | R | `{teamId?, ids[1..30]}` | `{exercises[{id,name,description,difficulty,patterns,equipment,muscles,contraindications,videoUrl}], notFound[]}` |
-| `create_exercise` | W, coach | `{teamId?, name 2..80, description≤400, difficulty, movementPatterns[≤4], contraindications?}` | `{id, name, teamId, existed}` (si ya hay uno visible con ese nombre lo devuelve) |
+| `create_exercise` | W, coach | `{teamId?, name 2..80, description≤400, difficulty, movementPatterns[≤4], contraindications?}` | `{id, name, teamId, existed}` (si ya hay uno visible con ese nombre exacto, sin distinguir mayúsculas, lo devuelve; la comparación es literal: `%` o `_` no son comodines) |
 | `list_routines` | R, miembro | `{teamId?, category?, query?, includeArchived?, limit?≤100=50}` | `{teamId, total, routines[{id,name,category,updatedAt,archived,itemCount,exerciseCount}]}` (más reciente primero) |
 | `get_routine` | R | `{routineId, format?: "outline" o "detail"}` | `{id,teamId,name,category,updatedAt,archived,itemCount,exerciseCount}` + `items` (outline) o `content` + `exerciseNames` (detail) |
 | `create_routine` | W, coach | `{teamId?, name 1..120, category?="training", content?: RoutineContentInput}` | `{routineId, teamId, name, updatedAt, itemCount}` |
@@ -333,7 +350,12 @@ usuario y en el catálogo visible; `fetch` devuelve la rutina o el ejercicio com
 Otros módulos pueden sumar tipos de id con `addSearchFetchProvider(server, {kind, search?, fetch})`
 (`tools/search-fetch.ts`); el módulo de planes suma `plan:<uuid>` (con `training_plans`): `search` busca por
 nombre u objetivo en los planes no archivados de los equipos del usuario y `fetch` devuelve el plan como texto
-(semanas, días, rutinas y asignaciones).
+(semanas, días, rutinas y asignaciones). Un id cuyo uuid no es válido → `INVALID_INPUT`.
+
+**Búsqueda por nombre** (`search_exercises` y `search`): sin distinguir mayúsculas ni acentos ("flexión"
+encuentra "Flexion") y con el texto literal (`%`, `_` y `\` se escapan; no son comodines de LIKE). En SQL se
+usa `translate()` de Postgres con la misma tabla de acentos en la columna y en el término (`lib/text-search.ts`),
+sin depender de la extensión `unaccent`.
 
 ## Resources y prompts (Paquete C)
 
@@ -435,6 +457,13 @@ atleta los ve en "Hoy" y en `sessions.myPending` igual que cualquier asignado. T
   `sessions.create`. Cada sesión guarda `plan_assignment_id` y `plan_workout_id`. Solo atletas del equipo
   (o el coach con auto-entrenamiento). Con `dryRun: true` calcula lo mismo sin escribir nada y devuelve
   `assignmentId: null`.
+- **Programar no es acumulativo (idempotencia ante reintentos):** si ya hay una asignación `active` del mismo plan
+  con la misma `startDate` y exactamente los mismos atletas (los de sus sesiones), `schedule` responde `CONFLICT`
+  con `details.assignmentId` y la pista "revísalo con get_plan… cancela antes esa asignación con
+  cancel_plan_assignment", sin crear nada. La comprobación corre en la transacción con el plan bloqueado
+  (`SELECT … FOR UPDATE`): dos llamadas idénticas simultáneas dan una asignación y un `CONFLICT`. En `dryRun` se
+  avisa con `duplicateOf` (el `assignmentId` existente o `null`). Otra fecha u otros atletas sí crean otra
+  asignación; tras cancelar la asignación (sin `fromDate`) se puede volver a programar igual.
 - **Lo ya programado no cambia:** editar el plan o sus rutinas no modifica las sesiones ya creadas (igual que un
   asignado suelto). `replaceWorkouts` o `removeWorkoutIds` dejan esas sesiones con `plan_workout_id = null`,
   pero conservan `plan_assignment_id`.
@@ -458,7 +487,7 @@ cualquier rol).
 | `create_plan` (W, coach) | `{teamId?, name, description?, goal?, weeks, weekMeta?[{week, name?, focus?, notes?}], routines?[{key, name, content}], workouts[{week, weekday, routineId? \| routineKey?, notes?}]}` | `{planId, updatedAt, createdRoutines[{key, routineId}], workoutCount}` |
 | `update_plan` (W, coach, destructiva) | `{planId, expectedUpdatedAt, name?, description?, goal?, weeks?, status?, weekMeta?, routines?, addWorkouts?, removeWorkoutIds?, replaceWorkouts?}` (`null` borra `description`, `goal` o un campo de `weekMeta`; `replaceWorkouts` no se combina con `addWorkouts` ni `removeWorkoutIds`) | `{planId, updatedAt, createdRoutines, workoutCount}`; `CONFLICT` |
 | `duplicate_plan` (W, coach) | `{planId, name?, copyRoutines?=false}` | `{planId, name, updatedAt, workoutCount, createdRoutines[{sourceRoutineId, routineId, name}]}` |
-| `schedule_plan` (W, coach) | `{planId, athleteIds[1..50], startDate, dryRun?=false}` | `{assignmentId \| null, dryRun, startDate, athleteIds, sessions[{date, week, weekday, position, workoutId, routineId, routineName, sessionId?, status?}], skipped[{workoutId, week, weekday, reason}]}` |
+| `schedule_plan` (W, coach) | `{planId, athleteIds[1..50], startDate, dryRun?=false}` | `{assignmentId \| null, dryRun, startDate, athleteIds, sessions[{date, week, weekday, position, workoutId, routineId, routineName, sessionId?, status?}], skipped[{workoutId, week, weekday, reason}], duplicateOf?}` (`duplicateOf` solo en `dryRun`); `CONFLICT` con `details.assignmentId` si ya está programado igual |
 | `cancel_plan_assignment` (W, coach, destructiva) | `{assignmentId, fromDate?}` | `{assignmentId, status, cancelledSessions, keptSessions}` |
 
 Notas:

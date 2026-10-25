@@ -361,3 +361,20 @@ describe("createMcpServer con todos los flags", () => {
     await assert.rejects(noPlans.readResource({ uri: `atleta://planes/${PLAN}` }))
   })
 })
+
+describe("tools/list del servidor completo", () => {
+  it("publica JSON Schema sin $ref en ninguna herramienta (algunos clientes no resuelven referencias)", async () => {
+    const client = await connect(makeCtx({ features: [...FEATURES] as FeatureKey[] }))
+    const { tools } = await client.listTools()
+    assert.ok(tools.length >= READ_TOOLS.length + WRITE_TOOLS.length + PLAN_READ_TOOLS.length)
+    const withRefs = tools.filter((t) => JSON.stringify(t.inputSchema).includes('"$ref"')).map((t) => t.name)
+    assert.deepEqual(withRefs, [])
+    for (const t of tools) {
+      assert.equal(t.inputSchema.type, "object", t.name)
+      assert.equal((t.inputSchema as { additionalProperties?: unknown }).additionalProperties, false, `${t.name}: objeto estricto`)
+    }
+    // Las series (unión reutilizada) se publican completas en ejercicios sueltos y en circuitos
+    const create = tools.find((t) => t.name === "create_routine")!
+    assert.match(JSON.stringify(create.inputSchema), /"count"/)
+  })
+})

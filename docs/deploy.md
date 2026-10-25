@@ -76,12 +76,47 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 | `MCP_ALLOWED_ORIGINS` | *(Opcional)* Orígenes de navegador permitidos en `/mcp` además de `WEB_URL`, separados por comas (ej. `http://localhost:6274` para MCP Inspector). Cualquier otro `Origin` recibe 403 |
 | `FEATURE_MCP_USERS` | Allowlist del flag `mcp` (conector MCP y página "Conectar IA"). Ver [feature-flags.md](./feature-flags.md) |
 | `FEATURE_TRAINING_PLANS_USERS` | Allowlist del flag `training_plans` (planes multi-semana; requiere `scheduled_sessions`) |
+| `TRUST_PROXY` | *(Opcional)* Cuántos proxies propios hay delante de la API para calcular la IP del cliente (límites de tasa de login y OAuth). Sin valor: `1` en producción (el edge de Railway), que es lo correcto en Railway; no lo subas a `2`. Ver [IP del cliente y TRUST_PROXY](#ip-del-cliente-y-trust_proxy) |
 
 > **Videos:** ya no se usa Cloudflare Stream (se eliminaron `CF_ACCOUNT_ID` y `CF_STREAM_API_TOKEN`). Los ejercicios guardan el ID de un video de YouTube; no hay almacenamiento ni costo por video.
 
 > **Conector MCP (OAuth):** el servidor de autorización es better-auth, con issuer `${BETTER_AUTH_URL}/api/auth` (el **web**). Los clientes de IA leen su metadata en `<WEB>/.well-known/oauth-authorization-server/api/auth`, que el web reenvía a la API con el rewrite `/.well-known/:path*` de `apps/web/next.config.ts`; el endpoint `/mcp` y su metadata (`/.well-known/oauth-protected-resource/mcp`) se sirven directo en la API. No hay variables nuevas en Vercel.
 
 > **`BETTER_AUTH_URL` debe ser la URL del web, no de la API.** El web proxea `/api/auth/*` hacia la API. El estado OAuth se almacena en una cookie del dominio web — si el callback apunta directamente a la API (diferente dominio), la cookie no existe y Google devuelve `state_mismatch`. Apuntando al web, el callback pasa por el proxy y la cookie está disponible.
+
+### IP del cliente y `TRUST_PROXY`
+
+better-auth limita por IP el login, el registro y los endpoints OAuth del conector MCP (`/oauth2/register` 20/h,
+`/oauth2/token` 30/min; solo en producción). Toma la IP del **primer** valor de `X-Forwarded-For`, que escribe el
+propio cliente: sin más, bastaba con rotar ese header para evadir los límites. Por eso el proxy `/api/auth/*` de la
+API (`apps/api/src/app.ts`) reescribe `X-Forwarded-For` con un único valor, `req.ip`, que Fastify calcula con
+`trustProxy` a partir de `TRUST_PROXY` (`apps/api/src/lib/client-ip.ts`):
+
+| Valor | Significado |
+|---|---|
+| *(vacío)* | `1` con `NODE_ENV=production`; `false` fuera de producción (local y pruebas: IP del socket) |
+| `N` (número) | Confía en los últimos N saltos: la IP es el valor N-ésimo contando desde el final del header |
+| `false` / `0` | No confía en `X-Forwarded-For`: la IP es la del socket (API expuesta sin proxy) |
+| `true` | Confía en todo el header. **Inseguro** si la API es accesible desde internet |
+| `10.0.0.0/8,…` | Lista de IPs/CIDR de proxies de confianza |
+
+**Por qué `1` por defecto en producción.** En Railway siempre hay exactamente un proxy propio delante de la API, su
+edge, y agrega al final de `X-Forwarded-For` la IP que lo contactó. Ese último valor no lo controla el cliente; lo
+que el cliente ponga antes se ignora. Con `1`:
+
+- **Cliente → API directo** (conectores MCP, apps, cualquier llamada a `API_PUBLIC_URL`): la IP es la real del
+  cliente. Es el camino de un atacante, y ahí el límite no se evade.
+- **Navegador → web → API** (`/api/auth/*` pasa por el rewrite de `apps/web/next.config.ts`, en Vercel o en el
+  servicio web de Railway): Vercel (o el edge del web) pone la IP real del usuario en `X-Forwarded-For` y el edge
+  de la API agrega la IP de salida del web. Con `1`, la IP que ve better-auth es la **del web**, no la del usuario:
+  los usuarios que entran por el web comparten el límite por cada IP de salida del web. Es más estricto de lo ideal
+  (con mucho tráfico simultáneo de login podría aparecer algún 429), pero no se puede evadir.
+
+**No uses `TRUST_PROXY=2`** aunque el web sea un salto más: daría la IP real a quien entra por el web, pero la API
+también es pública (el conector MCP llama directo), y en una llamada directa el valor N-ésimo desde el final lo
+escribe el cliente, que volvería a poder rotarlo. Si algún día la API deja de ser accesible salvo a través del web,
+o el web firma sus requests a la API, se puede revisar. Fuera de Railway, ajusta el número a los proxies propios
+que haya delante (p. ej. `0` si la API se expone sin proxy).
 
 ### Base de datos: primer despliegue con los scripts SQL
 

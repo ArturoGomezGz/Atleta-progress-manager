@@ -8,6 +8,7 @@ import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify"
 import { fromNodeHeaders } from "better-auth/node"
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify"
 import { auth } from "./auth"
+import { trustProxyFrom, withClientIp } from "./lib/client-ip"
 import { corsOptionsFor, registerMcpHttp, type McpHttpOptions } from "./mcp/http"
 import { appRouter } from "./routers"
 import { accountActions } from "./services/account-approval"
@@ -38,8 +39,10 @@ export async function buildApp(
   opts: { logger?: FastifyServerOptions["logger"]; /** Dependencias del conector MCP (tests). */ mcp?: McpHttpOptions } = {},
 ): Promise<FastifyInstance> {
   // maxParamLength: tRPC agrupa varios procedimientos en la ruta (/trpc/a,b,c…); con el
-  // límite por defecto de Fastify (100) las páginas con muchas consultas reciben 404
-  const app = Fastify({ logger: opts.logger ?? true, maxParamLength: 5000 })
+  // límite por defecto de Fastify (100) las páginas con muchas consultas reciben 404.
+  // trustProxy (TRUST_PROXY): cuántos proxies propios hay delante para calcular req.ip, la IP
+  // que ven los límites de tasa de better-auth (ver lib/client-ip.ts y docs/deploy.md)
+  const app = Fastify({ logger: opts.logger ?? true, maxParamLength: 5000, trustProxy: trustProxyFrom(process.env.TRUST_PROXY) })
 
   // CORS por ruta: la web (WEB_URL, con cookies) en general; /mcp y /.well-known/* aceptan
   // además MCP_ALLOWED_ORIGINS, sin cookies (ver corsOptionsFor en mcp/http.ts)
@@ -51,7 +54,8 @@ export async function buildApp(
   // cuerpo crudo y se reenvía tal cual a better-auth (sin esto Fastify responde 415)
   app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_req, body, done) => done(null, body))
 
-  // Auth routes — better-auth handles all /api/auth/* internally
+  // Auth routes — better-auth handles all /api/auth/* internally. X-Forwarded-For se reescribe con
+  // req.ip: better-auth limita por el primer valor del header, que de otro modo elige el cliente
   app.all("/api/auth/*", async (req, reply) => {
     if (isDeniedAuthPath(req.url)) return reply.status(404).send({ error: "Not Found" })
     try {
@@ -59,7 +63,7 @@ export async function buildApp(
       const response = await auth.handler(
         new Request(`${process.env.BETTER_AUTH_URL ?? "http://localhost:3001"}${req.url}`, {
           method: req.method,
-          headers: fromNodeHeaders(req.headers),
+          headers: withClientIp(fromNodeHeaders(req.headers), req.ip),
           body: hasBody ? (typeof req.body === "string" ? req.body : JSON.stringify(req.body)) : undefined,
         }),
       )

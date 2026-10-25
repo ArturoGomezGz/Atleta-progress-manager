@@ -112,7 +112,10 @@ export function registerPlanTools(server: McpServer, ctx: McpToolContext): void 
       "Aplica un plan a atletas a partir de startDate: crea una sesión asignada por entrenamiento con su fecha (los atletas " +
       `la ven en su app como cualquier asignado). ${CALENDAR_RULES} ` +
       `Máximo ${MAX_SCHEDULE_SESSIONS} sesiones de atleta (entrenamientos × atletas) por llamada. ` +
-      "Usa primero dryRun: true para mostrar las fechas al usuario y confirma antes de programar de verdad.",
+      "Usa primero dryRun: true para mostrar las fechas al usuario y confirma antes de programar de verdad. " +
+      "No es acumulativo: si ya hay una asignación activa del mismo plan con la misma startDate y los mismos atletas, " +
+      "responde CONFLICT con su assignmentId en details y no crea nada (en dryRun lo indica duplicateOf); " +
+      "para reprogramar, cancela antes esa asignación con cancel_plan_assignment (consúltalas con get_plan).",
     scope: "atleta:write",
     feature: FEATURE,
     annotations: { destructiveHint: false },

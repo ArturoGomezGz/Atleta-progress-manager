@@ -3,7 +3,7 @@
 // del token y los flags del usuario. Ver docs/mcp.md.
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
-import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js"
+import { CallToolRequestSchema, ListToolsRequestSchema, type ListToolsResult } from "@modelcontextprotocol/sdk/types.js"
 import { McpToolError, toToolError } from "./errors"
 import { registerPrompts } from "./prompts"
 import { registerResources } from "./resources"
@@ -14,6 +14,7 @@ import { registerPlanTools } from "./tools/plans"
 import { registerRoutineTools } from "./tools/routines"
 import { registerSearchFetchTools } from "./tools/search-fetch"
 import { registerSkillTools } from "./tools/skills"
+import { publishedInputSchema } from "./tool"
 import { MCP_SCOPES, type McpToolContext } from "./types"
 
 export const MCP_SERVER_NAME = "atleta"
@@ -79,10 +80,18 @@ export function createMcpServer(ctx: McpToolContext): McpServer {
   )
 
   // Una herramienta oculta por falta de scope respondería "Tool X not found" (texto del SDK).
-  // Interceptamos tools/call para responder INSUFFICIENT_SCOPE con nuestro formato.
+  // Interceptamos tools/call para responder INSUFFICIENT_SCOPE con nuestro formato, y tools/list
+  // para publicar los JSON Schema sin $ref.
   let hidden = new Set<string>()
   const setHandler = server.server.setRequestHandler.bind(server.server)
   server.server.setRequestHandler = ((schema: unknown, handler: (req: never, extra: never) => unknown) => {
+    // tools/list: el inputSchema publicado es el del wrapper, sin $ref (ver publishedInputSchema)
+    if (schema === ListToolsRequestSchema) {
+      return setHandler(ListToolsRequestSchema, async (req, extra) => {
+        const res = (await (handler as (r: typeof req, e: typeof extra) => Promise<ListToolsResult>)(req, extra))
+        return { ...res, tools: res.tools.map((t) => ({ ...t, inputSchema: (publishedInputSchema(server, t.name) as typeof t.inputSchema | undefined) ?? t.inputSchema })) }
+      })
+    }
     if (schema !== CallToolRequestSchema) return setHandler(schema as never, handler as never)
     return setHandler(CallToolRequestSchema, (req, extra) => {
       if (hidden.has(req.params.name)) {

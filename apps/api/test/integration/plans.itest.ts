@@ -197,9 +197,20 @@ describe("planes de entrenamiento (MCP + plans.*)", { skip: integrationSkip }, (
     assert.deepEqual({ a: await count("training_plan_assignment"), s: await count("training_session") }, before)
 
     // dryRun desde mañana: el hueco de hoy queda antes del inicio; desde hace una semana, hay huecos en el pasado
-    const fromTomorrow = await call(client, "schedule_plan", { planId: created.planId, athleteIds, startDate: addDays(today, 1), dryRun: true })
+    // (La semana 1 es la que contiene mañana: si hoy es domingo, mañana ya es otra semana y el
+    // hueco de hoy cae el próximo domingo, no antes del inicio.)
+    const tomorrow = addDays(today, 1)
+    const mondayFromTomorrow = addDays(tomorrow, 1 - isoWeekday(tomorrow))
+    const slotFromTomorrow = (week: number, weekday: number) => addDays(mondayFromTomorrow, (week - 1) * 7 + weekday - 1)
+    const fromTomorrow = await call(client, "schedule_plan", { planId: created.planId, athleteIds, startDate: tomorrow, dryRun: true })
     assert.ok(fromTomorrow.sessions.every((s: Structured) => s.date > today))
-    assert.ok(fromTomorrow.skipped.some((s: Structured) => s.reason === "before_start" && s.weekday === todayWd && s.week === 1))
+    const byWeekDay = (list: { week: number; weekday: number }[]) => list.map((s) => `${s.week}/${s.weekday}`).sort()
+    assert.deepEqual(
+      byWeekDay(fromTomorrow.skipped),
+      byWeekDay(workouts.filter((w) => slotFromTomorrow(w.week, w.weekday) < tomorrow)),
+    )
+    assert.ok(fromTomorrow.skipped.every((s: Structured) => s.reason === "before_start"))
+    if (todayWd !== 7) assert.ok(fromTomorrow.skipped.some((s: Structured) => s.weekday === todayWd && s.week === 1), "el hueco de hoy queda antes del inicio")
     const fromLastWeek = await call(client, "schedule_plan", { planId: created.planId, athleteIds, startDate: addDays(today, -7), dryRun: true })
     assert.ok(fromLastWeek.skipped.some((s: Structured) => s.reason === "past"))
     assert.ok(fromLastWeek.sessions.every((s: Structured) => s.date >= today))

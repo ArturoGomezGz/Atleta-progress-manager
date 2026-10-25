@@ -77,4 +77,50 @@ describe("toToolError", () => {
     assert.deepEqual(prod.details, { requestId: "req-1" })
     assert.match(body(new Error("detalle"), { production: false }).message, /detalle/)
   })
+
+  it("mensajes de zod en español, con la ruta del campo", () => {
+    const schema = z.object({
+      id: z.string().uuid(),
+      at: z.string().datetime(),
+      n: z.number().int().min(1).max(5),
+      name: z.string().min(1).max(3),
+      list: z.array(z.string()).min(1),
+      kind: z.enum(["a", "b"]),
+      req: z.string(),
+      tempo: z.string().regex(/^x$/),
+      own: z.string().regex(/^x$/, "Mensaje propio"),
+    }).strict()
+    const msg = (data: Record<string, unknown>) => {
+      const base = { id: "11111111-1111-4111-8111-111111111111", at: "2026-01-01T00:00:00.000Z", n: 1, name: "ab", list: ["x"], kind: "a", req: "r", tempo: "x", own: "x" }
+      const r = schema.safeParse({ ...base, ...data })
+      assert.equal(r.success, false)
+      return body(r.error).message
+    }
+    assert.match(msg({ id: "x" }), /id: debe ser un UUID/)
+    assert.match(msg({ at: "ayer" }), /at: debe ser una fecha y hora ISO 8601/)
+    assert.match(msg({ n: 9 }), /n: debe ser menor o igual que 5/)
+    assert.match(msg({ n: 0 }), /n: debe ser mayor o igual que 1/)
+    assert.match(msg({ n: 1.5 }), /n: se esperaba entero y llegó decimal/)
+    assert.match(msg({ name: "" }), /name: no puede estar vacío/)
+    assert.match(msg({ name: "abcd" }), /name: debe tener como máximo 3 caracteres/)
+    assert.match(msg({ list: [] }), /list: debe tener al menos 1 elemento/)
+    assert.match(msg({ kind: "z" }), /kind: valor no válido "z"; opciones: "a", "b"/)
+    assert.match(msg({ req: undefined }), /req: es obligatorio/)
+    assert.match(msg({ req: 3 }), /req: se esperaba texto y llegó número/)
+    assert.match(msg({ tempo: "y" }), /tempo: no tiene el formato esperado/)
+    assert.match(msg({ own: "y" }), /own: Mensaje propio/)
+    assert.match(msg({ extraField: 1 }), /\(raíz\): campo desconocido: "extraField"/)
+    assert.doesNotMatch(msg({ id: "x" }), /Invalid|Expected/)
+  })
+
+  it("las uniones se aplanan al issue más profundo (no 'Invalid input')", () => {
+    const sets = z.union([z.array(z.object({ reps: z.number() }).strict()).min(1), z.object({ count: z.number(), loadValue: z.number().optional() }).strict()])
+    const schema = z.object({ items: z.array(z.object({ sets })) })
+    const atajo = body(schema.safeParse({ items: [{ sets: { count: 1, loadValue: null } }] }).error)
+    assert.match(atajo.message, /items\.0\.sets\.loadValue: se esperaba número y llegó null/)
+    assert.deepEqual((atajo.details?.issues as { path: string }[])[0]!.path, "items.0.sets.loadValue")
+    const lista = body(schema.safeParse({ items: [{ sets: [{ reps: "x" }] }] }).error)
+    assert.match(lista.message, /items\.0\.sets\.0\.reps: se esperaba número y llegó texto/)
+    assert.doesNotMatch(atajo.message + lista.message, /Invalid input/)
+  })
 })

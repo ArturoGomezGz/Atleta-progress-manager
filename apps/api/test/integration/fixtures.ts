@@ -35,10 +35,19 @@ export function cookieHeader(res: Response): string {
     .join("; ")
 }
 
+// Una "IP" por usuario de prueba: con NODE_ENV=production better-auth limita sign-up/sign-in por IP
+// (3 cada 10 s) y, con TRUST_PROXY=1 (su valor por defecto en producción), la API toma el último
+// valor de X-Forwarded-For como la IP del cliente. Fuera de producción el header se ignora.
+function fixtureIp(email: string): string {
+  let h = 0
+  for (const c of email) h = (h * 31 + c.charCodeAt(0)) >>> 0
+  return `10.${(h >> 16) & 255}.${(h >> 8) & 255}.${h & 255}`
+}
+
 export async function signUp(baseUrl: string, email: string, name: string): Promise<FixtureUser> {
   const res = await fetch(`${baseUrl}/api/auth/sign-up/email`, {
     method: "POST",
-    headers: { "content-type": "application/json", origin: baseUrl },
+    headers: { "content-type": "application/json", origin: baseUrl, "x-forwarded-for": fixtureIp(email) },
     body: JSON.stringify({ email, name, password: FIXTURE_PASSWORD }),
   })
   if (!res.ok) throw new Error(`sign-up ${email} → ${res.status} ${await res.text()}`)
@@ -49,7 +58,7 @@ export async function signUp(baseUrl: string, email: string, name: string): Prom
 export async function signIn(baseUrl: string, email: string, password = FIXTURE_PASSWORD): Promise<Response> {
   return fetch(`${baseUrl}/api/auth/sign-in/email`, {
     method: "POST",
-    headers: { "content-type": "application/json", origin: baseUrl },
+    headers: { "content-type": "application/json", origin: baseUrl, "x-forwarded-for": fixtureIp(email) },
     body: JSON.stringify({ email, password }),
   })
 }
