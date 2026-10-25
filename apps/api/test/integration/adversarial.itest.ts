@@ -708,6 +708,12 @@ describe("QA adversarial del conector MCP", { skip: integrationSkip }, () => {
     assert.deepEqual(r.results.filter((x: S) => x.id.startsWith("exercise:")), [])
   })
 
+  it("create_exercise compara el nombre literal (no como patrón LIKE)", { todo: "BUG-13: proposeNewExercise usa ilike(name, name): '%%' o 'Press_banca' devuelven otro ejercicio existente como existed: true" }, async () => {
+    const r = await coachA.call("create_exercise", { name: "%%", description: "x", difficulty: "beginner", movementPatterns: ["core"] })
+    const sc = r.structuredContent as S
+    assert.ok(r.isError || sc.name === "%%", `devolvió otro ejercicio: ${JSON.stringify(sc)}`)
+  })
+
   it("round-trip get_routine detail → update_routine funciona con rutinas creadas en la web", { todo: "BUG-2: la web guarda valores fuera de los límites MCP (tempo libre, notas > 300, reps > 200, descanso > 600) y update_routine rechaza el contenido que el propio get_routine devolvió" }, async () => {
     const web = fx.callers.coachA
     const r = await web.routines.create({ teamId: fx.teams.a.id, name: "Hecha en la web" })
