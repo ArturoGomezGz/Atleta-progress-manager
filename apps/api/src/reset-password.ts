@@ -1,18 +1,18 @@
 // Uso (solo administrador): pnpm --filter api reset-password <email> [nuevaContraseña]
-// Sin contraseña explícita se usa la genérica; el usuario debe cambiarla en /settings.
+// Sin contraseña explícita se genera una aleatoria y se imprime una sola vez; el usuario debe cambiarla en /settings.
+import { randomBytes } from "node:crypto"
 import { db } from "@atleta/db/client"
 import * as schema from "@atleta/db/schema"
 import { hashPassword } from "better-auth/crypto"
 import { and, eq } from "drizzle-orm"
 
-const DEFAULT_PASSWORD = "changeMe123"
-
 async function main() {
-  const [email, password = DEFAULT_PASSWORD] = process.argv.slice(2)
+  const [email, explicitPassword] = process.argv.slice(2)
   if (!email) {
     console.error("Uso: pnpm --filter api reset-password <email> [nuevaContraseña]")
     process.exit(1)
   }
+  const password = explicitPassword ?? randomBytes(12).toString("base64url")
 
   const [user] = await db
     .select({ id: schema.user.id })
@@ -36,7 +36,11 @@ async function main() {
   // Cierra las sesiones abiertas: quien tuviera la cuenta abierta debe volver a entrar
   await db.delete(schema.session).where(eq(schema.session.userId, user.id))
 
-  console.log(`Contraseña de ${email} restablecida a "${password}". Debe cambiarla en Configuración.`)
+  if (explicitPassword) {
+    console.log(`Contraseña de ${email} restablecida. Debe cambiarla en Configuración.`)
+  } else {
+    console.log(`Contraseña de ${email} restablecida a "${password}". Debe cambiarla en Configuración.`)
+  }
   process.exit(0)
 }
 
