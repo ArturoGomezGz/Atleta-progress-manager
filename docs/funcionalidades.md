@@ -54,6 +54,8 @@ Se activan por usuario con variables de entorno en la API. El dueño las tiene t
 | Compartir por enlace (crear enlaces nuevos) | `share_links` | `FEATURE_SHARE_LINKS_USERS` | Decisión de producto. Los enlaces ya creados siguen funcionando. |
 | Programar asignados para una fecha futura | `scheduled_sessions` | `FEATURE_SCHEDULED_SESSIONS_USERS` | Sin probar; solo se ha usado "Ahora" |
 | Grupos de atletas | `groups` | `FEATURE_GROUPS_USERS` | Tiene bugs pendientes de revisar |
+| Conector MCP (Claude, ChatGPT u otro cliente MCP: consultar ejercicios, crear y editar entrenamientos, asignarlos; OAuth y tokens personales desde `/settings/conectar-ia`; ver [mcp.md](mcp.md)) | `mcp` | `FEATURE_MCP_USERS` | Nuevo; probado con tests automáticos, falta probar con Claude.ai, ChatGPT y Claude Code reales |
+| Planes de entrenamiento de varias semanas (semanas → días → entrenamientos, programarlos a atletas en fechas; hoy solo desde el conector MCP) | `training_plans` | `FEATURE_TRAINING_PLANS_USERS` | Nuevo; requiere además `scheduled_sessions`. Sin interfaz web todavía |
 
 ## Por pulir
 
@@ -76,6 +78,6 @@ Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md).
 |---|---|
 | Monetización por equipo | Plan gratuito con 1 atleta y plan de pago ilimitado; ver [monetizacion.md](monetizacion.md). Sin implementar. |
 | RM por atleta | Cálculo y almacenamiento del RM para cargas en % RM; ver [rm-atleta.md](rm-atleta.md). Depende de evaluación. |
-| Capa "Plan" (agrupar entrenamientos) | Fuera de v1 en [rutinas-normales.md](rutinas-normales.md). |
-| Más habilidades del editor de IA | Ajustar a una duración, duplicar/agrupar/separar bloques, restricciones de equipo o lesión, convertir RPE a % RM, crear variantes, y habilidades de cuenta/atletas para un futuro conector MCP; ver [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md). Sin implementar. |
+| Planes de entrenamiento en la web | Ver, crear y programar planes desde la interfaz web (hoy solo por el conector MCP); ver [rutinas-normales.md](rutinas-normales.md). |
+| Más habilidades del editor de IA | Ajustar a una duración, duplicar/agrupar/separar bloques, restricciones de equipo o lesión, convertir RPE a % RM, crear variantes, ; las de cuenta/atletas ya existen como herramientas del conector MCP ([mcp.md](mcp.md)); ver [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md). Sin implementar. |
 | Experiencia inmersiva (móvil) | Guía por voz con audífonos y avance automático, sin tocar el teléfono; se habilita sola en entrenamientos que se pueden cronometrar. Será limitada con flag. Ver [experiencia-inmersiva.md](experiencia-inmersiva.md). Sin implementar. |
