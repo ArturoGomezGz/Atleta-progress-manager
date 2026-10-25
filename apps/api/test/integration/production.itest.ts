@@ -130,4 +130,64 @@ describe("conector MCP en modo producción", { skip: integrationSkip }, () => {
       await direct.close()
     }
   })
+  describe("firma del web (WEB_PROXY_SECRET)", () => {
+    const SECRET = "secreto-de-prueba-del-web"
+    const WEB_IP = "76.76.21.9" // IP de salida del web (Vercel): el edge de Railway la agrega al final
+    const signIn = (xff: string, signature?: string) =>
+      fetch(`${server.baseUrl}/api/auth/sign-in/email`, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          origin: server.baseUrl,
+          "x-forwarded-for": xff,
+          ...(signature === undefined ? {} : { "x-atleta-web-proxy": signature }),
+        },
+        body: JSON.stringify({ email: "nadie@example.com", password: "incorrecta-123" }),
+      })
+
+    before(() => {
+      process.env.WEB_PROXY_SECRET = SECRET
+    })
+    after(() => {
+      delete process.env.WEB_PROXY_SECRET
+    })
+
+    it("con la firma correcta cuenta la IP del usuario: usuarios distintos no comparten el límite de sign-in", async () => {
+      // 5 usuarios × 3 intentos desde el mismo web: sin la firma serían 15 intentos de una sola IP
+      for (let u = 1; u <= 5; u++) {
+        for (let i = 0; i < 3; i++) {
+          const res = await signIn(`1.2.3.${u}, ${WEB_IP}`, SECRET)
+          assert.notEqual(res.status, 429, `usuario ${u}, intento ${i + 1}: 429 compartido con otros usuarios del web`)
+        }
+      }
+      // …y el límite sigue siendo por usuario (3 cada 10 s)
+      assert.equal((await signIn(`1.2.3.1, ${WEB_IP}`, SECRET)).status, 429)
+    })
+
+    it("con la firma correcta, lo que el cliente ponga antes de su IP no evade el límite", async () => {
+      const statuses: number[] = []
+      for (let i = 0; i < 6; i++) statuses.push((await signIn(`9.9.9.${i}, 1.2.4.1, ${WEB_IP}`, SECRET)).status)
+      assert.ok(statuses.slice(3).every((s) => s === 429), `rotar el primer valor evadió el límite: ${statuses.join(",")}`)
+    })
+
+    for (const [name, signature] of [["incorrecta", "otro-secreto"], ["ausente", undefined]] as const) {
+      it(`con la firma ${name} se usa req.ip (TRUST_PROXY): rotar el primer valor no evade el límite`, async () => {
+        const webIp = name === "ausente" ? "203.0.113.61" : "203.0.113.60"
+        const statuses: number[] = []
+        for (let i = 0; i < 6; i++) statuses.push((await signIn(`1.2.5.${i}, ${webIp}`, signature)).status)
+        assert.ok(statuses.slice(3).every((s) => s === 429), `rotar el primer valor evadió el límite: ${statuses.join(",")}`)
+      })
+    }
+
+    it("sin WEB_PROXY_SECRET configurado, una firma cualquiera (incluso vacía) no da un salto más", async () => {
+      delete process.env.WEB_PROXY_SECRET
+      try {
+        const statuses: number[] = []
+        for (let i = 0; i < 6; i++) statuses.push((await signIn(`1.2.6.${i}, 203.0.113.62`, "")).status)
+        assert.ok(statuses.slice(3).every((s) => s === 429), `rotar el primer valor evadió el límite: ${statuses.join(",")}`)
+      } finally {
+        process.env.WEB_PROXY_SECRET = SECRET
+      }
+    })
+  })
 })

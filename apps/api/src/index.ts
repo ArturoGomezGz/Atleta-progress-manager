@@ -18,6 +18,14 @@ async function main() {
 
   notifyStartup().catch((err) => app.log.error(err, "no se pudo enviar el aviso de arranque a Telegram"))
 
+  if (process.env.NODE_ENV === "production" && !process.env.WEB_PROXY_SECRET) {
+    app.log.warn(
+      "WEB_PROXY_SECRET no está configurado: los logins y registros que llegan por el web (/api/auth/* reenviado por Next) " +
+        "usan la IP de salida del web para los límites de tasa de better-auth (3 cada 10 s en sign-in/sign-up), así que " +
+        "usuarios distintos comparten ese límite y pueden recibir 429. Configura el mismo valor en la API y en el web (ver docs/deploy.md).",
+    )
+  }
+
   // En desarrollo no hay URL pública: el webhook solo se registra en producción
   if (process.env.NODE_ENV === "production") {
     registerTelegramWebhook(process.env.BETTER_AUTH_URL).then((ok) => ok && app.log.info("webhook de Telegram registrado")).catch((err) =>

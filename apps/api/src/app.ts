@@ -8,7 +8,7 @@ import { fastifyTRPCPlugin } from "@trpc/server/adapters/fastify"
 import { fromNodeHeaders } from "better-auth/node"
 import Fastify, { type FastifyInstance, type FastifyServerOptions } from "fastify"
 import { auth } from "./auth"
-import { trustProxyFrom, withClientIp } from "./lib/client-ip"
+import { isWebProxySignature, trustProxyFrom, WEB_PROXY_HEADER, webProxiedClientIp, withClientIp } from "./lib/client-ip"
 import { corsOptionsFor, registerMcpHttp, type McpHttpOptions } from "./mcp/http"
 import { appRouter } from "./routers"
 import { accountActions } from "./services/account-approval"
@@ -55,15 +55,20 @@ export async function buildApp(
   app.addContentTypeParser("application/x-www-form-urlencoded", { parseAs: "string" }, (_req, body, done) => done(null, body))
 
   // Auth routes — better-auth handles all /api/auth/* internally. X-Forwarded-For se reescribe con
-  // req.ip: better-auth limita por el primer valor del header, que de otro modo elige el cliente
+  // req.ip: better-auth limita por el primer valor del header, que de otro modo elige el cliente.
+  // Si la petición la reenvía el web firmada con WEB_PROXY_SECRET, se confía en un salto más (la IP
+  // del usuario que el web puso en X-Forwarded-For); la firma se quita siempre antes de better-auth.
   app.all("/api/auth/*", async (req, reply) => {
     if (isDeniedAuthPath(req.url)) return reply.status(404).send({ error: "Not Found" })
+    const clientIp = isWebProxySignature(req.headers[WEB_PROXY_HEADER])
+      ? webProxiedClientIp({ xff: req.headers["x-forwarded-for"], socketIp: req.socket.remoteAddress, trustedAddrs: req.ips, fallback: req.ip })
+      : req.ip
     try {
       const hasBody = req.method !== "GET" && req.method !== "HEAD"
       const response = await auth.handler(
         new Request(`${process.env.BETTER_AUTH_URL ?? "http://localhost:3001"}${req.url}`, {
           method: req.method,
-          headers: withClientIp(fromNodeHeaders(req.headers), req.ip),
+          headers: withClientIp(fromNodeHeaders(req.headers), clientIp),
           body: hasBody ? (typeof req.body === "string" ? req.body : JSON.stringify(req.body)) : undefined,
         }),
       )

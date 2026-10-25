@@ -22,6 +22,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { fromNodeHeaders } from "better-auth/node"
 import type { FastifyBaseLogger, FastifyInstance, FastifyReply, FastifyRequest } from "fastify"
 import { auth } from "../auth"
+import { WEB_PROXY_HEADER } from "../lib/client-ip"
 import { activeFeatures, hasFeature } from "../lib/features"
 import { createRateLimiter, type RateLimiter } from "../lib/rate-limit"
 import { createAuthRepo, resolveMcpAuth, type AuthRepo } from "./auth"
@@ -263,7 +264,10 @@ export async function registerMcpHttp(app: FastifyInstance, opts: McpHttpOptions
   const asMetadata = oauthProviderAuthServerMetadata(auth)
   const authServer = async (req: FastifyRequest, reply: FastifyReply) => {
     try {
-      const res = await asMetadata(new Request(`${apiPublicUrl()}${req.url}`, { headers: fromNodeHeaders(req.headers) }))
+      // La firma del web (x-atleta-web-proxy, ver lib/client-ip.ts) nunca llega a better-auth
+      const headers = fromNodeHeaders(req.headers)
+      headers.delete(WEB_PROXY_HEADER)
+      const res = await asMetadata(new Request(`${apiPublicUrl()}${req.url}`, { headers }))
       reply.status(res.status)
       res.headers.forEach((value, key) => {
         if (key !== "content-length" && key !== "content-encoding") reply.header(key, value)
