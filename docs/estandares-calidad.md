@@ -47,30 +47,41 @@ crash *antes* de llegar al assert no es solo un bug de UX: es una ruta sin
 comportamiento garantizado (¿niega acceso? ¿revienta con 500?) en el único
 punto que separa equipos entre sí.
 
-**Hallazgo real** — `apps/api/src/routers/sessions.ts:458-491`:
+**Patrón a vigilar (ya resuelto en `sessions.ts`)** — así se veía antes en
+`apps/api/src/routers/sessions.ts`:
 ```ts
 const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
 await assertCoach(ctx.session.user.id, session!.teamId)
 ```
 Si `session` no existe (fila inconsistente o borrada), `session!.teamId`
 lanza un `TypeError` sin control en vez de un `NOT_FOUND`/`FORBIDDEN` — y
-esto ocurre *antes* de la verificación de rol. `sessions.ts` ya está en
+esto ocurre *antes* de la verificación de rol. Hoy todas las rutas de
+`sessions.ts` hacen `if (!session) throw NOT_FOUND` antes de
+`assertCoach`/`assertMember`; el ejemplo se conserva como referencia de qué
+no reintroducir (en `sessions.ts` ni en ningún otro router). `sessions.ts` ya está en
 `scripts/quality-agents/config/critical-targets.json`: el agente debe tratar
 sus hallazgos como severidad alta por defecto, no como "uno más entre N
 console.log".
 
 ### 2. Errores crudos expuestos en la superficie de autenticación
 
-`apps/api/src/index.ts:47` — el handler de `/api/auth/*` responde
+**Patrón a vigilar (ya resuelto en `index.ts`)** — el handler de
+`/api/auth/*` en `apps/api/src/index.ts` respondía
 `reply.status(500).send({ error: String(err) })` ante cualquier excepción no
 controlada. Es el endpoint de login/signup/reset-password: el primero que se
-prueba desde fuera. Un error de la librería o de Postgres se serializa tal
-cual hacia el cliente.
+prueba desde fuera. Un error de la librería o de Postgres se serializaba tal
+cual hacia el cliente. Hoy responde
+`{ error: "Internal Server Error", requestId }` y registra el detalle con
+`req.log.error`; cualquier handler nuevo debe seguir esa misma forma (mensaje
+genérico + `requestId` al cliente, detalle solo en el log).
 
 ### 3. Cobertura de pruebas nula sobre autorización y dinero
 
-0 archivos `.test`/`.spec` en todo el monorepo. `unit-test-gap-finder` ya lo
-señala mecánicamente; el porqué priorizado aquí es:
+Existen tests unitarios en `apps/api/test/` (con `node:test`: rate-limit,
+scope-guard, tweak, telegram, entre otros), pero ninguno cubre autorización
+multi-tenant, `share.claim` ni facturación, y no corren automáticamente en
+CI. `unit-test-gap-finder` ya señala el gap mecánicamente; el porqué
+priorizado aquí es:
 - `assertCoach`/`assertMember` — toda la separación multi-tenant depende de
   dos funciones sin un solo test.
 - El flujo de reclamo de invitado (`share.claim`) — fusiona datos anónimos
@@ -116,6 +127,13 @@ exactamente... un error produce datos inválidos silenciosamente". Ese riesgo
 está identificado en la documentación pero no cubierto por ningún agente de
 calidad — `ai-reports.ts` y el autofill de `exercises.ts` están en
 `critical-targets.json` sin embargo.
+
+**Ejemplo concreto (ya resuelto)** — el procedimiento `autofill` de
+`apps/api/src/routers/exercises.ts` validaba la respuesta de la IA con un
+simple `as`, sin chequear los IDs devueltos contra el catálogo. Se corrigió
+en la rama `standards-fix/exercise-autofill-validate-ids`. El patrón a
+vigilar es el mismo en cualquier otro consumidor de IA: nunca confiar en la
+forma ni en los IDs de la respuesta del modelo sin validarlos.
 
 ---
 
