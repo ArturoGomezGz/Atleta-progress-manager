@@ -216,6 +216,7 @@ export async function searchExercises(raw: unknown, ctx: Ctx) {
 
   const results = (await attachDetails(rows))
     .filter((ex) => !args.bodyZone || ex.muscles.some((m) => m.role === "primary" && m.bodyZone === args.bodyZone))
+    // qa-ignore: non-null-safe, TS pierde narrowing en el closure
     .filter((ex) => !ctx.allowedEquipment || ex.equipment.every((e) => ctx.allowedEquipment!.has(e.equipmentId)))
     .filter((ex) => !ctx.avoid?.length || !matchesAvoid({ name: ex.name, equipment: ex.equipment }, ctx.avoid))
     .slice(0, 12)
