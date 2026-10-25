@@ -47,14 +47,10 @@ crash *antes* de llegar al assert no es solo un bug de UX: es una ruta sin
 comportamiento garantizado (¿niega acceso? ¿revienta con 500?) en el único
 punto que separa equipos entre sí.
 
-**Hallazgo real** — `apps/api/src/routers/sessions.ts:458-491`:
-```ts
-const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
-await assertCoach(ctx.session.user.id, session!.teamId)
-```
-Si `session` no existe (fila inconsistente o borrada), `session!.teamId`
-lanza un `TypeError` sin control en vez de un `NOT_FOUND`/`FORBIDDEN` — y
-esto ocurre *antes* de la verificación de rol. `sessions.ts` ya está en
+Resuelto en `5d23a97`: `sessions.ts` ya no usa non-null assertion antes de
+`assertCoach`/`assertMember`. La categoría sigue vigente: cualquier `!` o
+acceso sin verificar antes de un assert en archivos de `critical-targets.json`
+es severidad alta. `sessions.ts` ya está en
 `scripts/quality-agents/config/critical-targets.json`: el agente debe tratar
 sus hallazgos como severidad alta por defecto, no como "uno más entre N
 console.log".
@@ -65,7 +61,10 @@ console.log".
 `reply.status(500).send({ error: String(err) })` ante cualquier excepción no
 controlada. Es el endpoint de login/signup/reset-password: el primero que se
 prueba desde fuera. Un error de la librería o de Postgres se serializa tal
-cual hacia el cliente.
+cual hacia el cliente. Resuelto en `78d6c55`: el handler de `/api/auth/*`
+responde `{ error: "Internal Server Error", requestId }` y registra el error
+con `req.log.error`. Una regresión aquí (volver a serializar `err` hacia el
+cliente) es crítica.
 
 ### 3. Cobertura de pruebas nula sobre autorización y dinero
 
@@ -101,7 +100,7 @@ mantener esa misma disciplina.
 
 ### 6. Logging sin correlación de request
 
-`console.*` detectado en 6 archivos, mezclado de forma inconsistente con el
+`console.*` detectado en 4 archivos (3 en `apps/api`, 1 en `apps/web`), mezclado de forma inconsistente con el
 logger estructurado de Fastify (`req.log`, ver `index.ts`). Dado que el
 flujo de sesión permite "múltiples atletas, múltiples coaches editando sin
 flujo lineal" por diseño, reconstruir qué pasó (p. ej. "se perdió una serie")
