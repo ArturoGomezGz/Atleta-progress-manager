@@ -327,6 +327,7 @@ export const sessionsRouter = router({
 
       const [r] = await db.select().from(routine).where(eq(routine.id, input.routineId)).limit(1)
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+      if (r.teamId !== input.teamId) throw new TRPCError({ code: "NOT_FOUND" })
       if (r.category === "evaluation") assertFeature(ctx.session.user, "evaluation")
       if (input.scheduledDate != null) assertFeature(ctx.session.user, "scheduled_sessions")
 
