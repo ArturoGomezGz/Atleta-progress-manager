@@ -77,7 +77,7 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 | `FEATURE_MCP_USERS` | Allowlist del flag `mcp` (conector MCP y página "Conectar IA"). Ver [feature-flags.md](./feature-flags.md) |
 | `FEATURE_TRAINING_PLANS_USERS` | Allowlist del flag `training_plans` (planes multi-semana; requiere `scheduled_sessions`) |
 | `TRUST_PROXY` | *(Opcional)* Cuántos proxies propios hay delante de la API para calcular la IP del cliente (límites de tasa de login y OAuth). Sin valor: `1` en producción (el edge de Railway), que es lo correcto en Railway; no lo subas a `2`. Ver [IP del cliente y TRUST_PROXY](#ip-del-cliente-y-trust_proxy) |
-| `WEB_PROXY_SECRET` | Secreto compartido con el web (**el mismo valor en Railway y en Vercel**). Genéralo con `openssl rand -hex 32`. El web firma con él las peticiones que reenvía a la API (`/api/auth/*`, `/.well-known/*` y su consulta de sesión) y la API toma entonces la IP real del usuario para los límites de login. Sin él, todos los usuarios del web comparten el límite de la IP de salida del web (3 logins cada 10 s) y la API avisa al arrancar. Ver [IP del cliente y TRUST_PROXY](#ip-del-cliente-y-trust_proxy) |
+| `WEB_PROXY_SECRET` | Secreto compartido con el web (**el mismo valor en Railway y en Vercel**). Genéralo con `openssl rand -hex 32`. El web firma con él las peticiones que reenvía a la API (`/api/auth/*`, `/.well-known/*` y su consulta de sesión) y la API toma entonces la IP real del usuario para los límites de login. Sin él, la API reenvía `X-Forwarded-For` tal cual (como antes del conector): los logins funcionan, pero quien llame directo a la API puede evadir los límites rotando ese header; la API avisa al arrancar. Ver [IP del cliente y TRUST_PROXY](#ip-del-cliente-y-trust_proxy) |
 
 > **Videos:** ya no se usa Cloudflare Stream (se eliminaron `CF_ACCOUNT_ID` y `CF_STREAM_API_TOKEN`). Los ejercicios guardan el ID de un video de YouTube; no hay almacenamiento ni costo por video.
 
@@ -142,9 +142,11 @@ openssl rand -hex 32
 - **Vercel → Settings → Environment Variables:** `WEB_PROXY_SECRET=<valor>` (Production, y Preview si las previews
   usan la misma API). Haz un redeploy del web para que lo tome.
 
-Sin `WEB_PROXY_SECRET` en la API con `NODE_ENV=production`, la API registra un warning al arrancar. Si solo uno de los
-dos lados lo tiene, o los valores difieren, todo funciona pero con el límite compartido. Para rotarlo, cambia el
-valor en ambos y redespliega los dos; mientras no coincidan, los logins por el web vuelven a compartir límite.
+Sin `WEB_PROXY_SECRET` en la API, el proxy `/api/auth/*` reenvía `X-Forwarded-For` tal cual (comportamiento previo
+al conector): no bloquea logins legítimos, pero los límites se pueden evadir llamando directo a la API; con
+`NODE_ENV=production` registra un warning al arrancar. Si la API lo tiene y el web no (o los valores difieren), los
+logins por el web comparten el límite de la IP de salida del web: **configúralo primero en Vercel y redespliega el web,
+después en Railway**. Para rotarlo, quítalo de Railway, cambia el valor en Vercel y vuelve a ponerlo en Railway.
 
 ### Base de datos: primer despliegue con los scripts SQL
 

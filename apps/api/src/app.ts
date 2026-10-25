@@ -60,15 +60,25 @@ export async function buildApp(
   // del usuario que el web puso en X-Forwarded-For); la firma se quita siempre antes de better-auth.
   app.all("/api/auth/*", async (req, reply) => {
     if (isDeniedAuthPath(req.url)) return reply.status(404).send({ error: "Not Found" })
-    const clientIp = isWebProxySignature(req.headers[WEB_PROXY_HEADER])
-      ? webProxiedClientIp({ xff: req.headers["x-forwarded-for"], socketIp: req.socket.remoteAddress, trustedAddrs: req.ips, fallback: req.ip })
-      : req.ip
+    // Sin WEB_PROXY_SECRET no se puede distinguir lo que reenvía el web: se conservan los headers
+    // como antes (better-auth usa el primer X-Forwarded-For, el que puso Vercel) para no hacer que
+    // todos los usuarios del web compartan el límite de login. index.ts avisa en producción.
+    let headers: Headers
+    if (process.env.WEB_PROXY_SECRET) {
+      const clientIp = isWebProxySignature(req.headers[WEB_PROXY_HEADER])
+        ? webProxiedClientIp({ xff: req.headers["x-forwarded-for"], socketIp: req.socket.remoteAddress, trustedAddrs: req.ips, fallback: req.ip })
+        : req.ip
+      headers = withClientIp(fromNodeHeaders(req.headers), clientIp)
+    } else {
+      headers = fromNodeHeaders(req.headers)
+      headers.delete(WEB_PROXY_HEADER)
+    }
     try {
       const hasBody = req.method !== "GET" && req.method !== "HEAD"
       const response = await auth.handler(
         new Request(`${process.env.BETTER_AUTH_URL ?? "http://localhost:3001"}${req.url}`, {
           method: req.method,
-          headers: withClientIp(fromNodeHeaders(req.headers), clientIp),
+          headers,
           body: hasBody ? (typeof req.body === "string" ? req.body : JSON.stringify(req.body)) : undefined,
         }),
       )

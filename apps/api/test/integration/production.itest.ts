@@ -18,6 +18,8 @@ describe("conector MCP en modo producción", { skip: integrationSkip }, () => {
   const logs: string[] = []
 
   before(async () => {
+    // Con el secreto configurado (como en Railway/Vercel) aplica la protección de IP completa
+    process.env.WEB_PROXY_SECRET = "secreto-de-prueba-del-web"
     server = await startTestServer({ env: { NODE_ENV: "production" } })
     fx = await createFixtures(server.baseUrl)
     // Una segunda app con logger a memoria para revisar lo que se escribe en los logs
@@ -32,6 +34,7 @@ describe("conector MCP en modo producción", { skip: integrationSkip }, () => {
   after(async () => {
     await app?.close()
     await server?.close()
+    delete process.env.WEB_PROXY_SECRET
   })
 
   it("INTERNAL no expone el error interno (solo el requestId) y los logs no tienen tokens ni contenido", async () => {
@@ -148,9 +151,6 @@ describe("conector MCP en modo producción", { skip: integrationSkip }, () => {
     before(() => {
       process.env.WEB_PROXY_SECRET = SECRET
     })
-    after(() => {
-      delete process.env.WEB_PROXY_SECRET
-    })
 
     it("con la firma correcta cuenta la IP del usuario: usuarios distintos no comparten el límite de sign-in", async () => {
       // 5 usuarios × 3 intentos desde el mismo web: sin la firma serían 15 intentos de una sola IP
@@ -179,12 +179,17 @@ describe("conector MCP en modo producción", { skip: integrationSkip }, () => {
       })
     }
 
-    it("sin WEB_PROXY_SECRET configurado, una firma cualquiera (incluso vacía) no da un salto más", async () => {
+    it("sin WEB_PROXY_SECRET configurado se conserva el comportamiento previo: usuarios del web no comparten el límite", async () => {
+      // Sin secreto no se distingue al web, así que X-Forwarded-For pasa tal cual (better-auth usa
+      // el primer valor). Se prioriza no bloquear logins legítimos; index.ts avisa del riesgo.
       delete process.env.WEB_PROXY_SECRET
       try {
-        const statuses: number[] = []
-        for (let i = 0; i < 6; i++) statuses.push((await signIn(`1.2.6.${i}, 203.0.113.62`, "")).status)
-        assert.ok(statuses.slice(3).every((s) => s === 429), `rotar el primer valor evadió el límite: ${statuses.join(",")}`)
+        for (let u = 1; u <= 3; u++) {
+          for (let i = 0; i < 3; i++) {
+            const res = await signIn(`1.2.6.${u}, 203.0.113.62`, "")
+            assert.notEqual(res.status, 429, `usuario ${u}, intento ${i + 1}: 429 compartido sin WEB_PROXY_SECRET`)
+          }
+        }
       } finally {
         process.env.WEB_PROXY_SECRET = SECRET
       }

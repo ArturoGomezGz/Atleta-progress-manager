@@ -20,9 +20,9 @@ async function main() {
 
   if (process.env.NODE_ENV === "production" && !process.env.WEB_PROXY_SECRET) {
     app.log.warn(
-      "WEB_PROXY_SECRET no está configurado: los logins y registros que llegan por el web (/api/auth/* reenviado por Next) " +
-        "usan la IP de salida del web para los límites de tasa de better-auth (3 cada 10 s en sign-in/sign-up), así que " +
-        "usuarios distintos comparten ese límite y pueden recibir 429. Configura el mismo valor en la API y en el web (ver docs/deploy.md).",
+      "WEB_PROXY_SECRET no está configurado: /api/auth/* reenvía X-Forwarded-For tal cual, así que quien llame directo " +
+        "a la API puede evadir los límites de tasa de better-auth (registro dinámico OAuth, login) rotando ese header. " +
+        "Configura el mismo valor en la API y en el web (ver docs/deploy.md).",
     )
   }
 
