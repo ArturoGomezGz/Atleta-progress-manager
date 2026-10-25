@@ -1,15 +1,17 @@
 import { db } from "@atleta/db/client"
 import { equipment, exercise, exerciseMuscle, type RoutineContent, type RoutineExerciseContent, type RoutineSet } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, arrayContains, arrayOverlaps, eq, ilike, inArray, isNull, ne, or } from "drizzle-orm"
+import { and, arrayContains, arrayOverlaps, eq, inArray, ne, or } from "drizzle-orm"
 import type { FastifyBaseLogger } from "fastify"
 import type OpenAI from "openai"
 import { z } from "zod"
+import { containsText } from "../lib/text-search"
 import { attachDetails, getOpenAI } from "../routers/exercises"
 import { bodyZones, levels, patterns } from "./ai-routine-editor/catalog-constants"
 import type { AlternativeInfo } from "./ai-routine-editor/alternatives"
 import { matchesAvoid } from "./ai-routine-editor/avoid"
 import { AI_ROUTINE_SYSTEM_PROMPT } from "./ai-routines-prompt"
+import { exerciseVisibilityWhere } from "./exercise-visibility"
 
 export const AI_MODEL = "gpt-4o-mini"
 const MAX_TURNS = 16
@@ -160,16 +162,9 @@ export type Ctx = {
   avoid?: string[]
 }
 
+// La IA solo ve el catálogo del equipo de la rutina (no los demás equipos del usuario)
 function visibleTo(ctx: Ctx) {
-  return and(
-    isNull(exercise.deletedAt),
-    or(
-      and(isNull(exercise.ownerUserId), isNull(exercise.ownerTeamId)),
-      eq(exercise.isPublic, true),
-      eq(exercise.ownerTeamId, ctx.teamId),
-      eq(exercise.ownerUserId, ctx.userId),
-    ),
-  )
+  return exerciseVisibilityWhere({ userId: ctx.userId, teamIds: [ctx.teamId] })
 }
 
 const searchArgsSchema = z.object({
@@ -187,7 +182,7 @@ export async function searchExercises(raw: unknown, ctx: Ctx) {
     .from(exercise)
     .where(and(
       visibleTo(ctx),
-      args.query ? ilike(exercise.name, `%${args.query.trim()}%`) : undefined,
+      args.query?.trim() ? containsText(exercise.name, args.query) : undefined,
       args.movementPattern ? arrayContains(exercise.movementPatterns, [args.movementPattern]) : undefined,
       args.difficulty ? eq(exercise.difficulty, args.difficulty) : undefined,
       args.warmupOnly ? eq(exercise.suitableFor, "warmup") : undefined,

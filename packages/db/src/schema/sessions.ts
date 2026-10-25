@@ -1,6 +1,7 @@
-import { date, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { date, index, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
+import { trainingPlanAssignment, trainingPlanWorkout } from "./plans"
 import { routine, type RoutineContent } from "./routines"
 import { team } from "./teams"
 
@@ -10,20 +11,27 @@ export const sessionStatusEnum = pgEnum("session_status", ["scheduled", "active"
 export const athleteSessionStatusEnum = pgEnum("athlete_session_status", ["scheduled", "active", "cancelled", "completed"])
 export const setStatusEnum = pgEnum("set_status", ["valid", "invalid"])
 
-export const trainingSession = pgTable("training_session", {
-  id: uuid("id").primaryKey().defaultRandom(),
-  routineId: uuid("routine_id").references(() => routine.id, { onDelete: "set null" }),
-  teamId: uuid("team_id")
-    .notNull()
-    .references(() => team.id, { onDelete: "cascade" }),
-  startedBy: text("started_by")
-    .notNull()
-    .references(() => user.id),
-  startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
-  scheduledDate: date("scheduled_date"),
-  status: sessionStatusEnum("status").notNull().default("active"),
-  content: jsonb("content").$type<RoutineContent>(),
-})
+export const trainingSession = pgTable(
+  "training_session",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    routineId: uuid("routine_id").references(() => routine.id, { onDelete: "set null" }),
+    teamId: uuid("team_id")
+      .notNull()
+      .references(() => team.id, { onDelete: "cascade" }),
+    startedBy: text("started_by")
+      .notNull()
+      .references(() => user.id),
+    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    scheduledDate: date("scheduled_date"),
+    status: sessionStatusEnum("status").notNull().default("active"),
+    content: jsonb("content").$type<RoutineContent>(),
+    // Origen: sesión creada al programar un plan de entrenamiento (null = asignado suelto)
+    planAssignmentId: uuid("plan_assignment_id").references(() => trainingPlanAssignment.id, { onDelete: "set null" }),
+    planWorkoutId: uuid("plan_workout_id").references(() => trainingPlanWorkout.id, { onDelete: "set null" }),
+  },
+  (t) => [index("training_session_plan_assignment_idx").on(t.planAssignmentId)],
+)
 
 export const sessionExercise = pgTable("session_exercise", {
   id: uuid("id").primaryKey().defaultRandom(),

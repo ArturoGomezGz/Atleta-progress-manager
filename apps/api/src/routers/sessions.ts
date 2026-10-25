@@ -14,12 +14,13 @@ import {
   user,
 } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, asc, desc, eq, gt, gte, inArray, lte, or, SQL, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, inArray, lte, SQL, sql } from "drizzle-orm"
 import { z } from "zod"
 import { zoneProfileFromContent } from "@atleta/db/body-zones"
 import { exerciseZones, withZoneProfiles } from "../services/body-zones"
 import { triggerExerciseReport } from "../services/report-trigger"
-import { flattenContent, targetsForExercise } from "../services/routine-content"
+import { flattenContent } from "../services/routine-content"
+import { assertAssignableAthletes, createAssignedSessions, todayUtc } from "../services/session-assign"
 import { assertFeature, hasFeature } from "../lib/features"
 import { protectedProcedure, router } from "../trpc"
 import { assertAthleteInTeam, assertCoach, assertMember } from "./teams"
@@ -33,6 +34,19 @@ async function getRoutineCategory(routineId: string | null): Promise<"evaluation
 }
 
 type FeatureUser = { id: string; email: string }
+
+// Límites de sessions.createMany (y de la herramienta MCP assign_routine)
+export const MAX_ASSIGN_ATHLETES = 50
+export const MAX_ASSIGN_DATES = 60
+
+// Rutina a asignar: debe existir, ser del equipo y no estar archivada
+async function loadAssignableRoutine(routineId: string, teamId: string) {
+  const [r] = await db.select().from(routine).where(eq(routine.id, routineId)).limit(1)
+  // Una rutina de otro equipo se trata como inexistente (no revela que existe)
+  if (!r || r.teamId !== teamId) throw new TRPCError({ code: "NOT_FOUND" })
+  if (r.archivedAt) throw new TRPCError({ code: "BAD_REQUEST", message: "La rutina está archivada; restáurala para poder asignarla" })
+  return r
+}
 
 // Las sesiones de evaluación solo son accesibles con el flag `evaluation`
 async function assertSessionFeature(user: FeatureUser, routineId: string | null) {
@@ -252,11 +266,19 @@ export const sessionsRouter = router({
       }
     }),
 
+  // Filtros opcionales (los usa la herramienta MCP list_assignments; la web solo manda category/athleteId):
+  // `from`/`to` sobre la fecha de la sesión (programada o, sin fecha, el día en que se creó, en UTC),
+  // `status` de la sesión, `planAssignmentId` y `limit` (sin límite por defecto).
   list: protectedProcedure
     .input(z.object({
       teamId:    z.string().uuid(),
       category:  z.enum(["evaluation", "training"]).optional(),
       athleteId: z.string().optional(),
+      from:      z.string().date().optional(),
+      to:        z.string().date().optional(),
+      status:    z.array(z.enum(["scheduled", "active", "completed", "cancelled"])).min(1).optional(),
+      planAssignmentId: z.string().uuid().optional(),
+      limit:     z.number().int().min(1).max(500).optional(),
     }))
     .query(async ({ ctx, input }) => {
       const member = await assertMember(ctx.session.user.id, input.teamId)
@@ -267,6 +289,11 @@ export const sessionsRouter = router({
         conditions.push(eq(routine.category, "training"))
       }
       if (input.category) conditions.push(eq(routine.category, input.category))
+      const sessionDate = sql`coalesce(${trainingSession.scheduledDate}, (${trainingSession.startedAt} at time zone 'UTC')::date)`
+      if (input.from) conditions.push(sql`${sessionDate} >= ${input.from}::date`)
+      if (input.to) conditions.push(sql`${sessionDate} <= ${input.to}::date`)
+      if (input.status) conditions.push(inArray(trainingSession.status, input.status))
+      if (input.planAssignmentId) conditions.push(eq(trainingSession.planAssignmentId, input.planAssignmentId))
 
       const columns = {
         id: trainingSession.id,
@@ -275,27 +302,19 @@ export const sessionsRouter = router({
         scheduledDate: trainingSession.scheduledDate,
         routineId: trainingSession.routineId,
         routineName: routine.name,
+        planAssignmentId: trainingSession.planAssignmentId,
         content: trainingSession.content,
       }
 
       // Filtrar por atleta: la sesión solo aparece si ese atleta está asignado a ella
-      if (input.athleteId) {
-        conditions.push(eq(athleteSession.athleteId, input.athleteId))
-        return withAssignedAthletes(member.role === "coach", await withZoneProfiles(await db
-          .select(columns)
-          .from(trainingSession)
-          .innerJoin(routine, eq(trainingSession.routineId, routine.id))
-          .innerJoin(athleteSession, eq(athleteSession.sessionId, trainingSession.id))
-          .where(and(...conditions))
-          .orderBy(desc(trainingSession.startedAt))))
-      }
-
-      return withAssignedAthletes(member.role === "coach", await withZoneProfiles(await db
-        .select(columns)
-        .from(trainingSession)
-        .innerJoin(routine, eq(trainingSession.routineId, routine.id))
+      const base = db.select(columns).from(trainingSession).innerJoin(routine, eq(trainingSession.routineId, routine.id))
+      if (input.athleteId) conditions.push(eq(athleteSession.athleteId, input.athleteId))
+      const filtered = (input.athleteId ? base.innerJoin(athleteSession, eq(athleteSession.sessionId, trainingSession.id)) : base)
         .where(and(...conditions))
-        .orderBy(desc(trainingSession.startedAt))))
+        // Las de un mismo createMany comparten startedAt: desempata la fecha programada
+        .orderBy(desc(trainingSession.startedAt), sql`${trainingSession.scheduledDate} desc nulls first`)
+      const rows = await (input.limit ? filtered.limit(input.limit) : filtered)
+      return withAssignedAthletes(member.role === "coach", await withZoneProfiles(rows))
     }),
 
   create: protectedProcedure
@@ -307,70 +326,50 @@ export const sessionsRouter = router({
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
+      await assertAssignableAthletes(db, input.teamId, input.athleteIds)
 
-      // Solo atletas del equipo, o el propio coach si activó "entrenar en este equipo",
-      // pueden ser asignados a una sesión.
-      const eligible = await db
-        .select({ userId: teamMember.userId })
-        .from(teamMember)
-        .where(
-          and(
-            eq(teamMember.teamId, input.teamId),
-            or(eq(teamMember.role, "athlete"), eq(teamMember.selfAthlete, true)),
-          ),
-        )
-      const eligibleIds = new Set(eligible.map((m) => m.userId))
-      const invalidIds = input.athleteIds.filter((id) => !eligibleIds.has(id))
-      if (invalidIds.length > 0) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "Uno o más atletas seleccionados no pertenecen a este equipo" })
-      }
-
-      const [r] = await db.select().from(routine).where(eq(routine.id, input.routineId)).limit(1)
-      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+      const r = await loadAssignableRoutine(input.routineId, input.teamId)
       if (r.category === "evaluation") assertFeature(ctx.session.user, "evaluation")
       if (input.scheduledDate != null) assertFeature(ctx.session.user, "scheduled_sessions")
 
-      // Aplanar ejercicios del content (ejercicios individuales + ejercicios dentro de circuitos)
-      const allExercises = flattenContent(r.content)
+      const [session] = await db.transaction((tx) =>
+        createAssignedSessions(tx, {
+          routine: r,
+          teamId: input.teamId,
+          athleteIds: input.athleteIds,
+          dates: [input.scheduledDate ?? null],
+          startedBy: ctx.session.user.id,
+          today: todayUtc(),
+        }),
+      )
+      return session!
+    }),
 
-      const today = new Date().toISOString().split("T")[0]
-      const isScheduled = input.scheduledDate != null && input.scheduledDate > today
+  // Varias fechas a la vez (una sesión por fecha, todas con los mismos atletas), en una
+  // sola transacción. A diferencia de `create`, solo las fechas futuras exigen el flag
+  // `scheduled_sessions` (hoy o antes queda activa, igual que "Ahora").
+  createMany: protectedProcedure
+    .input(z.object({
+      routineId: z.string().uuid(),
+      teamId: z.string().uuid(),
+      athleteIds: z.array(z.string()).min(1).max(MAX_ASSIGN_ATHLETES),
+      dates: z.array(z.string().date()).min(1).max(MAX_ASSIGN_DATES)
+        .refine((d) => new Set(d).size === d.length, "Las fechas no se pueden repetir"),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      const athleteIds = [...new Set(input.athleteIds)]
+      await assertAssignableAthletes(db, input.teamId, athleteIds)
 
-      return db.transaction(async (tx) => {
-        const [session] = await tx
-          .insert(trainingSession)
-          .values({
-            routineId: input.routineId,
-            teamId: input.teamId,
-            startedBy: ctx.session.user.id,
-            scheduledDate: input.scheduledDate ?? null,
-            status: isScheduled ? "scheduled" : "active",
-            content: r.content,
-          })
-          .returning()
+      const r = await loadAssignableRoutine(input.routineId, input.teamId)
+      if (r.category === "evaluation") assertFeature(ctx.session.user, "evaluation")
+      const today = todayUtc()
+      if (input.dates.some((d) => d > today)) assertFeature(ctx.session.user, "scheduled_sessions")
 
-        // Snapshot exercises + set targets desde el content JSON
-        for (const [position, ex] of allExercises.entries()) {
-          const [se] = await tx
-            .insert(sessionExercise)
-            .values({ sessionId: session.id, exerciseId: ex.exerciseId, order: position })
-            .returning()
-
-          const targets = targetsForExercise(ex.sets).map((t) => ({ ...t, sessionExerciseId: se.id }))
-
-          if (targets.length > 0) {
-            await tx.insert(sessionSetTarget).values(targets)
-          }
-        }
-
-        // En entrenamiento el atleta activa su propia sesión; en evaluación el coach controla todo
-        const athleteInitialStatus = r.category === "training" ? "scheduled" as const : "active" as const
-        await tx.insert(athleteSession).values(
-          input.athleteIds.map((athleteId) => ({ sessionId: session.id, athleteId, status: athleteInitialStatus })),
-        )
-
-        return session
-      })
+      const dates = [...input.dates].sort()
+      return db.transaction((tx) =>
+        createAssignedSessions(tx, { routine: r, teamId: input.teamId, athleteIds, dates, startedBy: ctx.session.user.id, today }),
+      )
     }),
 
   get: protectedProcedure

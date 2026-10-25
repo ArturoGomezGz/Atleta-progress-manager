@@ -1,0 +1,59 @@
+name: api-tests
+
+# Pruebas de la API: unitarias (sin red ni BD), typecheck e integración contra un
+# Postgres 16 de servicio (apps/api/test/integration, ver docs/mcp.md).
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - "packages/db/**"
+      - "pnpm-lock.yaml"
+      - ".github/workflows/api-tests.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: atleta
+          POSTGRES_PASSWORD: atleta
+          POSTGRES_DB: atleta_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U atleta -d atleta_test"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm --filter @atleta/api typecheck
+
+      - name: Unit tests
+        run: pnpm --filter @atleta/api test
+
+      - name: Integration tests
+        env:
+          TEST_DATABASE_URL: postgres://atleta:atleta@localhost:5432/atleta_test
+        run: pnpm --filter @atleta/api test:integration

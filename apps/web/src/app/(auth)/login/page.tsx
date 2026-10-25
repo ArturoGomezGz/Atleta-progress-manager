@@ -4,6 +4,7 @@ import { signIn } from "@/lib/auth"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
 import { AuthShell, EmailCollapse, GoogleIcon } from "../_components/auth-ui"
+import { OAUTH_EXPIRED_MESSAGE, OAuthNotice, followOAuthRedirect, useOAuthFlow } from "../_components/oauth-flow"
 
 function LoginForm() {
   const router = useRouter()
@@ -17,6 +18,8 @@ function LoginForm() {
   const [emailOpen, setEmailOpen] = useState(false)
 
   const redirectTo = searchParams.get("redirect") ?? "/dashboard"
+  // Conectar una app de IA (conector MCP): tras iniciar sesión sigue el flujo OAuth
+  const oauth = useOAuthFlow()
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -30,6 +33,9 @@ function LoginForm() {
       setEmailOpen(true)
       if (result.error.status === 403) {
         setUnverified(true)
+      } else if (oauth.active && result.error.status === 400) {
+        // La query firmada vence a los 10 minutos
+        setError(OAUTH_EXPIRED_MESSAGE)
       } else {
         setError("Correo o contraseña incorrectos")
       }
@@ -37,6 +43,11 @@ function LoginForm() {
       return
     }
 
+    // En modo OAuth la respuesta trae la URL de consentimiento (o de vuelta a la app)
+    if (oauth.active) {
+      followOAuthRedirect(result.data)
+      return
+    }
     router.push(redirectTo)
   }
 
@@ -45,10 +56,17 @@ function LoginForm() {
     await signIn.social({ provider: "google", callbackURL: redirectTo })
   }
 
-  const registerHref = `/register${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`
+  const registerHref = oauth.active
+    ? `/register?${oauth.query}`
+    : `/register${redirectTo !== "/dashboard" ? `?redirect=${encodeURIComponent(redirectTo)}` : ""}`
 
   return (
-    <AuthShell tagline="Progreso para atletas y coaches" title="Entra a tu cuenta">
+    <AuthShell
+      tagline={oauth.active ? "Conectar una app de IA" : "Progreso para atletas y coaches"}
+      title={oauth.active ? "Entra para continuar" : "Entra a tu cuenta"}
+    >
+      {oauth.active && <OAuthNotice clientName={oauth.clientName} />}
+
       <button
         type="button"
         onClick={handleGoogle}

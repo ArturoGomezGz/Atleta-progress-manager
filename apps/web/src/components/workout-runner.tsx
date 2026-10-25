@@ -717,6 +717,7 @@ export function WorkoutRunner({
       exit={exit}
       onShowOverview={openOverview}
       onRecordSet={onRecordSet}
+      autoContinue={autoContinue}
       onRecorded={(isLastSet) => {
         vibrate(60)
         if (!isLastSet) startRest(curEx.restSeconds ?? DEFAULT_REST_SECONDS)
@@ -730,7 +731,7 @@ export function WorkoutRunner({
 
 function SetExecution({
   exercise, target, exerciseIdx, totalExercises, totalSetsGlobal, doneSetsGlobal,
-  defaultWeight, exit, onRecordSet, onRecorded, onShowOverview, withSidebar,
+  defaultWeight, exit, onRecordSet, onRecorded, onShowOverview, withSidebar, autoContinue,
 }: {
   exercise: WorkoutExercise
   target: WorkoutTarget
@@ -744,6 +745,8 @@ function SetExecution({
   onRecorded: (isLastSet: boolean) => void
   onShowOverview: () => void
   withSidebar: boolean
+  /** Con "Continuar automáticamente": el temporizador de una serie por tiempo arranca y se guarda solo. */
+  autoContinue: boolean
 }) {
   const isTime = isTimeTarget(target)
   const freeReps = !isTime && target.targetReps == null
@@ -780,6 +783,24 @@ function SetExecution({
       setSaving(false)
     }
   }
+
+  // Cada serie monta este componente de nuevo (key), así que se dispara una vez por serie:
+  // arranca al terminar el descanso y se guarda al acabar el tiempo (y de ahí sigue el descanso).
+  const autoStarted = useRef(false)
+  const autoCompleted = useRef(false)
+  useEffect(() => {
+    if (!autoContinue || !isTime || autoStarted.current) return
+    autoStarted.current = true
+    // Sin la cuenta "prepárate": el tiempo corre en el mismo instante en que termina el descanso
+    setTimerPhase("running")
+    vibrate(120)
+  }, [autoContinue, isTime])
+  useEffect(() => {
+    if (!autoContinue || !timerFinished || autoCompleted.current) return
+    autoCompleted.current = true
+    handleComplete()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoContinue, timerFinished])
 
   return (
     <div className={cn("flex flex-col", screenHeight(withSidebar))}>

@@ -4,11 +4,15 @@ import { signIn, signUp } from "@/lib/auth"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useState } from "react"
 import { AuthShell, EmailCollapse, GoogleIcon } from "../_components/auth-ui"
+import { OAUTH_EXPIRED_MESSAGE, OAuthNotice, followOAuthRedirect, useOAuthFlow } from "../_components/oauth-flow"
 
 function RegisterForm() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const redirectTo = searchParams.get("redirect") ?? "/dashboard"
+  // Conectar una app de IA (conector MCP): si el registro deja la sesión iniciada, sigue el flujo OAuth
+  const oauth = useOAuthFlow()
+  const loginHref = oauth.active ? `/login?${oauth.query}` : "/login"
 
   const [name, setName] = useState("")
   const [email, setEmail] = useState("")
@@ -31,12 +35,17 @@ function RegisterForm() {
       setEmailOpen(true)
       if (result.error.status === 422) {
         setEmailInUse(true)
+      } else if (oauth.active && result.error.status === 400) {
+        setError(OAUTH_EXPIRED_MESSAGE)
       } else {
         setError("Error al crear la cuenta. Inténtalo de nuevo.")
       }
       setLoading(false)
       return
     }
+
+    // En modo OAuth, si el registro inició sesión, la respuesta trae la URL de consentimiento
+    if (oauth.active && followOAuthRedirect(result.data)) return
 
     // Con AUTO_VERIFY_EMAIL (testing) el registro ya inicia sesión: no hay correo que confirmar.
     if (result.data?.token) {
@@ -55,7 +64,8 @@ function RegisterForm() {
   }
 
   return (
-    <AuthShell tagline="Progreso para atletas y coaches" title="Crea tu cuenta">
+    <AuthShell tagline={oauth.active ? "Conectar una app de IA" : "Progreso para atletas y coaches"} title="Crea tu cuenta">
+      {oauth.active && <OAuthNotice clientName={oauth.clientName} />}
       <button
         type="button"
         onClick={handleGoogle}
@@ -112,7 +122,7 @@ function RegisterForm() {
                   <div className="rounded-lg border border-border bg-muted/40 p-3 space-y-1">
                     <p className="text-sm text-foreground">Este correo ya tiene una cuenta.</p>
                     <div className="flex gap-3 text-sm">
-                      <a href="/login" className="text-primary hover:brightness-110 font-medium">
+                      <a href={loginHref} className="text-primary hover:brightness-110 font-medium">
                         Iniciar sesión
                       </a>
                     </div>
@@ -131,7 +141,7 @@ function RegisterForm() {
 
       <p className="text-center text-sm text-muted-foreground">
         ¿Ya tienes cuenta?{" "}
-        <a href="/login" className="text-primary hover:brightness-110 font-medium">
+        <a href={loginHref} className="text-primary hover:brightness-110 font-medium">
           Inicia sesión
         </a>
       </p>

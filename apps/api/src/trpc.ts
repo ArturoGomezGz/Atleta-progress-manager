@@ -46,6 +46,8 @@ const t = initTRPC.context<Context>().create({
 
 export const router = t.router
 export const publicProcedure = t.procedure
+// Llamar procedimientos desde el servidor (herramientas MCP) con las mismas reglas de rol y flag
+export const createCallerFactory = t.createCallerFactory
 
 // Requires a valid session
 export const protectedProcedure = t.procedure.use(({ ctx, next }) => {

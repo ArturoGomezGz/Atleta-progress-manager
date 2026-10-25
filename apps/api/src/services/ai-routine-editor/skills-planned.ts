@@ -19,8 +19,6 @@ function planned(id: string, name: string, description: string, category: SkillC
   }
 }
 
-const account = { scope: "persist" as const, mcp: "yes" as const }
-
 export const PLANNED_SKILLS: AnySkill[] = [
   // Consulta
   planned("routine_summary", "Resumen de la rutina", "Describe la rutina: duración estimada, zonas, patrones y carga total.", "read", { scope: "read", mcp: "yes" }),
@@ -37,12 +35,9 @@ export const PLANNED_SKILLS: AnySkill[] = [
   planned("apply_limitation", "Aplicar limitación o lesión", "Sustituye ejercicios con contraindicaciones para una lesión dada.", "compound", { execution: "llm", risk: "high", mcp: "no", notes: "Requiere decidir cómo se declaran y persisten las limitaciones; no es consejo médico." }),
   planned("convert_rpe_to_percent_rm", "Convertir RPE a % RM", "Cambia cargas RPE a % RM cuando hay RM registrados.", "compound", { mcp: "yes", notes: "Depende de RM por atleta ([rm-atleta.md](rm-atleta.md))." }),
   planned("create_variant", "Crear variante", "Misma estructura y volumen con variantes de los ejercicios principales.", "compound", { execution: "llm", risk: "medium", mcp: "no" }),
-  // Cuenta (pensadas para un futuro conector MCP)
-  planned("create_routine", "Crear rutina", "Crea una rutina vacía en un equipo.", "account", account),
-  planned("duplicate_routine", "Duplicar rutina", "Copia una rutina con ids nuevos.", "account", account),
-  planned("rename_routine", "Renombrar rutina", "Cambia el nombre de una rutina.", "account", account),
-  planned("list_routines", "Listar rutinas", "Lista las rutinas de un equipo.", "account", { scope: "read", mcp: "yes" }),
+  // Cuenta. Crear, duplicar, renombrar y listar rutinas o atletas ya no son habilidades del editor:
+  // son herramientas del conector MCP (create_routine, duplicate_routine, update_routine,
+  // list_routines, list_athletes; ver docs/mcp.md).
   planned("generate_routine", "Generar rutina desde cero", "Genera una rutina completa con IA a partir de objetivo y duración.", "account", { scope: "persist", execution: "llm", risk: "medium", mcp: "no", notes: "Ya existe como generador (`routines.generateWithAI`, flag `ai_generator`), pero fuera del registro." }),
-  planned("list_athletes", "Listar atletas", "Lista los atletas de un equipo.", "account", { scope: "read", mcp: "yes", notes: "Datos personales: exige permisos por equipo." }),
   planned("read_athlete_progress", "Leer progreso de un atleta", "Lee RM, marcas y avance de un atleta.", "account", { scope: "read", mcp: "yes", risk: "medium", notes: "Depende del flag `progress`." }),
 ]

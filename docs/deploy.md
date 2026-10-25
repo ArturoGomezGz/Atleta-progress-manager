@@ -71,10 +71,82 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 | `SEED_DEMO_DATA` | `true` para sembrar cuentas de prueba + catálogo de ejercicios al arrancar (idempotente). `false` en producción real |
 | `GEMINI_API_KEY` | *(Opcional)* Reportes de progreso con IA |
 | `OPENAI_API_KEY` | *(Opcional)* Botón "Completar con IA" al crear ejercicios |
+| `API_PUBLIC_URL` | URL pública de **esta API** (ej. `https://api-production-85b2.up.railway.app`). Obligatoria para el conector MCP: con ella se arman la URL del conector (`<API>/mcp`) y el Protected Resource Metadata. Ver [mcp.md](./mcp.md) |
+| `MCP_RESOURCE_URL` | *(Opcional)* Identificador del recurso OAuth y URL del conector. Por defecto `${API_PUBLIC_URL}/mcp` |
+| `MCP_ALLOWED_ORIGINS` | *(Opcional)* Orígenes de navegador permitidos en `/mcp` además de `WEB_URL`, separados por comas (ej. `http://localhost:6274` para MCP Inspector). Cualquier otro `Origin` recibe 403 |
+| `FEATURE_MCP_USERS` | Allowlist del flag `mcp` (conector MCP y página "Conectar IA"). Ver [feature-flags.md](./feature-flags.md) |
+| `FEATURE_TRAINING_PLANS_USERS` | Allowlist del flag `training_plans` (planes multi-semana; requiere `scheduled_sessions`) |
+| `TRUST_PROXY` | *(Opcional)* Cuántos proxies propios hay delante de la API para calcular la IP del cliente (límites de tasa de login y OAuth). Sin valor: `1` en producción (el edge de Railway), que es lo correcto en Railway; no lo subas a `2`. Ver [IP del cliente y TRUST_PROXY](#ip-del-cliente-y-trust_proxy) |
+| `WEB_PROXY_SECRET` | Secreto compartido con el web (**el mismo valor en Railway y en Vercel**). Genéralo con `openssl rand -hex 32`. El web firma con él las peticiones que reenvía a la API (`/api/auth/*`, `/.well-known/*` y su consulta de sesión) y la API toma entonces la IP real del usuario para los límites de login. Sin él, la API reenvía `X-Forwarded-For` tal cual (como antes del conector): los logins funcionan, pero quien llame directo a la API puede evadir los límites rotando ese header; la API avisa al arrancar. Ver [IP del cliente y TRUST_PROXY](#ip-del-cliente-y-trust_proxy) |
 
 > **Videos:** ya no se usa Cloudflare Stream (se eliminaron `CF_ACCOUNT_ID` y `CF_STREAM_API_TOKEN`). Los ejercicios guardan el ID de un video de YouTube; no hay almacenamiento ni costo por video.
 
+> **Conector MCP (OAuth):** el servidor de autorización es better-auth, con issuer `${BETTER_AUTH_URL}/api/auth` (el **web**). Los clientes de IA leen su metadata en `<WEB>/.well-known/oauth-authorization-server/api/auth`, que el web reenvía a la API con el rewrite `/.well-known/:path*` de `apps/web/next.config.ts`; el endpoint `/mcp` y su metadata (`/.well-known/oauth-protected-resource/mcp`) se sirven directo en la API. En Vercel solo hace falta `WEB_PROXY_SECRET` (el mismo de la API), para que los límites de tasa usen la IP real del usuario.
+
 > **`BETTER_AUTH_URL` debe ser la URL del web, no de la API.** El web proxea `/api/auth/*` hacia la API. El estado OAuth se almacena en una cookie del dominio web — si el callback apunta directamente a la API (diferente dominio), la cookie no existe y Google devuelve `state_mismatch`. Apuntando al web, el callback pasa por el proxy y la cookie está disponible.
+
+### IP del cliente y `TRUST_PROXY`
+
+better-auth limita por IP el login, el registro y los endpoints OAuth del conector MCP (`/oauth2/register` 20/h,
+`/oauth2/token` 30/min; solo en producción). Toma la IP del **primer** valor de `X-Forwarded-For`, que escribe el
+propio cliente: sin más, bastaba con rotar ese header para evadir los límites. Por eso el proxy `/api/auth/*` de la
+API (`apps/api/src/app.ts`) reescribe `X-Forwarded-For` con un único valor, `req.ip`, que Fastify calcula con
+`trustProxy` a partir de `TRUST_PROXY` (`apps/api/src/lib/client-ip.ts`):
+
+| Valor | Significado |
+|---|---|
+| *(vacío)* | `1` con `NODE_ENV=production`; `false` fuera de producción (local y pruebas: IP del socket) |
+| `N` (número) | Confía en los últimos N saltos: la IP es el valor N-ésimo contando desde el final del header |
+| `false` / `0` | No confía en `X-Forwarded-For`: la IP es la del socket (API expuesta sin proxy) |
+| `true` | Confía en todo el header. **Inseguro** si la API es accesible desde internet |
+| `10.0.0.0/8,…` | Lista de IPs/CIDR de proxies de confianza |
+
+**Por qué `1` por defecto en producción.** En Railway siempre hay exactamente un proxy propio delante de la API, su
+edge, y agrega al final de `X-Forwarded-For` la IP que lo contactó. Ese último valor no lo controla el cliente; lo
+que el cliente ponga antes se ignora. Con `1`:
+
+- **Cliente → API directo** (conectores MCP, apps, cualquier llamada a `API_PUBLIC_URL`): la IP es la real del
+  cliente. Es el camino de un atacante, y ahí el límite no se evade.
+- **Navegador → web → API** (`/api/auth/*` y `/.well-known/*` pasan por el rewrite de `apps/web/next.config.ts`,
+  en Vercel o en el servicio web de Railway): Vercel pone la IP real del usuario en `X-Forwarded-For` y el edge de
+  la API agrega la IP de salida del web. Con `1` a secas, la IP que vería better-auth es la **del web**: todos los
+  usuarios del web compartirían el límite de `/sign-in` y `/sign-up` (3 cada 10 s por IP en better-auth 1.6.9) y
+  con unos pocos logins simultáneos aparecerían 429. Para eso está `WEB_PROXY_SECRET` (abajo).
+
+**No uses `TRUST_PROXY=2`** aunque el web sea un salto más: daría la IP real a quien entra por el web, pero la API
+también es pública (el conector MCP y la app móvil llaman directo), y en una llamada directa el valor N-ésimo desde
+el final lo escribe el cliente, que volvería a poder rotarlo. Fuera de Railway, ajusta el número a los proxies
+propios que haya delante (p. ej. `0` si la API se expone sin proxy).
+
+#### `WEB_PROXY_SECRET`: el web firma lo que reenvía
+
+El middleware del web (`apps/web/src/middleware.ts`) agrega `x-atleta-web-proxy: <WEB_PROXY_SECRET>` a las
+peticiones que reescribe a la API (`/api/auth/*`, `/.well-known/*`) y a su propia consulta de sesión
+(`/api/auth/get-session`, a la que además pasa el `X-Forwarded-For` del usuario). Antes borra cualquier
+`x-atleta-web-proxy` que mande el navegador. El secreto no es `NEXT_PUBLIC_`: solo existe en el servidor y nunca
+llega al navegador.
+
+La API, en el proxy `/api/auth/*`, compara el header con su `WEB_PROXY_SECRET` en tiempo constante. Si coincide,
+confía en **un salto más** que `TRUST_PROXY`: la IP del cliente es el valor de `X-Forwarded-For` anterior a la IP del
+web, es decir, la que puso Vercel. Si no coincide, o la API no tiene secreto, se usa `req.ip` como siempre: quien
+llama directo a la API (conector MCP, app móvil, un atacante) sigue sin poder elegir su IP. El header se quita
+siempre antes de pasar la petición a better-auth.
+
+Configúralo así (mismo valor en los dos lados):
+
+```bash
+openssl rand -hex 32
+```
+
+- **Railway → servicio API → Variables:** `WEB_PROXY_SECRET=<valor>`.
+- **Vercel → Settings → Environment Variables:** `WEB_PROXY_SECRET=<valor>` (Production, y Preview si las previews
+  usan la misma API). Haz un redeploy del web para que lo tome.
+
+Sin `WEB_PROXY_SECRET` en la API, el proxy `/api/auth/*` reenvía `X-Forwarded-For` tal cual (comportamiento previo
+al conector): no bloquea logins legítimos, pero los límites se pueden evadir llamando directo a la API; con
+`NODE_ENV=production` registra un warning al arrancar. Si la API lo tiene y el web no (o los valores difieren), los
+logins por el web comparten el límite de la IP de salida del web: **configúralo primero en Vercel y redespliega el web,
+después en Railway**. Para rotarlo, quítalo de Railway, cambia el valor en Vercel y vuelve a ponerlo en Railway.
 
 ### Base de datos: primer despliegue con los scripts SQL
 
@@ -159,6 +231,7 @@ Ir a **Settings → Environment Variables** y agregar:
 | Variable | Valor |
 |---|---|
 | `NEXT_PUBLIC_API_URL` | URL pública de la API en Railway (ej. `https://atleta-api.railway.app`) |
+| `WEB_PROXY_SECRET` | El **mismo** valor que en la API de Railway (`openssl rand -hex 32`). Solo servidor (sin `NEXT_PUBLIC_`): el middleware firma con él lo que reenvía a la API para que los límites de login usen la IP real del usuario. Ver [WEB_PROXY_SECRET](#web_proxy_secret-el-web-firma-lo-que-reenvía) |
 
 ---
 
@@ -260,7 +333,10 @@ Para solicitar verificación: Google Cloud Console → OAuth consent screen → 
 - [ ] `BETTER_AUTH_URL` en Railway (API) — URL del **web** de producción
 - [ ] `WEB_URL` en Railway (API) — URL del web de producción
 - [ ] `NEXT_PUBLIC_API_URL` en Vercel (Web) — URL de la API en Railway
+- [ ] `WEB_PROXY_SECRET` en Railway (API) **y** en Vercel (Web) — mismo valor, `openssl rand -hex 32`
 - [ ] `ANTHROPIC_API_KEY` en Railway (API)
+- [ ] `API_PUBLIC_URL` en Railway (API) — URL pública de la API (conector MCP)
+- [ ] `FEATURE_MCP_USERS` en Railway (API) — si el conector MCP se habilita
 
 ### Resend
 - [ ] Dominio verificado en Resend
@@ -278,3 +354,4 @@ Para solicitar verificación: Google Cloud Console → OAuth consent screen → 
 - [ ] Email de verificación llega y el link redirige al dashboard
 - [ ] Login con Google funciona
 - [ ] Reset de contraseña funciona
+- [ ] Conector MCP: `<WEB>/.well-known/oauth-authorization-server/api/auth` y `<API>/.well-known/oauth-protected-resource/mcp` responden JSON (el `issuer` debe ser exactamente `<WEB>/api/auth`), `POST <API>/mcp` sin token responde 401 con `WWW-Authenticate`, y un cliente (MCP Inspector o Claude) completa el login y el consentimiento (checklist en [mcp.md](./mcp.md))

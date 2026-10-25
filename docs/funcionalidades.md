@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-10.
+> **Última revisión:** 2026-10-25.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -22,8 +22,8 @@ La columna **Verificación** indica de dónde viene el estado:
 
 | Función | Qué hace | Verificación |
 |---|---|---|
-| Registro e inicio de sesión | Correo y contraseña, y Google si está configurado. Con el bot de Telegram configurado, las cuentas nuevas quedan en revisión hasta que el administrador las aprueba con un botón, y la recuperación de contraseña le llega al administrador como enlace para reenviar (sin Telegram, se usan correos de Resend). Google entra directo, sin aprobación. En testing se omite todo con `AUTO_VERIFY_EMAIL`. Ver [deploy.md](deploy.md). | Por confirmar |
-| Identidad de marca (icono) | Anillo PR como icono de la app: favicon, icono iOS, icono de la app Android, manifest para instalar en Android y logo en login, registro, sidebar y pantallas públicas. | Por confirmar |
+| Registro e inicio de sesión | Correo y contraseña, y Google si está configurado. Con el bot de Telegram configurado, las cuentas nuevas quedan en revisión hasta que el administrador las aprueba con un botón, y la recuperación de contraseña le llega al administrador como enlace para reenviar (sin Telegram, se usan correos de Resend). Google entra directo, sin aprobación. En testing se omite todo con `AUTO_VERIFY_EMAIL`. Los límites de intentos por IP de producción necesitan `WEB_PROXY_SECRET` (mismo valor en web y API); sin él, los usuarios que entran por el web comparten el límite. Ver [deploy.md](deploy.md). | Por confirmar |
+| Identidad de marca (icono) | Anillo PR como icono de la app web y del APK de Android (producción y testing): favicon, icono iOS, manifest para instalar en Android y logo en login, registro, sidebar y pantallas públicas. | Por confirmar |
 | Equipo por defecto | Cada usuario nuevo recibe "Mi equipo", donde es coach y tiene el auto-entrenamiento activado, que ocupa una plaza de atleta ([equipo-por-defecto.md](equipo-por-defecto.md)). | Por confirmar |
 | Onboarding de usuarios nuevos | Tutorial guiado y bloqueante (spotlight con flecha): solo se puede hacer clic donde indica, hasta crear su primer entrenamiento, asignárselo, hacerlo y conocer Explorar. Se puede omitir siempre y reiniciar con el botón "?". Solo para quien recibe el equipo por defecto ([onboarding.md](onboarding.md)). | Por confirmar |
 | Equipos | Crear equipos, cambiar entre ellos desde la sección Equipo, eliminar equipo. | Por confirmar |
@@ -38,7 +38,7 @@ La columna **Verificación** indica de dónde viene el estado:
 | Explorar | Catálogo público de ejercicios. | Por confirmar |
 | Búsqueda de ejercicios | Buscador de Explorar, Mis ejercicios y el selector de ejercicios. Ignora mayúsculas, tildes, guiones y espacios (`pull-up` = `pullup`), plurales y errores de tecleo; entiende términos en español (`dominadas`, `flexiones`, `press banca`); ordena por relevancia con el nombre por encima de la descripción. Todo en el cliente, sin búsqueda semántica (descartada por ahora). Lógica en `apps/web/src/lib/exercise-search.ts`. | Por confirmar |
 | Cuenta (`/settings`) | Perfil (nombre, correo verificado, miembro desde), tema (claro/oscuro/sistema), cambio de contraseña y cerrar sesión. | Por confirmar |
-| Ejecución con temporizador de descanso | Descanso automático entre series, configurable. | Por confirmar |
+| Ejecución con temporizador de descanso | Descanso automático entre series, configurable. Con "Continuar automáticamente" activo (web y móvil), el descanso termina solo y, en series por tiempo, el temporizador arranca al instante al acabar el descanso (sin cuenta "prepárate") y la serie se guarda sola al terminar el tiempo, encadenando el siguiente descanso. Las series por repeticiones siguen siendo manuales. En el móvil, 5 segundos antes de cada fin de descanso o de tiempo la música del atleta baja de volumen y vuelve tras el último pitido (sin probar en dispositivo). | Por confirmar |
 
 ## Limitadas (solo usuarios permitidos)
 
@@ -54,6 +54,8 @@ Se activan por usuario con variables de entorno en la API. El dueño las tiene t
 | Compartir por enlace (crear enlaces nuevos) | `share_links` | `FEATURE_SHARE_LINKS_USERS` | Decisión de producto. Los enlaces ya creados siguen funcionando. |
 | Programar asignados para una fecha futura | `scheduled_sessions` | `FEATURE_SCHEDULED_SESSIONS_USERS` | Sin probar; solo se ha usado "Ahora" |
 | Grupos de atletas | `groups` | `FEATURE_GROUPS_USERS` | Tiene bugs pendientes de revisar |
+| Conector MCP (Claude, ChatGPT u otro cliente MCP: consultar ejercicios y sus alternativas, crear y editar entrenamientos, asignarlos; OAuth y tokens personales desde `/settings/conectar-ia`; ver [mcp.md](mcp.md)) | `mcp` | `FEATURE_MCP_USERS` | Nuevo; probado con tests automáticos, falta probar con Claude.ai, ChatGPT y Claude Code reales |
+| Planes de entrenamiento de varias semanas (semanas → días → entrenamientos, programarlos a atletas en fechas; hoy solo desde el conector MCP) | `training_plans` | `FEATURE_TRAINING_PLANS_USERS` | Nuevo; requiere además `scheduled_sessions`. Sin interfaz web todavía |
 
 ## Por pulir
 
@@ -76,6 +78,6 @@ Fuera del alcance de esta lista web; el detalle está en [mobile.md](mobile.md).
 |---|---|
 | Monetización por equipo | Plan gratuito con 1 atleta y plan de pago ilimitado; ver [monetizacion.md](monetizacion.md). Sin implementar. |
 | RM por atleta | Cálculo y almacenamiento del RM para cargas en % RM; ver [rm-atleta.md](rm-atleta.md). Depende de evaluación. |
-| Capa "Plan" (agrupar entrenamientos) | Fuera de v1 en [rutinas-normales.md](rutinas-normales.md). |
-| Más habilidades del editor de IA | Ajustar a una duración, duplicar/agrupar/separar bloques, restricciones de equipo o lesión, convertir RPE a % RM, crear variantes, y habilidades de cuenta/atletas para un futuro conector MCP; ver [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md). Sin implementar. |
+| Planes de entrenamiento en la web | Ver, crear y programar planes desde la interfaz web (hoy solo por el conector MCP); ver [rutinas-normales.md](rutinas-normales.md). |
+| Más habilidades del editor de IA | Ajustar a una duración, duplicar/agrupar/separar bloques, restricciones de equipo o lesión, convertir RPE a % RM, crear variantes, ; las de cuenta/atletas ya existen como herramientas del conector MCP ([mcp.md](mcp.md)); ver [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md). Sin implementar. |
 | Experiencia inmersiva (móvil) | Guía por voz con audífonos y avance automático, sin tocar el teléfono; se habilita sola en entrenamientos que se pueden cronometrar. Será limitada con flag. Ver [experiencia-inmersiva.md](experiencia-inmersiva.md). Sin implementar. |

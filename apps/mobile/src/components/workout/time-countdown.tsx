@@ -1,4 +1,4 @@
-// Serie por tiempo: "prepárate" 3-2-1 con pitidos, cuenta del tiempo con aviso en
+// Serie por tiempo: "prepárate" 3-2-1 con pitidos (en modo automático arranca sin él), cuenta del tiempo con aviso en
 // los últimos 3 segundos y alarma al terminar. Si el atleta sale de la app mientras
 // corre, la notificación del sistema le avisa al terminar.
 // El control (empezar, pausar, seguir, reiniciar) vive en los botones del pie del
@@ -64,6 +64,7 @@ export function useSetCountdown(seconds: number, exerciseName: string, perSide =
 
   // 3-2-1 y últimos segundos
   useSecondTicks(shown, (s) => {
+    if (s === 5 && phase === "running") feedback.duck()
     if (s >= 1 && s <= 3) feedback.tick()
   })
 
@@ -91,7 +92,15 @@ export function useSetCountdown(seconds: number, exerciseName: string, perSide =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ms, phase])
 
-  function start() {
+  /** Con `immediate` arranca el tiempo en ese instante, sin la cuenta "prepárate" (modo automático). */
+  function start(opts?: { immediate?: boolean }) {
+    if (opts?.immediate) {
+      lastShown.current = null
+      setSide(1)
+      latest.current = { ...latest.current, side: 1 }
+      run(latest.current.seconds * 1000)
+      return
+    }
     feedback.tick()
     lastShown.current = 3
     setSide(1)

@@ -1,80 +1,90 @@
 #!/usr/bin/env python3
-"""Genera los íconos de producción de la app con el Anillo PR, el logo de la marca
-(el mismo de apps/web/src/components/atleta-mark.tsx y apps/web/src/app/icon.svg):
+"""Genera los íconos de producción de la app (Anillo PR, la marca de Atleta) en assets/.
+Misma geometría que apps/web/src/app/icon.svg. Después hay que volver a correr testing-icons.py:
 
-    python3 apps/mobile/scripts/brand-icons.py
-    python3 apps/mobile/scripts/testing-icons.py   # después, para la variante de testing
+    python3 apps/mobile/scripts/brand-icons.py && python3 apps/mobile/scripts/testing-icons.py
 
-Requiere Pillow. Se dibuja a 4x y se reduce para que los bordes salgan suaves.
+Requiere Pillow.
 """
 import math
 from pathlib import Path
 from PIL import Image, ImageDraw
 
 ASSETS = Path(__file__).resolve().parent.parent / "assets"
-BLUE = (71, 145, 255, 255)  # #4791ff
-GOLD = (251, 191, 36, 255)  # #fbbf24
-CHEVRON = (230, 234, 240, 255)  # #e6eaf0
-RIM = (10, 13, 19, 255)  # #0a0d13
-SS = 4
+SS = 4  # supersampling para bordes suaves
+BLUE, GOLD, INK, FG = (71, 145, 255), (251, 191, 36), (10, 13, 19), (230, 234, 240)
+SWEEP = 154.6 / (2 * math.pi * 30) * 360  # arco del anillo, en grados
 
 
-def gradient(size: int) -> Image.Image:
-    """Fondo de la marca: vertical #151b27 -> #06080c."""
-    top, bottom = (21, 27, 39), (6, 8, 12)
+def gradient(size):
+    """Fondo de la marca: #151b27 arriba a #06080c abajo."""
+    top, bot = (21, 27, 39), (6, 8, 12)
     img = Image.new("RGBA", (1, size))
     for y in range(size):
         t = y / (size - 1)
-        img.putpixel((0, y), tuple(round(a + (b - a) * t) for a, b in zip(top, bottom)) + (255,))
+        img.putpixel((0, y), tuple(round(a + (b - a) * t) for a, b in zip(top, bot)) + (255,))
     return img.resize((size, size))
 
 
-def logo(size: int, scale: float, mono: bool = False) -> Image.Image:
-    """Anillo PR sobre fondo transparente. scale = píxeles por unidad del viewBox de 100 (centrado)."""
+def mark(size, scale, mono=False):
+    """El anillo sobre fondo transparente. `scale` = píxeles por unidad del viewBox de 100."""
     n = size * SS
-    k = scale * SS
+    s = scale * SS
+    ox = oy = n / 2 - 50 * s
     img = Image.new("RGBA", (n, n), (0, 0, 0, 0))
-    d = ImageDraw.Draw(img)
-    c = n / 2
 
-    def pt(x, y):
-        return (c + (x - 50) * k, c + (y - 50) * k)
+    def P(x, y):
+        return (ox + x * s, oy + y * s)
 
-    r, sw = 30 * k, 10 * k
-    ro = r + sw / 2  # PIL dibuja el trazo hacia adentro desde el borde: se pasa el radio exterior
-    box = (c - ro, c - ro, c + ro, c + ro)
-    # Pista tenue del anillo y arco de progreso (82 %), que arranca arriba y sigue las agujas del reloj
-    d.ellipse(box, outline=(255, 255, 255, 64) if mono else (71, 145, 255, 51), width=round(sw))
-    d.arc(box, -90, 205.2, fill=(255, 255, 255, 255) if mono else BLUE, width=round(sw))
-    for ang in (-90, 205.2):  # puntas redondeadas del arco
-        x, y = c + r * math.cos(math.radians(ang)), c + r * math.sin(math.radians(ang))
-        d.ellipse((x - sw / 2, y - sw / 2, x + sw / 2, y + sw / 2), fill=(255, 255, 255, 255) if mono else BLUE)
-    # Punto dorado donde termina el arco
-    dx, dy = pt(22.86, 37.23)
-    pr = 7.5 * k
-    if not mono:
-        d.ellipse((dx - pr - 1.25 * k, dy - pr - 1.25 * k, dx + pr + 1.25 * k, dy + pr + 1.25 * k), fill=RIM)
-    d.ellipse((dx - pr, dy - pr, dx + pr, dy + pr), fill=(255, 255, 255, 255) if mono else GOLD)
+    def disc(layer, x, y, r, fill):
+        cx, cy = P(x, y)
+        ImageDraw.Draw(layer).ellipse((cx - r * s, cy - r * s, cx + r * s, cy + r * s), fill=fill)
+
+    def arc(layer, start, end, fill, caps):
+        d = ImageDraw.Draw(layer)
+        a, b = P(15, 15), P(85, 85)
+        d.arc((a[0], a[1], b[0], b[1]), start, end, fill=fill, width=round(10 * s))
+        if caps:
+            for ang in (start, end):
+                r = math.radians(ang)
+                disc(layer, 50 + 30 * math.cos(r), 50 + 30 * math.sin(r), 5, fill)
+
+    # Pista del anillo
+    track = Image.new("RGBA", (n, n), (0, 0, 0, 0))
+    arc(track, 0, 360, BLUE + (0 if mono else 46,), False)
+    img.alpha_composite(track)
+    # Progreso
+    arc(img, -90, -90 + SWEEP, (255, 255, 255, 255) if mono else BLUE + (255,), True)
+    # Punto dorado del PR, con borde del color del fondo
+    end = math.radians(-90 + SWEEP)
+    gx, gy = 50 + 30 * math.cos(end), 50 + 30 * math.sin(end)
+    if mono:
+        disc(img, gx, gy, 7.5, (255, 255, 255, 255))
+    else:
+        disc(img, gx, gy, 8.75, INK + (255,))
+        disc(img, gx, gy, 7.5, GOLD + (255,))
     # Chevron
-    pts = [pt(40, 57), pt(50, 45), pt(60, 57)]
-    w = round(7 * k)
-    col = (255, 255, 255, 255) if mono else CHEVRON
-    d.line(pts, fill=col, width=w, joint="curve")
-    for x, y in pts[::2]:
-        d.ellipse((x - w / 2, y - w / 2, x + w / 2, y + w / 2), fill=col)
+    d = ImageDraw.Draw(img)
+    pts = [P(40, 57), P(50, 45), P(60, 57)]
+    col = (255, 255, 255, 255) if mono else FG + (255,)
+    d.line(pts, fill=col, width=round(7 * s), joint="curve")
+    for x, y in ((40, 57), (50, 45), (60, 57)):
+        disc(img, x, y, 3.5, col)
     return img.resize((size, size), Image.LANCZOS)
 
 
 def main():
-    # Ícono completo (1024): fondo de la marca y el anillo, como el maskable de la web
+    # Ícono completo: la marca sobre el fondo oscuro
     icon = gradient(1024)
-    icon.alpha_composite(logo(1024, 7.2))
+    icon.alpha_composite(mark(1024, 8.4))
     icon.convert("RGB").save(ASSETS / "icon.png")
 
-    # Ícono adaptivo: fondo + capa frontal (512, la máscara recorta a ~66 %) + monocromo (432)
+    # Adaptivo: fondo y capa frontal; Android recorta a ~66 % central, la marca queda dentro
     gradient(512).save(ASSETS / "android-icon-background.png")
-    logo(512, 3.9).save(ASSETS / "android-icon-foreground.png")
-    logo(432, 3.6, mono=True).save(ASSETS / "android-icon-monochrome.png")
+    mark(512, 4.3).save(ASSETS / "android-icon-foreground.png")
+
+    # Monocromo (íconos temáticos de Android 13+ y notificaciones): solo forma
+    mark(432, 3.6, mono=True).save(ASSETS / "android-icon-monochrome.png")
     print("Íconos de marca en", ASSETS)
 
 

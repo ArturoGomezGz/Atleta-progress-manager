@@ -2,8 +2,8 @@
 
 Registro único y revisable de las **habilidades** (skills) que el editor de rutinas con IA sabe ejecutar. El código vive en `apps/api/src/services/ai-routine-editor/` (registro en `skills.ts`); este documento es la fuente de verdad para gestionarlas y hay una prueba (`apps/api/test/services/ai-routine-editor/registry-doc.test.ts`) que falla si un id, el estado o el tipo de ejecución de una habilidad difieren entre el código y estas tablas.
 
-> **Última revisión:** 2026-10-06.
-> **Contexto:** el flujo de ajustes ("tweaks") está descrito en [ia-generacion-rutinas.md §11](ia-generacion-rutinas.md). Estado de la función en [funcionalidades.md](funcionalidades.md). Flag: `ai_routine_tweaks` ([feature-flags.md](feature-flags.md)).
+> **Última revisión:** 2026-10-24.
+> **Contexto:** el flujo de ajustes ("tweaks") está descrito en [ia-generacion-rutinas.md §11](ia-generacion-rutinas.md). Estado de la función en [funcionalidades.md](funcionalidades.md). Flag: `ai_routine_tweaks` ([feature-flags.md](feature-flags.md)). Las habilidades con MCP "Sí" también se exponen en el conector MCP ([mcp.md](mcp.md), §5).
 
 ## 1. Propósito y principios
 
@@ -13,7 +13,7 @@ El editor no es un chat: un **tweak** es una sola tarea concreta sobre la rutina
 2. **Determinista donde se pueda.** Subir dificultad o ajustar descansos son reglas con límites, no una decisión del modelo. El LLM se reserva para lo que exige criterio (elegir una alternativa).
 3. **Guardián de alcance.** Tras ejecutar, el código verifica que cada cambio caiga dentro de lo que la intención permite y descarta el resto antes de armar la propuesta (`scope-guard.ts`). No se confía en que el prompt se obedezca.
 4. **Nada se guarda sin confirmación.** Las habilidades de alcance *borrador* solo cambian el contenido que el cliente envía; el entrenador acepta o rechaza.
-5. **Independiente del proveedor.** Las definiciones no usan tipos de OpenAI; `adapters/openai.ts` las convierte en tools. Otro adaptador (MCP, REST) podría usar el mismo registro.
+5. **Independiente del proveedor.** Las definiciones no usan tipos de OpenAI; `adapters/openai.ts` las convierte en tools del agente del editor y `adapters/mcp.ts` en herramientas del conector MCP. Otro adaptador (REST) podría usar el mismo registro.
 6. **Poco contexto, poco costo.** Cada intención expone solo sus herramientas con un prompt corto, y los resultados de las herramientas son un resumen del cambio, nunca la rutina completa.
 
 Vocabulario de las tablas:
@@ -82,7 +82,7 @@ Intenciones y su alcance permitido:
 
 | Habilidad | Retirada | Motivo |
 |---|---|---|
-| `propose_new_exercise` | 2026-10-06 | Ninguna IA escribe en el catálogo de ejercicios. Los ejercicios creados quedaban vacíos (sin músculos, equipo ni dificultad), eludían `avoid` (H-02), no se podían validar y ensuciaban el catálogo del equipo aunque se rechazara la propuesta. Si no hay alternativa, el tweak lo dice y no cambia nada; el generador (`routines.generateWithAI`) usa solo ejercicios del catálogo. |
+| `propose_new_exercise` | 2026-10-06 | Ninguna IA escribe en el catálogo de ejercicios. Los ejercicios creados quedaban vacíos (sin músculos, equipo ni dificultad), eludían `avoid` (H-02), no se podían validar y ensuciaban el catálogo del equipo aunque se rechazara la propuesta. Si no hay alternativa, el tweak lo dice y no cambia nada; el generador (`routines.generateWithAI`) usa solo ejercicios del catálogo. El conector MCP conserva el alta como herramienta propia, `create_exercise` (la dirige el coach, no la IA interna; `services/exercise-create.ts`). |
 
 ### Edición básica
 
@@ -117,25 +117,22 @@ Intenciones y su alcance permitido:
 
 | Id | Nombre | Descripción | Ejecución | Alcance | Entradas | Salidas | Riesgo | Estado | Flag | MCP | Revisión | Notas |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|
-| `create_routine` | Crear rutina | Crea una rutina vacía en un equipo. | Determinista | Guardado | — | — | Bajo | Planeada | — | Sí | 2026-10-06 |  |
-| `duplicate_routine` | Duplicar rutina | Copia una rutina con ids nuevos. | Determinista | Guardado | — | — | Bajo | Planeada | — | Sí | 2026-10-06 |  |
-| `rename_routine` | Renombrar rutina | Cambia el nombre de una rutina. | Determinista | Guardado | — | — | Bajo | Planeada | — | Sí | 2026-10-06 |  |
-| `list_routines` | Listar rutinas | Lista las rutinas de un equipo. | Determinista | Lectura | — | — | Bajo | Planeada | — | Sí | 2026-10-06 |  |
 | `generate_routine` | Generar rutina desde cero | Genera una rutina completa con IA a partir de objetivo y duración. | LLM | Guardado | — | — | Medio | Planeada | — | No | 2026-10-06 | Ya existe como generador (`routines.generateWithAI`, flag `ai_generator`), pero fuera del registro. |
-| `list_athletes` | Listar atletas | Lista los atletas de un equipo. | Determinista | Lectura | — | — | Bajo | Planeada | — | Sí | 2026-10-06 | Datos personales: exige permisos por equipo. |
 | `read_athlete_progress` | Leer progreso de un atleta | Lee RM, marcas y avance de un atleta. | Determinista | Lectura | — | — | Medio | Planeada | — | Sí | 2026-10-06 | Depende del flag `progress`. |
 
-## 5. Hacia un MCP
+Crear, duplicar, renombrar y listar rutinas o atletas ya no figuran aquí: no operan sobre el borrador de un tweak, así que son herramientas del conector MCP (`create_routine`, `duplicate_routine`, `update_routine`, `list_routines`, `list_athletes`; ver [mcp.md](mcp.md)) y no habilidades del editor.
 
-El agente del editor es **un cliente más** del registro; no el dueño. Para exponerlo por MCP (u otro adaptador) conviene respetar:
+## 5. Conector MCP
 
-- **No anidar un bucle LLM dentro de una herramienta MCP.** El cliente (que ya es un modelo) compone las atómicas; por eso las habilidades `LLM` (p. ej. `replace_with_alternative`) figuran con MCP "No": su equivalente MCP es buscar + reemplazar. Las deterministas (`adjust_difficulty`, `adjust_rest`) sí sirven tal cual.
-- **Autenticación por usuario**, nunca una clave global: cada llamada actúa como un coach concreto con `assertCoach(teamId)`, igual que `routines.tweakWithAI`.
-- **Permisos por habilidad con los feature flags** existentes (campo `flag`): una habilidad solo se lista si el usuario tiene el flag; la API debe seguir rechazando con `FORBIDDEN` aunque el cliente la conozca.
-- **Alcance explícito.** Las de lectura y borrador no necesitan confirmación; las de **guardado** (cuenta) requieren confirmación del usuario en el cliente o un modo de solo propuesta.
-- **Concurrencia optimista** para rutinas persistidas: hoy el borrador viaja entero y lo guarda `routines.updateContent`; un MCP que escriba debe enviar la versión (`updatedAt`) que leyó y fallar si cambió.
-- **Salidas compactas y estables**, con ids; nunca volcar la rutina completa en cada respuesta.
-- Un adaptador MCP debe implementar el `SkillRuntime` de `types.ts` (borrador, catálogo, `apply`) con su propia persistencia; las habilidades no cambian.
+El agente del editor es **un cliente más** del registro, no su dueño. El conector MCP ([mcp.md](mcp.md)) es otro: `adapters/mcp.ts` (`mcpSkillTools()`) genera una herramienta por cada habilidad con MCP **Sí**, ejecutable (`isRunnable`) y de categoría edición o compuesta, y `apps/api/src/mcp/tools/skills.ts` la registra. Hoy son `replace_exercise`, `add_exercise`, `remove_item`, `move_item`, `update_sets`, `update_item_fields`, `update_block`, `adjust_difficulty` y `adjust_rest`. Las de catálogo tienen herramienta propia: `search_exercises` (`mcp/tools/catalog.ts`) y `find_alternatives` (`mcp/tools/skills.ts`, solo lectura: `{routineId, itemId, avoid?, easier?}` → candidatos, sin guardar). `create_exercise` no es una habilidad (el editor no crea ejercicios): es una herramienta MCP sobre `services/exercise-create.ts`.
+
+- **Misma definición.** Nombre = id de la habilidad, misma descripción y el mismo zod: el JSON Schema publicado sale del objeto (atravesando `refine`) y la validación usa el schema completo, así `adjust_rest` sigue exigiendo dirección o segundos (`INVALID_INPUT`).
+- **No anida un bucle LLM.** Las habilidades `LLM` (p. ej. `replace_with_alternative`) figuran con MCP "No": el cliente, que ya es un modelo, compone buscar + reemplazar.
+- **Sobre la rutina guardada, no sobre un borrador.** Cada llamada lee la rutina (`routines.get`), ejecuta la habilidad con `createRuntime` (el `SkillRuntime` de `runtime.ts`) y guarda con `routines.updateContent`. Una compuesta sin margen no escribe (`saved: false`).
+- **El coach dirige.** En MCP se admiten `percent_rm` y `fixed_kg` (`allowPercentRm` / `allowFixedKg` en `true`), `add_exercise` puede repetir un ejercicio ya presente (`allowRepeatExercises`, como `edit_routine`), y los `exerciseId` del input se precargan como conocidos (`knownExerciseIds`) tras comprobar que son visibles para el usuario; si no, `BAD_REQUEST`.
+- **Concurrencia optimista.** `expectedUpdatedAt` opcional: si no coincide con la rutina, `CONFLICT` antes de editar; sin él se usa el `updatedAt` recién leído, y `updateContent` lo comprueba otra vez con la fila bloqueada (`SELECT … FOR UPDATE`).
+- **Permisos.** Autenticación por usuario (token OAuth o personal), scope `atleta:write` y las mismas reglas de rol (`assertCoach`) que la web. **No exigen `ai_routine_tweaks`**: ese flag protege la UI del editor y el costo del LLM interno, que aquí no se usa; basta el flag `mcp`. El campo `flag` de cada habilidad no cambia.
+- **Salidas compactas:** `{routineId, updatedAt, saved, result, message?, changes[{type, itemId, summary}]}`, nunca la rutina completa.
 
 ## 6. Preguntas abiertas y registro de decisiones
 
@@ -150,6 +147,9 @@ El agente del editor es **un cliente más** del registro; no el dueño. Para exp
 | 2026-10-06 | Las exclusiones del mensaje ("no tengo paralelas") se aplican como `avoid` en el catálogo; no son memoria. |
 | 2026-10-06 | Fuera de alcance por ahora: restricciones globales o persistentes (lesiones, equipo), memoria de conversación y `context`. Sin `percent_rm` (no hay RM en el tweak) y `fixed_kg` solo si el mensaje trae pesos. |
 | 2026-10-06 | Los resultados de las herramientas son compactos (resumen del cambio) para bajar los ~26 k tokens de entrada por petición. |
+| 2026-10-24 | Conector MCP: las habilidades con MCP "Sí" de edición y compuestas se exponen como herramientas generadas del registro (`adapters/mcp.ts`), sobre la rutina guardada y con concurrencia optimista. Exigen el flag `mcp`, no `ai_routine_tweaks`. Allí se admiten `percent_rm` y `fixed_kg` porque el coach dirige. |
+| 2026-10-24 | `create_routine`, `duplicate_routine`, `rename_routine`, `list_routines` y `list_athletes` salen del registro: son herramientas MCP, no habilidades del editor. |
+| 2026-10-25 | Al unir el conector MCP con los ajustes de la ronda 2026-10-06: `propose_new_exercise` sigue fuera del registro; el alta de ejercicios queda solo como herramienta MCP `create_exercise` (`services/exercise-create.ts`, comparación de nombre literal, 10 por hora). `find_alternatives` (MCP "Sí") se expone como herramienta MCP de lectura. |
 
 **Preguntas abiertas**
 

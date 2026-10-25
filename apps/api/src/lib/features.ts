@@ -6,12 +6,27 @@
 
 import { TRPCError } from "@trpc/server"
 
-export const FEATURES = ["evaluation", "progress", "ai_generator", "ai_routine_tweaks", "team_appearance", "share_links", "scheduled_sessions", "groups"] as const
+export const FEATURES = [
+  "evaluation",
+  "progress",
+  "ai_generator",
+  "ai_routine_tweaks",
+  "team_appearance",
+  "share_links",
+  "scheduled_sessions",
+  "groups",
+  // Conector MCP (Claude, ChatGPT…): endpoint /mcp, router mcp.* y la página "Conectar IA"
+  "mcp",
+  // Planes de entrenamiento multi-semana (router plans.* y sus herramientas MCP)
+  "training_plans",
+] as const
 export type FeatureKey = (typeof FEATURES)[number]
 
 // Una función que depende de otra solo se activa si la otra también lo está
 const REQUIRES: Partial<Record<FeatureKey, FeatureKey[]>> = {
   progress: ["evaluation"],
+  // Programar un plan crea sesiones con fecha futura
+  training_plans: ["scheduled_sessions"],
 }
 
 type FeatureUser = { id: string; email: string }

@@ -64,6 +64,7 @@ Plantilla de entrenamiento creada por un entrenador. **Nunca se modifica desde u
 | `created_by` | text FK → user | |
 | `created_at` | timestamp | |
 | `updated_at` | timestamp | |
+| `archived_at` | timestamp nullable | Archivada: fuera de las listas por defecto y no se puede asignar; `null` = activa |
 
 ### `routine_exercise`
 Ejercicios que componen una rutina. El orden no es estricto — el entrenador navega libremente entre ejercicios durante la sesión.
@@ -110,6 +111,8 @@ Ejecución real de una rutina. Independiente de la plantilla original.
 | `started_by` | text FK → user | Entrenador que inició |
 | `started_at` | timestamptz | Sin restricción de horario |
 | `status` | enum | `active` \| `completed` \| `cancelled` |
+| `plan_assignment_id` | uuid FK → training_plan_assignment nullable | Sesión creada al programar un plan; `SET NULL` |
+| `plan_workout_id` | uuid FK → training_plan_workout nullable | Hueco del plan que la originó; `SET NULL` |
 
 ### `session_exercise`
 Snapshot de `routine_exercise` al iniciar la sesión. Puede recibir ejercicios extra añadidos en ejecución.
@@ -217,6 +220,56 @@ todavía no existe: la posición en el contenido aplanado basta para reconstruir
 | `reps` | integer | |
 | `weight_lbs` | numeric(6,2) | |
 | `recorded_at` | timestamptz | |
+
+---
+
+## Conector MCP: OAuth y tokens personales
+
+Ver `docs/mcp.md`. Las cuatro tablas `oauth_*` son las que pide `@better-auth/oauth-provider@1.6.9`:
+los nombres de export del schema Drizzle (`oauthClient`, `oauthAccessToken`, `oauthRefreshToken`,
+`oauthConsent`) y sus propiedades son los nombres de modelo y campo del plugin — no renombrar.
+Ids `text` (los genera better-auth); los arreglos son `text[]`.
+
+| Tabla | Descripción |
+|---|---|
+| `oauth_client` | Clientes OAuth (registro dinámico de Claude, ChatGPT…): `client_id` único, `redirect_uris`, `scopes`, `disabled`, `public`, metadatos RFC 7591 |
+| `oauth_access_token` | Access tokens opacos (guardados como hash SHA-256), `client_id` → `oauth_client.client_id`, `user_id`, `scopes`, `expires_at`, `refresh_id` |
+| `oauth_refresh_token` | Refresh tokens (hash) con `revoked` y `auth_time` |
+| `oauth_consent` | Consentimiento por usuario y cliente (`scopes`); índice `(user_id, client_id)` |
+| `mcp_personal_token` | Tokens personales `atl_pat_…`: solo `token_hash` (SHA-256 hex, único) y `token_prefix` para mostrar; `scopes`, `expires_at` (null = no expira), `last_used_at`, `revoked_at` |
+
+Todas cascadean al borrar el usuario (y los tokens/consentimientos, al borrar el cliente).
+
+---
+
+## Planes de entrenamiento (flag `training_plans`)
+
+Ver `docs/mcp.md`. Un plan es una plantilla de 1 a 16 semanas; programarlo crea
+`training_session` normales enlazadas con `plan_assignment_id` / `plan_workout_id`.
+
+### `training_plan`
+| Columna | Tipo | Notas |
+|---|---|---|
+| `id` | uuid PK | |
+| `team_id` | uuid FK → team | cascade delete |
+| `created_by` | text FK → user | |
+| `name` / `description` / `goal` | text | `description` y `goal` nullable |
+| `weeks_count` | integer | CHECK 1–16 |
+| `status` | enum | `draft` \| `active` \| `archived` |
+| `created_at` / `updated_at` | timestamp | |
+
+### `training_plan_week`
+Una fila por semana. PK `(plan_id, week_number)`; `name`, `focus` y `notes` opcionales. Cascade al borrar el plan.
+
+### `training_plan_workout`
+Hueco de entrenamiento: `(plan_id, week_number)` FK → `training_plan_week` (cascade), `weekday` ISO
+(CHECK 1–7, 1 = lunes), `position` dentro del día (único por `plan_id, week_number, weekday, position`),
+`routine_id` FK → routine nullable (`SET NULL`: el hueco queda sin rutina) y `notes`.
+
+### `training_plan_assignment`
+Aplicación de un plan desde `start_date`: `plan_id` (nullable, `SET NULL`), `team_id`, `assigned_by`,
+`status` (`active` \| `cancelled`), `cancelled_at`. Los atletas se derivan de `athlete_session` de sus
+sesiones (`training_session.plan_assignment_id`, con índice); no se guardan aparte.
 
 ---
 

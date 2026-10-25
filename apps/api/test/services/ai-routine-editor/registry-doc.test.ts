@@ -4,6 +4,7 @@ import { dirname, resolve } from "node:path"
 import { describe, it } from "node:test"
 import { fileURLToPath } from "node:url"
 import { INTENTS } from "../../../src/services/ai-routine-editor/intents"
+import { mcpSkillTools } from "../../../src/services/ai-routine-editor/adapters/mcp"
 import { finishTool } from "../../../src/services/ai-routine-editor/adapters/openai"
 import { getSkill, isRunnable, SKILLS } from "../../../src/services/ai-routine-editor/skills"
 
@@ -84,6 +85,26 @@ describe("coherencia del registro", () => {
         assert.equal(skill!.flag, "ai_routine_tweaks")
         assert.ok(skill!.parameters, `${intent.id}: ${id} sin parameters`)
       }
+    }
+  })
+
+  it("toda habilidad ejecutable con MCP \"Sí\" tiene herramienta MCP (generada o de catálogo) y el documento la nombra", () => {
+    // Las de catálogo se exponen con herramientas propias (mcp/tools/catalog.ts y mcp/tools/skills.ts)
+    const catalogTools: Record<string, string> = { search_exercises: "search_exercises", find_alternatives: "find_alternatives" }
+    const generated = new Set(mcpSkillTools().map((t) => t.name))
+    const doc = readFileSync(DOC, "utf8")
+    for (const s of SKILLS.filter((x) => x.mcp === "yes" && isRunnable(x))) {
+      const tool = catalogTools[s.id] ?? (generated.has(s.id) ? s.id : undefined)
+      assert.ok(tool, `${s.id}: MCP "Sí" pero sin herramienta MCP`)
+      assert.ok(doc.includes(`\`${tool}\``), `${s.id}: el documento no menciona la herramienta ${tool}`)
+    }
+    // Las LLM nunca se exponen por MCP (el cliente compone las atómicas)
+    for (const s of SKILLS.filter((x) => x.execution === "llm")) assert.notEqual(s.mcp, "yes", `${s.id}: LLM con MCP "Sí"`)
+  })
+
+  it("las operaciones de cuenta y el alta de ejercicios ya no son habilidades (son herramientas MCP)", () => {
+    for (const id of ["create_routine", "duplicate_routine", "rename_routine", "list_routines", "list_athletes", "propose_new_exercise"]) {
+      assert.equal(getSkill(id), undefined, `${id} sigue en el registro`)
     }
   })
 

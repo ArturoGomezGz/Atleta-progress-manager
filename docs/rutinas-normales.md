@@ -24,7 +24,27 @@ Estos flujos son completamente independientes. El flujo de evaluación ya existe
 Rutina  →  Sesión asignada  →  Ejecución del atleta
 ```
 
-> La capa **Plan** (contenedor de rutinas) queda fuera de v1. Se añadirá cuando haya un caso concreto de uso (ej. calentamiento + trabajo principal como una sola asignación).
+> La capa **Plan** (contenedor de rutinas) quedó fuera de v1. Se implementó en v2 como plan de varias semanas (ver abajo).
+
+### Capa Plan (v2, implementada; flag `training_plans`)
+
+```
+Plan (1–16 semanas)  →  semana  →  hueco (día ISO + posición → rutina)
+        │
+        └─ programar a atletas desde una fecha  →  un asignado por hueco  →  ejecución del atleta
+```
+
+- **Qué es:** un plan agrupa rutinas en un calendario de varias semanas (mesociclo).
+- **Cómo se aplica:** programarlo crea un **asignado normal por hueco**. Cada uno lleva su fecha, el snapshot
+  de la rutina y el vínculo `plan_assignment_id` / `plan_workout_id`. El atleta no ve nada distinto: lo
+  encuentra en "Hoy" como cualquier asignado.
+- **Calendario:** la semana 1 es la semana (lunes a domingo) que contiene la fecha de inicio. Los días van de
+  1 = lunes a 7 = domingo. Los huecos antes del inicio o en el pasado se omiten.
+- **Reglas:** solo rutinas de entrenamiento del mismo equipo y no archivadas.
+- **Editar después:** cambiar el plan o sus rutinas no modifica lo ya programado.
+- **Cancelar:** se cancelan solo los asignados que nadie empezó.
+- **Interfaz:** por ahora solo existe por API (`plans.*`) y por el conector MCP. No hay UI web.
+- **Detalle:** [mcp.md](mcp.md) ("Planes de entrenamiento"), esquema en [base-de-datos.md](base-de-datos.md).
 
 ---
 

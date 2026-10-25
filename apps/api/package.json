@@ -11,22 +11,26 @@
     "start": "tsx src/index.ts",
     "reset-password": "tsx src/reset-password.ts",
     "typecheck": "tsc --noEmit",
-    "test": "node --import tsx --test \"test/**/*.test.ts\""
+    "test": "node --import tsx --test \"test/**/*.test.ts\"",
+    "test:integration": "node --import tsx --test --test-concurrency=1 \"test/integration/**/*.itest.ts\""
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.95.1",
     "@atleta/db": "workspace:*",
+    "@better-auth/oauth-provider": "1.6.9",
     "@fastify/cors": "^10.0.0",
     "@google/generative-ai": "^0.24.1",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@trpc/server": "^11.0.0",
-    "better-auth": "^1.2.0",
+    "better-auth": "^1.6.9",
     "drizzle-orm": "^0.41.0",
     "fastify": "^5.0.0",
     "openai": "^6.38.0",
     "postgres": "^3.4.5",
     "resend": "^6.12.3",
     "tsx": "^4.19.0",
-    "zod": "^3.24.0"
+    "zod": "^3.24.0",
+    "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",
