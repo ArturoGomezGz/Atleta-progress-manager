@@ -22,7 +22,7 @@ import { triggerExerciseReport } from "../services/report-trigger"
 import { flattenContent, targetsForExercise } from "../services/routine-content"
 import { assertFeature, hasFeature } from "../lib/features"
 import { protectedProcedure, router } from "../trpc"
-import { assertAthleteInTeam, assertCoach, assertMember } from "./teams"
+import { assertCanViewAthlete, assertCoach, assertMember } from "./teams"
 
 
 
@@ -864,8 +864,7 @@ export const sessionsRouter = router({
     .query(async ({ ctx, input }) => {
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
-      await assertMember(ctx.session.user.id, session.teamId)
-      await assertAthleteInTeam(input.athleteId, session.teamId)
+      await assertCanViewAthlete(ctx.session.user.id, session.teamId, input.athleteId)
 
       const exercises = await db
         .select({ exerciseId: sessionExercise.exerciseId })
