@@ -22,7 +22,7 @@ import { setTrainView, useTrainView } from "@/lib/train-view"
 import { trpc } from "@/lib/trpc"
 import { useRemainingMs, useSecondTicks } from "@/lib/use-countdown"
 import {
-  calcWeight, DEFAULT_REST_SECONDS, doneSets, findCurrentPosition, groupForPreview, sc, totalSets,
+  calcWeight, doneSets, findCurrentPosition, groupForPreview, sc, totalSets,
   type WorkoutExercise, type WorkoutTarget,
 } from "@/lib/workout"
 import { isTimeTarget } from "@/lib/workout-text"
@@ -109,7 +109,7 @@ export default function TrainScreen() {
   // Pasos en orden: serie, su descanso (si el ejercicio descansa y no es la última serie), serie…
   const steps: Step[] = flat.flatMap((f, i) => {
     const out: Step[] = [{ kind: "set", i }]
-    if (i < flat.length - 1 && (f.exercise.restSeconds ?? DEFAULT_REST_SECONDS) > 0) out.push({ kind: "rest", i })
+    if (i < flat.length - 1 && (f.exercise.restSeconds ?? 0) > 0) out.push({ kind: "rest", i })
     return out
   })
   const posIdx = position ? flat.findIndex((f) => f.target.id === position.target.id) : -1
@@ -185,7 +185,7 @@ export default function TrainScreen() {
       const from = flat[st.i]
       const upcoming = flat[st.i + 1]
       setViewStep({ kind: "rest", id: from.target.id })
-      startRest(from.exercise.restSeconds ?? DEFAULT_REST_SECONDS, upcomingLabel(upcoming))
+      startRest(from.exercise.restSeconds ?? 0, upcomingLabel(upcoming))
     } else {
       setViewStep({ kind: "set", id: flat[st.i].target.id })
     }
@@ -333,7 +333,7 @@ export default function TrainScreen() {
       feedback.setDone()
       countdown.reset()
       const nextPos = findCurrentPosition(next)
-      const restFor = exercise.restSeconds ?? DEFAULT_REST_SECONDS
+      const restFor = exercise.restSeconds ?? 0
       if (nextPos && restFor > 0) startRest(restFor, upcomingLabel(nextPos))
     } catch {
       setFailed(true)

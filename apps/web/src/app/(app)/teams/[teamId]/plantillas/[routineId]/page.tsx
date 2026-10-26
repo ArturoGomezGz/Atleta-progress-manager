@@ -1006,7 +1006,7 @@ function RestRow({ itemId, seconds, label = "Descanso", onAdd, onChange, onClear
         onClick={onAdd}
         className="flex items-center gap-1.5 ml-9 mt-1 pl-1 text-[11px] text-muted-foreground/60 hover:text-primary transition-colors cursor-pointer"
       >
-        <PlusIcon className="w-3 h-3" /> Agregar descanso
+        <PlusIcon className="w-3 h-3" /> Sin descanso (0 seg) · agregar
       </button>
     )
   }

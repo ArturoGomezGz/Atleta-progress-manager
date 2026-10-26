@@ -117,9 +117,6 @@ const doneSets = (exercises: WorkoutExercise[]) =>
   exercises.reduce((s, ex) => s + ex.sets.filter((r) => r.sessionSetTargetId !== null).length, 0)
 const doneFor = (ex: WorkoutExercise) => ex.sets.filter((r) => r.sessionSetTargetId !== null).length
 
-// Descanso usado cuando el ejercicio no trae uno propio definido por el entrenador.
-const DEFAULT_REST_SECONDS = 90
-
 function vibrate(pattern: number | number[]) {
   try { navigator.vibrate?.(pattern) } catch { /* no soportado */ }
 }
@@ -720,7 +717,7 @@ export function WorkoutRunner({
       autoContinue={autoContinue}
       onRecorded={(isLastSet) => {
         vibrate(60)
-        if (!isLastSet) startRest(curEx.restSeconds ?? DEFAULT_REST_SECONDS)
+        if (!isLastSet && (curEx.restSeconds ?? 0) > 0) startRest(curEx.restSeconds ?? 0)
       }}
       withSidebar={withSidebar}
     />
