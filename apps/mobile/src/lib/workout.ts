@@ -7,9 +7,6 @@ export type WorkoutExercise = WorkoutProgress["exercises"][number]
 export type WorkoutTarget = WorkoutExercise["targets"][number]
 export type WorkoutSet = WorkoutExercise["sets"][number]
 
-// Descanso usado cuando el ejercicio no trae uno propio definido por el entrenador.
-export const DEFAULT_REST_SECONDS = 90
-
 export const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 export function calcWeight(targetPercent: string | null, rmLbs: string | null | undefined): string {
