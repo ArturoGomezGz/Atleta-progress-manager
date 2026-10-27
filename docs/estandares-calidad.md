@@ -39,7 +39,16 @@ vez de solo contar coincidencias.
 
 ## Categorías priorizadas
 
-### 1. Errores no controlados en rutas de autorización — **crítico**
+### 1. Errores no controlados en rutas de autorización — **crítico** — hallazgo resuelto
+
+> **Resuelto (verificado 2026-10-27 sobre `master`)**: `sessions.ts` ya no
+> usa `session!.teamId` ni ningún non-null assertion de ese tipo. Cada
+> búsqueda de sesión/`athleteSession` ahora lanza
+> `TRPCError({ code: "NOT_FOUND" })` si la fila no existe, *antes* de llamar
+> a `assertCoach`. El hallazgo de abajo se conserva como historial. La
+> categoría sigue vigente como criterio: cualquier acceso a una fila
+> posiblemente inexistente antes de un assert de rol debe tratarse como
+> severidad alta.
 
 `assertCoach` / `assertMember` (`apps/api/src/routers/teams.ts`) son la única
 barrera entre "cualquier usuario autenticado" y los datos de otro equipo. Un
@@ -47,7 +56,7 @@ crash *antes* de llegar al assert no es solo un bug de UX: es una ruta sin
 comportamiento garantizado (¿niega acceso? ¿revienta con 500?) en el único
 punto que separa equipos entre sí.
 
-**Hallazgo real** — `apps/api/src/routers/sessions.ts:458-491`:
+**Hallazgo real (histórico, ya corregido)** — `apps/api/src/routers/sessions.ts:458-491`:
 ```ts
 const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, as!.sessionId)).limit(1)
 await assertCoach(ctx.session.user.id, session!.teamId)
@@ -59,8 +68,15 @@ esto ocurre *antes* de la verificación de rol. `sessions.ts` ya está en
 sus hallazgos como severidad alta por defecto, no como "uno más entre N
 console.log".
 
-### 2. Errores crudos expuestos en la superficie de autenticación
+### 2. Errores crudos expuestos en la superficie de autenticación — hallazgo resuelto
 
+> **Resuelto (verificado 2026-10-27 sobre `master`)**: el `catch` del
+> handler de `/api/auth/*` (`apps/api/src/index.ts:47-50`) ahora registra el
+> error con `req.log.error(err, "better-auth handler error")` y responde
+> `{ error: "Internal Server Error", requestId: req.id }`, sin serializar el
+> error al cliente. El texto de abajo se conserva como historial.
+
+**Hallazgo original (histórico, ya corregido)** —
 `apps/api/src/index.ts:47` — el handler de `/api/auth/*` responde
 `reply.status(500).send({ error: String(err) })` ante cualquier excepción no
 controlada. Es el endpoint de login/signup/reset-password: el primero que se
