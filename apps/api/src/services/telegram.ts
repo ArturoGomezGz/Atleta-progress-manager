@@ -61,10 +61,13 @@ export function notifyStartup() {
 }
 
 // Registra el webhook en Telegram al arrancar; solo con secreto y URL pública configurados.
-export async function registerTelegramWebhook(publicUrl: string | undefined) {
+export async function registerTelegramWebhook(
+  publicUrl: string | undefined,
+  log: { warn(msg: string): void } = console,
+) {
   if (!telegramEnabled || !publicUrl) return false
   if (!WEBHOOK_SECRET()) {
-    console.warn("[ALERTA] TELEGRAM_WEBHOOK_SECRET no configurada: los botones de Telegram no funcionarán")
+    log.warn("[ALERTA] TELEGRAM_WEBHOOK_SECRET no configurada: los botones de Telegram no funcionarán")
     return false
   }
   await call("setWebhook", {
