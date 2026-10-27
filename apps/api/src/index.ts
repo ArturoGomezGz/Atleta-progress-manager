@@ -9,18 +9,19 @@ import { handleTelegramUpdate, isValidWebhookSecret, notifyStartup, registerTele
 import { appRouter } from "./routers"
 import { createContext } from "./trpc"
 
+// maxParamLength: tRPC agrupa varios procedimientos en la ruta (/trpc/a,b,c…); con el
+// límite por defecto de Fastify (100) las páginas con muchas consultas reciben 404.
+// Se crea antes de las migraciones para que todo el arranque use el logger estructurado (pino).
+const app = Fastify({ logger: true, maxParamLength: 5000 })
+
 async function main() {
-  console.log("🚀 Iniciando API...")
+  app.log.info("🚀 Iniciando API...")
   try {
     await runMigrations()
   } catch (err) {
-    console.error("❌ Error en migraciones:", err)
+    app.log.error(err, "❌ Error en migraciones")
     throw err
   }
-
-  // maxParamLength: tRPC agrupa varios procedimientos en la ruta (/trpc/a,b,c…); con el
-  // límite por defecto de Fastify (100) las páginas con muchas consultas reciben 404
-  const app = Fastify({ logger: true, maxParamLength: 5000 })
 
   await app.register(cors, {
     origin: process.env.WEB_URL ?? "http://localhost:3000",
@@ -76,14 +77,14 @@ async function main() {
 
   // En desarrollo no hay URL pública: el webhook solo se registra en producción
   if (process.env.NODE_ENV === "production") {
-    registerTelegramWebhook(process.env.BETTER_AUTH_URL).then((ok) => ok && app.log.info("webhook de Telegram registrado")).catch((err) =>
+    registerTelegramWebhook(process.env.BETTER_AUTH_URL, app.log).then((ok) => ok && app.log.info("webhook de Telegram registrado")).catch((err) =>
       app.log.error(err, "no se pudo registrar el webhook de Telegram"),
     )
   }
 }
 
 main().catch((err) => {
-  console.error(err)
+  app.log.fatal(err, "la API no pudo arrancar")
   process.exit(1)
 })
 
