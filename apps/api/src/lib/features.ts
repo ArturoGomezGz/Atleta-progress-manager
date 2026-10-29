@@ -2,9 +2,12 @@
 // Cada clave se activa con una allowlist en variables de entorno (sin migraciones):
 //   FEATURE_<CLAVE>_USERS=correo@x.com,<user-id>,*   (el `*` la activa para todos)
 //   FEATURE_ALL_USERS=correo@x.com                   (activa todas las claves)
-// Sin variable, la función queda apagada. Ver docs/feature-flags.md.
+// Sin variable, la función queda apagada. Antes se consulta Railway Feature Flags (railway-flags.ts):
+// si el flag existe allí, su valor manda (incluso `false`); si no, se usan estas allowlists.
+// Ver docs/feature-flags.md.
 
 import { TRPCError } from "@trpc/server"
+import { readRailwayFlag } from "./railway-flags"
 
 export const FEATURES = [
   "evaluation",
@@ -47,8 +50,9 @@ function inAllowlist(user: FeatureUser, value: string | undefined): boolean {
 
 export function hasFeature(user: FeatureUser, key: FeatureKey): boolean {
   const enabled =
-    inAllowlist(user, process.env.FEATURE_ALL_USERS) ||
-    inAllowlist(user, process.env[`FEATURE_${key.toUpperCase()}_USERS`])
+    readRailwayFlag(key, user) ??
+    (inAllowlist(user, process.env.FEATURE_ALL_USERS) ||
+      inAllowlist(user, process.env[`FEATURE_${key.toUpperCase()}_USERS`]))
   if (!enabled) return false
   return (REQUIRES[key] ?? []).every((dep) => hasFeature(user, dep))
 }

@@ -74,6 +74,7 @@ Ir a la pestaña **Variables** del servicio API y agregar:
 | `API_PUBLIC_URL` | URL pública de **esta API** (ej. `https://api-production-85b2.up.railway.app`). Obligatoria para el conector MCP: con ella se arman la URL del conector (`<API>/mcp`) y el Protected Resource Metadata. Ver [mcp.md](./mcp.md) |
 | `MCP_RESOURCE_URL` | *(Opcional)* Identificador del recurso OAuth y URL del conector. Por defecto `${API_PUBLIC_URL}/mcp` |
 | `MCP_ALLOWED_ORIGINS` | *(Opcional)* Orígenes de navegador permitidos en `/mcp` además de `WEB_URL`, separados por comas (ej. `http://localhost:6274` para MCP Inspector). Cualquier otro `Origin` recibe 403 |
+| `RAILWAY_TOKEN` | *(Opcional)* Token de proyecto de Railway para leer Railway Feature Flags (fuente principal de los flags por usuario; los flags son del proyecto, compartidos entre ambientes). Sin él se usan solo las allowlists `FEATURE_*`. Ver [feature-flags.md](./feature-flags.md) |
 | `FEATURE_MCP_USERS` | Allowlist del flag `mcp` (conector MCP y página "Conectar IA"). Ver [feature-flags.md](./feature-flags.md) |
 | `FEATURE_TRAINING_PLANS_USERS` | Allowlist del flag `training_plans` (planes multi-semana; requiere `scheduled_sessions`) |
 | `TRUST_PROXY` | *(Opcional)* Cuántos proxies propios hay delante de la API para calcular la IP del cliente (límites de tasa de login y OAuth). Sin valor: `1` en producción (el edge de Railway), que es lo correcto en Railway; no lo subas a `2`. Ver [IP del cliente y TRUST_PROXY](#ip-del-cliente-y-trust_proxy) |

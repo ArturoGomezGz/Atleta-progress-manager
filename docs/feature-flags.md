@@ -2,7 +2,21 @@
 
 Permiten ocultar funciones que aún no están listas y activarlas solo para un conjunto de usuarios (p. ej. el dueño, para seguir probando). No hay migración de BD: la allowlist vive en variables de entorno de la API (en Railway, cambiarlas redespliega).
 
-## Variables
+## Railway Feature Flags (fuente principal)
+
+La API consulta primero **Railway Feature Flags** (SDK `railway`, `apps/api/src/lib/railway-flags.ts`). Orden de decisión por clave:
+
+1. Si el flag existe en Railway, su valor manda (también `false`, aunque la allowlist incluya al usuario).
+2. Si no (sin `RAILWAY_TOKEN`, sin sincronizar, flag inexistente, tipo incorrecto o cualquier error), se usan las allowlists de entorno (`FEATURE_ALL_USERS` o `FEATURE_<CLAVE>_USERS`, abajo).
+3. Las dependencias (`REQUIRES`) se aplican siempre después, con el valor resultante.
+
+- Nombre del flag en Railway = la clave tal cual (`evaluation`, `ai_generator`, `training_plans`…), de tipo booleano. Pendiente verificar que Railway acepte guiones bajos en el nombre.
+- Variable `RAILWAY_TOKEN` en la API: token **de proyecto** de Railway (recomendado; el proyecto se infiere). Alternativa: `RAILWAY_API_TOKEN`. Sin token no se usa Railway y se avisa una vez al arrancar. El arranque espera como máximo 5 s a la primera sincronización y nunca falla por esto.
+- Los flags son del **proyecto completo** (producción, testing y demás ambientes los comparten). El contexto que evalúa cada regla es `{ key: <id de usuario>, email: <correo en minúsculas>, env: <RAILWAY_ENVIRONMENT_NAME, o "local"> }`; `key` es la identidad para los porcentajes de despliegue.
+- Crear una regla: en el flag, agregar una regla de segmentación, por ejemplo `email == "dueno@ejemplo.com"` y, para limitarla a un ambiente, `env == "testing"`.
+- Los cambios llegan a la API en unos ~10 s (sondeo en segundo plano), sin redesplegar.
+
+## Variables (respaldo por entorno)
 
 Formato: lista separada por comas de **correos o ids de usuario** (sin distinguir mayúsculas). `*` la activa para todos.
 

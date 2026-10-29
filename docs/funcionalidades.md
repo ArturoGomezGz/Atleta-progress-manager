@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-25.
+> **Última revisión:** 2026-10-29.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -42,7 +42,7 @@ La columna **Verificación** indica de dónde viene el estado:
 
 ## Limitadas (solo usuarios permitidos)
 
-Se activan por usuario con variables de entorno en la API. El dueño las tiene todas con `FEATURE_ALL_USERS`.
+Se activan por usuario con Railway Feature Flags (si hay `RAILWAY_TOKEN`; por pulir: sin probar en vivo, ver [feature-flags.md](feature-flags.md)) y, como respaldo, con variables de entorno en la API. El dueño las tiene todas con `FEATURE_ALL_USERS`.
 
 | Función | Clave | Variable | Motivo |
 |---|---|---|---|

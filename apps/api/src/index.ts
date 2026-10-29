@@ -1,4 +1,5 @@
 import { buildApp } from "./app"
+import { initRailwayFlags } from "./lib/railway-flags"
 import { runMigrations } from "./migrate"
 import { notifyStartup, registerTelegramWebhook } from "./services/telegram"
 
@@ -10,6 +11,8 @@ async function main() {
     console.error("❌ Error en migraciones:", err)
     throw err
   }
+
+  await initRailwayFlags()
 
   const app = await buildApp()
 
