@@ -2,6 +2,7 @@ import { Button } from "@/components/button"
 import { MomentumTracker } from "@/components/momentum/momentum-tracker"
 import { Text } from "@/components/text"
 import { signOut, useSession } from "@/lib/auth"
+import { currentPushToken } from "@/lib/push"
 import { colors } from "@/lib/theme"
 import { trpc } from "@/lib/trpc"
 import { useQueryClient } from "@tanstack/react-query"
@@ -12,8 +13,12 @@ export default function ProfileScreen() {
   const queryClient = useQueryClient()
   const { data: session } = useSession()
   const { data, isLoading, isError, refetch, isRefetching } = trpc.sessions.myMomentum.useQuery()
+  const unregister = trpc.notifications.unregisterDevice.useMutation()
 
   async function handleSignOut() {
+    // Antes de cerrar sesión (después ya no hay cookie): este teléfono deja de recibir avisos de la cuenta
+    const token = currentPushToken()
+    if (token) await unregister.mutateAsync({ token }).catch(() => {})
     await signOut()
     queryClient.clear()
   }

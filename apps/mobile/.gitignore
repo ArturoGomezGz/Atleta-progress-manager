@@ -39,3 +39,6 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Firebase (push): lo trae el workflow desde un secreto, ver docs/notificaciones.md
+google-services.json

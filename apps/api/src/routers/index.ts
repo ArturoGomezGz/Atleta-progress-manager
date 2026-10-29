@@ -3,6 +3,7 @@ import { exercisesRouter } from "./exercises"
 import { featuresRouter } from "./features"
 import { groupsRouter } from "./groups"
 import { mcpRouter } from "./mcp"
+import { notificationsRouter } from "./notifications"
 import { onboardingRouter } from "./onboarding"
 import { plansRouter } from "./plans"
 import { preferencesRouter } from "./preferences"
@@ -24,6 +25,7 @@ export const appRouter = router({
   onboarding: onboardingRouter,
   share: shareRouter,
   mcp: mcpRouter,
+  notifications: notificationsRouter,
   plans: plansRouter,
 })
 

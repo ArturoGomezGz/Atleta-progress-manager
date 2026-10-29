@@ -8,13 +8,14 @@ const CHANNEL = "workout-timer"
 // Mismo archivo que assets/sounds/rest_end.wav, empaquetado por el plugin de expo-notifications
 const SOUND = "rest_end.wav"
 
+// Los avisos del temporizador (locales) no se muestran con la app abierta: ahí suenan los
+// sonidos propios. Los push del entrenador (remotos) sí, aunque la app esté abierta.
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowBanner: false,
-    shouldShowList: false,
-    shouldPlaySound: false,
-    shouldSetBadge: false,
-  }),
+  handleNotification: async (notification) => {
+    const trigger = notification.request.trigger
+    const remote = !!trigger && "type" in trigger && trigger.type === "push"
+    return { shouldShowBanner: remote, shouldShowList: remote, shouldPlaySound: remote, shouldSetBadge: false }
+  },
 })
 
 let channelReady: Promise<unknown> | null = null

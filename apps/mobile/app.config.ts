@@ -1,3 +1,4 @@
+import { existsSync } from "node:fs"
 import type { ConfigContext, ExpoConfig } from "expo/config"
 
 // Sobre app.json (que sigue siendo la fuente de la versión y del resto). Con APP_VARIANT=testing
@@ -7,17 +8,28 @@ import type { ConfigContext, ExpoConfig } from "expo/config"
 // scripts/testing-icons.py.
 const testing = process.env.APP_VARIANT === "testing"
 
+// Notificaciones push (FCM): el google-services.json del proyecto de Firebase, con las dos apps
+// (com.atleta.app y com.atleta.app.testing) registradas. Va en apps/mobile/google-services.json
+// (ignorado por git; en CI lo escribe el workflow desde el secreto GOOGLE_SERVICES_JSON) o en la
+// ruta de GOOGLE_SERVICES_JSON. Sin el archivo la app compila igual, pero sin push.
+const googleServicesFile = [process.env.GOOGLE_SERVICES_JSON, "./google-services.json"].find(
+  (p) => p && existsSync(p),
+)
+
 export default ({ config }: ConfigContext): ExpoConfig => {
-  if (!testing) return config as ExpoConfig
+  const base = googleServicesFile
+    ? ({ ...config, android: { ...config.android, googleServicesFile } } as ExpoConfig)
+    : (config as ExpoConfig)
+  if (!testing) return base
   return {
-    ...config,
+    ...base,
     name: "Atleta Test",
     icon: "./assets/testing/icon.png",
     android: {
-      ...config.android,
+      ...base.android,
       package: "com.atleta.app.testing",
       adaptiveIcon: {
-        ...config.android?.adaptiveIcon,
+        ...base.android?.adaptiveIcon,
         foregroundImage: "./assets/testing/android-icon-foreground.png",
         monochromeImage: "./assets/testing/android-icon-monochrome.png",
       },

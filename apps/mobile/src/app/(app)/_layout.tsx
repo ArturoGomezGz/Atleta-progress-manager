@@ -1,7 +1,9 @@
+import { usePushRegistration } from "@/lib/push"
 import { colors, fonts } from "@/lib/theme"
 import { Stack } from "expo-router"
 
 export default function AppLayout() {
+  usePushRegistration()
   return (
     <Stack
       screenOptions={{

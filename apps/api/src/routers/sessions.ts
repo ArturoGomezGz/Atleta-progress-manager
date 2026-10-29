@@ -18,6 +18,7 @@ import { and, asc, desc, eq, gt, gte, inArray, lte, SQL, sql } from "drizzle-orm
 import { z } from "zod"
 import { zoneProfileFromContent } from "@atleta/db/body-zones"
 import { exerciseZones, withZoneProfiles } from "../services/body-zones"
+import { notifyWorkoutAssigned } from "../services/push"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { flattenContent } from "../services/routine-content"
 import { assertAssignableAthletes, createAssignedSessions, todayUtc } from "../services/session-assign"
@@ -332,6 +333,7 @@ export const sessionsRouter = router({
       if (r.category === "evaluation") assertFeature(ctx.session.user, "evaluation")
       if (input.scheduledDate != null) assertFeature(ctx.session.user, "scheduled_sessions")
 
+      const today = todayUtc()
       const [session] = await db.transaction((tx) =>
         createAssignedSessions(tx, {
           routine: r,
@@ -339,9 +341,13 @@ export const sessionsRouter = router({
           athleteIds: input.athleteIds,
           dates: [input.scheduledDate ?? null],
           startedBy: ctx.session.user.id,
-          today: todayUtc(),
+          today,
         }),
       )
+      void notifyWorkoutAssigned({
+        coachId: ctx.session.user.id, athleteIds: input.athleteIds, routineId: r.id,
+        sessionIds: [session!.id], dates: [input.scheduledDate ?? null], today,
+      })
       return session!
     }),
 
@@ -367,9 +373,13 @@ export const sessionsRouter = router({
       if (input.dates.some((d) => d > today)) assertFeature(ctx.session.user, "scheduled_sessions")
 
       const dates = [...input.dates].sort()
-      return db.transaction((tx) =>
+      const sessions = await db.transaction((tx) =>
         createAssignedSessions(tx, { routine: r, teamId: input.teamId, athleteIds, dates, startedBy: ctx.session.user.id, today }),
       )
+      void notifyWorkoutAssigned({
+        coachId: ctx.session.user.id, athleteIds, routineId: r.id, sessionIds: sessions.map((s) => s.id), dates, today,
+      })
+      return sessions
     }),
 
   get: protectedProcedure

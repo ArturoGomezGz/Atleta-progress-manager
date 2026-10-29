@@ -32,6 +32,7 @@ import { assertExercisesVisible } from "./exercise-visibility"
 import { computePlanCalendar, type PlanCalendarSkip } from "./plan-calendar"
 import { normalizeRoutineContent } from "./routine-content-input"
 import { cloneRoutineContent, flattenContent } from "./routine-content"
+import { notifyWorkoutAssigned } from "./push"
 import { assertAssignableAthletes, createAssignedSessions, type Tx } from "./session-assign"
 import {
   MAX_PLAN_WORKOUTS,
@@ -577,7 +578,7 @@ export async function schedulePlan(actor: PlanActor, input: PlanScheduleInput, o
   // Ya lo exige training_plans (REQUIRES), pero las fechas futuras son justo lo que protege el flag
   if (entries.some((e) => e.date > opts.today)) assertFeature(actor, "scheduled_sessions")
 
-  return db.transaction(async (tx) => {
+  const scheduled = await db.transaction(async (tx) => {
     // Bloquea el plan: dos schedule_plan idénticos simultáneos se serializan y el segundo ve el duplicado
     await tx.select({ id: trainingPlan.id }).from(trainingPlan).where(eq(trainingPlan.id, plan.id)).for("update")
     const duplicate = await findDuplicateAssignment(tx, plan.id, input.startDate, athleteIds)
@@ -610,6 +611,12 @@ export async function schedulePlan(actor: PlanActor, input: PlanScheduleInput, o
     }
     return result(assignment!.id, out, skipped)
   })
+  // Un solo aviso del plan (no uno por sesión), una vez confirmada la transacción
+  void notifyWorkoutAssigned({
+    coachId: actor.id, athleteIds, routineId: entries[0]!.routineId, planName: plan.name,
+    sessionIds: entries.map((e) => e.workoutId), dates: entries.map((e) => e.date), today: opts.today,
+  })
+  return scheduled
 }
 
 /**

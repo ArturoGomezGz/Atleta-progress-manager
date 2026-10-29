@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-25.
+> **Última revisión:** 2026-10-29.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -39,6 +39,7 @@ La columna **Verificación** indica de dónde viene el estado:
 | Búsqueda de ejercicios | Buscador de Explorar, Mis ejercicios y el selector de ejercicios. Ignora mayúsculas, tildes, guiones y espacios (`pull-up` = `pullup`), plurales y errores de tecleo; entiende términos en español (`dominadas`, `flexiones`, `press banca`); ordena por relevancia con el nombre por encima de la descripción. Todo en el cliente, sin búsqueda semántica (descartada por ahora). Lógica en `apps/web/src/lib/exercise-search.ts`. | Por confirmar |
 | Cuenta (`/settings`) | Perfil (nombre, correo verificado, miembro desde), tema (claro/oscuro/sistema), cambio de contraseña y cerrar sesión. | Por confirmar |
 | Ejecución con temporizador de descanso | Descanso automático entre series, configurable. Con "Continuar automáticamente" activo (web y móvil), el descanso termina solo y, en series por tiempo, el temporizador arranca al instante al acabar el descanso (sin cuenta "prepárate") y la serie se guarda sola al terminar el tiempo, encadenando el siguiente descanso. Las series por repeticiones siguen siendo manuales. En el móvil, 5 segundos antes de cada fin de descanso o de tiempo la música del atleta baja de volumen y vuelve tras el último pitido (sin probar en dispositivo). | Por confirmar |
+| Notificaciones de entrenamiento asignado (app móvil) | Aviso push al atleta cuando el entrenador le asigna o programa un entrenamiento, o le asigna un plan; al tocarlo abre la sesión. Firebase Cloud Messaging; hace falta `FIREBASE_SERVICE_ACCOUNT` en la API y `GOOGLE_SERVICES_JSON` en CI ([notificaciones.md](notificaciones.md)). Sin configurar no envía nada. | Por confirmar |
 
 ## Limitadas (solo usuarios permitidos)
 

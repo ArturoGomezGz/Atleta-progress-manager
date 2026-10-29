@@ -35,6 +35,7 @@ muestra historial. Por ahora solo Android.
     de un `react-native-webview`; YouTube exige un Referer, así que la página del
     iframe se carga con origen `https://com.atleta.app` (el id del paquete). Las
     URLs de YouTube salen de `@atleta/db/youtube`, igual que en la web.
+  - Notificaciones push cuando el entrenador asigna un entrenamiento (FCM, `src/lib/push.ts`; ver [notificaciones.md](notificaciones.md)). Hace falta `google-services.json` en el build.
 - Siguiente: cola offline para las series registradas.
 
 Los temporizadores se calculan con la hora de fin, no restando segundos, así que
