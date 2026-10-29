@@ -18,11 +18,12 @@ export async function initRailwayFlags(): Promise<void> {
   try {
     // timeoutMs acota la primera sincronización: el arranque nunca se queda esperando a Railway
     await flags.init({ timeoutMs: 5000 })
-    ready = flags.synced
+    // El lector revisa `flags.synced` en cada lectura: si la primera sincronización tarda más que el timeout, se usará en cuanto termine
+    ready = true
     console.log(
-      ready
+      flags.synced
         ? `Railway Feature Flags: sincronizados (${flags.list().length} flags)`
-        : "Railway Feature Flags: sin sincronizar, se usan las allowlists de entorno",
+        : "Railway Feature Flags: aún sin sincronizar; se usará en cuanto sincronice (mientras, allowlists de entorno)",
     )
   } catch (err) {
     ready = false
