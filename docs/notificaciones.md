@@ -14,8 +14,8 @@ un plan). Solo Android. Ideas para después: aviso de racha en riesgo, recordato
    al usuario que lo registró último).
 3. Al asignar (`sessions.create`, `sessions.createMany`, `plans.schedule` y, por reutilizarlos, las
    herramientas MCP) la API llama a `notifyWorkoutAssigned` (`apps/api/src/services/push.ts`) **después**
-   de confirmar la transacción y sin esperar: un fallo de FCM nunca rompe la asignación. No avisa al
-   coach que se asigna a sí mismo. Un plan manda un solo aviso, no uno por sesión.
+   de confirmar la transacción y sin esperar: un fallo de FCM nunca rompe la asignación. Si el coach
+   se asigna a sí mismo también recibe su aviso («Te asignaste…»). Un plan manda un solo aviso, no uno por sesión.
 4. El envío usa la API HTTP v1 de FCM con `fetch` y la cuenta de servicio (JWT RS256 → token OAuth,
    cacheado); no hay SDK de Firebase. Los tokens que FCM rechaza (app desinstalada) se borran.
 5. Al tocar el aviso, la app abre la vista previa de la sesión (`sessionId` en los datos); si son

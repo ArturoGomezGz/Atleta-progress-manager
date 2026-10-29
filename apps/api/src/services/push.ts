@@ -130,14 +130,13 @@ function dayLabel(date: string): string {
 }
 
 /**
- * Avisa a los atletas que su entrenador les puso un entrenamiento. No avisa al propio coach
- * (auto-entrenamiento). Nunca lanza: un fallo de FCM no debe romper la asignación.
+ * Avisa a los atletas que su entrenador les puso un entrenamiento. Si el coach se asigna a sí
+ * mismo (auto-entrenamiento) también recibe su aviso, redactado en primera persona.
+ * Nunca lanza: un fallo de FCM no debe romper la asignación.
  */
 export async function notifyWorkoutAssigned(n: AssignmentNotice): Promise<void> {
   try {
-    if (!pushEnabled()) return
-    const recipients = n.athleteIds.filter((id) => id !== n.coachId)
-    if (recipients.length === 0 || n.sessionIds.length === 0) return
+    if (!pushEnabled() || n.athleteIds.length === 0 || n.sessionIds.length === 0) return
 
     const [[coach], [r]] = await Promise.all([
       db.select({ name: user.name }).from(user).where(eq(user.id, n.coachId)).limit(1),
@@ -145,27 +144,37 @@ export async function notifyWorkoutAssigned(n: AssignmentNotice): Promise<void> 
     ])
     const coachName = coach?.name ?? "Tu entrenador"
     const routineName = r?.name ?? "un entrenamiento"
+    const date = n.dates[0]
+    const later = date != null && date > n.today
 
-    let title: string
-    let body: string
-    if (n.planName) {
-      title = "Nuevo plan de entrenamiento"
-      body = `${coachName} te asignó el plan «${n.planName}».`
-    } else if (n.sessionIds.length > 1) {
-      title = "Nuevos entrenamientos"
-      body = `${coachName} te asignó ${n.sessionIds.length} entrenamientos: «${routineName}».`
-    } else {
-      const date = n.dates[0]
-      const later = date != null && date > n.today
-      title = "Nuevo entrenamiento"
-      body = later
-        ? `${coachName} te programó «${routineName}» para el ${dayLabel(date)}.`
-        : `${coachName} te asignó «${routineName}». ¡A entrenar!`
-    }
     // Con una sola sesión la notificación abre su vista previa; si no, la lista
     const data: Record<string, string> = { type: "workout_assigned" }
     if (n.sessionIds.length === 1 && !n.planName) data.sessionId = n.sessionIds[0]!
-    await sendPushToUsers(recipients, { title, body, data })
+
+    const compose = (self: boolean): PushMessage => {
+      const who = self ? "Te" : `${coachName} te`
+      const verb = (assigned: string, scheduled: string) => `${who} ${self ? scheduled : assigned}`
+      if (n.planName) {
+        return { title: "Nuevo plan de entrenamiento", body: `${verb("asignó", "asignaste")} el plan «${n.planName}».`, data }
+      }
+      if (n.sessionIds.length > 1) {
+        return { title: "Nuevos entrenamientos", body: `${verb("asignó", "asignaste")} ${n.sessionIds.length} entrenamientos: «${routineName}».`, data }
+      }
+      return {
+        title: "Nuevo entrenamiento",
+        body: later
+          ? `${verb("programó", "programaste")} «${routineName}» para el ${dayLabel(date!)}.`
+          : `${verb("asignó", "asignaste")} «${routineName}». ¡A entrenar!`,
+        data,
+      }
+    }
+
+    const others = n.athleteIds.filter((id) => id !== n.coachId)
+    const self = n.athleteIds.includes(n.coachId)
+    await Promise.all([
+      others.length > 0 ? sendPushToUsers(others, compose(false)) : undefined,
+      self ? sendPushToUsers([n.coachId], compose(true)) : undefined,
+    ])
   } catch (err) {
     console.error("No se pudo enviar la notificación de entrenamiento asignado:", err)
   }
