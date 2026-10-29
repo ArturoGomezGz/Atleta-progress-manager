@@ -73,7 +73,7 @@ El registro y la verificación de correo siguen en la web.
 El workflow `.github/workflows/android-apk.yml` compila un APK apuntando a la API
 de testing y lo publica como pre-release de GitHub (`android-preview-<n>`). Corre
 en cada push a `testing` que toque `apps/mobile`, o a mano desde Actions (el de
-producción sale de `master`, ver `android-apk-production.yml`). Va firmado con la llave de depuración: sirve para instalar a mano, no
+producción sale de `master`, ver `android-apk-production.yml`). Al terminar (bien o mal) avisa por Telegram si existen los secretos `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` de GitHub Actions (los mismos del bot de la API); sin ellos se omite. Va firmado con la llave de depuración: sirve para instalar a mano, no
 para la tienda. Para que el login funcione, la API de testing debe tener los
 cambios de la app desplegados.
 

@@ -80,3 +80,21 @@ jobs:
             --target "${{ github.sha }}" \
             --title "Atleta Android (prueba) #${{ github.run_number }}" \
             --notes "APK de prueba desde \`${GITHUB_REF_NAME}\` (${GITHUB_SHA::7}). Usa la API de testing: ${EXPO_PUBLIC_API_URL}"
+
+      - name: Notify Telegram
+        if: always()
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          JOB_STATUS: ${{ job.status }}
+          LABEL: "APK de testing"
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ] || [ -z "$TELEGRAM_CHAT_ID" ]; then echo "Sin secretos de Telegram: no se avisa."; exit 0; fi
+          RUN_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ "$JOB_STATUS" = "success" ]; then
+            TEXT="✅ $LABEL listo (${GITHUB_SHA::7}): ${{ github.server_url }}/${{ github.repository }}/releases/tag/android-preview-${{ github.run_number }}"
+          else
+            TEXT="❌ $LABEL: la compilación terminó con estado $JOB_STATUS (${GITHUB_SHA::7}): $RUN_URL"
+          fi
+          curl -sS --max-time 20 "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${TELEGRAM_CHAT_ID}" --data-urlencode "text=${TEXT}" >/dev/null || echo "::warning::No se pudo avisar por Telegram"
