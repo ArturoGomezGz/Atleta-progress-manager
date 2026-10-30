@@ -193,3 +193,72 @@ export function RoutineActionsSheet({
     document.body,
   )
 }
+
+// Diálogo modal: bloquea el resto de la pantalla hasta aceptar o cancelar. Tocar fuera
+// no lo cierra a propósito, para que borrar nunca sea un descuido.
+export function ConfirmDeleteDialog({
+  name,
+  pending,
+  onCancel,
+  onConfirm,
+}: {
+  name: string
+  pending: boolean
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVisible(true))
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !pending) onCancel() }
+    window.addEventListener("keydown", onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener("keydown", onKey)
+      document.body.style.overflow = prev
+    }
+  }, [onCancel, pending])
+
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="alertdialog" aria-modal="true" aria-labelledby="confirm-delete-title">
+      <div className={cn("absolute inset-0 bg-black/60 transition-opacity duration-150", visible ? "opacity-100" : "opacity-0")} />
+      <div
+        className={cn(
+          "relative w-full max-w-sm bg-popover border border-border rounded-2xl p-5 shadow-xl transition-all duration-150",
+          visible ? "opacity-100 scale-100" : "opacity-0 scale-95",
+        )}
+      >
+        <div className="w-10 h-10 rounded-full bg-destructive/10 text-destructive grid place-items-center mb-3">
+          <Trash2Icon className="w-5 h-5" />
+        </div>
+        <h2 id="confirm-delete-title" className="text-base font-semibold">¿Eliminar entrenamiento?</h2>
+        <p className="mt-1.5 text-sm text-muted-foreground break-words">
+          <span className="font-medium text-foreground">{name}</span> se eliminará de tus entrenamientos. Esta acción no se puede deshacer.
+        </p>
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={pending}
+            autoFocus
+            className="py-2.5 text-sm font-medium border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={pending}
+            className="py-2.5 text-sm font-medium bg-destructive text-destructive-foreground rounded-xl hover:bg-destructive/90 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {pending ? "Eliminando…" : "Eliminar"}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
