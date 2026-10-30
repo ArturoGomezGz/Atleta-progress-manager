@@ -81,13 +81,17 @@ export function SwipeRow({
   const hidden = x === 0 && !dragging
 
   return (
-    <div ref={wrap} className={cn("relative rounded-xl overflow-hidden", className)}>
+    <div ref={wrap} className={cn("relative", className)}>
       {side !== 0 && (
+        // Panel del ancho justo del desplazamiento, pegado al borde: solo redondea su lado exterior,
+        // así las esquinas redondeadas de la tarjeta dejan ver el fondo de la página, no el panel.
         <div
           aria-hidden={hidden}
+          style={{ width: Math.abs(x) }}
           className={cn(
-            "absolute inset-0 flex items-stretch",
-            side > 0 ? "bg-primary text-primary-foreground justify-start" : "bg-destructive text-destructive-foreground justify-end",
+            "absolute inset-y-0 flex overflow-hidden",
+            !dragging && "transition-[width] duration-200 ease-out",
+            side > 0 ? "left-0 justify-start rounded-l-xl bg-primary text-primary-foreground" : "right-0 justify-end rounded-r-xl bg-destructive text-destructive-foreground",
           )}
         >
           <button
@@ -95,7 +99,7 @@ export function SwipeRow({
             tabIndex={hidden ? -1 : 0}
             onClick={() => { setX(0); (side > 0 ? onAssign : onDelete)() }}
             style={{ width: REVEAL }}
-            className="flex flex-col items-center justify-center gap-1 text-[11px] font-medium cursor-pointer"
+            className="shrink-0 flex flex-col items-center justify-center gap-1 text-[11px] font-medium cursor-pointer"
           >
             {side > 0 ? <UserPlusIcon className="w-5 h-5" /> : <Trash2Icon className="w-5 h-5" />}
             {side > 0 ? "Asignar" : "Eliminar"}
@@ -110,7 +114,7 @@ export function SwipeRow({
         onClickCapture={onClickCapture}
         onTransitionEnd={() => { if (x === 0) setSide(0) }}
         style={{ transform: `translateX(${x}px)`, touchAction: "pan-y" }}
-        className={cn("relative bg-card", !dragging && "transition-transform duration-200 ease-out")}
+        className={cn("relative bg-card rounded-xl", !dragging && "transition-transform duration-200 ease-out")}
       >
         {children}
       </div>
