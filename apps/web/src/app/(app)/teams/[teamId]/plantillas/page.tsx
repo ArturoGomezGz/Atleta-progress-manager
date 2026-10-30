@@ -2,6 +2,7 @@
 
 import { EntrenamientosHeader } from "@/components/entrenamientos-header"
 import { OnboardingReopen, useOnboardingHint } from "@/components/onboarding"
+import { RoutineActionsSheet, RowMenuButton, SwipeRow } from "@/components/routine-row-actions"
 import { PageTransition, useRevealAfterEnter, type SlideDirection } from "@/components/page-transition"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import { consumeBackNavigation } from "@/lib/page-transition"
@@ -9,7 +10,7 @@ import { useFeature } from "@/lib/features"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
-import { CopyIcon, PlusIcon, SearchIcon, Trash2Icon } from "lucide-react"
+import { PlusIcon, SearchIcon } from "lucide-react"
 import Link from "next/link"
 import { use, useLayoutEffect, useState } from "react"
 import { useRouter } from "next/navigation"
@@ -27,6 +28,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
   const [filter, setFilter]       = useState<Filter>("all")
   const [search, setSearch]       = useState("")
   const [deleting, setDeleting]   = useState<{ id: string; name: string } | null>(null)
+  const [menuFor, setMenuFor]     = useState<{ id: string; name: string } | null>(null)
   // Si se vuelve desde "Nueva plantilla" o desde el editor, entra deslizándose desde la
   // izquierda; en una carga directa no hay animación.
   const [direction, setDirection] = useState<SlideDirection | null>(null)
@@ -131,43 +133,29 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
             </div>
           )
 
+          const assign = () => router.push(`/teams/${teamId}/sesiones/new?routineId=${r.id}`)
+          const askDelete = () => setDeleting({ id: r.id, name: r.name })
+
           return (
-            <div key={r.id} className="group flex items-center border border-border rounded-xl hover:border-primary/20 bg-card/60 transition-colors">
-              <ZoneStripe profile={r.zoneProfile} className="ml-2 my-2.5" />
-              <Link href={`/teams/${teamId}/plantillas/${r.id}`} className="flex-1 flex items-center gap-3 pl-3 pr-4 py-3.5 min-w-0">
-                <Icon className={cn("w-4 h-4 shrink-0", cfg.text)} />
-                <span className="flex-1 min-w-0">
-                  <span className="block font-medium text-sm truncate">{sc(r.name)}</span>
-                  <ZoneLegend profile={r.zoneProfile} className="mt-0.5" />
-                </span>
-                <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
-                  {new Date(r.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
-                </span>
-              </Link>
-              <Link
-                href={`/teams/${teamId}/sesiones/new?routineId=${r.id}`}
-                data-tour={r.id === assignRoutineId ? "assign-btn" : undefined}
-                className="text-xs font-medium px-3 py-1.5 mr-1 border border-border rounded-lg text-foreground hover:border-primary/40 hover:text-primary transition-colors cursor-pointer shrink-0"
-              >
-                Asignar
-              </Link>
-              <div className="flex items-center gap-1 pr-3 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                <button
-                  onClick={() => duplicateRoutine.mutate({ id: r.id })}
-                  disabled={duplicateRoutine.isPending}
-                  title="Duplicar entrenamiento"
-                  className="p-1.5 text-muted-foreground hover:text-foreground rounded-lg cursor-pointer disabled:opacity-50"
-                >
-                  <CopyIcon className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={() => setDeleting({ id: r.id, name: r.name })}
-                  className="p-1.5 text-muted-foreground hover:text-destructive rounded-lg cursor-pointer"
-                >
-                  <Trash2Icon className="w-3.5 h-3.5" />
-                </button>
+            <SwipeRow key={r.id} onAssign={assign} onDelete={askDelete}>
+              <div className="flex items-center border border-border rounded-xl">
+                <ZoneStripe profile={r.zoneProfile} className="ml-2 my-2.5" />
+                <Link href={`/teams/${teamId}/plantillas/${r.id}`} className="flex-1 flex items-center gap-3 pl-3 pr-2 py-3.5 min-w-0">
+                  <Icon className={cn("w-4 h-4 shrink-0", cfg.text)} />
+                  <span className="flex-1 min-w-0">
+                    <span className="block font-medium text-sm line-clamp-2 break-words">{sc(r.name)}</span>
+                    <ZoneLegend profile={r.zoneProfile} className="mt-0.5" />
+                  </span>
+                  <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">
+                    {new Date(r.createdAt).toLocaleDateString("es", { day: "numeric", month: "short" })}
+                  </span>
+                </Link>
+                <RowMenuButton
+                  onClick={() => setMenuFor({ id: r.id, name: r.name })}
+                  data-tour={r.id === assignRoutineId ? "assign-btn" : undefined}
+                />
               </div>
-            </div>
+            </SwipeRow>
           )
         })}
 
@@ -188,6 +176,16 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
           </div>
         )}
       </div>
+      )}
+
+      {menuFor && (
+        <RoutineActionsSheet
+          name={sc(menuFor.name)}
+          onClose={() => setMenuFor(null)}
+          onAssign={() => router.push(`/teams/${teamId}/sesiones/new?routineId=${menuFor.id}`)}
+          onDuplicate={() => duplicateRoutine.mutate({ id: menuFor.id })}
+          onDelete={() => setDeleting(menuFor)}
+        />
       )}
     </div>
     </PageTransition>
