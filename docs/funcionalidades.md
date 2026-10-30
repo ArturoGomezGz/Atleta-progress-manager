@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-29.
+> **Última revisión:** 2026-10-30.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -28,6 +28,7 @@ La columna **Verificación** indica de dónde viene el estado:
 | Onboarding de usuarios nuevos | Tutorial guiado y bloqueante (spotlight con flecha): solo se puede hacer clic donde indica, hasta crear su primer entrenamiento, asignárselo, hacerlo y conocer Explorar. Se puede omitir siempre y reiniciar con el botón "?". Solo para quien recibe el equipo por defecto ([onboarding.md](onboarding.md)). | Por confirmar |
 | Equipos | Crear equipos, cambiar entre ellos desde la sección Equipo, eliminar equipo. | Por confirmar |
 | Miembros e invitaciones | Invitar atletas por enlace, ver miembros y roles. | Por confirmar |
+| Conector MCP (Claude, ChatGPT u otro cliente MCP: consultar ejercicios y sus alternativas, crear y editar entrenamientos, asignarlos; OAuth y tokens personales desde `/settings/conectar-ia`; ver [mcp.md](mcp.md)) | Activado para todos en producción con `FEATURE_MCP_USERS=*` (2026-10-30). Probado con tests automáticos y con las herramientas reales; falta probar con Claude.ai, ChatGPT y Claude Code. Los planes multi-semana siguen limitados por `training_plans`. | Por confirmar |
 | Auto-entrenamiento | El coach se asigna entrenamientos a sí mismo y los ve en "Hoy". | Por confirmar |
 | Entrenamientos (builder) | Crear y editar entrenamientos con ejercicios individuales y circuitos; series por repeticiones o tiempo; carga fija, % RM o RPE; tempo, descanso, objetivo y notas; reordenar arrastrando. | Probada |
 | Por cada lado (unilaterales) | Casilla "Por cada lado" en cada ejercicio del builder: las repeticiones o el tiempo de cada serie son para cada lado (`perSide` en el contenido, sin migración). Se muestra "12 repeticiones por lado" / "30 segundos por lado" en el builder, el resumen al asignar, el ejecutor web y móvil y el registro del coach. En series por tiempo el ejecutor corre dos temporizadores: lado 1, 5 s de "Cambia de lado" y lado 2; la serie termina al acabar el lado 2. La IA (generador y editor) lo marca en unilaterales y lo conserva al editar. | Por confirmar |
@@ -55,7 +56,6 @@ Se activan por usuario con variables de entorno en la API. El dueño las tiene t
 | Compartir por enlace (crear enlaces nuevos) | `share_links` | `FEATURE_SHARE_LINKS_USERS` | Decisión de producto. Los enlaces ya creados siguen funcionando. |
 | Programar asignados para una fecha futura | `scheduled_sessions` | `FEATURE_SCHEDULED_SESSIONS_USERS` | Sin probar; solo se ha usado "Ahora" |
 | Grupos de atletas | `groups` | `FEATURE_GROUPS_USERS` | Tiene bugs pendientes de revisar |
-| Conector MCP (Claude, ChatGPT u otro cliente MCP: consultar ejercicios y sus alternativas, crear y editar entrenamientos, asignarlos; OAuth y tokens personales desde `/settings/conectar-ia`; ver [mcp.md](mcp.md)) | `mcp` | `FEATURE_MCP_USERS` | Nuevo; probado con tests automáticos, falta probar con Claude.ai, ChatGPT y Claude Code reales |
 | Planes de entrenamiento de varias semanas (semanas → días → entrenamientos, programarlos a atletas en fechas; hoy solo desde el conector MCP) | `training_plans` | `FEATURE_TRAINING_PLANS_USERS` | Nuevo; requiere además `scheduled_sessions`. Sin interfaz web todavía |
 
 ## Por pulir
