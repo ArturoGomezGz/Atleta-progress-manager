@@ -152,7 +152,7 @@ export const STEPS: Record<Step, StepDef> = {
       key: "assign-pick",
       selector: '[data-tour="assign-btn"]',
       title: "Ahora asígnatelo",
-      body: "Un entrenamiento es el molde; al asignarlo se convierte en un asignado, la versión que se hace de verdad. Pulsa Asignar.",
+      body: "Un entrenamiento es el molde; al asignarlo se convierte en un asignado, la versión que se hace de verdad. Abre el menú ⋯ y pulsa Asignar.",
     }],
   },
 
