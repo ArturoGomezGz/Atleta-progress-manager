@@ -2,7 +2,7 @@
 
 import { EntrenamientosHeader } from "@/components/entrenamientos-header"
 import { OnboardingReopen, useOnboardingHint } from "@/components/onboarding"
-import { RoutineActionsSheet, RowMenuButton, SwipeRow } from "@/components/routine-row-actions"
+import { ConfirmDeleteDialog, RoutineActionsSheet, RowMenuButton, SwipeRow } from "@/components/routine-row-actions"
 import { PageTransition, useRevealAfterEnter, type SlideDirection } from "@/components/page-transition"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import { consumeBackNavigation } from "@/lib/page-transition"
@@ -123,16 +123,6 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
           const cfg  = getRoutineTypeConfig(r.category)
           const Icon = cfg.icon
 
-          if (deleting?.id === r.id) return (
-            <div key={r.id} className="flex items-center justify-between p-4 border border-destructive/30 rounded-xl bg-destructive/5">
-              <p className="text-sm text-destructive">¿Eliminar <span className="font-medium">{sc(r.name)}</span>?</p>
-              <div className="flex gap-2">
-                <button onClick={() => setDeleting(null)} className="text-xs px-3 py-1.5 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">Cancelar</button>
-                <button onClick={() => deleteRoutine.mutate({ id: r.id })} disabled={deleteRoutine.isPending} className="text-xs px-3 py-1.5 bg-destructive text-destructive-foreground rounded-lg disabled:opacity-50 cursor-pointer">Eliminar</button>
-              </div>
-            </div>
-          )
-
           const assign = () => router.push(`/teams/${teamId}/sesiones/new?routineId=${r.id}`)
           const askDelete = () => setDeleting({ id: r.id, name: r.name })
 
@@ -176,6 +166,15 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
           </div>
         )}
       </div>
+      )}
+
+      {deleting && (
+        <ConfirmDeleteDialog
+          name={sc(deleting.name)}
+          pending={deleteRoutine.isPending}
+          onCancel={() => setDeleting(null)}
+          onConfirm={() => deleteRoutine.mutate({ id: deleting.id })}
+        />
       )}
 
       {menuFor && (
