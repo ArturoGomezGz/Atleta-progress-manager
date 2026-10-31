@@ -114,7 +114,7 @@ Ejecución real de una rutina. Independiente de la plantilla original.
 | `started_at` | timestamptz | Sin restricción de horario |
 | `scheduled_date` | date nullable | Día programado; `null` = "Ahora" |
 | `kind` | enum `routine_kind` nullable | Copia del tipo de la rutina al asignar (puede sobreescribirse); `null` en evaluaciones |
-| `position` | integer NOT NULL default 0 | Orden dentro del día para un mismo atleta (por defecto warmup 0, main 1, recovery 2; en secuencias, el índice del paso; en planes, la posición del hueco). Un entrenamiento no se puede iniciar mientras haya otro del mismo día con `position` menor sin completar ni saltar |
+| `position` | integer NOT NULL default 0 | Orden dentro del día para un mismo atleta (por defecto al final del día; con `insertIndex` el hueco elegido y el resto se renumera 0..n; en secuencias, el índice del paso; en planes, la posición del hueco). Un entrenamiento no se puede iniciar mientras haya otro del mismo día con `position` menor sin completar ni saltar |
 | `scheduled_time` | time nullable | Hora sugerida ("HH:MM" en la API), solo informativa |
 | `status` | enum | `active` \| `completed` \| `cancelled` |
 | `plan_assignment_id` | uuid FK → training_plan_assignment nullable | Sesión creada al programar un plan; `SET NULL` |

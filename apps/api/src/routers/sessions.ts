@@ -24,6 +24,7 @@ import { routineKindSchema, scheduledTimeSchema, toHHMM } from "../services/rout
 import { computeSessionLocks, lockForSession, startRefusalError, type LockCandidate, type SessionLockReason } from "../services/session-rules"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { flattenContent } from "../services/routine-content"
+import { loadDayPlan } from "../services/day-plan"
 import { assertAssignableAthletes, createAssignedSessions, resolveAthleteToday, todayUtc } from "../services/session-assign"
 import { assertFeature, hasFeature } from "../lib/features"
 import { protectedProcedure, router } from "../trpc"
@@ -50,6 +51,8 @@ export const MAX_SEQUENCE_SESSIONS = 120
 // "Hoy" del atleta: el cliente puede mandar su fecha local (ver resolveAthleteToday)
 const localDateInput = z.string().date().optional()
 const positionInput = z.number().int().min(0).max(99)
+// Lugar en la lista del día (sessions.dayPlan): 0 = al inicio, n = al final
+const insertIndexInput = z.number().int().min(0).max(99)
 
 type PendingCheck = {
   sessionId: string
@@ -454,15 +457,30 @@ export const sessionsRouter = router({
       return withAssignedAthletes(member.role === "coach", (await withZoneProfiles(rows)).map((r) => ({ ...r, scheduledTime: toHHMM(r.scheduledTime) })))
     }),
 
+  // Lista ordenada (position asc) de entrenamientos no cancelados de ese día que involucran a alguno de esos
+  // atletas. Con ella el coach elige en qué parte del día va una rutina nueva (insertIndex en create/createMany).
+  dayPlan: protectedProcedure
+    .input(z.object({
+      teamId: z.string().uuid(),
+      athleteIds: z.array(z.string()).max(MAX_ASSIGN_ATHLETES),
+      date: z.string().date(),
+    }))
+    .query(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      const plan = await loadDayPlan(db, { teamId: input.teamId, athleteIds: [...new Set(input.athleteIds)], date: input.date, today: todayUtc() })
+      return plan.map(({ scheduledDate: _d, ...e }) => e)
+    }),
+
   create: protectedProcedure
     .input(z.object({
       routineId: z.string().uuid(),
       teamId: z.string().uuid(),
       athleteIds: z.array(z.string()).min(1),
       scheduledDate: z.string().date().optional(),
-      // Solo entrenamientos: por defecto el tipo de la rutina y el orden de ese tipo (warmup 0, main 1, recovery 2)
+      // Solo entrenamientos: por defecto el tipo de la rutina y, sin insertIndex ni position, al final del día
       kind: routineKindSchema.optional(),
       position: positionInput.optional(),
+      insertIndex: insertIndexInput.optional(),
       scheduledTime: scheduledTimeSchema.optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -484,6 +502,7 @@ export const sessionsRouter = router({
           today,
           kind: input.kind,
           position: input.position,
+          insertIndex: input.insertIndex,
           scheduledTime: input.scheduledTime,
         }),
       )
@@ -506,6 +525,7 @@ export const sessionsRouter = router({
         .refine((d) => new Set(d).size === d.length, "Las fechas no se pueden repetir"),
       kind: routineKindSchema.optional(),
       position: positionInput.optional(),
+      insertIndex: insertIndexInput.optional(),
       scheduledTime: scheduledTimeSchema.optional(),
     }))
     .mutation(async ({ ctx, input }) => {
@@ -522,7 +542,7 @@ export const sessionsRouter = router({
       const sessions = await db.transaction((tx) =>
         createAssignedSessions(tx, {
           routine: r, teamId: input.teamId, athleteIds, dates, startedBy: ctx.session.user.id, today,
-          kind: input.kind, position: input.position, scheduledTime: input.scheduledTime,
+          kind: input.kind, position: input.position, insertIndex: input.insertIndex, scheduledTime: input.scheduledTime,
         }),
       )
       void notifyWorkoutAssigned({
