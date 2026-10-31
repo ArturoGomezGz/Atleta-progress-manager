@@ -638,6 +638,7 @@ export const shareRouter = router({
             startedBy: ctx.session.user.id,
             startedAt: workout.startedAt,
             status: "completed",
+            kind: "main",
             content: workout.content,
           })
           .returning()

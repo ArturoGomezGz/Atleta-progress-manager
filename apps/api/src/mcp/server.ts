@@ -28,7 +28,7 @@ Flujo recomendado:
 3. search_exercises para elegir ejercicios: usa solo los ids que devuelve (create_exercise solo si no hay equivalente).
 4. Para crear: create_routine con content (formato en el resource atleta://guia/contenido-rutina; convenciones en atleta://guia/programacion).
 5. Para modificar: get_routine y luego la herramienta más acotada (add_exercise, replace_exercise, update_sets, adjust_difficulty, adjust_rest…) o edit_routine para varios cambios atómicos; update_routine reemplaza todo el contenido. Envía expectedUpdatedAt con el updatedAt que leíste; si responde CONFLICT, vuelve a leer la rutina y reintenta.
-6. Para asignar: assign_routine (sin fechas = ahora; con fechas futuras queda programada) y revisa con list_assignments.
+6. Para asignar: assign_routine (sin fechas = ahora; con fechas futuras queda programada) o assign_sequence para encadenar varios entrenamientos del día en orden (calentamiento → principal → recuperación), y revisa con list_assignments.
 7. Si están disponibles las herramientas de planes: create_plan con sus rutinas, schedule_plan con dryRun para revisar el calendario y, tras confirmar, schedule_plan sin dryRun.
 
 Reglas:

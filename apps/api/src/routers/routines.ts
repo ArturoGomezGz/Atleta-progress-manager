@@ -8,6 +8,7 @@ import { createTweakDeps } from "../services/ai-routine-editor/deps-real"
 import { tweakInputSchema } from "../services/ai-routine-editor/input"
 import { tweakRoutineWithAI } from "../services/ai-routine-editor/tweak"
 import { routineContentSchema } from "../services/routine-content-schema"
+import { resolveRoutineKind, routineKindSchema } from "../services/routine-kind"
 import { exerciseZones, zoneProfiles } from "../services/body-zones"
 import { assertExercisesVisible } from "../services/exercise-visibility"
 import { canUseAiRoutines } from "../services/feature-access"
@@ -86,12 +87,15 @@ export const routinesRouter = router({
       teamId:   z.string().uuid(),
       name:     z.string().min(1),
       category: z.enum(["evaluation", "training"]).default("training"),
+      // Solo entrenamientos (por defecto "main"); las evaluaciones no tienen tipo
+      kind:     routineKindSchema.optional(),
       // Opcional (herramientas MCP): la rutina nace con contenido en vez de vacía
       content:  routineContentSchema.optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
       if (input.category === "evaluation") assertFeature(ctx.session.user, "evaluation")
+      const kind = resolveRoutineKind(input.category, input.kind)
       const content = input.content ?? { v: 1 as const, items: [] }
       if (input.content) {
         assertRoutineLimits(content)
@@ -99,7 +103,7 @@ export const routinesRouter = router({
       }
       const [r] = await db
         .insert(routine)
-        .values({ teamId: input.teamId, name: input.name, category: input.category, createdBy: ctx.session.user.id, content })
+        .values({ teamId: input.teamId, name: input.name, category: input.category, kind, createdBy: ctx.session.user.id, content })
         .returning()
       return r
     }),
@@ -119,6 +123,7 @@ export const routinesRouter = router({
           teamId: r.teamId,
           createdBy: ctx.session.user.id,
           category: r.category,
+          kind: r.kind,
           content: cloneRoutineContent(r.content),
         })
         .returning()
@@ -129,6 +134,8 @@ export const routinesRouter = router({
     .input(z.object({
       teamId:   z.string().uuid(),
       category: z.enum(["evaluation", "training"]).optional(),
+      // Solo entrenamientos del tipo indicado (las evaluaciones no tienen tipo)
+      kind: routineKindSchema.optional(),
       // Las archivadas quedan fuera salvo que se pidan
       includeArchived: z.boolean().optional(),
     }))
@@ -142,6 +149,7 @@ export const routinesRouter = router({
         conditions.push(eq(routine.category, "training"))
       }
       if (input.category) conditions.push(eq(routine.category, input.category))
+      if (input.kind) conditions.push(eq(routine.kind, input.kind))
       const rows = await db.select().from(routine).where(and(...conditions))
       const profiles = await zoneProfiles(rows.map((r) => r.content))
       return rows.map((r, i) => ({ ...r, zoneProfile: profiles[i] }))
@@ -182,6 +190,7 @@ export const routinesRouter = router({
       id:      z.string().uuid(),
       content: routineContentSchema,
       name:    z.string().min(1).optional(),
+      kind:    routineKindSchema.optional(),
       expectedUpdatedAt: expectedUpdatedAtSchema,
     }))
     .mutation(async ({ ctx, input }) => {
@@ -194,7 +203,12 @@ export const routinesRouter = router({
 
         const [updated] = await tx
           .update(routine)
-          .set({ content: input.content, ...(input.name !== undefined && { name: input.name }), updatedAt: new Date() })
+          .set({
+            content: input.content,
+            ...(input.name !== undefined && { name: input.name }),
+            ...(input.kind !== undefined && { kind: resolveRoutineKind(r.category, input.kind, r.kind) }),
+            updatedAt: new Date(),
+          })
           .where(eq(routine.id, input.id))
           .returning()
         return updated!
@@ -257,7 +271,13 @@ export const routinesRouter = router({
     }),
 
   rename: protectedProcedure
-    .input(z.object({ id: z.string().uuid(), name: z.string().min(1), expectedUpdatedAt: expectedUpdatedAtSchema }))
+    .input(z.object({
+      id: z.string().uuid(),
+      name: z.string().min(1).optional(),
+      // Cambiar el tipo (solo entrenamientos); sin name ni kind no hay nada que cambiar
+      kind: routineKindSchema.optional(),
+      expectedUpdatedAt: expectedUpdatedAtSchema,
+    }).refine((i) => i.name !== undefined || i.kind !== undefined, "Indica name o kind"))
     .mutation(async ({ ctx, input }) => {
       return db.transaction(async (tx) => {
         const { routine: r, assertVersion } = await lockRoutine(tx, input.id, input.expectedUpdatedAt)
@@ -266,7 +286,11 @@ export const routinesRouter = router({
         assertVersion()
         const [updated] = await tx
           .update(routine)
-          .set({ name: input.name, updatedAt: new Date() })
+          .set({
+            ...(input.name !== undefined && { name: input.name }),
+            ...(input.kind !== undefined && { kind: resolveRoutineKind(r.category, input.kind, r.kind) }),
+            updatedAt: new Date(),
+          })
           .where(eq(routine.id, input.id))
           .returning()
         return updated!

@@ -1,7 +1,7 @@
 // Vistas compactas (con ids) de lo que devuelven las herramientas MCP. Puro: recibe las filas que ya
 // devolvieron los procedimientos tRPC. Nunca incluye datos de más (emails, contenido de sesiones…).
 
-import type { RoutineContent, RoutineExerciseContent, RoutineSet } from "@atleta/db/schema"
+import type { RoutineContent, RoutineExerciseContent, RoutineKind, RoutineSet } from "@atleta/db/schema"
 import { toContentInput, type RoutineContentInput } from "../services/routine-content-input"
 
 export type RoutineFormat = "outline" | "detail"
@@ -35,6 +35,7 @@ type RoutineRow = {
   id: string
   name: string
   category: "evaluation" | "training"
+  kind: RoutineKind | null
   updatedAt: Date | string
   archivedAt: Date | string | null
   content: RoutineContent
@@ -49,6 +50,7 @@ export function toRoutineSummary(r: RoutineRow) {
     id: r.id,
     name: r.name,
     category: r.category,
+    kind: r.kind,
     updatedAt: iso(r.updatedAt),
     archived: r.archivedAt != null,
     itemCount: r.content.items.length,
@@ -119,6 +121,9 @@ type SessionRow = {
   status: "scheduled" | "active" | "completed" | "cancelled"
   startedAt: Date | string
   scheduledDate: string | null
+  kind?: RoutineKind | null
+  position?: number
+  scheduledTime?: string | null
   routineId: string | null
   routineName: string | null
   planAssignmentId?: string | null
@@ -132,6 +137,9 @@ export function toAssignmentView(s: SessionRow, opts: { includeAthletes: boolean
     routineId: s.routineId,
     routineName: s.routineName,
     scheduledDate: s.scheduledDate,
+    kind: s.kind ?? null,
+    position: s.position ?? 0,
+    scheduledTime: s.scheduledTime ?? null,
     startedAt: iso(s.startedAt),
     status: s.status,
     planAssignmentId: s.planAssignmentId ?? null,

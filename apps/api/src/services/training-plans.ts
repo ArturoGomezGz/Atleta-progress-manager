@@ -110,7 +110,7 @@ async function insertInlineRoutines(tx: Tx, actor: PlanActor, teamId: string, pr
   const now = new Date()
   const rows = await tx
     .insert(routine)
-    .values(prepared.map((r) => ({ name: r.name, teamId, createdBy: actor.id, category: "training" as const, content: r.content, createdAt: now, updatedAt: now })))
+    .values(prepared.map((r) => ({ name: r.name, teamId, createdBy: actor.id, category: "training" as const, kind: "main" as const, content: r.content, createdAt: now, updatedAt: now })))
     .returning({ id: routine.id })
   const created = prepared.map((r, i) => ({ key: r.key, routineId: rows[i]!.id }))
   for (const c of created) keyToId.set(c.key, c.routineId)
@@ -435,7 +435,7 @@ export async function duplicatePlan(actor: PlanActor, input: PlanDuplicateInput)
         const name = `${r.name} (copia)`
         const [copy] = await tx
           .insert(routine)
-          .values({ name, teamId: r.teamId, createdBy: actor.id, category: r.category, content: cloneRoutineContent(r.content), createdAt: now, updatedAt: now })
+          .values({ name, teamId: r.teamId, createdBy: actor.id, category: r.category, kind: r.kind, content: cloneRoutineContent(r.content), createdAt: now, updatedAt: now })
           .returning({ id: routine.id })
         routineMap.set(r.id, copy!.id)
         createdRoutines.push({ sourceRoutineId: r.id, routineId: copy!.id, name })
@@ -602,6 +602,8 @@ export async function schedulePlan(actor: PlanActor, input: PlanScheduleInput, o
         startedBy: actor.id,
         planAssignmentId: assignment!.id,
         planWorkoutIds: indexes.map((i) => entries[i]!.workoutId),
+        // Orden dentro del día = posición del hueco en el plan; el tipo sale de la rutina
+        positions: routines.get(routineId)!.category === "training" ? indexes.map((i) => entries[i]!.position) : undefined,
         today: opts.today,
       })
       created.forEach((s, j) => {
