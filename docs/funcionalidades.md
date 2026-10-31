@@ -2,7 +2,7 @@
 
 Registro de lo que tiene el producto y en qué estado está, para no perder el rastro. Cubre la web y menciona la app móvil.
 
-> **Última revisión:** 2026-10-30.
+> **Última revisión:** 2026-10-31.
 > **Cómo mantenerlo:** cuando una función cambie de estado, muévela de sección y actualiza la fecha. Las limitadas por usuario viven en `apps/api/src/lib/features.ts` (ver [feature-flags.md](feature-flags.md)); los nombres visibles, en [terminologia-ui.md](terminologia-ui.md).
 
 ## Estados
@@ -34,6 +34,10 @@ La columna **Verificación** indica de dónde viene el estado:
 | Lista de entrenamientos: acciones por fila (menú ⋯ con Asignar, Duplicar y Eliminar; deslizar a la derecha asigna y a la izquierda elimina; eliminar pide confirmación en un diálogo modal) | Nuevo; falta probar en móvil real. |
 | Por cada lado (unilaterales) | Casilla "Por cada lado" en cada ejercicio del builder: las repeticiones o el tiempo de cada serie son para cada lado (`perSide` en el contenido, sin migración). Se muestra "12 repeticiones por lado" / "30 segundos por lado" en el builder, el resumen al asignar, el ejecutor web y móvil y el registro del coach. En series por tiempo el ejecutor corre dos temporizadores: lado 1, 5 s de "Cambia de lado" y lado 2; la serie termina al acabar el lado 2. La IA (generador y editor) lo marca en unilaterales y lo conserva al editar. | Por confirmar |
 | Asignar y entrenar ahora | Asignar un entrenamiento a uno o más atletas y comenzarlo en el momento. | Probada |
+| Tipo de entrenamiento (calentamiento, principal, recuperación) | Cada entrenamiento (no evaluación) tiene un `kind` fijo, `main` por defecto; se copia a cada sesión asignada y define su orden por defecto en el día (0, 1, 2). Solo API y conector MCP por ahora (`routines.*`, `create_routine`, `update_routine`, `list_routines`); falta la interfaz web y móvil. Sin etiquetas libres (queda para después). Datos migrados con 0007. | Por confirmar |
+| Secuencias de entrenamientos por día | `sessions.createSequence` y `assign_sequence` (MCP): varios entrenamientos ordenados por día (`position`, `scheduledTime` informativa), un aviso push agrupado. Programar un plan propaga la posición del hueco. Solo API/MCP; falta la interfaz web y móvil. Probado con tests de integración. | Por confirmar |
+| Reglas de inicio (no futuro, en orden, de a uno) | `sessions.activate` rechaza con `error.data.reason`: `FUTURE_SESSION`, `PREVIOUS_STEP_PENDING`, `ANOTHER_ACTIVE`; el atleta puede saltar un paso con `sessions.skipMyStep`. Las evaluaciones tampoco se inician antes de su fecha. "Hoy" = fecha local del cliente (`localDate`) si está a ±1 día de UTC. `myPending`, `myList` y `get` devuelven `locked`/`lockReason`. Los clientes móvil y web aún no mandan `localDate` ni muestran el bloqueo. | Por confirmar |
+| Calendario del atleta (API) | `sessions.myCalendar`: entrenamientos y evaluaciones del atleta por rango de fechas (máx. 62 días), con completados y bloqueo. Sin interfaz todavía. | Por confirmar |
 | Pestaña Asignados | Lista de lo asignado con atletas y avance completado. | Por confirmar |
 | Hoy (atleta) | Lo que toca hoy, en curso, próximos y terminados; ejecutar el entrenamiento paso a paso. | Por confirmar |
 | Biblioteca de ejercicios | Ejercicios con video, zonas del cuerpo, contraindicaciones y alternativas; los propios del equipo. | Por confirmar |

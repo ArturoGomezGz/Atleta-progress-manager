@@ -72,12 +72,12 @@ La autorización de rol (coach/atleta) se verifica dentro de cada procedimiento.
 
 | Procedimiento | Tipo | Descripción | Autorización |
 |---|---|---|---|
-| `routines.create` | mutation | Crear rutina en un equipo. `content` opcional (la usa el conector MCP): se validan los límites (20 elementos, 10 por circuito, 12 series) y que cada ejercicio sea visible para quien crea (`BAD_REQUEST` si no). | Coach del equipo |
+| `routines.create` | mutation | Crear rutina en un equipo. `kind` opcional (`warmup` \| `main` \| `recovery`; por defecto `main` en entrenamientos; las evaluaciones no tienen tipo y rechazan uno con `BAD_REQUEST`). `content` opcional (la usa el conector MCP): se validan los límites (20 elementos, 10 por circuito, 12 series) y que cada ejercicio sea visible para quien crea (`BAD_REQUEST` si no). | Coach del equipo |
 | `routines.duplicate` | mutation | Copia una rutina con ids nuevos (`name` opcional). | Coach del equipo |
-| `routines.list` | query | Rutinas de un equipo. Filtro `category`; las archivadas solo con `includeArchived: true`. | Miembro del equipo |
+| `routines.list` | query | Rutinas de un equipo. Filtros `category` y `kind`; las archivadas solo con `includeArchived: true`. | Miembro del equipo |
 | `routines.get` | query | Rutina con nombres e información de sus ejercicios (`exerciseNames`, `exerciseInfo`) y `archivedAt`. | Miembro del equipo |
 | `routines.updateContent` | mutation | Guarda el contenido completo (y opcionalmente `name`). Cada ejercicio **nuevo** debe ser visible (`BAD_REQUEST`). Con `expectedUpdatedAt` (ISO) aplica concurrencia optimista: bloquea la fila (`SELECT … FOR UPDATE`) y, si su `updatedAt` ya no es ese, falla con `CONFLICT`. Sin él se comporta como siempre (la web). | Coach del equipo |
-| `routines.rename` | mutation | Cambia el nombre; acepta `expectedUpdatedAt` igual que `updateContent`. | Coach del equipo |
+| `routines.rename` | mutation | Cambia el nombre y/o el tipo (`name?`, `kind?`, al menos uno); acepta `expectedUpdatedAt` igual que `updateContent` (que también acepta `kind`). | Coach del equipo |
 | `routines.archive` | mutation | `{id, archived = true}`: archiva (sale de `list` y no se puede asignar con `sessions.create`/`createMany`) o restaura con `archived: false`. Lo ya asignado no cambia. | Coach del equipo |
 | `routines.delete` | mutation | Eliminar rutina completa. | Coach del equipo |
 | `routines.aiAvailable` / `generateWithAI` / `tweakWithAI` | query / mutation | Generación y ajustes con IA (ver [ia-generacion-rutinas.md](ia-generacion-rutinas.md)). | Miembro / Coach del equipo |
@@ -86,11 +86,15 @@ La autorización de rol (coach/atleta) se verifica dentro de cada procedimiento.
 
 | Procedimiento | Tipo | Descripción | Autorización |
 |---|---|---|---|
-| `sessions.myPending` | query | Sesiones pendientes del atleta en todos sus equipos (activas y de entrenamiento programadas), sin fecha primero. La usa la app Android. | Usuario autenticado |
+| `sessions.myPending` | query | Sesiones pendientes del atleta en todos sus equipos (activas y de entrenamiento programadas), sin fecha primero. La usa la app Android. Entrada opcional `{localDate?}`. Cada fila incluye `kind`, `position`, `scheduledTime` ("HH:MM"), `locked` y `lockReason`. | Usuario autenticado |
+| `sessions.myCalendar` | query | `{from, to, localDate?}` (YYYY-MM-DD, rango máx. 62 días): entrenamientos y evaluaciones del atleta en todos sus equipos, incluidos completados y saltados, ordenados por fecha, `position` y hora. Item: `{sessionId, teamId, teamName, routineName, category, kind, position, scheduledDate, scheduledTime, status (del atleta), completedAt, exerciseCount, locked, lockReason}`. Una sesión sin fecha ("Ahora") sale en HOY mientras esté pendiente y, ya terminada, en el día en que se creó. Tipo: `MyCalendarItem` en `apps/api/src/services/session-calendar.ts`. | Usuario autenticado |
+| `sessions.skipMyStep` | mutation | `{sessionId, localDate?}`: el atleta salta un entrenamiento que aún no inició (su `athlete_session` pasa a `cancelled`) para desbloquear el siguiente del día. Solo hoy o antes (`FUTURE_SESSION`); no aplica a evaluaciones. | Atleta de la sesión |
+| `sessions.createSequence` | mutation | `{teamId, athleteIds, dates[], steps[{routineId, kind?, scheduledTime?}]}`: por cada fecha crea una sesión por paso (`position` = índice) en una transacción. Solo entrenamientos. Un solo aviso push. Futuras: `scheduled_sessions`. | Coach del equipo |
+| `sessions.activate` | mutation | `{id, localDate?}`: inicia. Rechaza con `BAD_REQUEST` y `error.data.reason` = `FUTURE_SESSION` (fecha posterior a hoy del atleta), `PREVIOUS_STEP_PENDING` (hay un paso anterior del día sin completar ni saltar) o `ANOTHER_ACTIVE` (ya tiene otro entrenamiento en curso). "Hoy" = `localDate` si está a ±1 día de la fecha UTC; si no, UTC. | Atleta (entrenamiento) / coach (evaluación) |
 | `sessions.list` | query | Sesiones del equipo (con `planAssignmentId` y, para el coach, los atletas asignados). Filtros opcionales: `category`, `athleteId` (solo sesiones donde ese atleta está asignado), `from`/`to` (fecha programada o, sin fecha, el día UTC en que se creó), `status[]`, `planAssignmentId` y `limit` (1–500; sin límite por defecto). | Miembro del equipo |
 | `sessions.create` | mutation | Iniciar sesión: hace snapshot de la rutina y enrolla atletas. | Coach del equipo |
-| `sessions.createMany` | mutation | Igual que `create` para varias fechas a la vez (una sesión por fecha, máx. 60 fechas y 50 atletas, en una transacción). Solo las fechas futuras exigen `scheduled_sessions`. | Coach del equipo |
-| `sessions.get` | query | Sesión con ejercicios (snapshot) y atletas. | Miembro del equipo |
+| `sessions.createMany` | mutation | (`create` y `createMany` aceptan además `kind?`, `position?` y `scheduledTime?`; por defecto el tipo de la rutina y el orden warmup 0, main 1, recovery 2.) Igual que `create` para varias fechas a la vez (una sesión por fecha, máx. 60 fechas y 50 atletas, en una transacción). Solo las fechas futuras exigen `scheduled_sessions`. | Coach del equipo |
+| `sessions.get` | query | Sesión con ejercicios (snapshot) y atletas; incluye `kind`, `position`, `scheduledTime`, `locked` y `lockReason` para quien consulta. Entrada opcional `localDate`. | Miembro del equipo |
 | `sessions.athleteSets` | query | Todas las series de un atleta en la sesión. | Miembro del equipo |
 | `sessions.recordSet` | mutation | Registrar una serie para un atleta. | Coach del equipo |
 | `sessions.updateSetStatus` | mutation | Cambiar estado de una serie a `valid` o `invalid`. | Coach del equipo |

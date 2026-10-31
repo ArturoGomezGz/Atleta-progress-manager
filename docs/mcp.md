@@ -295,16 +295,17 @@ guardar, asignar, cancelar o archivar".
 | `get_exercises` | R | `{teamId?, ids[1..30]}` | `{exercises[{id,name,description,difficulty,patterns,equipment,muscles,contraindications,videoUrl}], notFound[]}` |
 | `find_alternatives` | R, miembro | `{routineId, itemId, avoid?≤8, easier?}` | `{routineId, itemId, candidates[≤8]{id,name,pattern,muscles,equipment,difficulty}}` (equivalentes por patrón o músculo primario, dificultad no mayor, sin los ya presentes en la rutina; no modifica nada; ítem que no es ejercicio de la rutina → `BAD_REQUEST`) |
 | `create_exercise` | W, coach | `{teamId?, name 2..80, description≤400, difficulty, movementPatterns[≤4], contraindications?}` | `{id, name, teamId, existed}` (si ya hay uno visible con ese nombre exacto, sin distinguir mayúsculas, lo devuelve; la comparación es literal: `%` o `_` no son comodines) |
-| `list_routines` | R, miembro | `{teamId?, category?, query?, includeArchived?, limit?≤100=50}` | `{teamId, total, routines[{id,name,category,updatedAt,archived,itemCount,exerciseCount}]}` (más reciente primero) |
+| `list_routines` | R, miembro | `{teamId?, category?, kind?, query?, includeArchived?, limit?≤100=50}` | `{teamId, total, routines[{id,name,category,kind,updatedAt,archived,itemCount,exerciseCount}]}` (más reciente primero) |
 | `get_routine` | R | `{routineId, format?: "outline" o "detail"}` | `{id,teamId,name,category,updatedAt,archived,itemCount,exerciseCount}` + `items` (outline) o `content` + `exerciseNames` (detail) |
-| `create_routine` | W, coach | `{teamId?, name 1..120, category?="training", content?: RoutineContentInput}` | `{routineId, teamId, name, updatedAt, itemCount}` |
-| `update_routine` | W, coach | `{routineId, expectedUpdatedAt, name?, content?}` (al menos uno) | `{routineId, name, updatedAt, itemCount}`; `CONFLICT` |
+| `create_routine` | W, coach | `{teamId?, name 1..120, category?="training", kind?="main" (solo entrenamientos), content?: RoutineContentInput}` | `{routineId, teamId, name, kind, updatedAt, itemCount}` |
+| `update_routine` | W, coach | `{routineId, expectedUpdatedAt, name?, kind?, content?}` (al menos uno) | `{routineId, name, kind, updatedAt, itemCount}`; `CONFLICT` |
 | `edit_routine` | W, coach | `{routineId, expectedUpdatedAt?, ops[1..25]}` (operaciones `{op, …}` del editor) | `{routineId, updatedAt, changes[{type,itemId,summary}]}`; atómica |
 | `add_exercise`, `replace_exercise`, `remove_item`, `move_item`, `update_sets`, `update_item_fields`, `update_block`, `adjust_difficulty`, `adjust_rest` | W, coach | `{routineId, expectedUpdatedAt?}` + la entrada de la habilidad | `{routineId, updatedAt, saved, result, message?, changes[]}` |
 | `duplicate_routine` | W, coach | `{routineId, name?}` | `{routineId, name, updatedAt}` |
 | `archive_routine` | W, coach, destructiva | `{routineId, archived?=true}` | `{routineId, archived, updatedAt}` |
-| `assign_routine` | W, coach | `{routineId, athleteIds[1..50], dates?[1..60]}` | `{routineId, teamId, athleteIds, sessions[{sessionId,date,status}]}` |
-| `list_assignments` | R, miembro | `{teamId?, athleteId?, from?, to?, status?[], planAssignmentId?, limit?≤100=50}` | `{teamId, today, assignments[{sessionId,routineId,routineName,scheduledDate,startedAt,status,planAssignmentId,athletes?}]}` |
+| `assign_routine` | W, coach | `{routineId, athleteIds[1..50], dates?[1..60], kind?, position?, scheduledTime? "HH:MM"}` | `{routineId, teamId, athleteIds, sessions[{sessionId,date,status,kind,position,scheduledTime}]}` |
+| `assign_sequence` | W, coach | `{athleteIds[1..50], dates[1..60], steps[1..10]: [{routineId, kind?, scheduledTime?}]}` (solo entrenamientos) | `{teamId, athleteIds, sessions[{sessionId,routineId,date,status,kind,position,scheduledTime}]}`; `position` = índice del paso; todo o nada; comparte el límite de 20/h con `assign_routine` |
+| `list_assignments` | R, miembro | `{teamId?, athleteId?, from?, to?, status?[], planAssignmentId?, limit?≤100=50}` | `{teamId, today, assignments[{sessionId,routineId,routineName,scheduledDate,kind,position,scheduledTime,startedAt,status,planAssignmentId,athletes?}]}` |
 | `cancel_assignment` | W, coach, destructiva | `{sessionId, athleteId?}` | `{sessionId, cancelled: "session" o "athlete"}` |
 | `search` | R | `{query}` | `{results[{id,title,url}]}` con ids `routine:<uuid>` / `exercise:<uuid>` |
 | `fetch` | R | `{id}` | `{id, title, text, url, metadata}` |
@@ -344,6 +345,9 @@ y decisiones en [habilidades-ia-rutinas.md](habilidades-ia-rutinas.md) §5.
 - `assign_routine` toma el equipo de la rutina. Sin `dates` crea una sesión disponible ya
   (`sessions.create`); con `dates`, una por fecha en una transacción (`sessions.createMany`): hoy o antes queda
   activa y las futuras programadas, que requieren `scheduled_sessions`. Atletas de otro equipo → `BAD_REQUEST`.
+- `assign_sequence` (`sessions.createSequence`) crea, por cada fecha, una sesión por paso con `position` = índice del
+  paso, en una transacción; las evaluaciones en `steps` → `BAD_REQUEST`. El atleta no puede iniciar un paso hasta
+  completar o saltar los anteriores del día (reglas en `apps/api/src/services/session-rules.ts`).
 - `list_assignments`: el coach ve los atletas de cada sesión y puede filtrar por `athleteId`; un atleta solo
   consulta sus propias sesiones (se ignora `athleteId`) y sin la lista de atletas.
 - `cancel_assignment` cancela la sesión entera; con `athleteId`, solo a ese atleta (como en la web, solo en
