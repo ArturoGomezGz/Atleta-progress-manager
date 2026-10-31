@@ -666,7 +666,10 @@ function NewSessionForm({ teamId }: { teamId: string }) {
                 return (
                   <div key={i} className="space-y-1.5">
                     {available && (
-                      <label className="block cursor-pointer">
+                      // `relative`: el radio es sr-only (position: absolute); sin un ancestro
+                      // posicionado queda fuera de <main> y, al enfocarse, el navegador desplaza
+                      // el shell (overflow-hidden) y deja una franja negra abajo.
+                      <label className="relative block cursor-pointer">
                         <input
                           type="radio"
                           name="day-slot"
