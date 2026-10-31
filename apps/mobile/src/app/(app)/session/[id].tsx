@@ -4,13 +4,15 @@ import { Button } from "@/components/button"
 import { Text } from "@/components/text"
 import { RoutineCards } from "@/components/workout/cards"
 import { VideoModal } from "@/components/workout/video"
+import { inlineDateLabel, localDateISO } from "@/lib/dates"
 import { ensureNotificationPermission } from "@/lib/notifications"
+import { kindLabel, lockMessage } from "@/lib/session-kind"
 import { colors, radiusLg } from "@/lib/theme"
 import { trpc } from "@/lib/trpc"
 import { doneSets, groupForPreview, sc, totalSets, type WorkoutExercise } from "@/lib/workout"
 import { useState } from "react"
 import { router, Stack, useLocalSearchParams } from "expo-router"
-import { Calendar, CheckCircle, Play } from "lucide-react-native"
+import { Calendar, CheckCircle, Lock, Play } from "lucide-react-native"
 import { ActivityIndicator, ScrollView, StyleSheet, View } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 
@@ -19,9 +21,12 @@ export default function SessionScreen() {
   const utils = trpc.useUtils()
   const [video, setVideo] = useState<WorkoutExercise | null>(null)
   const { data, isLoading, isError, refetch } = trpc.sessions.myProgress.useQuery({ sessionId: id })
+  // Tipo de bloque, fecha y si se puede empezar ahora (candado) vienen de `get`; el progreso, de `myProgress`.
+  const localDate = localDateISO()
+  const info = trpc.sessions.get.useQuery({ id, localDate })
   const activate = trpc.sessions.activate.useMutation({
     onSuccess: async () => {
-      await Promise.all([refetch(), utils.sessions.myPending.invalidate()])
+      await Promise.all([refetch(), utils.sessions.myPending.invalidate(), utils.sessions.myCalendar.invalidate()])
       router.push({ pathname: "/train/[id]", params: { id } })
     },
   })
@@ -43,11 +48,16 @@ export default function SessionScreen() {
   const exerciseCount = groupForPreview(data.exercises).reduce((n, g) => n + (g.kind === "circuit" ? g.exercises.length : 1), 0)
   const scheduled = data.status === "scheduled"
   const active = data.status === "active"
+  const locked = info.data?.locked === true
+  const lockReason = info.data?.lockReason ?? null
+  const lockText = lockMessage(lockReason, info.data?.scheduledDate ? inlineDateLabel(info.data.scheduledDate) : undefined)
+  // Solo se bloquea el inicio; continuar uno ya en curso siempre se puede.
+  const startBlocked = scheduled && locked
 
   async function start() {
     // Permiso para avisar cuando termine un descanso con el teléfono bloqueado
     await ensureNotificationPermission()
-    if (scheduled) activate.mutate({ id })
+    if (scheduled) activate.mutate({ id, localDate: localDateISO() })
     else router.push({ pathname: "/train/[id]", params: { id } })
   }
 
@@ -56,6 +66,11 @@ export default function SessionScreen() {
       <Stack.Screen options={{ title: "" }} />
       <ScrollView contentContainerStyle={styles.content}>
         <View style={{ gap: 6 }}>
+          {info.data && (
+            <Text size={12} weight="semibold" color={info.data.routineCategory === "evaluation" ? colors.warning : colors.primary} style={{ textTransform: "uppercase", letterSpacing: 0.5 }}>
+              {kindLabel(info.data.kind ?? null, info.data.routineCategory ?? null)}
+            </Text>
+          )}
           <Text heading size={36}>{sc(data.routineName ?? "Rutina")}</Text>
           <View style={styles.inline}>
             <Calendar size={18} color={colors.mutedForeground} />
@@ -63,7 +78,13 @@ export default function SessionScreen() {
           </View>
         </View>
 
-        {scheduled && (
+        {startBlocked && (
+          <View style={[styles.banner, { backgroundColor: colors.mutedSoft }]}>
+            <Lock size={20} color={colors.mutedForeground} />
+            <Text style={{ flex: 1 }}>{lockText}</Text>
+          </View>
+        )}
+        {scheduled && !startBlocked && (
           <View style={styles.intro}>
             <Text size={16}>
               Antes de empezar, puedes tocar cada ejercicio para <Text weight="bold">ver el video</Text> de cómo se hace.
@@ -94,7 +115,7 @@ export default function SessionScreen() {
 
       <VideoModal exercise={video} onClose={() => setVideo(null)} />
 
-      {(scheduled || active) && (
+      {(scheduled || active) && !startBlocked && (
         <View style={styles.footer}>
           <Button
             label={activate.isPending ? "Preparando…" : scheduled ? "Empezar rutina" : "Continuar rutina"}
@@ -103,7 +124,11 @@ export default function SessionScreen() {
             loading={activate.isPending}
             onPress={start}
           />
-          {activate.isError && <Text size={15} color={colors.destructive} center>No se pudo empezar. Inténtalo de nuevo.</Text>}
+          {activate.isError && (
+            <Text size={15} color={colors.destructive} center>
+              {activate.error.data?.code === "BAD_REQUEST" ? activate.error.message : "No se pudo empezar. Inténtalo de nuevo."}
+            </Text>
+          )}
         </View>
       )}
     </SafeAreaView>
