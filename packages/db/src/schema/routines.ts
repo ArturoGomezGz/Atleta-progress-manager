@@ -55,12 +55,18 @@ export type RoutineContent = {
 
 export const routineCategoryEnum = pgEnum("routine_category", ["evaluation", "training"])
 
+/** Tipo fijo de un entrenamiento (no aplica a evaluaciones): calentamiento, principal o recuperación. */
+export const routineKindEnum = pgEnum("routine_kind", ["warmup", "main", "recovery"])
+export type RoutineKind = (typeof routineKindEnum.enumValues)[number]
+
 export const routine = pgTable("routine", {
   id:        uuid("id").primaryKey().defaultRandom(),
   name:      text("name").notNull(),
   teamId:    uuid("team_id").notNull().references(() => team.id, { onDelete: "cascade" }),
   createdBy: text("created_by").notNull().references(() => user.id),
   category:  routineCategoryEnum("category").notNull().default("training"),
+  // category='evaluation' → null; category='training' → not null (default 'main'). Regla aplicada en la API.
+  kind:      routineKindEnum("kind"),
   content:   jsonb("content").$type<RoutineContent>().notNull().default({ v: 1, items: [] } as RoutineContent),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),

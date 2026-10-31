@@ -416,8 +416,8 @@ function buildDemoRoutine(dataset: SeedExercise[]): string {
   }
 
   return `-- Rutina de ejemplo del equipo Neo
-INSERT INTO "routine" ("id", "name", "team_id", "created_by", "category", "content")
-  SELECT '${stableUuid("routine:demo")}', 'rutina de ejemplo', '${TEAM.id}', u."id", 'training', ${q(JSON.stringify(content))}::jsonb
+INSERT INTO "routine" ("id", "name", "team_id", "created_by", "category", "kind", "content")
+  SELECT '${stableUuid("routine:demo")}', 'rutina de ejemplo', '${TEAM.id}', u."id", 'training', 'main', ${q(JSON.stringify(content))}::jsonb
   FROM "user" u WHERE u."email" = ${q(COACH_EMAIL)}
   ON CONFLICT ("id") DO NOTHING;`
 }

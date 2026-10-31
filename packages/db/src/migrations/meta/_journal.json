@@ -50,6 +50,13 @@
       "when": 1793242265431,
       "tag": "0006_swift_carnage",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793481683870,
+      "tag": "0007_real_titanium_man",
+      "breakpoints": true
     }
   ]
 }

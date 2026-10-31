@@ -62,6 +62,8 @@ Plantilla de entrenamiento creada por un entrenador. **Nunca se modifica desde u
 | `name` | text | Nombre de la rutina |
 | `team_id` | uuid FK → team | cascade delete |
 | `created_by` | text FK → user | |
+| `category` | enum | `evaluation` \| `training`. Su significado no cambia |
+| `kind` | enum `routine_kind` nullable | Tipo fijo: `warmup` \| `main` \| `recovery`. Regla (aplicada en la API): `evaluation` → `null`; `training` → obligatorio (por defecto `main`). Migración 0007 rellenó las existentes con `main` |
 | `created_at` | timestamp | |
 | `updated_at` | timestamp | |
 | `archived_at` | timestamp nullable | Archivada: fuera de las listas por defecto y no se puede asignar; `null` = activa |
@@ -110,9 +112,15 @@ Ejecución real de una rutina. Independiente de la plantilla original.
 | `team_id` | uuid FK → team | cascade delete |
 | `started_by` | text FK → user | Entrenador que inició |
 | `started_at` | timestamptz | Sin restricción de horario |
+| `scheduled_date` | date nullable | Día programado; `null` = "Ahora" |
+| `kind` | enum `routine_kind` nullable | Copia del tipo de la rutina al asignar (puede sobreescribirse); `null` en evaluaciones |
+| `position` | integer NOT NULL default 0 | Orden dentro del día para un mismo atleta (por defecto warmup 0, main 1, recovery 2; en secuencias, el índice del paso; en planes, la posición del hueco). Un entrenamiento no se puede iniciar mientras haya otro del mismo día con `position` menor sin completar ni saltar |
+| `scheduled_time` | time nullable | Hora sugerida ("HH:MM" en la API), solo informativa |
 | `status` | enum | `active` \| `completed` \| `cancelled` |
 | `plan_assignment_id` | uuid FK → training_plan_assignment nullable | Sesión creada al programar un plan; `SET NULL` |
 | `plan_workout_id` | uuid FK → training_plan_workout nullable | Hueco del plan que la originó; `SET NULL` |
+
+Índice `training_session_team_date_position_idx` sobre (`team_id`, `scheduled_date`, `position`).
 
 ### `session_exercise`
 Snapshot de `routine_exercise` al iniciar la sesión. Puede recibir ejercicios extra añadidos en ejecución.
