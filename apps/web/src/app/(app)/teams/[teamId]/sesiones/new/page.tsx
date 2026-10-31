@@ -7,14 +7,21 @@ import { usePublishTourSignal } from "@/lib/tour-signals"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
+import { KIND_LABEL, KIND_ORDER, KindBadge, ROUTINE_KINDS, type RoutineKind } from "@/lib/routine-kinds"
 import { ZoneStripe } from "@/components/zone-profile"
-import { ChevronLeftIcon, InfoIcon, Link2Icon, SearchIcon, XIcon } from "lucide-react"
+import { ArrowDownIcon, ArrowUpIcon, ChevronLeftIcon, InfoIcon, PlusIcon, Link2Icon, SearchIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { use, useState, Suspense, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import type { RoutineContent } from "@atleta/db/schema"
 
 const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
+// Mismo criterio que el servidor: "hoy" en UTC
+const todayUtc = new Date().toISOString().split("T")[0]
+const MAX_STEPS = 10
+type Step = { key: string; routineId: string; kind: RoutineKind | null; time: string }
+let stepSeq = 0
+const newStep = (routineId: string): Step => ({ key: `s${++stepSeq}`, routineId, kind: null, time: "" })
 const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0]
 
 // ─── Template preview bottom sheet ───────────────────────────────────────────
@@ -189,7 +196,19 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const hasShareLinks = useFeature("share_links")
   const hasScheduling = useFeature("scheduled_sessions")
 
-  const [selectedRoutineId, setSelectedRoutineId] = useState<string | null>(preselectedId)
+  // Secuencia del día: el primer paso es el entrenamiento elegido arriba
+  const [steps, setSteps] = useState<Step[]>(() => (preselectedId ? [newStep(preselectedId)] : []))
+  const [addingStep, setAddingStep] = useState(false)
+  const selectedRoutineId: string | null = steps[0]?.routineId ?? null
+  // Elegir un entrenamiento reemplaza el primer paso; una evaluación no admite más pasos
+  function setSelectedRoutineId(id: string | null) {
+    setSteps((prev) => {
+      if (id === null) return []
+      const r = routines?.find((x) => x.id === id)
+      if (r && r.category !== "training") return [newStep(id)]
+      return prev.length > 0 ? [{ ...prev[0]!, routineId: id, kind: null }, ...prev.slice(1)] : [newStep(id)]
+    })
+  }
   // Con el entrenamiento preelegido se oculta el paso de elegirlo, salvo que se pida cambiarlo
   const [changingRoutine, setChangingRoutine] = useState(false)
   const [selectedAthleteIds, setSelectedAthleteIds] = useState<Set<string>>(new Set())
@@ -204,6 +223,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const { data: routines } = trpc.routines.list.useQuery({ teamId })
   const { data: members }  = trpc.teams.members.useQuery({ teamId })
   const createSession = trpc.sessions.create.useMutation()
+  const createSequence = trpc.sessions.createSequence.useMutation()
   // Genera el enlace (o reutiliza el vigente); la navegación se decide en
   // handleSubmit una vez que todo lo que se pidió terminó de crearse.
   const createLink = trpc.share.createLink.useMutation()
@@ -225,8 +245,42 @@ function NewSessionForm({ teamId }: { teamId: string }) {
 
   // Un routineId inválido o de otro equipo no debe quedar seleccionado
   useEffect(() => {
-    if (routines && selectedRoutineId && !selectedRoutine) setSelectedRoutineId(null)
-  }, [routines, selectedRoutineId, selectedRoutine])
+    if (!routines) return
+    setSteps((prev) => (prev.every((st) => routines.some((r) => r.id === st.routineId)) ? prev : prev.filter((st) => routines.some((r) => r.id === st.routineId))))
+  }, [routines])
+
+  const isEvaluationStep = selectedRoutine?.category === "evaluation"
+  const isSequence = steps.length >= 2
+  const kindOf = (st: Step): RoutineKind => st.kind ?? ((routines?.find((r) => r.id === st.routineId)?.kind as RoutineKind | null) ?? "main")
+  const trainingRoutines = (routines ?? []).filter((r) => r.category === "training")
+
+  // Al agregar un paso se coloca según el orden calentamiento, principal, recuperación
+  function addStep(routineId: string) {
+    const st = newStep(routineId)
+    const order = KIND_ORDER[kindOf(st)]
+    setSteps((prev) => {
+      if (prev.length >= MAX_STEPS) return prev
+      let at = prev.length
+      while (at > 0 && KIND_ORDER[kindOf(prev[at - 1]!)] > order) at--
+      return [...prev.slice(0, at), st, ...prev.slice(at)]
+    })
+    setAddingStep(false)
+  }
+  function updateStep(key: string, patch: Partial<Step>) {
+    setSteps((prev) => prev.map((st) => (st.key === key ? { ...st, ...patch } : st)))
+  }
+  function moveStep(index: number, delta: number) {
+    setSteps((prev) => {
+      const to = index + delta
+      if (to < 0 || to >= prev.length) return prev
+      const next = [...prev]
+      ;[next[index], next[to]] = [next[to]!, next[index]!]
+      return next
+    })
+  }
+  function removeStep(key: string) {
+    setSteps((prev) => (prev.length <= 1 ? prev : prev.filter((st) => st.key !== key)))
+  }
 
   function toggleAthlete(id: string) {
     setSelectedAthleteIds((prev) => {
@@ -250,6 +304,17 @@ function NewSessionForm({ teamId }: { teamId: string }) {
     e.preventDefault()
     if (!selectedRoutineId || !canSubmit) return
     try {
+      if (isSequence) {
+        await createSequence.mutateAsync({
+          teamId,
+          athleteIds: Array.from(selectedAthleteIds),
+          dates: [hasScheduling && startMode === "scheduled" ? scheduledDate : todayUtc],
+          steps: steps.map((st) => ({ routineId: st.routineId, kind: kindOf(st), ...(st.time ? { scheduledTime: st.time } : {}) })),
+        })
+        router.push(`/teams/${teamId}/rutinas`)
+        return
+      }
+      const first = steps[0]!
       const [session] = await Promise.all([
         selectedAthleteIds.size > 0
           ? createSession.mutateAsync({
@@ -257,6 +322,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               teamId,
               athleteIds: Array.from(selectedAthleteIds),
               ...(hasScheduling && startMode === "scheduled" ? { scheduledDate } : {}),
+              ...(isEvaluationStep ? {} : { kind: kindOf(first), ...(first.time ? { scheduledTime: first.time } : {}) }),
             })
           : Promise.resolve(null),
         guestSelected ? createLink.mutateAsync({ routineId: selectedRoutineId }) : Promise.resolve(null),
@@ -274,12 +340,14 @@ function NewSessionForm({ teamId }: { teamId: string }) {
     }
   }
 
-  const isSubmitting = createSession.isPending || createLink.isPending
-  const submitError = createSession.error?.message ?? createLink.error?.message ?? null
+  const isSubmitting = createSession.isPending || createLink.isPending || createSequence.isPending
+  const submitError = createSession.error?.message ?? createLink.error?.message ?? createSequence.error?.message ?? null
 
   // Una rutina de evaluación la registra el coach en persona, así que no se comparte
   const guestBlockedReason = !selectedRoutine
     ? "Elige primero un entrenamiento."
+    : isSequence
+      ? "El enlace de invitado solo funciona con un entrenamiento; quita los demás pasos."
     : selectedRoutine.category !== "training"
       ? "Solo puedes compartir entrenamientos, no evaluaciones: las evaluaciones las registras tú en persona."
       : (selectedRoutine.content as RoutineContent).items.length === 0
@@ -289,6 +357,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const canSubmit =
     !!selectedRoutineId &&
     (selectedAthleteIds.size > 0 || guestSelected) &&
+    (!isSequence || selectedAthleteIds.size > 0) &&
     (!guestSelected || guestBlockedReason === null) &&
     !isSubmitting
 
@@ -439,6 +508,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
                     >
                       {sc(r.name)}
                     </button>
+                    <KindBadge kind={r.kind} category={r.category} />
 
                     {/* Info button */}
                     <button
@@ -488,6 +558,107 @@ function NewSessionForm({ teamId }: { teamId: string }) {
           )}
           </>}
         </section>
+
+        {/* ── Secuencia del día ── */}
+        {steps.length > 0 && selectedRoutine && (
+          <section className="space-y-2" aria-labelledby="seq-title">
+            <h2 id="seq-title" className="text-xs font-semibold text-muted-foreground uppercase tracking-widest">
+              {isEvaluationStep ? "Evaluación" : steps.length > 1 ? "Secuencia del día" : "Tipo y hora"}
+            </h2>
+            {!isEvaluationStep && (
+              <ol className="space-y-2">
+                {steps.map((st, i) => {
+                  const r = routines?.find((x) => x.id === st.routineId)
+                  const kind = kindOf(st)
+                  return (
+                    <li key={st.key} className="border border-border rounded-xl bg-card/50 p-3 space-y-2">
+                      <div className="flex items-center gap-2">
+                        {steps.length > 1 && (
+                          <span className="w-5 h-5 shrink-0 rounded-full bg-muted text-[11px] font-semibold flex items-center justify-center" aria-hidden="true">{i + 1}</span>
+                        )}
+                        <span className="flex-1 min-w-0 text-sm font-medium truncate">{r ? sc(r.name) : "—"}</span>
+                        {steps.length > 1 && (
+                          <div className="flex items-center shrink-0">
+                            <button type="button" onClick={() => moveStep(i, -1)} disabled={i === 0} aria-label={`Subir el paso ${i + 1}`}
+                              className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                              <ArrowUpIcon className="w-3.5 h-3.5" />
+                            </button>
+                            <button type="button" onClick={() => moveStep(i, 1)} disabled={i === steps.length - 1} aria-label={`Bajar el paso ${i + 1}`}
+                              className="p-1.5 text-muted-foreground hover:text-foreground disabled:opacity-30 cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                              <ArrowDownIcon className="w-3.5 h-3.5" />
+                            </button>
+                            <button type="button" onClick={() => removeStep(st.key)} aria-label={`Quitar el paso ${i + 1}`}
+                              className="p-1.5 text-muted-foreground hover:text-destructive cursor-pointer rounded focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
+                              <XIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-2">
+                        <div className="flex-1 min-w-0">
+                          <label htmlFor={`kind-${st.key}`} className="block text-[11px] text-muted-foreground mb-1">Tipo</label>
+                          <select
+                            id={`kind-${st.key}`}
+                            value={kind}
+                            onChange={(e) => updateStep(st.key, { kind: e.target.value as RoutineKind })}
+                            className="w-full border border-border rounded-lg px-2.5 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          >
+                            {ROUTINE_KINDS.map((k) => <option key={k} value={k}>{KIND_LABEL[k]}</option>)}
+                          </select>
+                        </div>
+                        <div className="w-32 shrink-0">
+                          <label htmlFor={`time-${st.key}`} className="block text-[11px] text-muted-foreground mb-1">Hora sugerida</label>
+                          <input
+                            id={`time-${st.key}`}
+                            type="time"
+                            value={st.time}
+                            onChange={(e) => updateStep(st.key, { time: e.target.value })}
+                            className="w-full border border-border rounded-lg px-2.5 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                          />
+                        </div>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ol>
+            )}
+
+            {!isEvaluationStep && (addingStep ? (
+              <div className="flex gap-2 items-end">
+                <div className="flex-1 min-w-0">
+                  <label htmlFor="add-step" className="block text-[11px] text-muted-foreground mb-1">Entrenamiento del nuevo paso</label>
+                  <select
+                    id="add-step"
+                    defaultValue=""
+                    onChange={(e) => e.target.value && addStep(e.target.value)}
+                    className="w-full border border-border rounded-lg px-2.5 py-2 text-sm bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                  >
+                    <option value="" disabled>Elegir…</option>
+                    {trainingRoutines.map((r) => (
+                      <option key={r.id} value={r.id}>{sc(r.name)}{r.kind ? ` · ${KIND_LABEL[r.kind as RoutineKind]}` : ""}</option>
+                    ))}
+                  </select>
+                </div>
+                <button type="button" onClick={() => setAddingStep(false)} className="text-xs px-3 py-2 border border-border rounded-lg text-muted-foreground hover:text-foreground cursor-pointer">
+                  Cancelar
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setAddingStep(true)}
+                disabled={steps.length >= MAX_STEPS}
+                className="flex items-center gap-1.5 text-xs font-medium text-primary hover:underline disabled:opacity-40 cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+              >
+                <PlusIcon className="w-3.5 h-3.5" />
+                Agregar paso
+              </button>
+            ))}
+            {isEvaluationStep && (
+              <p className="text-xs text-muted-foreground">Las evaluaciones no pueden ir en una secuencia de varios pasos.</p>
+            )}
+          </section>
+        )}
 
         {/* ── Atletas ── */}
         <section className="space-y-2">
@@ -614,6 +785,8 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               ? "Asignando..."
               : guestSelected && selectedAthleteIds.size === 0
               ? "Compartir enlace"
+              : isSequence
+              ? "Asignar secuencia"
               : hasScheduling && startMode === "scheduled"
               ? "Asignar"
               : "Asignar y comenzar"}

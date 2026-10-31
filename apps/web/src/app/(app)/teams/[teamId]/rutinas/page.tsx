@@ -4,6 +4,7 @@ import { EntrenamientosHeader } from "@/components/entrenamientos-header"
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import type { ZoneProfile } from "@/lib/body-zones"
 import { useFeature } from "@/lib/features"
+import { compareByPosition, KindBadge } from "@/lib/routine-kinds"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { CheckIcon, ChevronDownIcon, Link2Icon, PlusIcon, SearchIcon, UserIcon, XIcon } from "lucide-react"
@@ -26,6 +27,9 @@ type SessionItem = {
   scheduledDate: string | null
   routineName: string
   routineCategory?: string | null
+  kind?: string | null
+  position?: number | null
+  scheduledTime?: string | null
   zoneProfile?: ZoneProfile
   // Solo llega para el entrenador
   athletes?: { userId: string; name: string | null; status: "scheduled" | "active" | "completed" }[]
@@ -103,11 +107,14 @@ function SessionCard({ teamId, session }: { teamId: string; session: SessionItem
         {/* El estado ya lo dice la etiqueta de la derecha: el borde muestra las zonas que se trabajan */}
         <ZoneStripe profile={session.zoneProfile} className="min-h-8" />
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
-            {session.routineName ? sc(session.routineName) : "—"}
-          </p>
+          <div className="flex items-center gap-2 min-w-0">
+            <p className="font-medium text-sm text-foreground group-hover:text-primary transition-colors truncate">
+              {session.routineName ? sc(session.routineName) : "—"}
+            </p>
+            <KindBadge kind={session.kind} category={session.routineCategory} />
+          </div>
           <p className="text-xs text-muted-foreground mt-0.5 truncate">
-            {athleteNames ? `${athleteNames} · ${dateLabel}` : dateLabel}
+            {[athleteNames, dateLabel, session.scheduledTime ? `${session.scheduledTime} h` : null].filter(Boolean).join(" · ")}
           </p>
           <ZoneLegend profile={session.zoneProfile} className="mt-1" />
         </div>
@@ -325,12 +332,15 @@ function SesionesContent({ teamId }: { teamId: string }) {
     ...(trainingSessions ?? []).map((s) => ({ ...s, routineCategory: "training" as const })),
   ]
 
-  const scheduled = allSessions.filter((s) => s.status === "scheduled")
-  const active     = allSessions.filter((s) => s.status === "active")
+  // Las del mismo día van en el orden de la secuencia (position), luego por hora sugerida
+  const byDayAndPosition = (a: SessionItem, b: SessionItem) =>
+    (a.scheduledDate ?? "").localeCompare(b.scheduledDate ?? "") || compareByPosition(a, b)
+  const scheduled = allSessions.filter((s) => s.status === "scheduled").sort(byDayAndPosition)
+  const active     = allSessions.filter((s) => s.status === "active").sort(byDayAndPosition)
   const history    = allSessions
     .filter((s) => s.status !== "active" && s.status !== "scheduled")
     .filter((s) => histFilter === "all" || s.routineCategory === histFilter)
-    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime())
+    .sort((a, b) => new Date(b.startedAt).getTime() - new Date(a.startedAt).getTime() || compareByPosition(a, b))
 
   return (
     <div className="max-w-2xl mx-auto px-4 sm:px-6 py-6 sm:py-8 space-y-8">

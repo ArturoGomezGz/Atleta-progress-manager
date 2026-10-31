@@ -7,6 +7,7 @@ import { PageTransition, useRevealAfterEnter, type SlideDirection } from "@/comp
 import { ZoneLegend, ZoneStripe } from "@/components/zone-profile"
 import { consumeBackNavigation } from "@/lib/page-transition"
 import { useFeature } from "@/lib/features"
+import { KIND_LABEL, KindBadge, ROUTINE_KINDS, type RoutineKind } from "@/lib/routine-kinds"
 import { getRoutineTypeConfig } from "@/lib/routine-types"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -15,8 +16,7 @@ import Link from "next/link"
 import { use, useLayoutEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 
-type Category = "evaluation" | "training"
-type Filter = "all" | Category
+type Filter = "all" | RoutineKind | "evaluation"
 
 const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 
@@ -43,7 +43,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
   const duplicateRoutine = trpc.routines.duplicate.useMutation({ onSuccess: () => refetch() })
 
   const filtered = (routines ?? []).filter((r) => {
-    if (filter !== "all" && r.category !== filter) return false
+    if (filter === "evaluation" ? r.category !== "evaluation" : filter !== "all" && r.kind !== filter) return false
     if (search && !r.name.toLowerCase().includes(search.toLowerCase())) return false
     return true
   })
@@ -85,20 +85,22 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
             className="w-full pl-8 pr-3 py-2 text-sm border border-border rounded-lg bg-background focus:outline-none focus:ring-1 focus:ring-primary text-foreground placeholder:text-muted-foreground"
           />
         </div>
-        {hasEvaluation && <div className="flex gap-1">
-          {(["all", "training", "evaluation"] as Filter[]).map((f) => (
+        <div className="flex gap-1 overflow-x-auto -mx-1 px-1" role="group" aria-label="Filtrar por tipo">
+          {(["all", ...ROUTINE_KINDS, ...(hasEvaluation ? ["evaluation"] : [])] as Filter[]).map((f) => (
             <button
               key={f}
+              type="button"
               onClick={() => setFilter(f)}
+              aria-pressed={filter === f}
               className={cn(
-                "px-3 py-2 text-xs rounded-lg border transition-colors cursor-pointer font-medium whitespace-nowrap",
+                "px-3 py-2 text-xs rounded-lg border transition-colors cursor-pointer font-medium whitespace-nowrap focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
                 filter === f ? "border-primary bg-primary/10 text-primary" : "border-border text-muted-foreground hover:text-foreground",
               )}
             >
-              {f === "all" ? "Todas" : f === "training" ? "Entrenamiento" : "Evaluación"}
+              {f === "all" ? "Todas" : f === "evaluation" ? "Evaluaciones" : KIND_LABEL[f]}
             </button>
           ))}
-        </div>}
+        </div>
       </div>
 
       {/* List */}
@@ -133,7 +135,10 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
                 <Link href={`/teams/${teamId}/plantillas/${r.id}`} className="flex-1 flex items-center gap-3 pl-3 pr-2 py-3.5 min-w-0">
                   <Icon className={cn("w-4 h-4 shrink-0", cfg.text)} />
                   <span className="flex-1 min-w-0">
-                    <span className="block font-medium text-sm line-clamp-2 break-words">{sc(r.name)}</span>
+                    <span className="flex items-start gap-2">
+                      <span className="flex-1 min-w-0 font-medium text-sm line-clamp-2 break-words">{sc(r.name)}</span>
+                      <KindBadge kind={r.kind} category={r.category} className="mt-0.5" />
+                    </span>
                     <ZoneLegend profile={r.zoneProfile} className="mt-0.5" />
                   </span>
                   <span className="text-xs text-muted-foreground shrink-0 hidden sm:block">

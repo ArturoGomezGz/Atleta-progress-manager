@@ -3,6 +3,7 @@
 import { PageTransition } from "@/components/page-transition"
 import { useFeature } from "@/lib/features"
 import { markBackNavigation } from "@/lib/page-transition"
+import { KindSelector, type RoutineKind } from "@/lib/routine-kinds"
 import { getRoutineTypeConfig, type RoutineCategory } from "@/lib/routine-types"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
@@ -16,6 +17,7 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
 
   const [name, setName]         = useState("")
   const [category, setCategory] = useState<RoutineCategory>("training")
+  const [kind, setKind]     = useState<RoutineKind>("main")
   const hasEvaluation = useFeature("evaluation")
 
   const createRoutine = trpc.routines.create.useMutation({
@@ -30,7 +32,8 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim()) return
-    createRoutine.mutate({ teamId, name: name.trim().toLowerCase(), category: hasEvaluation ? category : "training" })
+    const cat = hasEvaluation ? category : "training"
+    createRoutine.mutate({ teamId, name: name.trim().toLowerCase(), category: cat, ...(cat === "training" ? { kind } : {}) })
   }
 
   return (
@@ -90,6 +93,13 @@ export default function NuevaPlantillaPage({ params }: { params: Promise<{ teamI
               })}
             </div>
           </div>}
+
+          {(!hasEvaluation || category === "training") && (
+            <div className="space-y-1.5">
+              <p className="text-sm font-semibold">Momento del día</p>
+              <KindSelector value={kind} onChange={setKind} label="Momento del día" />
+            </div>
+          )}
 
           <div className="flex gap-2 justify-end pt-1">
             <button

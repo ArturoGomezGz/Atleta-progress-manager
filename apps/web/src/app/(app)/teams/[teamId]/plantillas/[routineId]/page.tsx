@@ -5,6 +5,7 @@ import { AiRoutineEditor } from "@/components/ai-routine-editor"
 import { ExercisePicker, type PickerExercise } from "@/components/exercise-picker"
 import { setsSummary, type ItemPreview } from "@/lib/ai-routine-diff"
 import { useFeature } from "@/lib/features"
+import { KindSelector, type RoutineKind } from "@/lib/routine-kinds"
 import { usePublishTourSignal } from "@/lib/tour-signals"
 import { PageTransition, useRevealAfterEnter } from "@/components/page-transition"
 import { YouTubePlayer, YouTubeThumb } from "@/components/youtube-player"
@@ -529,6 +530,15 @@ export default function RoutinePage({ params }: { params: Promise<{ teamId: stri
           />
           )}
         </div>
+        {showContent && routineData && routineData.category === "training" && (
+          <div className="pt-1.5 pb-0.5">
+            <KindSelector
+              value={(routineData.kind ?? "main") as RoutineKind}
+              disabled={renameRoutine.isPending}
+              onChange={(k) => { if (k !== routineData.kind) renameRoutine.mutate({ id: routineId, kind: k }) }}
+            />
+          </div>
+        )}
         {/* Reparto de la rutina por zona corporal, siempre visible mientras se arma */}
         {showContent && zoneProfile.totalSets > 0 && (
           <div className="pt-1 pb-0.5">

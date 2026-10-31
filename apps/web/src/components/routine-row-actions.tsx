@@ -266,3 +266,75 @@ export function ConfirmDeleteDialog({
     document.body,
   )
 }
+
+// Diálogo modal de confirmación genérico (mismo patrón que ConfirmDeleteDialog)
+export function ConfirmDialog({
+  title,
+  description,
+  confirmLabel,
+  pendingLabel,
+  pending,
+  error,
+  onCancel,
+  onConfirm,
+}: {
+  title: string
+  description: ReactNode
+  confirmLabel: string
+  pendingLabel: string
+  pending: boolean
+  error?: string
+  onCancel: () => void
+  onConfirm: () => void
+}) {
+  const [visible, setVisible] = useState(false)
+
+  useEffect(() => {
+    const raf = requestAnimationFrame(() => setVisible(true))
+    const onKey = (e: KeyboardEvent) => { if (e.key === "Escape" && !pending) onCancel() }
+    window.addEventListener("keydown", onKey)
+    const prev = document.body.style.overflow
+    document.body.style.overflow = "hidden"
+    return () => {
+      cancelAnimationFrame(raf)
+      window.removeEventListener("keydown", onKey)
+      document.body.style.overflow = prev
+    }
+  }, [onCancel, pending])
+
+  return createPortal(
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4" role="alertdialog" aria-modal="true" aria-labelledby="confirm-dialog-title">
+      <div className={cn("absolute inset-0 bg-black/60 transition-opacity duration-150", visible ? "opacity-100" : "opacity-0")} />
+      <div
+        className={cn(
+          "relative w-full max-w-sm bg-popover border border-border rounded-2xl p-5 shadow-xl transition-all duration-150",
+          visible ? "opacity-100 scale-100" : "opacity-0 scale-95",
+        )}
+      >
+        <h2 id="confirm-dialog-title" className="text-base font-semibold">{title}</h2>
+        <div className="mt-1.5 text-sm text-muted-foreground break-words">{description}</div>
+        {error && <p className="mt-2 text-sm text-destructive">{error}</p>}
+        <div className="mt-5 grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={pending}
+            autoFocus
+            className="py-2.5 text-sm font-medium border border-border rounded-xl hover:bg-muted transition-colors cursor-pointer disabled:opacity-50"
+          >
+            Cancelar
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={pending}
+            className="py-2.5 text-sm font-medium bg-primary text-primary-foreground rounded-xl hover:bg-primary/90 transition-colors cursor-pointer disabled:opacity-50"
+          >
+            {pending ? pendingLabel : confirmLabel}
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body,
+  )
+}
