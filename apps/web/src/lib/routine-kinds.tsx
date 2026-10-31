@@ -16,9 +16,6 @@ const KIND_STYLE: Record<RoutineKind, string> = {
   recovery: "bg-emerald-500/10 text-emerald-400 border-emerald-500/25",
 }
 
-/** Orden por defecto dentro del día (igual que el backend). */
-export const KIND_ORDER: Record<RoutineKind, number> = { warmup: 0, main: 1, recovery: 2 }
-
 /** Etiqueta de tipo; las evaluaciones (kind null) se muestran como "Evaluación". */
 export function kindLabel(kind: string | null | undefined, category?: string | null): string | null {
   if (category === "evaluation") return "Evaluación"

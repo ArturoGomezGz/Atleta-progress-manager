@@ -74,7 +74,7 @@ describe("Tipos de rutina y secuencias", { skip: integrationSkip }, () => {
     assert.ok(viaMcp.routines.every((r) => r.kind === "warmup") && viaMcp.routines.some((r) => r.id === warmup))
   })
 
-  it("assign por tipo: position por defecto warmup 0, main 1, recovery 2; override de kind/position/hora", async () => {
+  it("assign sin insertIndex: cada una va al final del día (0, 1, ...); override de kind/position/hora", async () => {
     const date = utcDate(40)
     const [w] = await coach().sessions.createMany({ routineId: warmup, teamId: teamId(), athleteIds: [fx.users.athleteA.id], dates: [date] })
     const [m] = await coach().sessions.createMany({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id], dates: [date], scheduledTime: "18:30" })
@@ -158,7 +158,7 @@ describe("Tipos de rutina y secuencias", { skip: integrationSkip }, () => {
     const locked = (await athlete().sessions.myPending()).find((p) => p.id === id)!
     assert.deepEqual([locked.locked, locked.lockReason], [true, "FUTURE"])
     const inList = (await athlete().sessions.myList({ teamId: teamId() })).find((p) => p.id === id)!
-    assert.deepEqual([inList.locked, inList.lockReason, inList.position], [true, "FUTURE", 1])
+    assert.deepEqual([inList.locked, inList.lockReason, inList.position], [true, "FUTURE", 0])
 
     // Usuario en una zona horaria adelantada: ya es "mañana" para él
     await athlete().sessions.activate({ id, localDate: utcDate(1) })
@@ -178,8 +178,9 @@ describe("Tipos de rutina y secuencias", { skip: integrationSkip }, () => {
   })
 
   it("skipMyStep abandona una sesión en curso y libera ANOTHER_ACTIVE", async () => {
-    const a = await coach().sessions.create({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id] })
-    const b = await coach().sessions.create({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id] })
+    // Mismo orden (position) para que solo cuente "otro en curso"
+    const a = await coach().sessions.create({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id], position: 50 })
+    const b = await coach().sessions.create({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id], position: 50 })
     await athlete().sessions.activate({ id: a.id })
     assert.equal(await refusal(athlete().sessions.activate({ id: b.id })), "ANOTHER_ACTIVE")
     assert.equal((await athlete().sessions.skipMyStep({ sessionId: a.id })).status, "cancelled")
@@ -202,7 +203,7 @@ describe("Tipos de rutina y secuencias", { skip: integrationSkip }, () => {
     const date = utcDate(10)
     await coach().sessions.createMany({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id], dates: [date], position: 5, scheduledTime: "20:00" })
     await coach().sessions.createMany({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id], dates: [date], position: 5, scheduledTime: "08:00" })
-    await coach().sessions.createMany({ routineId: warmup, teamId: teamId(), athleteIds: [fx.users.athleteA.id], dates: [date] })
+    await coach().sessions.createMany({ routineId: warmup, teamId: teamId(), athleteIds: [fx.users.athleteA.id], dates: [date], position: 0 })
     const now = await coach().sessions.create({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id] })
 
     const cal = await athlete().sessions.myCalendar({ from: utcDate(0), to: utcDate(12) })
@@ -230,8 +231,8 @@ describe("Tipos de rutina y secuencias", { skip: integrationSkip }, () => {
     const one = await mcp.ok<{ sessions: { kind: string; position: number; scheduledTime: string | null }[] }>("assign_routine", {
       routineId: recovery, athleteIds: [fx.users.athleteA.id], dates: [utcDate(31)], scheduledTime: "21:00",
     })
-    assert.deepEqual([one.sessions[0]!.kind, one.sessions[0]!.position, one.sessions[0]!.scheduledTime], ["recovery", 2, "21:00"])
+    assert.deepEqual([one.sessions[0]!.kind, one.sessions[0]!.position, one.sessions[0]!.scheduledTime], ["recovery", 0, "21:00"])
     const listed = await mcp.ok<{ assignments: { kind: string | null; position: number }[] }>("list_assignments", { from: utcDate(31), to: utcDate(31) })
-    assert.deepEqual(listed.assignments.map((a) => [a.kind, a.position]), [["recovery", 2]])
+    assert.deepEqual(listed.assignments.map((a) => [a.kind, a.position]), [["recovery", 0]])
   })
 })

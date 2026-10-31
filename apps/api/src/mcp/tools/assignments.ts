@@ -35,7 +35,7 @@ export function registerAssignmentTools(server: McpServer, ctx: McpToolContext):
     name: "assign_routine",
     title: "Asignar rutina",
     description:
-      `Asigna una rutina a atletas del equipo de la rutina (athleteId de list_athletes, máx. ${MAX_ASSIGN_ATHLETES}). Sin dates queda disponible ahora; con dates crea una sesión por fecha (máx. ${MAX_ASSIGN_DATES}): las fechas futuras quedan programadas (requieren la función de sesiones programadas) y las de hoy o antes, activas. "Hoy" es UTC (ver whoami). Las rutinas archivadas no se pueden asignar. Opcionales para entrenamientos (no evaluaciones): kind (por defecto el de la rutina), position (orden dentro del día; por defecto warmup 0, main 1, recovery 2) y scheduledTime. El atleta debe completar (o saltar) los pasos anteriores del día antes de iniciar el siguiente; para encadenar varios entrenamientos usa assign_sequence. Confirma con el usuario atletas y fechas antes de asignar. Máximo 20 asignaciones por hora.`,
+      `Asigna una rutina a atletas del equipo de la rutina (athleteId de list_athletes, máx. ${MAX_ASSIGN_ATHLETES}). Sin dates queda disponible ahora; con dates crea una sesión por fecha (máx. ${MAX_ASSIGN_DATES}): las fechas futuras quedan programadas (requieren la función de sesiones programadas) y las de hoy o antes, activas. "Hoy" es UTC (ver whoami). Las rutinas archivadas no se pueden asignar. Opcionales para entrenamientos (no evaluaciones): kind (por defecto el de la rutina), insertIndex y scheduledTime. Orden dentro del día: por defecto la rutina va AL FINAL de lo que esos atletas ya tienen ese día (la primera queda en 0); con insertIndex (0 = al inicio, n = al final, siendo n el número de entrenamientos que ya tienen ese día) la insertas en ese lugar y las demás se reordenan; no se puede insertar antes de una rutina ya completada o en curso (BAD_REQUEST). Con varias dates, insertIndex aplica a cada fecha. position queda como orden absoluto avanzado (no combinar con insertIndex). El atleta debe completar (o saltar) los pasos anteriores del día antes de iniciar el siguiente; para encadenar varios entrenamientos de una vez usa assign_sequence. Confirma con el usuario atletas y fechas antes de asignar. Máximo 20 asignaciones por hora.`,
     scope: "atleta:write",
     annotations: { destructiveHint: false, idempotentHint: false },
     input: {
@@ -43,7 +43,8 @@ export function registerAssignmentTools(server: McpServer, ctx: McpToolContext):
       athleteIds: z.array(z.string().min(1)).min(1).max(MAX_ASSIGN_ATHLETES),
       dates: z.array(dateInput).min(1).max(MAX_ASSIGN_DATES).optional(),
       kind: kindInput.optional(),
-      position: z.number().int().min(0).max(99).optional().describe("Orden dentro del día (0 = primero)"),
+      insertIndex: z.number().int().min(0).max(99).optional().describe("Lugar en la lista de entrenamientos que esos atletas ya tienen ese día: 0 = al inicio, n = al final (por defecto). Las demás se reordenan."),
+      position: z.number().int().min(0).max(99).optional().describe("Avanzado: orden absoluto dentro del día (0 = primero). Prefiere insertIndex"),
       scheduledTime: timeInput.optional(),
     },
     async run(args, ctx) {
@@ -51,7 +52,7 @@ export function registerAssignmentTools(server: McpServer, ctx: McpToolContext):
       const routine = await ctx.caller.routines.get({ id: args.routineId })
       const athleteIds = [...new Set(args.athleteIds)]
       checkScheduleLimit(ctx)
-      const extra = { kind: args.kind, position: args.position, scheduledTime: args.scheduledTime }
+      const extra = { kind: args.kind, position: args.position, insertIndex: args.insertIndex, scheduledTime: args.scheduledTime }
       const sessions = args.dates
         ? await ctx.caller.sessions.createMany({ routineId: routine.id, teamId: routine.teamId, athleteIds, dates: [...new Set(args.dates)], ...extra })
         : [await ctx.caller.sessions.create({ routineId: routine.id, teamId: routine.teamId, athleteIds, ...extra })]

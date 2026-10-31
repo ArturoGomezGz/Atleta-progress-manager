@@ -8,13 +8,14 @@
 import { db } from "@atleta/db/client"
 import { athleteSession, routine, sessionExercise, sessionSetTarget, teamMember, trainingSession } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, eq, or } from "drizzle-orm"
+import { and, eq, or, sql } from "drizzle-orm"
 import { flattenContent, targetsForExercise } from "./routine-content"
-import { defaultPositionForKind, toHHMM, type RoutineKind } from "./routine-kind"
+import { loadDayPlan, openSlot } from "./day-plan"
+import { toHHMM, type RoutineKind } from "./routine-kind"
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 type Reader = Pick<Tx, "select">
-type Writer = Pick<Tx, "insert">
+type Writer = Pick<Tx, "insert" | "select" | "update" | "execute">
 
 /** "Hoy" en UTC (YYYY-MM-DD), el mismo criterio que usa sessions.create desde siempre. */
 export function todayUtc(now: Date = new Date()): string {
@@ -63,10 +64,15 @@ export type AssignSessionsInput = {
   today: string
   /** Tipo de la sesión; por defecto el de la rutina (null en evaluaciones). */
   kind?: RoutineKind
-  /** Orden dentro del día (mismo índice que `dates`); por defecto el orden del tipo. */
+  /** Orden dentro del día (mismo índice que `dates`). Sin él (ni `position` ni `insertIndex`): al final del día. */
   positions?: number[]
   /** Un solo orden para todas las fechas (si no hay `positions`). */
   position?: number
+  /**
+   * Lugar en la lista del día (0..n, ver `loadDayPlan`): renumera las demás sesiones del día dejando el hueco.
+   * Se evalúa por fecha. Excluyente con `position`/`positions`.
+   */
+  insertIndex?: number
   /** Hora sugerida "HH:MM", solo informativa. */
   scheduledTime?: string | null
 }
@@ -84,8 +90,11 @@ export async function createAssignedSessions(tx: Writer, a: AssignSessionsInput)
     throw new Error("positions debe tener la misma longitud que dates")
   }
   const isTraining = a.routine.category === "training"
-  if (!isTraining && (a.kind !== undefined || a.position !== undefined || a.positions !== undefined)) {
+  if (!isTraining && (a.kind !== undefined || a.position !== undefined || a.positions !== undefined || a.insertIndex !== undefined)) {
     throw new TRPCError({ code: "BAD_REQUEST", message: "Las evaluaciones no tienen tipo ni orden dentro del día" })
+  }
+  if (a.insertIndex !== undefined && (a.position !== undefined || a.positions !== undefined)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Usa insertIndex o position, no los dos" })
   }
   // Evaluación: sin tipo ni orden. Entrenamiento: el pedido, o el de la rutina, o "main".
   const kind: RoutineKind | null = isTraining ? (a.kind ?? a.routine.kind ?? "main") : null
@@ -96,7 +105,24 @@ export async function createAssignedSessions(tx: Writer, a: AssignSessionsInput)
   const athleteInitialStatus = a.routine.category === "training" ? ("scheduled" as const) : ("active" as const)
 
   const sessions: (typeof trainingSession.$inferSelect)[] = []
-  for (const [i, date] of a.dates.entries()) {
+  for (const [i, originalDate] of a.dates.entries()) {
+    let date = originalDate
+    let position = 0
+    if (isTraining) {
+      const explicit = a.positions?.[i] ?? a.position
+      if (explicit !== undefined) {
+        position = explicit
+      } else {
+        // Orden dentro del día: el pedido (insertIndex) o, por defecto, al final. Se serializa por equipo y día.
+        const day = date ?? a.today
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`${a.teamId}:${day}`}))`)
+        const plan = await loadDayPlan(tx, { teamId: a.teamId, athleteIds: a.athleteIds, date: day, today: a.today })
+        if (a.insertIndex !== undefined) position = await openSlot(tx, plan, a.insertIndex, a.today)
+        else position = plan.length === 0 ? 0 : Math.max(...plan.map((s) => s.position)) + 1
+        // "Ahora" no forma secuencia: si el día ya tiene rutinas, la nueva se fija a hoy para que el orden se respete
+        if (date === null && plan.length > 0) date = a.today
+      }
+    }
     const isScheduled = date != null && date > a.today
     const [session] = await tx
       .insert(trainingSession)
@@ -110,7 +136,7 @@ export async function createAssignedSessions(tx: Writer, a: AssignSessionsInput)
         planAssignmentId: a.planAssignmentId ?? null,
         planWorkoutId: a.planWorkoutIds?.[i] ?? null,
         kind,
-        position: isTraining ? (a.positions?.[i] ?? a.position ?? defaultPositionForKind(kind)) : 0,
+        position,
         scheduledTime: a.scheduledTime ?? null,
       })
       .returning()
