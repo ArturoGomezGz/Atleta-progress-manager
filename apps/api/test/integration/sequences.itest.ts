@@ -134,7 +134,6 @@ describe("Tipos de rutina y secuencias", { skip: integrationSkip }, () => {
     assert.equal(detail.position, 2)
 
     // Saltar el paso en curso no se puede; el que sigue pendiente sí, y deja de bloquear
-    await assert.rejects(athlete().sessions.skipMyStep({ sessionId: step2 }), /aún no iniciaste/)
     await athlete().sessions.completeMySession({ sessionId: step2 })
     const skipped = await athlete().sessions.skipMyStep({ sessionId: step3 })
     assert.equal(skipped.status, "cancelled")
@@ -174,6 +173,17 @@ describe("Tipos de rutina y secuencias", { skip: integrationSkip }, () => {
     const pending = (await athlete().sessions.myPending()).find((p) => p.id === b.id)!
     assert.equal(pending.lockReason, "ANOTHER_ACTIVE")
     await athlete().sessions.completeMySession({ sessionId: a.id })
+    await athlete().sessions.activate({ id: b.id })
+    await athlete().sessions.completeMySession({ sessionId: b.id })
+  })
+
+  it("skipMyStep abandona una sesión en curso y libera ANOTHER_ACTIVE", async () => {
+    const a = await coach().sessions.create({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id] })
+    const b = await coach().sessions.create({ routineId: main, teamId: teamId(), athleteIds: [fx.users.athleteA.id] })
+    await athlete().sessions.activate({ id: a.id })
+    assert.equal(await refusal(athlete().sessions.activate({ id: b.id })), "ANOTHER_ACTIVE")
+    assert.equal((await athlete().sessions.skipMyStep({ sessionId: a.id })).status, "cancelled")
+    await assert.rejects(athlete().sessions.skipMyStep({ sessionId: a.id }), /cancelada/)
     await athlete().sessions.activate({ id: b.id })
     await athlete().sessions.completeMySession({ sessionId: b.id })
   })

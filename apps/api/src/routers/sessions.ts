@@ -733,7 +733,7 @@ export const sessionsRouter = router({
       return updated
     }),
 
-  // El atleta salta un entrenamiento que aún no inició (su athlete_session pasa a "cancelled") para
+  // El atleta salta un entrenamiento pendiente o abandona uno en curso (su athlete_session pasa a "cancelled"; no se borran sus series) para
   // desbloquear el siguiente del día. Solo hoy o antes (FUTURE_SESSION si es futuro); no aplica a evaluaciones.
   skipMyStep: protectedProcedure
     .input(z.object({ sessionId: z.string().uuid(), localDate: localDateInput }))
@@ -752,7 +752,8 @@ export const sessionsRouter = router({
         .limit(1)
       if (!as) throw new TRPCError({ code: "FORBIDDEN" })
       if (session.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión fue cancelada" })
-      if (as.status !== "scheduled") throw new TRPCError({ code: "BAD_REQUEST", message: "Solo puedes saltar un entrenamiento que aún no iniciaste" })
+      // Se puede saltar uno pendiente o abandonar uno en curso (sus series ya registradas se conservan)
+      if (as.status !== "scheduled" && as.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Solo puedes saltar o abandonar un entrenamiento pendiente o en curso" })
       if (session.scheduledDate != null && session.scheduledDate > resolveAthleteToday(input.localDate)) throw startRefusalError("FUTURE")
 
       const [updated] = await db.update(athleteSession).set({ status: "cancelled" }).where(eq(athleteSession.id, as.id)).returning()
