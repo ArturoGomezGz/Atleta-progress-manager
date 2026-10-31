@@ -216,6 +216,9 @@ function DayStrip({ days, today, selected, byDate, onPick }: {
     <ScrollView
       ref={ref}
       horizontal
+      // Sin flexGrow: 0, un ScrollView horizontal dentro del contenido (flexGrow: 1) se estira
+      // a lo alto y empuja la leyenda y el detalle del día hacia abajo.
+      style={{ flexGrow: 0 }}
       showsHorizontalScrollIndicator={false}
       onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
       contentContainerStyle={styles.strip}
@@ -417,7 +420,7 @@ function DayDetail({ date, today, items, shake, reduceMotion, onOpen, onRefuse, 
               )
             })}
           </View>
-          <Text size={13} color={colors.mutedForeground}>{resolved} de {chain.length} {chain.length === 1 ? "bloque" : "bloques"}</Text>
+          <Text size={13} color={colors.mutedForeground} style={{ marginHorizontal: 16 }}>{resolved} de {chain.length} {chain.length === 1 ? "bloque" : "bloques"}</Text>
         </View>
       )}
 
