@@ -25,7 +25,7 @@ const addDays = (d: string, n: number) => new Date(Date.parse(`${d}T00:00:00Z`) 
 const isoWeekday = (d: string) => ((new Date(`${d}T00:00:00Z`).getUTCDay() + 6) % 7) + 1
 
 const EXPECTED_TOOLS = [
-  "add_exercise", "adjust_difficulty", "adjust_rest", "archive_routine", "assign_routine", "cancel_assignment",
+  "add_exercise", "adjust_difficulty", "adjust_rest", "archive_routine", "assign_routine", "assign_sequence", "cancel_assignment",
   "cancel_plan_assignment", "create_exercise", "create_plan", "create_routine", "duplicate_plan", "duplicate_routine",
   "edit_routine", "fetch", "find_alternatives", "get_exercises", "get_plan", "get_routine", "list_assignments", "list_athletes", "list_plans",
   "list_routines", "move_item", "remove_item", "replace_exercise", "schedule_plan", "search", "search_exercises",

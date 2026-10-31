@@ -14,13 +14,15 @@ import {
   WorkoutSummary,
   type WorkoutProgress,
 } from "@/components/workout-runner"
+import { ConfirmDialog } from "@/components/routine-row-actions"
 import { useSession } from "@/lib/auth"
+import { localDateStr, lockMessage } from "@/lib/session-lock"
 import { setSignal, usePublishTourSignal } from "@/lib/tour-signals"
 import { useFullscreenWhileMounted } from "@/lib/fullscreen-mode"
 import { trpc } from "@/lib/trpc/client"
 import { ArrowLeftIcon } from "lucide-react"
 import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
 export function AthleteSessionView({ sessionId }: { sessionId: string }) {
@@ -52,7 +54,20 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
     { enabled: !!userId && (progress?.status === "active" || progress?.status === "completed") },
   )
 
-  const activate = trpc.sessions.activate.useMutation({ onSuccess: () => refetch() })
+  const [localDate] = useState(() => localDateStr())
+  const { data: myList, refetch: refetchList } = trpc.sessions.myList.useQuery({ teamId, localDate })
+  const listed = myList?.find((s) => s.id === sessionId)
+  const lockedReason = lockMessage(listed?.lockReason, listed?.scheduledDate) ?? undefined
+  const [confirmSkip, setConfirmSkip] = useState(false)
+  const router = useRouter()
+  const skip = trpc.sessions.skipMyStep.useMutation({
+    onSuccess: () => {
+      utils.sessions.myList.invalidate()
+      utils.sessions.myPending.invalidate()
+      router.push(`/teams/${teamId}/mis-rutinas`)
+    },
+  })
+  const activate = trpc.sessions.activate.useMutation({ onSuccess: () => { refetch(); refetchList() }, onError: () => refetchList() })
   const recordSet = trpc.sessions.recordSet.useMutation()
   const completeSession = trpc.sessions.completeMySession.useMutation()
 
@@ -69,9 +84,33 @@ export function AthleteSessionView({ sessionId }: { sessionId: string }) {
       <RoutinePreview
         progress={typed}
         back={back}
-        onStart={() => activate.mutate({ id: sessionId })}
+        onStart={() => activate.mutate({ id: sessionId, localDate })}
         starting={activate.isPending}
-        error={activate.isError ? "No se pudo empezar. Inténtalo de nuevo." : undefined}
+        lockedReason={lockedReason}
+        error={activate.isError ? (activate.error.message || "No se pudo empezar. Inténtalo de nuevo.") : undefined}
+        footerExtra={listed?.routineCategory !== "evaluation" && listed?.lockReason !== "FUTURE" ? (
+          <>
+            <button
+              type="button"
+              onClick={() => setConfirmSkip(true)}
+              className="mt-3 w-full text-base text-muted-foreground hover:text-foreground underline underline-offset-4 cursor-pointer min-h-11 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+            >
+              Saltar bloque
+            </button>
+            {confirmSkip && (
+              <ConfirmDialog
+                title="¿Saltar este bloque?"
+                description="No se registrará y podrás pasar al siguiente. Esta acción no se puede deshacer."
+                confirmLabel="Saltar bloque"
+                pendingLabel="Saltando…"
+                pending={skip.isPending}
+                error={skip.isError ? skip.error.message : undefined}
+                onCancel={() => setConfirmSkip(false)}
+                onConfirm={() => skip.mutate({ sessionId, localDate })}
+              />
+            )}
+          </>
+        ) : undefined}
       />
     )
   }

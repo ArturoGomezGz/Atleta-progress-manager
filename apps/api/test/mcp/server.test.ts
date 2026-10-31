@@ -98,7 +98,7 @@ const READ_TOOLS = ["whoami", "list_athletes", "search_exercises", "get_exercise
 const WRITE_TOOLS = [
   "create_exercise", "create_routine", "update_routine", "edit_routine", "duplicate_routine", "archive_routine",
   "replace_exercise", "add_exercise", "remove_item", "move_item", "update_sets", "update_item_fields", "update_block", "adjust_difficulty", "adjust_rest",
-  "assign_routine", "cancel_assignment",
+  "assign_routine", "assign_sequence", "cancel_assignment",
 ]
 // Solo con el flag training_plans
 const PLAN_READ_TOOLS = ["list_plans", "get_plan"]

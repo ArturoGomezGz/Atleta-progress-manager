@@ -19,9 +19,12 @@ import { z } from "zod"
 import { zoneProfileFromContent } from "@atleta/db/body-zones"
 import { exerciseZones, withZoneProfiles } from "../services/body-zones"
 import { notifyWorkoutAssigned } from "../services/push"
+import { compareCalendarItems, calendarDate, MAX_CALENDAR_DAYS, type MyCalendarItem } from "../services/session-calendar"
+import { routineKindSchema, scheduledTimeSchema, toHHMM } from "../services/routine-kind"
+import { computeSessionLocks, lockForSession, startRefusalError, type LockCandidate, type SessionLockReason } from "../services/session-rules"
 import { triggerExerciseReport } from "../services/report-trigger"
 import { flattenContent } from "../services/routine-content"
-import { assertAssignableAthletes, createAssignedSessions, todayUtc } from "../services/session-assign"
+import { assertAssignableAthletes, createAssignedSessions, resolveAthleteToday, todayUtc } from "../services/session-assign"
 import { assertFeature, hasFeature } from "../lib/features"
 import { protectedProcedure, router } from "../trpc"
 import { assertAthleteInTeam, assertCoach, assertMember } from "./teams"
@@ -39,6 +42,40 @@ type FeatureUser = { id: string; email: string }
 // Límites de sessions.createMany (y de la herramienta MCP assign_routine)
 export const MAX_ASSIGN_ATHLETES = 50
 export const MAX_ASSIGN_DATES = 60
+
+// Límites de sessions.createSequence
+export const MAX_SEQUENCE_STEPS = 10
+export const MAX_SEQUENCE_SESSIONS = 120
+
+// "Hoy" del atleta: el cliente puede mandar su fecha local (ver resolveAthleteToday)
+const localDateInput = z.string().date().optional()
+const positionInput = z.number().int().min(0).max(99)
+
+type PendingCheck = {
+  sessionId: string
+  scheduledDate: string | null
+  position: number
+  category: "evaluation" | "training" | null
+  sessionStatus: "scheduled" | "active" | "completed" | "cancelled"
+  athleteStatus: "scheduled" | "active" | "completed" | "cancelled"
+}
+
+// Entrenamiento: pendiente = el atleta aún no la inicia. Evaluación: pendiente = el coach aún no la activa.
+function lockCandidate(r: PendingCheck): LockCandidate {
+  const isTraining = r.category !== "evaluation"
+  const pending = r.sessionStatus !== "cancelled" && r.athleteStatus !== "cancelled" && r.athleteStatus !== "completed" &&
+    (isTraining ? r.athleteStatus === "scheduled" : r.sessionStatus === "scheduled")
+  return { sessionId: r.sessionId, scheduledDate: r.scheduledDate, position: r.position, isTraining, pending }
+}
+
+// locked / lockReason de cada fila del atleta (no pendientes: locked false)
+async function lockFields(athleteId: string, rows: PendingCheck[], today: string) {
+  const locks = await computeSessionLocks(athleteId, rows.map(lockCandidate), today)
+  return (sessionId: string): { locked: boolean; lockReason: SessionLockReason | null } => {
+    const lockReason = locks.get(sessionId) ?? null
+    return { locked: lockReason !== null, lockReason }
+  }
+}
 
 // Rutina a asignar: debe existir, ser del equipo y no estar archivada
 async function loadAssignableRoutine(routineId: string, teamId: string) {
@@ -99,7 +136,7 @@ async function withAssignedAthletes<T extends { id: string }>(isCoach: boolean, 
 
 export const sessionsRouter = router({
   myList: protectedProcedure
-    .input(z.object({ teamId: z.string().uuid() }))
+    .input(z.object({ teamId: z.string().uuid(), localDate: localDateInput }))
     .query(async ({ ctx, input }) => {
       await assertMember(ctx.session.user.id, input.teamId)
       const athleteId = ctx.session.user.id
@@ -109,6 +146,9 @@ export const sessionsRouter = router({
           status: trainingSession.status,
           startedAt: trainingSession.startedAt,
           scheduledDate: trainingSession.scheduledDate,
+          kind: trainingSession.kind,
+          position: trainingSession.position,
+          scheduledTime: trainingSession.scheduledTime,
           routineName: routine.name,
           routineId: trainingSession.routineId,
           routineCategory: routine.category,
@@ -123,8 +163,14 @@ export const sessionsRouter = router({
 
       // Sin el flag las sesiones de evaluación quedan ocultas (no se borran)
       const visible = hasFeature(ctx.session.user, "evaluation") ? rows : rows.filter((r) => r.routineCategory !== "evaluation")
+      const lockOf = await lockFields(athleteId, visible.map((r) => ({
+        sessionId: r.id, scheduledDate: r.scheduledDate, position: r.position, category: r.routineCategory,
+        sessionStatus: r.status, athleteStatus: r.athleteSessionStatus,
+      })), resolveAthleteToday(input.localDate))
       return (await withZoneProfiles(visible)).map((row) => ({
         ...row,
+        scheduledTime: toHHMM(row.scheduledTime),
+        ...lockOf(row.id),
         // Si la sesión entera fue cancelada por el coach, tiene precedencia sobre el estado individual
         status: row.status === "cancelled" ? "cancelled" as const : row.athleteSessionStatus,
       }))
@@ -132,7 +178,7 @@ export const sessionsRouter = router({
 
   // Pendientes del atleta en todos sus equipos (app móvil): las activas y las
   // de entrenamiento programadas, con el mismo criterio que "Mis rutinas" en web.
-  myPending: protectedProcedure.query(async ({ ctx }) => {
+  myPending: protectedProcedure.input(z.object({ localDate: localDateInput }).optional()).query(async ({ ctx, input }) => {
     const athleteId = ctx.session.user.id
     const canSeeEvaluation = hasFeature(ctx.session.user, "evaluation")
     const rows = await db
@@ -144,6 +190,9 @@ export const sessionsRouter = router({
         status: athleteSession.status,
         startedAt: trainingSession.startedAt,
         scheduledDate: trainingSession.scheduledDate,
+        kind: trainingSession.kind,
+        position: trainingSession.position,
+        scheduledTime: trainingSession.scheduledTime,
         routineName: routine.name,
         routineCategory: routine.category,
       })
@@ -159,11 +208,15 @@ export const sessionsRouter = router({
       // Sin fecha primero, como en web
       .orderBy(sql`${trainingSession.scheduledDate} asc nulls first`, desc(trainingSession.startedAt))
 
-    return rows
+    const visible = rows
       .filter((r) => r.sessionStatus !== "cancelled")
       .filter((r) => r.status === "active" || r.routineCategory === "training")
       .filter((r) => canSeeEvaluation || r.routineCategory !== "evaluation")
-      .map(({ sessionStatus: _sessionStatus, ...r }) => r)
+    const lockOf = await lockFields(athleteId, visible.map((r) => ({
+      sessionId: r.id, scheduledDate: r.scheduledDate, position: r.position, category: r.routineCategory,
+      sessionStatus: r.sessionStatus, athleteStatus: r.status,
+    })), resolveAthleteToday(input?.localDate))
+    return visible.map(({ sessionStatus: _sessionStatus, ...r }) => ({ ...r, scheduledTime: toHHMM(r.scheduledTime), ...lockOf(r.id) }))
   }),
 
   // Fechas de las sesiones que el atleta completó en el último año, para el
@@ -182,6 +235,86 @@ export const sessionsRouter = router({
       .orderBy(desc(athleteSession.completedAt))
     return rows.flatMap((r) => (r.completedAt ? [r.completedAt.toISOString()] : []))
   }),
+
+  // Calendario del atleta en todos sus equipos (como myPending) para un rango de fechas (máx. 62 días):
+  // entrenamientos y evaluaciones, incluidos los completados y los saltados. Orden: fecha, position, hora sugerida.
+  // Día de una sesión sin scheduledDate ("Ahora"): hoy mientras siga pendiente; ya terminada o cancelada,
+  // el día en que se creó (ver `calendarDate`). Las que el coach canceló no salen (las que el atleta saltó sí); las evaluaciones, solo con el flag.
+  myCalendar: protectedProcedure
+    .input(z.object({ from: z.string().date(), to: z.string().date(), localDate: localDateInput }))
+    .query(async ({ ctx, input }): Promise<MyCalendarItem[]> => {
+      const span = (Date.parse(`${input.to}T00:00:00Z`) - Date.parse(`${input.from}T00:00:00Z`)) / 86_400_000
+      if (span < 0) throw new TRPCError({ code: "BAD_REQUEST", message: "La fecha inicial debe ser anterior o igual a la final" })
+      if (span > MAX_CALENDAR_DAYS) throw new TRPCError({ code: "BAD_REQUEST", message: `El rango máximo es de ${MAX_CALENDAR_DAYS} días` })
+
+      const athleteId = ctx.session.user.id
+      const today = resolveAthleteToday(input.localDate)
+      const canSeeEvaluation = hasFeature(ctx.session.user, "evaluation")
+      const createdDay = sql`(${trainingSession.startedAt} at time zone 'UTC')::date`
+      const rows = await db
+        .select({
+          sessionId: trainingSession.id,
+          teamId: trainingSession.teamId,
+          teamName: team.name,
+          sessionStatus: trainingSession.status,
+          athleteStatus: athleteSession.status,
+          completedAt: athleteSession.completedAt,
+          startedAt: trainingSession.startedAt,
+          scheduledDate: trainingSession.scheduledDate,
+          kind: trainingSession.kind,
+          position: trainingSession.position,
+          scheduledTime: trainingSession.scheduledTime,
+          routineName: routine.name,
+          category: routine.category,
+          content: trainingSession.content,
+        })
+        .from(athleteSession)
+        .innerJoin(trainingSession, eq(athleteSession.sessionId, trainingSession.id))
+        .innerJoin(team, eq(trainingSession.teamId, team.id))
+        .innerJoin(teamMember, and(eq(teamMember.teamId, trainingSession.teamId), eq(teamMember.userId, athleteId)))
+        .leftJoin(routine, eq(trainingSession.routineId, routine.id))
+        .where(and(
+          eq(athleteSession.athleteId, athleteId),
+          // Las que canceló el coach no salen; las que el propio atleta saltó sí (estado "cancelled")
+          sql`(${trainingSession.status} <> 'cancelled' or ${athleteSession.status} = 'cancelled')`,
+          sql`(
+            (${trainingSession.scheduledDate} between ${input.from}::date and ${input.to}::date)
+            or (${trainingSession.scheduledDate} is null and (
+              ${athleteSession.status} in ('scheduled', 'active')
+              or ${createdDay} between ${input.from}::date and ${input.to}::date
+            ))
+          )`,
+        ))
+
+      const visible = rows
+        .filter((r) => canSeeEvaluation || r.category !== "evaluation")
+        .map((r) => ({ ...r, day: calendarDate({ scheduledDate: r.scheduledDate, startedAt: r.startedAt, athleteStatus: r.athleteStatus, today }) }))
+        .filter((r) => r.day >= input.from && r.day <= input.to)
+
+      const lockOf = await lockFields(athleteId, visible.map((r) => ({
+        sessionId: r.sessionId, scheduledDate: r.scheduledDate, position: r.position, category: r.category,
+        sessionStatus: r.sessionStatus, athleteStatus: r.athleteStatus,
+      })), today)
+
+      return visible
+        .map((r): MyCalendarItem => ({
+          sessionId: r.sessionId,
+          teamId: r.teamId,
+          teamName: r.teamName,
+          routineName: r.routineName,
+          category: r.category,
+          kind: r.kind,
+          position: r.position,
+          scheduledDate: r.day,
+          scheduledTime: toHHMM(r.scheduledTime),
+          // Una evaluación futura ya nace "active" para el atleta; mientras el coach no la active, está programada
+          status: r.category === "evaluation" && r.sessionStatus === "scheduled" && r.athleteStatus === "active" ? "scheduled" : r.athleteStatus,
+          completedAt: r.completedAt ? r.completedAt.toISOString() : null,
+          exerciseCount: flattenContent(r.content).length,
+          ...lockOf(r.sessionId),
+        }))
+        .sort(compareCalendarItems)
+    }),
 
   myProgress: protectedProcedure
     .input(z.object({ sessionId: z.string().uuid() }))
@@ -301,6 +434,9 @@ export const sessionsRouter = router({
         status: trainingSession.status,
         startedAt: trainingSession.startedAt,
         scheduledDate: trainingSession.scheduledDate,
+        kind: trainingSession.kind,
+        position: trainingSession.position,
+        scheduledTime: trainingSession.scheduledTime,
         routineId: trainingSession.routineId,
         routineName: routine.name,
         planAssignmentId: trainingSession.planAssignmentId,
@@ -315,7 +451,7 @@ export const sessionsRouter = router({
         // Las de un mismo createMany comparten startedAt: desempata la fecha programada
         .orderBy(desc(trainingSession.startedAt), sql`${trainingSession.scheduledDate} desc nulls first`)
       const rows = await (input.limit ? filtered.limit(input.limit) : filtered)
-      return withAssignedAthletes(member.role === "coach", await withZoneProfiles(rows))
+      return withAssignedAthletes(member.role === "coach", (await withZoneProfiles(rows)).map((r) => ({ ...r, scheduledTime: toHHMM(r.scheduledTime) })))
     }),
 
   create: protectedProcedure
@@ -324,6 +460,10 @@ export const sessionsRouter = router({
       teamId: z.string().uuid(),
       athleteIds: z.array(z.string()).min(1),
       scheduledDate: z.string().date().optional(),
+      // Solo entrenamientos: por defecto el tipo de la rutina y el orden de ese tipo (warmup 0, main 1, recovery 2)
+      kind: routineKindSchema.optional(),
+      position: positionInput.optional(),
+      scheduledTime: scheduledTimeSchema.optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
@@ -342,6 +482,9 @@ export const sessionsRouter = router({
           dates: [input.scheduledDate ?? null],
           startedBy: ctx.session.user.id,
           today,
+          kind: input.kind,
+          position: input.position,
+          scheduledTime: input.scheduledTime,
         }),
       )
       void notifyWorkoutAssigned({
@@ -361,6 +504,9 @@ export const sessionsRouter = router({
       athleteIds: z.array(z.string()).min(1).max(MAX_ASSIGN_ATHLETES),
       dates: z.array(z.string().date()).min(1).max(MAX_ASSIGN_DATES)
         .refine((d) => new Set(d).size === d.length, "Las fechas no se pueden repetir"),
+      kind: routineKindSchema.optional(),
+      position: positionInput.optional(),
+      scheduledTime: scheduledTimeSchema.optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       await assertCoach(ctx.session.user.id, input.teamId)
@@ -374,7 +520,10 @@ export const sessionsRouter = router({
 
       const dates = [...input.dates].sort()
       const sessions = await db.transaction((tx) =>
-        createAssignedSessions(tx, { routine: r, teamId: input.teamId, athleteIds, dates, startedBy: ctx.session.user.id, today }),
+        createAssignedSessions(tx, {
+          routine: r, teamId: input.teamId, athleteIds, dates, startedBy: ctx.session.user.id, today,
+          kind: input.kind, position: input.position, scheduledTime: input.scheduledTime,
+        }),
       )
       void notifyWorkoutAssigned({
         coachId: ctx.session.user.id, athleteIds, routineId: r.id, sessionIds: sessions.map((s) => s.id), dates, today,
@@ -382,8 +531,60 @@ export const sessionsRouter = router({
       return sessions
     }),
 
+  // Secuencia de entrenamientos por día (p. ej. calentamiento → principal → recuperación): por cada fecha crea
+  // una sesión por paso, con position = índice del paso, todo en una transacción. Solo rutinas de entrenamiento.
+  // Mismas reglas de permisos y de flag que createMany. Un solo aviso push por asignación (no uno por paso).
+  createSequence: protectedProcedure
+    .input(z.object({
+      teamId: z.string().uuid(),
+      athleteIds: z.array(z.string()).min(1).max(MAX_ASSIGN_ATHLETES),
+      dates: z.array(z.string().date()).min(1).max(MAX_ASSIGN_DATES)
+        .refine((d) => new Set(d).size === d.length, "Las fechas no se pueden repetir"),
+      steps: z.array(z.object({
+        routineId: z.string().uuid(),
+        kind: routineKindSchema.optional(),
+        scheduledTime: scheduledTimeSchema.optional(),
+      })).min(1).max(MAX_SEQUENCE_STEPS),
+    }).refine((i) => i.dates.length * i.steps.length <= MAX_SEQUENCE_SESSIONS, `Máximo ${MAX_SEQUENCE_SESSIONS} sesiones por secuencia (fechas × pasos)`))
+    .mutation(async ({ ctx, input }) => {
+      await assertCoach(ctx.session.user.id, input.teamId)
+      const athleteIds = [...new Set(input.athleteIds)]
+      await assertAssignableAthletes(db, input.teamId, athleteIds)
+
+      const routines = new Map<string, Awaited<ReturnType<typeof loadAssignableRoutine>>>()
+      for (const id of new Set(input.steps.map((st) => st.routineId))) {
+        const r = await loadAssignableRoutine(id, input.teamId)
+        if (r.category !== "training") {
+          throw new TRPCError({ code: "BAD_REQUEST", message: "Solo los entrenamientos pueden formar una secuencia; las evaluaciones no" })
+        }
+        routines.set(id, r)
+      }
+      const today = todayUtc()
+      if (input.dates.some((d) => d > today)) assertFeature(ctx.session.user, "scheduled_sessions")
+
+      const dates = [...input.dates].sort()
+      const sessions = await db.transaction(async (tx) => {
+        const created: Awaited<ReturnType<typeof createAssignedSessions>> = []
+        for (const date of dates) {
+          for (const [index, step] of input.steps.entries()) {
+            const [session] = await createAssignedSessions(tx, {
+              routine: routines.get(step.routineId)!, teamId: input.teamId, athleteIds, dates: [date],
+              startedBy: ctx.session.user.id, today, kind: step.kind, position: index, scheduledTime: step.scheduledTime,
+            })
+            created.push(session!)
+          }
+        }
+        return created
+      })
+      void notifyWorkoutAssigned({
+        coachId: ctx.session.user.id, athleteIds, routineId: input.steps[0]!.routineId,
+        sessionIds: sessions.map((s) => s.id), dates, today, sequenceSteps: input.steps.length,
+      })
+      return sessions
+    }),
+
   get: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.string().uuid(), localDate: localDateInput }))
     .query(async ({ ctx, input }) => {
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.id)).limit(1)
       if (!session) throw new TRPCError({ code: "NOT_FOUND" })
@@ -454,18 +655,33 @@ export const sessionsRouter = router({
       ])
       const zoneProfile = zoneProfileFromContent(session.content, (id) => zones.get(id))
 
+      // ¿Puede quien consulta iniciarla ahora? (para mostrar u ocultar el botón de la vista previa)
+      const mine = athletes.find((a) => a.athleteId === ctx.session.user.id)
+      const category = r?.category ?? null
+      const { locked, lockReason } = category === "evaluation" || mine
+        ? (await lockFields(ctx.session.user.id, [{
+            sessionId: session.id, scheduledDate: session.scheduledDate, position: session.position, category,
+            sessionStatus: session.status, athleteStatus: mine?.status ?? "active",
+          }], resolveAthleteToday(input.localDate)))(session.id)
+        : { locked: false, lockReason: null }
+
       return {
         ...session,
+        scheduledTime: toHHMM(session.scheduledTime),
+        locked,
+        lockReason,
         routineName: r?.name ?? null,
-        routineCategory: r?.category ?? null,
+        routineCategory: category,
         zoneProfile,
         exercises: exercisesWithTargets.map((ex) => ({ ...ex, zone: zones.get(ex.exerciseId) ?? null })),
         athletes,
       }
     }),
 
+  // Iniciar. Rechaza (BAD_REQUEST con `error.data.reason`): FUTURE_SESSION (fecha posterior a "hoy" del
+  // atleta, ver resolveAthleteToday), PREVIOUS_STEP_PENDING y ANOTHER_ACTIVE (ver services/session-rules.ts).
   activate: protectedProcedure
-    .input(z.object({ id: z.string().uuid() }))
+    .input(z.object({ id: z.string().uuid(), localDate: localDateInput }))
     .mutation(async ({ ctx, input }) => {
       const userId = ctx.session.user.id
       const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.id)).limit(1)
@@ -483,6 +699,14 @@ export const sessionsRouter = router({
           .limit(1)
         if (!as) throw new TRPCError({ code: "FORBIDDEN" })
         if (as.status !== "scheduled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión ya fue iniciada" })
+        if (session.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión fue cancelada" })
+
+        const lock = await lockForSession(
+          userId,
+          { sessionId: session.id, scheduledDate: session.scheduledDate, position: session.position, isTraining: true, pending: true },
+          resolveAthleteToday(input.localDate),
+        )
+        if (lock) throw startRefusalError(lock)
 
         const now = new Date()
         await db.update(athleteSession).set({ status: "active", startedAt: now }).where(eq(athleteSession.id, as.id))
@@ -498,6 +722,8 @@ export const sessionsRouter = router({
       // Evaluación: el coach activa toda la sesión
       if (member.role !== "coach") throw new TRPCError({ code: "FORBIDDEN" })
       if (session.status !== "scheduled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión no está programada" })
+      // Las evaluaciones no forman secuencias, pero tampoco se inician antes de su fecha
+      if (session.scheduledDate != null && session.scheduledDate > resolveAthleteToday(input.localDate)) throw startRefusalError("FUTURE")
 
       const [updated] = await db
         .update(trainingSession)
@@ -505,6 +731,43 @@ export const sessionsRouter = router({
         .where(eq(trainingSession.id, input.id))
         .returning()
       return updated
+    }),
+
+  // El atleta salta un entrenamiento pendiente o abandona uno en curso (su athlete_session pasa a "cancelled"; no se borran sus series) para
+  // desbloquear el siguiente del día. Solo hoy o antes (FUTURE_SESSION si es futuro); no aplica a evaluaciones.
+  skipMyStep: protectedProcedure
+    .input(z.object({ sessionId: z.string().uuid(), localDate: localDateInput }))
+    .mutation(async ({ ctx, input }) => {
+      const userId = ctx.session.user.id
+      const [session] = await db.select().from(trainingSession).where(eq(trainingSession.id, input.sessionId)).limit(1)
+      if (!session) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertMember(userId, session.teamId)
+      const category = await assertSessionFeature(ctx.session.user, session.routineId)
+      if (category === "evaluation") throw new TRPCError({ code: "BAD_REQUEST", message: "Las evaluaciones no se pueden saltar" })
+
+      const [as] = await db
+        .select()
+        .from(athleteSession)
+        .where(and(eq(athleteSession.sessionId, input.sessionId), eq(athleteSession.athleteId, userId)))
+        .limit(1)
+      if (!as) throw new TRPCError({ code: "FORBIDDEN" })
+      if (session.status === "cancelled") throw new TRPCError({ code: "BAD_REQUEST", message: "La sesión fue cancelada" })
+      // Se puede saltar uno pendiente o abandonar uno en curso (sus series ya registradas se conservan)
+      if (as.status !== "scheduled" && as.status !== "active") throw new TRPCError({ code: "BAD_REQUEST", message: "Solo puedes saltar o abandonar un entrenamiento pendiente o en curso" })
+      if (session.scheduledDate != null && session.scheduledDate > resolveAthleteToday(input.localDate)) throw startRefusalError("FUTURE")
+
+      const [updated] = await db.update(athleteSession).set({ status: "cancelled" }).where(eq(athleteSession.id, as.id)).returning()
+
+      // Si ya nadie tiene pendiente la sesión, se cierra (completada si alguien la hizo; si no, cancelada)
+      if (session.status === "active" || session.status === "scheduled") {
+        const all = await db.select({ status: athleteSession.status }).from(athleteSession).where(eq(athleteSession.sessionId, input.sessionId))
+        if (!all.some((a) => a.status === "active" || a.status === "scheduled")) {
+          await db.update(trainingSession)
+            .set({ status: all.some((a) => a.status === "completed") ? "completed" : "cancelled" })
+            .where(eq(trainingSession.id, input.sessionId))
+        }
+      }
+      return updated!
     }),
 
   athleteSets: protectedProcedure

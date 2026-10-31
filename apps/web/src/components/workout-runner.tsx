@@ -399,7 +399,7 @@ function CircuitOverviewCard({
 }
 
 export function RoutinePreview({
-  progress, onStart, starting, error, back, intro, children, withSidebar = true,
+  progress, onStart, starting, error, back, intro, children, withSidebar = true, lockedReason, footerExtra,
 }: {
   progress: WorkoutProgress
   onStart: () => void
@@ -411,6 +411,10 @@ export function RoutinePreview({
   /** Encabezado propio (p. ej. quién comparte la rutina en un enlace de invitado). */
   children?: React.ReactNode
   withSidebar?: boolean
+  /** Si se indica, no se puede empezar: se muestra el motivo en lugar del botón. */
+  lockedReason?: string
+  /** Acciones secundarias bajo el botón (p. ej. saltar el bloque). */
+  footerExtra?: React.ReactNode
 }) {
   const [video, setVideo] = useState<WorkoutExercise | null>(null)
   const total = totalSets(progress.exercises)
@@ -461,6 +465,9 @@ export function RoutinePreview({
         withSidebar && "lg:left-56",
       )}>
         <div className="max-w-xl mx-auto">
+          {lockedReason ? (
+            <p role="status" className="rounded-2xl border border-border bg-muted/40 px-4 py-4 text-base text-center font-medium">{lockedReason}</p>
+          ) : (
           <button
             onClick={onStart}
             data-tour="run-start"
@@ -470,7 +477,9 @@ export function RoutinePreview({
             <PlayIcon className="w-6 h-6 fill-current" />
             {starting ? "Preparando…" : "Empezar entrenamiento"}
           </button>
+          )}
           {error && <p className="text-base text-destructive text-center mt-2">{error}</p>}
+          {footerExtra}
         </div>
       </div>
 

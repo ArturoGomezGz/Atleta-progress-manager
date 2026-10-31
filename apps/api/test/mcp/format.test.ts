@@ -24,7 +24,7 @@ const content: RoutineContent = {
 }
 
 const row = {
-  id: id(9), teamId: id(8), name: "Fuerza A", category: "training" as const,
+  id: id(9), teamId: id(8), name: "Fuerza A", category: "training" as const, kind: "main" as const,
   updatedAt: new Date("2026-10-01T10:00:00.123Z"), archivedAt: null, content,
   exerciseNames: { [id(101)]: "Sentadilla", [id(102)]: "Zancada" },
 }
@@ -45,7 +45,7 @@ describe("format", () => {
 
   it("toRoutineSummary cuenta elementos y ejercicios y expone archived", () => {
     assert.deepEqual(toRoutineSummary(row), {
-      id: id(9), name: "Fuerza A", category: "training", updatedAt: "2026-10-01T10:00:00.123Z", archived: false, itemCount: 2, exerciseCount: 3,
+      id: id(9), name: "Fuerza A", category: "training", kind: "main", updatedAt: "2026-10-01T10:00:00.123Z", archived: false, itemCount: 2, exerciseCount: 3,
     })
     assert.equal(toRoutineSummary({ ...row, archivedAt: new Date() }).archived, true)
   })
@@ -81,10 +81,11 @@ describe("format", () => {
     const s = {
       id: id(5), status: "scheduled" as const, startedAt: new Date("2026-10-02T00:00:00Z"), scheduledDate: "2026-10-10",
       routineId: id(9), routineName: "Fuerza A", planAssignmentId: null,
+      kind: "warmup" as const, position: 0, scheduledTime: "07:30",
       athletes: [{ userId: "u1", name: "Ana", status: "scheduled" }],
     }
     assert.deepEqual(toAssignmentView(s, { includeAthletes: true }), {
-      sessionId: id(5), routineId: id(9), routineName: "Fuerza A", scheduledDate: "2026-10-10", startedAt: "2026-10-02T00:00:00.000Z",
+      sessionId: id(5), routineId: id(9), routineName: "Fuerza A", scheduledDate: "2026-10-10", kind: "warmup", position: 0, scheduledTime: "07:30", startedAt: "2026-10-02T00:00:00.000Z",
       status: "scheduled", planAssignmentId: null, athletes: [{ athleteId: "u1", name: "Ana", status: "scheduled" }],
     })
     assert.equal("athletes" in toAssignmentView(s, { includeAthletes: false }), false)

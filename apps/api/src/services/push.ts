@@ -122,6 +122,8 @@ export type AssignmentNotice = {
   today: string
   /** Si viene de un plan, se manda un solo aviso del plan en vez de uno por sesión. */
   planName?: string
+  /** Si es una secuencia (varios pasos por día), un solo aviso agrupado en vez de uno por paso. */
+  sequenceSteps?: number
 }
 
 function dayLabel(date: string): string {
@@ -156,6 +158,10 @@ export async function notifyWorkoutAssigned(n: AssignmentNotice): Promise<void> 
       const verb = (assigned: string, scheduled: string) => `${who} ${self ? scheduled : assigned}`
       if (n.planName) {
         return { title: "Nuevo plan de entrenamiento", body: `${verb("asignó", "asignaste")} el plan «${n.planName}».`, data }
+      }
+      if (n.sequenceSteps && n.sequenceSteps > 1 && n.sessionIds.length > 1) {
+        const when = n.dates.length > 1 ? `para ${n.dates.length} días` : date != null && date > n.today ? `para el ${dayLabel(date)}` : "para hoy"
+        return { title: "Nuevos entrenamientos", body: `${verb("asignó", "asignaste")} ${n.sequenceSteps} entrenamientos ${when}, en orden.`, data }
       }
       if (n.sessionIds.length > 1) {
         return { title: "Nuevos entrenamientos", body: `${verb("asignó", "asignaste")} ${n.sessionIds.length} entrenamientos: «${routineName}».`, data }

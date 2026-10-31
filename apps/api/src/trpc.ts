@@ -5,6 +5,8 @@ import { ZodError } from "zod"
 import { friendlyTweakInputMessage } from "./services/ai-routine-editor/input"
 import { auth } from "./auth"
 import { assertFeature, type FeatureKey } from "./lib/features"
+import { ErrorDetails } from "./mcp/errors"
+import type { SessionStartRefusal } from "./services/session-rules"
 
 export async function createContext({ req }: CreateFastifyContextOptions) {
   const session = await auth.api.getSession({
@@ -39,6 +41,11 @@ const t = initTRPC.context<Context>().create({
         message: "Ocurrió un error interno. Intenta de nuevo más tarde.",
         data,
       }
+    }
+    // Motivo estable de un rechazo de negocio (p. ej. FUTURE_SESSION al iniciar): los clientes
+    // ramifican por `error.data.reason`, no por el mensaje.
+    if (error.code === "BAD_REQUEST" && error.cause instanceof ErrorDetails && typeof error.cause.details.reason === "string") {
+      return { ...shape, data: { ...shape.data, reason: error.cause.details.reason as SessionStartRefusal } }
     }
     return shape
   },

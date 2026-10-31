@@ -63,7 +63,7 @@ export default function TrainScreen() {
   const recordSet = trpc.sessions.recordSet.useMutation()
   const complete = trpc.sessions.completeMySession.useMutation({
     onSuccess: () => utils.sessions.myMomentum.invalidate(),
-    onSettled: () => utils.sessions.myPending.invalidate(),
+    onSettled: () => Promise.all([utils.sessions.myPending.invalidate(), utils.sessions.myCalendar.invalidate()]),
   })
 
   const [rest, setRest] = useState<Rest | null>(null)

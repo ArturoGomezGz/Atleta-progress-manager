@@ -1,8 +1,8 @@
-import { date, index, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, text, timestamp, uuid } from "drizzle-orm/pg-core"
+import { date, index, integer, jsonb, numeric, pgEnum, pgTable, primaryKey, text, time, timestamp, uuid } from "drizzle-orm/pg-core"
 import { user } from "./auth"
 import { exercise } from "./exercises"
 import { trainingPlanAssignment, trainingPlanWorkout } from "./plans"
-import { routine, type RoutineContent } from "./routines"
+import { routine, routineKindEnum, type RoutineContent } from "./routines"
 import { team } from "./teams"
 
 export const rmSourceEnum = pgEnum("rm_source", ["auto", "manual"])
@@ -24,13 +24,22 @@ export const trainingSession = pgTable(
       .references(() => user.id),
     startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
     scheduledDate: date("scheduled_date"),
+    // Tipo copiado de la rutina al asignar (null en evaluaciones)
+    kind: routineKindEnum("kind"),
+    // Orden dentro del día para un mismo atleta (warmup=0, main=1, recovery=2 por defecto)
+    position: integer("position").notNull().default(0),
+    // Hora sugerida, solo informativa
+    scheduledTime: time("scheduled_time"),
     status: sessionStatusEnum("status").notNull().default("active"),
     content: jsonb("content").$type<RoutineContent>(),
     // Origen: sesión creada al programar un plan de entrenamiento (null = asignado suelto)
     planAssignmentId: uuid("plan_assignment_id").references(() => trainingPlanAssignment.id, { onDelete: "set null" }),
     planWorkoutId: uuid("plan_workout_id").references(() => trainingPlanWorkout.id, { onDelete: "set null" }),
   },
-  (t) => [index("training_session_plan_assignment_idx").on(t.planAssignmentId)],
+  (t) => [
+    index("training_session_plan_assignment_idx").on(t.planAssignmentId),
+    index("training_session_team_date_position_idx").on(t.teamId, t.scheduledDate, t.position),
+  ],
 )
 
 export const sessionExercise = pgTable("session_exercise", {

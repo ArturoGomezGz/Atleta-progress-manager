@@ -3,11 +3,15 @@
 import { useOnboardingHint } from "@/components/onboarding"
 import { ZoneBar, ZoneLegend } from "@/components/zone-profile"
 import type { ZoneProfile } from "@/lib/body-zones"
+import { ConfirmDialog } from "@/components/routine-row-actions"
+import { compareByPosition, KindBadge } from "@/lib/routine-kinds"
+import { localDateStr, lockMessage } from "@/lib/session-lock"
 import { trpc } from "@/lib/trpc/client"
 import { cn } from "@/lib/utils"
 import { CalendarIcon, CheckCircleIcon, ChevronRightIcon, CompassIcon, DumbbellIcon, PlayIcon, XIcon } from "lucide-react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
+import { useState } from "react"
 
 type Session = {
   id: string
@@ -17,6 +21,11 @@ type Session = {
   status: string
   routineCategory: string | null
   zoneProfile?: ZoneProfile
+  kind?: string | null
+  position?: number | null
+  scheduledTime?: string | null
+  locked?: boolean
+  lockReason?: string | null
 }
 
 const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
@@ -33,7 +42,7 @@ function dateLabel(session: Session) {
   return sc(new Date(session.startedAt).toLocaleDateString("es", { weekday: "long", day: "numeric", month: "long" }))
 }
 
-function SessionCard({ teamId, session, tourTarget }: { teamId: string; session: Session; tourTarget?: boolean }) {
+function SessionCard({ teamId, session, tourTarget, onSkip }: { teamId: string; session: Session; tourTarget?: boolean; onSkip?: (s: Session) => void }) {
   const isCancelled = session.status === "cancelled"
   const action =
     session.status === "active"    ? { label: "Continuar",  icon: PlayIcon,        tone: "bg-primary text-primary-foreground" } :
@@ -41,21 +50,33 @@ function SessionCard({ teamId, session, tourTarget }: { teamId: string; session:
     session.status === "completed" ? { label: "Ver resumen", icon: CheckCircleIcon, tone: "bg-muted text-foreground" } :
                                      { label: "Cancelada",  icon: XIcon,           tone: "" }
   const Icon = action.icon
+  // Futura o bloqueada: no se ofrece "Empezar", se explica por qué
+  const lockText = session.status === "scheduled" ? lockMessage(session.lockReason, session.scheduledDate) : null
+  const canSkip = !!onSkip && (session.status === "scheduled" || session.status === "active") &&
+    session.routineCategory === "training" && session.lockReason !== "FUTURE"
 
   const content = (
     <>
       <ZoneBar profile={session.zoneProfile} className="h-1 rounded-none" />
       <div className="p-4 sm:p-5">
         <div className="space-y-1">
-          <p className="text-lg font-semibold leading-snug">{sc(session.routineName ?? "Entrenamiento")}</p>
+          <div className="flex items-start gap-2">
+            <p className="text-lg font-semibold leading-snug flex-1 min-w-0">{sc(session.routineName ?? "Entrenamiento")}</p>
+            <KindBadge kind={session.kind} category={session.routineCategory} className="mt-1.5 text-xs" />
+          </div>
           <p className="text-base text-muted-foreground flex items-center gap-1.5">
             <CalendarIcon className="w-4 h-4 shrink-0" />
-            {dateLabel(session)}
+            {dateLabel(session)}{session.scheduledTime ? ` · ${session.scheduledTime} h` : ""}
           </p>
           <ZoneLegend profile={session.zoneProfile} className="text-xs pt-1" />
         </div>
         <div className="flex justify-end mt-3 pt-3 border-t border-border">
-          {isCancelled ? (
+          {lockText ? (
+            <span className="inline-flex items-center gap-2 text-base text-muted-foreground text-right">
+              {lockText}
+              <ChevronRightIcon className="w-4 h-4 shrink-0 opacity-70" />
+            </span>
+          ) : isCancelled ? (
             <span className="inline-flex items-center gap-2 text-base text-muted-foreground">
               <Icon className="w-4 h-4" />
               {action.label}
@@ -77,9 +98,22 @@ function SessionCard({ teamId, session, tourTarget }: { teamId: string; session:
   if (isCancelled) return <div className={cn(cardClass, "opacity-60")}>{content}</div>
 
   return (
-    <Link href={`/teams/${teamId}/mis-rutinas/${session.id}`} data-tour={tourTarget ? "run-card" : undefined} className={cn(cardClass, "block hover:border-primary/50 active:scale-[0.99] transition-all")}>
-      {content}
-    </Link>
+    <div className={cn(cardClass, "hover:border-primary/50 transition-colors", lockText && "opacity-90")}>
+      <Link href={`/teams/${teamId}/mis-rutinas/${session.id}`} data-tour={tourTarget ? "run-card" : undefined} className="block active:scale-[0.99] transition-transform">
+        {content}
+      </Link>
+      {canSkip && (
+        <div className="px-4 sm:px-5 pb-3 -mt-1 flex justify-end">
+          <button
+            type="button"
+            onClick={() => onSkip!(session)}
+            className="text-sm text-muted-foreground hover:text-foreground underline underline-offset-4 cursor-pointer min-h-9 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded"
+          >
+            Saltar bloque
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
 
@@ -94,15 +128,24 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function MisRutinasPage() {
   const { teamId } = useParams<{ teamId: string }>()
-  const { data: sessions, isLoading } = trpc.sessions.myList.useQuery({ teamId })
+  // Fecha local del navegador: el servidor la usa para decidir qué es "hoy"
+  const [localDate] = useState(() => localDateStr())
+  const utils = trpc.useUtils()
+  const { data: sessions, isLoading } = trpc.sessions.myList.useQuery({ teamId, localDate })
+  const [skipping, setSkipping] = useState<Session | null>(null)
+  const skip = trpc.sessions.skipMyStep.useMutation({
+    onSuccess: () => {
+      setSkipping(null)
+      utils.sessions.myList.invalidate()
+      utils.sessions.myPending.invalidate()
+    },
+  })
   const { pendingSessionId } = useOnboardingHint(teamId)
 
   const active    = sessions?.filter((s) => s.status === "active") ?? []
   const scheduled = (sessions?.filter((s) => s.status === "scheduled" && s.routineCategory === "training") ?? [])
-    .sort((a, b) => (a.scheduledDate ?? "").localeCompare(b.scheduledDate ?? ""))
-  // Fecha local (no UTC) para que "hoy" coincida con lo que ve la persona
-  const now = new Date()
-  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`
+    .sort((a, b) => (a.scheduledDate ?? "").localeCompare(b.scheduledDate ?? "") || compareByPosition(a, b))
+  const todayStr = localDate
   const forToday = scheduled.filter((s) => (s.scheduledDate ?? todayStr) <= todayStr)
   const upcoming = scheduled.filter((s) => (s.scheduledDate ?? todayStr) > todayStr)
   const past      = sessions?.filter((s) => s.status === "completed" || s.status === "cancelled") ?? []
@@ -125,19 +168,19 @@ export default function MisRutinasPage() {
 
       {active.length > 0 && (
         <Section title="En curso">
-          {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
+          {active.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} onSkip={setSkipping} />)}
         </Section>
       )}
 
       {forToday.length > 0 && (
         <Section title="Para hoy">
-          {forToday.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
+          {forToday.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} onSkip={setSkipping} />)}
         </Section>
       )}
 
       {upcoming.length > 0 && (
         <Section title="Próximos">
-          {upcoming.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
+          {upcoming.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} onSkip={setSkipping} />)}
         </Section>
       )}
 
@@ -156,9 +199,22 @@ export default function MisRutinasPage() {
         </Section>
       )}
 
+      {skipping && (
+        <ConfirmDialog
+          title="¿Saltar este bloque?"
+          description={<><span className="font-medium text-foreground">{sc(skipping.routineName ?? "Entrenamiento")}</span> no se registrará y podrás pasar al siguiente.</>}
+          confirmLabel="Saltar bloque"
+          pendingLabel="Saltando…"
+          pending={skip.isPending}
+          error={skip.isError ? skip.error.message : undefined}
+          onCancel={() => { skip.reset(); setSkipping(null) }}
+          onConfirm={() => skip.mutate({ sessionId: skipping.id, localDate })}
+        />
+      )}
+
       {past.length > 0 && (
         <Section title="Terminadas">
-          {past.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} />)}
+          {past.map((s) => <SessionCard key={s.id} teamId={teamId} session={s} tourTarget={s.id === pendingSessionId} onSkip={setSkipping} />)}
         </Section>
       )}
     </div>

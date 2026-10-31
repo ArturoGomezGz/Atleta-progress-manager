@@ -227,7 +227,7 @@ describe("planes de entrenamiento (MCP + plans.*)", { skip: integrationSkip }, (
     )
     assert.equal(scheduled.sessions[0].status, "active") // el hueco de hoy (weekday de hoy, semana 1)
 
-    const [{ db }, schema, { eq, inArray }] = await Promise.all([import("@atleta/db/client"), import("@atleta/db/schema"), import("drizzle-orm")])
+    const [{ db }, schema, { and, eq, inArray }] = await Promise.all([import("@atleta/db/client"), import("@atleta/db/schema"), import("drizzle-orm")])
     const rows = await db.select().from(schema.trainingSession).where(eq(schema.trainingSession.planAssignmentId, scheduled.assignmentId))
     assert.equal(rows.length, expected.length)
     const byId = new Map(rows.map((r) => [r.id, r]))
@@ -265,9 +265,13 @@ describe("planes de entrenamiento (MCP + plans.*)", { skip: integrationSkip }, (
     assert.deepEqual(withAssignment.assignments[0].sessions, { total: expected.length, completed: 0, cancelled: 0 })
     assert.equal((await call(client, "list_plans", {})).plans[0].activeAssignments, 1)
 
-    // El atleta empieza el último entrenamiento: cancelar desde la semana 3 lo conserva
+    // El último entrenamiento es futuro: activate lo rechaza. Para probar que cancelar conserva lo ya
+    // empezado, se marca como iniciado directamente en la BD.
     const last = scheduled.sessions[scheduled.sessions.length - 1]
-    await fx.callers.athleteA.sessions.activate({ id: last.sessionId })
+    await assert.rejects(fx.callers.athleteA.sessions.activate({ id: last.sessionId }), /fecha futura/)
+    await db.update(schema.athleteSession).set({ status: "active", startedAt: new Date() })
+      .where(and(eq(schema.athleteSession.sessionId, last.sessionId), eq(schema.athleteSession.athleteId, fx.users.athleteA.id)))
+    await db.update(schema.trainingSession).set({ status: "active" }).where(eq(schema.trainingSession.id, last.sessionId))
     const fromDate = addDays(monday, 14)
     const fromWeek3 = scheduled.sessions.filter((s: Structured) => s.date >= fromDate)
     const cancel1 = await call(client, "cancel_plan_assignment", { assignmentId: scheduled.assignmentId, fromDate })

@@ -4,7 +4,8 @@
 
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
 import { z } from "zod"
-import { MAX_ASSIGN_ATHLETES, MAX_ASSIGN_DATES } from "../../routers/sessions"
+import { MAX_ASSIGN_ATHLETES, MAX_ASSIGN_DATES, MAX_SEQUENCE_STEPS } from "../../routers/sessions"
+import { ROUTINE_KINDS, scheduledTimeSchema } from "../../services/routine-kind"
 import { todayUtc } from "../../services/session-assign"
 import { resolveTeamId } from "../context"
 import { McpToolError } from "../errors"
@@ -17,6 +18,8 @@ const MAX_LIST_LIMIT = 100
 const SESSION_STATUSES = ["scheduled", "active", "completed", "cancelled"] as const
 
 const dateInput = z.string().date().describe("YYYY-MM-DD")
+const kindInput = z.enum(ROUTINE_KINDS).describe("warmup (calentamiento), main (principal) o recovery (recuperación)")
+const timeInput = scheduledTimeSchema.describe("Hora sugerida HH:MM (24 h), solo informativa")
 
 function checkScheduleLimit(ctx: McpToolContext) {
   const limit = ctx.limiters.schedule.hit(ctx.principal.user.id)
@@ -32,27 +35,61 @@ export function registerAssignmentTools(server: McpServer, ctx: McpToolContext):
     name: "assign_routine",
     title: "Asignar rutina",
     description:
-      `Asigna una rutina a atletas del equipo de la rutina (athleteId de list_athletes, máx. ${MAX_ASSIGN_ATHLETES}). Sin dates queda disponible ahora; con dates crea una sesión por fecha (máx. ${MAX_ASSIGN_DATES}): las fechas futuras quedan programadas (requieren la función de sesiones programadas) y las de hoy o antes, activas. "Hoy" es UTC (ver whoami). Las rutinas archivadas no se pueden asignar. Confirma con el usuario atletas y fechas antes de asignar. Máximo 20 asignaciones por hora.`,
+      `Asigna una rutina a atletas del equipo de la rutina (athleteId de list_athletes, máx. ${MAX_ASSIGN_ATHLETES}). Sin dates queda disponible ahora; con dates crea una sesión por fecha (máx. ${MAX_ASSIGN_DATES}): las fechas futuras quedan programadas (requieren la función de sesiones programadas) y las de hoy o antes, activas. "Hoy" es UTC (ver whoami). Las rutinas archivadas no se pueden asignar. Opcionales para entrenamientos (no evaluaciones): kind (por defecto el de la rutina), position (orden dentro del día; por defecto warmup 0, main 1, recovery 2) y scheduledTime. El atleta debe completar (o saltar) los pasos anteriores del día antes de iniciar el siguiente; para encadenar varios entrenamientos usa assign_sequence. Confirma con el usuario atletas y fechas antes de asignar. Máximo 20 asignaciones por hora.`,
     scope: "atleta:write",
     annotations: { destructiveHint: false, idempotentHint: false },
     input: {
       routineId: z.string().uuid(),
       athleteIds: z.array(z.string().min(1)).min(1).max(MAX_ASSIGN_ATHLETES),
       dates: z.array(dateInput).min(1).max(MAX_ASSIGN_DATES).optional(),
+      kind: kindInput.optional(),
+      position: z.number().int().min(0).max(99).optional().describe("Orden dentro del día (0 = primero)"),
+      scheduledTime: timeInput.optional(),
     },
     async run(args, ctx) {
       // El equipo es el de la rutina (routines.get exige ser miembro; sessions.* exige ser coach)
       const routine = await ctx.caller.routines.get({ id: args.routineId })
       const athleteIds = [...new Set(args.athleteIds)]
       checkScheduleLimit(ctx)
+      const extra = { kind: args.kind, position: args.position, scheduledTime: args.scheduledTime }
       const sessions = args.dates
-        ? await ctx.caller.sessions.createMany({ routineId: routine.id, teamId: routine.teamId, athleteIds, dates: [...new Set(args.dates)] })
-        : [await ctx.caller.sessions.create({ routineId: routine.id, teamId: routine.teamId, athleteIds })]
+        ? await ctx.caller.sessions.createMany({ routineId: routine.id, teamId: routine.teamId, athleteIds, dates: [...new Set(args.dates)], ...extra })
+        : [await ctx.caller.sessions.create({ routineId: routine.id, teamId: routine.teamId, athleteIds, ...extra })]
       return {
         routineId: routine.id,
         teamId: routine.teamId,
         athleteIds,
-        sessions: sessions.map((s) => ({ sessionId: s.id, date: s.scheduledDate, status: s.status })),
+        sessions: sessions.map((s) => ({ sessionId: s.id, date: s.scheduledDate, status: s.status, kind: s.kind, position: s.position, scheduledTime: s.scheduledTime })),
+      }
+    },
+  })
+
+  registerAtletaTool(server, ctx, {
+    name: "assign_sequence",
+    title: "Asignar secuencia de entrenamientos",
+    description:
+      `Asigna una secuencia ordenada de entrenamientos (p. ej. calentamiento → principal → recuperación) a atletas del equipo: por cada fecha de dates (1..${MAX_ASSIGN_DATES}, puede ser una sola) crea una sesión por paso, con position = índice del paso (máx. ${MAX_SEQUENCE_STEPS} pasos). Todo o nada. Solo rutinas de entrenamiento (las evaluaciones no entran). Cada paso puede fijar kind (por defecto el de la rutina) y scheduledTime (HH:MM, informativa). El atleta debe completar o saltar cada paso antes de iniciar el siguiente. Un solo aviso al atleta por asignación. Fechas futuras requieren la función de sesiones programadas. El equipo es el de la primera rutina. Confirma con el usuario atletas, fechas y orden antes de asignar. Máximo 20 asignaciones por hora.`,
+    scope: "atleta:write",
+    annotations: { destructiveHint: false, idempotentHint: false },
+    input: {
+      athleteIds: z.array(z.string().min(1)).min(1).max(MAX_ASSIGN_ATHLETES),
+      dates: z.array(dateInput).min(1).max(MAX_ASSIGN_DATES),
+      steps: z
+        .array(z.object({ routineId: z.string().uuid(), kind: kindInput.optional(), scheduledTime: timeInput.optional() }))
+        .min(1)
+        .max(MAX_SEQUENCE_STEPS),
+    },
+    async run(args, ctx) {
+      const first = await ctx.caller.routines.get({ id: args.steps[0]!.routineId })
+      const athleteIds = [...new Set(args.athleteIds)]
+      checkScheduleLimit(ctx)
+      const sessions = await ctx.caller.sessions.createSequence({ teamId: first.teamId, athleteIds, dates: [...new Set(args.dates)], steps: args.steps })
+      return {
+        teamId: first.teamId,
+        athleteIds,
+        sessions: sessions.map((s) => ({
+          sessionId: s.id, routineId: s.routineId, date: s.scheduledDate, status: s.status, kind: s.kind, position: s.position, scheduledTime: s.scheduledTime,
+        })),
       }
     },
   })

@@ -3,7 +3,7 @@
 -- Generado por packages/db/scripts/build-sql.ts — no editar a mano.
 -- Idempotente: seguro de re-ejecutar.
 -- ═══════════════════════════════════════════════════════════════════════════
--- Incluye las migraciones: 0000_youtube_baseline, 0001_happy_blockbuster, 0002_flat_mongu, 0003_big_wendell_vaughn, 0004_furry_miss_america
+-- Incluye las migraciones: 0000_youtube_baseline, 0001_happy_blockbuster, 0002_flat_mongu, 0003_big_wendell_vaughn, 0004_furry_miss_america, 0005_lying_the_renegades, 0006_swift_carnage, 0007_real_titanium_man
 -- La API también corre el migrador de Drizzle al arrancar; como aquí se registra el hash,
 -- no intentará volver a crear las tablas.
 
@@ -404,5 +404,218 @@ BEGIN
   END IF;
   EXECUTE $stmt$ALTER TABLE "user_preferences" ADD COLUMN "onboarding" jsonb$stmt$;
   INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('1b574d3184614fef022e2fbaf5ad18f4e2cdc97c9a84482429cbfe0b7108e7d0', 1790918083402);
+END
+$migration$;
+
+-- Migración 0005_lying_the_renegades
+DO $migration$
+BEGIN
+  IF EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE hash = 'b748e0bca862e181022a6c98e9cb5d27af23eba5abd4b6a136ff0aaa507f2075') THEN
+    RAISE NOTICE 'Migración 0005_lying_the_renegades ya aplicada, se omite';
+    RETURN;
+  END IF;
+  EXECUTE $stmt$CREATE TYPE "public"."training_plan_assignment_status" AS ENUM('active', 'cancelled')$stmt$;
+  EXECUTE $stmt$CREATE TYPE "public"."training_plan_status" AS ENUM('draft', 'active', 'archived')$stmt$;
+  EXECUTE $stmt$CREATE TABLE "mcp_personal_token" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" text NOT NULL,
+	"name" text NOT NULL,
+	"token_hash" text NOT NULL,
+	"token_prefix" text NOT NULL,
+	"scopes" text[] NOT NULL,
+	"expires_at" timestamp,
+	"last_used_at" timestamp,
+	"revoked_at" timestamp,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "mcp_personal_token_token_hash_unique" UNIQUE("token_hash")
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "oauth_access_token" (
+	"id" text PRIMARY KEY NOT NULL,
+	"token" text,
+	"client_id" text NOT NULL,
+	"session_id" text,
+	"user_id" text,
+	"reference_id" text,
+	"refresh_id" text,
+	"expires_at" timestamp,
+	"created_at" timestamp,
+	"scopes" text[] NOT NULL,
+	CONSTRAINT "oauth_access_token_token_unique" UNIQUE("token")
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "oauth_client" (
+	"id" text PRIMARY KEY NOT NULL,
+	"client_id" text NOT NULL,
+	"client_secret" text,
+	"disabled" boolean DEFAULT false,
+	"skip_consent" boolean,
+	"enable_end_session" boolean,
+	"subject_type" text,
+	"scopes" text[],
+	"user_id" text,
+	"created_at" timestamp,
+	"updated_at" timestamp,
+	"name" text,
+	"uri" text,
+	"icon" text,
+	"contacts" text[],
+	"tos" text,
+	"policy" text,
+	"software_id" text,
+	"software_version" text,
+	"software_statement" text,
+	"redirect_uris" text[] NOT NULL,
+	"post_logout_redirect_uris" text[],
+	"token_endpoint_auth_method" text,
+	"grant_types" text[],
+	"response_types" text[],
+	"public" boolean,
+	"type" text,
+	"require_pkce" boolean,
+	"reference_id" text,
+	"metadata" jsonb,
+	CONSTRAINT "oauth_client_client_id_unique" UNIQUE("client_id")
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "oauth_consent" (
+	"id" text PRIMARY KEY NOT NULL,
+	"client_id" text NOT NULL,
+	"user_id" text,
+	"reference_id" text,
+	"scopes" text[] NOT NULL,
+	"created_at" timestamp,
+	"updated_at" timestamp
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "oauth_refresh_token" (
+	"id" text PRIMARY KEY NOT NULL,
+	"token" text NOT NULL,
+	"client_id" text NOT NULL,
+	"session_id" text,
+	"user_id" text NOT NULL,
+	"reference_id" text,
+	"expires_at" timestamp,
+	"created_at" timestamp,
+	"revoked" timestamp,
+	"auth_time" timestamp,
+	"scopes" text[] NOT NULL,
+	CONSTRAINT "oauth_refresh_token_token_unique" UNIQUE("token")
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "training_plan" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"team_id" uuid NOT NULL,
+	"created_by" text NOT NULL,
+	"name" text NOT NULL,
+	"description" text,
+	"goal" text,
+	"weeks_count" integer NOT NULL,
+	"status" "training_plan_status" DEFAULT 'draft' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"updated_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "training_plan_weeks_check" CHECK ("training_plan"."weeks_count" between 1 and 16)
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "training_plan_assignment" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"plan_id" uuid,
+	"team_id" uuid NOT NULL,
+	"assigned_by" text NOT NULL,
+	"start_date" date NOT NULL,
+	"status" "training_plan_assignment_status" DEFAULT 'active' NOT NULL,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	"cancelled_at" timestamp
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "training_plan_week" (
+	"plan_id" uuid NOT NULL,
+	"week_number" integer NOT NULL,
+	"name" text,
+	"focus" text,
+	"notes" text,
+	CONSTRAINT "training_plan_week_plan_id_week_number_pk" PRIMARY KEY("plan_id","week_number")
+)$stmt$;
+  EXECUTE $stmt$CREATE TABLE "training_plan_workout" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"plan_id" uuid NOT NULL,
+	"week_number" integer NOT NULL,
+	"weekday" integer NOT NULL,
+	"position" integer DEFAULT 0 NOT NULL,
+	"routine_id" uuid,
+	"notes" text,
+	"created_at" timestamp DEFAULT now() NOT NULL,
+	CONSTRAINT "training_plan_workout_weekday_check" CHECK ("training_plan_workout"."weekday" between 1 and 7)
+)$stmt$;
+  EXECUTE $stmt$ALTER TABLE "routine" ADD COLUMN "archived_at" timestamp$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_session" ADD COLUMN "plan_assignment_id" uuid$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_session" ADD COLUMN "plan_workout_id" uuid$stmt$;
+  EXECUTE $stmt$ALTER TABLE "mcp_personal_token" ADD CONSTRAINT "mcp_personal_token_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_access_token" ADD CONSTRAINT "oauth_access_token_client_id_oauth_client_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."oauth_client"("client_id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_access_token" ADD CONSTRAINT "oauth_access_token_session_id_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."session"("id") ON DELETE set null ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_access_token" ADD CONSTRAINT "oauth_access_token_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_access_token" ADD CONSTRAINT "oauth_access_token_refresh_id_oauth_refresh_token_id_fk" FOREIGN KEY ("refresh_id") REFERENCES "public"."oauth_refresh_token"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_client" ADD CONSTRAINT "oauth_client_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_consent" ADD CONSTRAINT "oauth_consent_client_id_oauth_client_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."oauth_client"("client_id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_consent" ADD CONSTRAINT "oauth_consent_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_refresh_token" ADD CONSTRAINT "oauth_refresh_token_client_id_oauth_client_client_id_fk" FOREIGN KEY ("client_id") REFERENCES "public"."oauth_client"("client_id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_refresh_token" ADD CONSTRAINT "oauth_refresh_token_session_id_session_id_fk" FOREIGN KEY ("session_id") REFERENCES "public"."session"("id") ON DELETE set null ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "oauth_refresh_token" ADD CONSTRAINT "oauth_refresh_token_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_plan" ADD CONSTRAINT "training_plan_team_id_team_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."team"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_plan" ADD CONSTRAINT "training_plan_created_by_user_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_plan_assignment" ADD CONSTRAINT "training_plan_assignment_plan_id_training_plan_id_fk" FOREIGN KEY ("plan_id") REFERENCES "public"."training_plan"("id") ON DELETE set null ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_plan_assignment" ADD CONSTRAINT "training_plan_assignment_team_id_team_id_fk" FOREIGN KEY ("team_id") REFERENCES "public"."team"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_plan_assignment" ADD CONSTRAINT "training_plan_assignment_assigned_by_user_id_fk" FOREIGN KEY ("assigned_by") REFERENCES "public"."user"("id") ON DELETE no action ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_plan_week" ADD CONSTRAINT "training_plan_week_plan_id_training_plan_id_fk" FOREIGN KEY ("plan_id") REFERENCES "public"."training_plan"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_plan_workout" ADD CONSTRAINT "training_plan_workout_routine_id_routine_id_fk" FOREIGN KEY ("routine_id") REFERENCES "public"."routine"("id") ON DELETE set null ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_plan_workout" ADD CONSTRAINT "training_plan_workout_week_fk" FOREIGN KEY ("plan_id","week_number") REFERENCES "public"."training_plan_week"("plan_id","week_number") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$CREATE INDEX "mcp_personal_token_user_idx" ON "mcp_personal_token" USING btree ("user_id")$stmt$;
+  EXECUTE $stmt$CREATE INDEX "oauth_consent_user_client_idx" ON "oauth_consent" USING btree ("user_id","client_id")$stmt$;
+  EXECUTE $stmt$CREATE INDEX "training_plan_team_idx" ON "training_plan" USING btree ("team_id")$stmt$;
+  EXECUTE $stmt$CREATE UNIQUE INDEX "training_plan_workout_slot_unique" ON "training_plan_workout" USING btree ("plan_id","week_number","weekday","position")$stmt$;
+  EXECUTE $stmt$CREATE INDEX "training_plan_workout_routine_idx" ON "training_plan_workout" USING btree ("routine_id")$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_session" ADD CONSTRAINT "training_session_plan_assignment_id_training_plan_assignment_id_fk" FOREIGN KEY ("plan_assignment_id") REFERENCES "public"."training_plan_assignment"("id") ON DELETE set null ON UPDATE no action$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_session" ADD CONSTRAINT "training_session_plan_workout_id_training_plan_workout_id_fk" FOREIGN KEY ("plan_workout_id") REFERENCES "public"."training_plan_workout"("id") ON DELETE set null ON UPDATE no action$stmt$;
+  EXECUTE $stmt$CREATE INDEX "training_session_plan_assignment_idx" ON "training_session" USING btree ("plan_assignment_id")$stmt$;
+  INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('b748e0bca862e181022a6c98e9cb5d27af23eba5abd4b6a136ff0aaa507f2075', 1792855246172);
+END
+$migration$;
+
+-- Migración 0006_swift_carnage
+DO $migration$
+BEGIN
+  IF EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE hash = '2bcf70b4091bf528de5660cb26de45bed9552df3ed4bf8e307edbeb876f9598d') THEN
+    RAISE NOTICE 'Migración 0006_swift_carnage ya aplicada, se omite';
+    RETURN;
+  END IF;
+  EXECUTE $stmt$CREATE TABLE "push_device" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"user_id" text NOT NULL,
+	"token" text NOT NULL,
+	"platform" text DEFAULT 'android' NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "push_device_token_unique" UNIQUE("token")
+)$stmt$;
+  EXECUTE $stmt$ALTER TABLE "push_device" ADD CONSTRAINT "push_device_user_id_user_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."user"("id") ON DELETE cascade ON UPDATE no action$stmt$;
+  EXECUTE $stmt$CREATE INDEX "push_device_user_idx" ON "push_device" USING btree ("user_id")$stmt$;
+  INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('2bcf70b4091bf528de5660cb26de45bed9552df3ed4bf8e307edbeb876f9598d', 1793242265431);
+END
+$migration$;
+
+-- Migración 0007_real_titanium_man
+DO $migration$
+BEGIN
+  IF EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations WHERE hash = '15333968cf2a516603e7a38fb4e07e09697bfcbc76b01f8f789ad3ab2ed26ae6') THEN
+    RAISE NOTICE 'Migración 0007_real_titanium_man ya aplicada, se omite';
+    RETURN;
+  END IF;
+  EXECUTE $stmt$CREATE TYPE "public"."routine_kind" AS ENUM('warmup', 'main', 'recovery')$stmt$;
+  EXECUTE $stmt$ALTER TABLE "routine" ADD COLUMN "kind" "routine_kind"$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_session" ADD COLUMN "kind" "routine_kind"$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_session" ADD COLUMN "position" integer DEFAULT 0 NOT NULL$stmt$;
+  EXECUTE $stmt$ALTER TABLE "training_session" ADD COLUMN "scheduled_time" time$stmt$;
+  EXECUTE $stmt$CREATE INDEX "training_session_team_date_position_idx" ON "training_session" USING btree ("team_id","scheduled_date","position")$stmt$;
+  EXECUTE $stmt$UPDATE "routine" SET "kind" = 'main' WHERE "category" = 'training' AND "kind" IS NULL$stmt$;
+  EXECUTE $stmt$UPDATE "training_session" ts SET "kind" = COALESCE(
+  (SELECT r."kind" FROM "routine" r WHERE r."id" = ts."routine_id" AND r."category" = 'training'),
+  'main'
+) WHERE ts."kind" IS NULL AND NOT EXISTS (
+  SELECT 1 FROM "routine" r WHERE r."id" = ts."routine_id" AND r."category" = 'evaluation'
+)$stmt$;
+  INSERT INTO drizzle.__drizzle_migrations (hash, created_at) VALUES ('15333968cf2a516603e7a38fb4e07e09697bfcbc76b01f8f789ad3ab2ed26ae6', 1793481683870);
 END
 $migration$;

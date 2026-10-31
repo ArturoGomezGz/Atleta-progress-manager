@@ -10,6 +10,7 @@ import { athleteSession, routine, sessionExercise, sessionSetTarget, teamMember,
 import { TRPCError } from "@trpc/server"
 import { and, eq, or } from "drizzle-orm"
 import { flattenContent, targetsForExercise } from "./routine-content"
+import { defaultPositionForKind, toHHMM, type RoutineKind } from "./routine-kind"
 
 export type Tx = Parameters<Parameters<typeof db.transaction>[0]>[0]
 type Reader = Pick<Tx, "select">
@@ -18,6 +19,18 @@ type Writer = Pick<Tx, "insert">
 /** "Hoy" en UTC (YYYY-MM-DD), el mismo criterio que usa sessions.create desde siempre. */
 export function todayUtc(now: Date = new Date()): string {
   return now.toISOString().split("T")[0]!
+}
+
+/**
+ * "Hoy" del atleta (YYYY-MM-DD). El cliente manda la fecha local de su dispositivo (`localDate`); el
+ * servidor la acepta solo si está a ±1 día de la fecha UTC (cubre todas las zonas horarias reales) y,
+ * si no, usa UTC. Así un reloj mal puesto no abre días futuros.
+ */
+export function resolveAthleteToday(localDate?: string | null, now: Date = new Date()): string {
+  const utc = todayUtc(now)
+  if (!localDate || !/^\d{4}-\d{2}-\d{2}$/.test(localDate)) return utc
+  const diffDays = Math.abs(Date.parse(`${localDate}T00:00:00Z`) - Date.parse(`${utc}T00:00:00Z`)) / 86_400_000
+  return Number.isFinite(diffDays) && diffDays <= 1 ? localDate : utc
 }
 
 /**
@@ -48,6 +61,14 @@ export type AssignSessionsInput = {
   planWorkoutIds?: (string | null)[]
   /** "Hoy" (YYYY-MM-DD): una fecha posterior deja la sesión programada. */
   today: string
+  /** Tipo de la sesión; por defecto el de la rutina (null en evaluaciones). */
+  kind?: RoutineKind
+  /** Orden dentro del día (mismo índice que `dates`); por defecto el orden del tipo. */
+  positions?: number[]
+  /** Un solo orden para todas las fechas (si no hay `positions`). */
+  position?: number
+  /** Hora sugerida "HH:MM", solo informativa. */
+  scheduledTime?: string | null
 }
 
 /**
@@ -59,6 +80,15 @@ export async function createAssignedSessions(tx: Writer, a: AssignSessionsInput)
   if (a.planWorkoutIds && a.planWorkoutIds.length !== a.dates.length) {
     throw new Error("planWorkoutIds debe tener la misma longitud que dates")
   }
+  if (a.positions && a.positions.length !== a.dates.length) {
+    throw new Error("positions debe tener la misma longitud que dates")
+  }
+  const isTraining = a.routine.category === "training"
+  if (!isTraining && (a.kind !== undefined || a.position !== undefined || a.positions !== undefined)) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: "Las evaluaciones no tienen tipo ni orden dentro del día" })
+  }
+  // Evaluación: sin tipo ni orden. Entrenamiento: el pedido, o el de la rutina, o "main".
+  const kind: RoutineKind | null = isTraining ? (a.kind ?? a.routine.kind ?? "main") : null
 
   // Aplanar ejercicios del content (ejercicios individuales + ejercicios dentro de circuitos)
   const allExercises = flattenContent(a.routine.content)
@@ -79,6 +109,9 @@ export async function createAssignedSessions(tx: Writer, a: AssignSessionsInput)
         content: a.routine.content,
         planAssignmentId: a.planAssignmentId ?? null,
         planWorkoutId: a.planWorkoutIds?.[i] ?? null,
+        kind,
+        position: isTraining ? (a.positions?.[i] ?? a.position ?? defaultPositionForKind(kind)) : 0,
+        scheduledTime: a.scheduledTime ?? null,
       })
       .returning()
 
@@ -102,7 +135,7 @@ export async function createAssignedSessions(tx: Writer, a: AssignSessionsInput)
     await tx.insert(athleteSession).values(
       a.athleteIds.map((athleteId) => ({ sessionId: session!.id, athleteId, status: athleteInitialStatus })),
     )
-    sessions.push(session!)
+    sessions.push({ ...session!, scheduledTime: toHHMM(session!.scheduledTime) })
   }
   return sessions
 }
