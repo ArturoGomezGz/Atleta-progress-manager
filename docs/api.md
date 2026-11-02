@@ -79,7 +79,8 @@ La autorización de rol (coach/atleta) se verifica dentro de cada procedimiento.
 | `routines.updateContent` | mutation | Guarda el contenido completo (y opcionalmente `name`). Cada ejercicio **nuevo** debe ser visible (`BAD_REQUEST`). Con `expectedUpdatedAt` (ISO) aplica concurrencia optimista: bloquea la fila (`SELECT … FOR UPDATE`) y, si su `updatedAt` ya no es ese, falla con `CONFLICT`. Sin él se comporta como siempre (la web). | Coach del equipo |
 | `routines.rename` | mutation | Cambia el nombre y/o el tipo (`name?`, `kind?`, al menos uno); acepta `expectedUpdatedAt` igual que `updateContent` (que también acepta `kind`). | Coach del equipo |
 | `routines.archive` | mutation | `{id, archived = true}`: archiva (sale de `list` y no se puede asignar con `sessions.create`/`createMany`) o restaura con `archived: false`. Lo ya asignado no cambia. | Coach del equipo |
-| `routines.delete` | mutation | Eliminar rutina completa. | Coach del equipo |
+| `routines.pendingAssignments` | query | `{id}`: nº de atletas con sesiones pendientes (scheduled/active) de la plantilla; la web lo usa para advertir antes de eliminar. | Coach del equipo |
+| `routines.delete` | mutation | Eliminar rutina completa; cancela sus sesiones asignadas pendientes (las completadas se conservan). | Coach del equipo |
 | `routines.aiAvailable` / `generateWithAI` / `tweakWithAI` | query / mutation | Generación y ajustes con IA (ver [ia-generacion-rutinas.md](ia-generacion-rutinas.md)). | Miembro / Coach del equipo |
 
 ### `sessions`

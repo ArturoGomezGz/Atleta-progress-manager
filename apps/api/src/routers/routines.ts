@@ -1,7 +1,7 @@
 import { db } from "@atleta/db/client"
-import { exercise, routine, type RoutineContent } from "@atleta/db/schema"
+import { athleteSession, exercise, routine, trainingSession, type RoutineContent } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, eq, inArray, isNull } from "drizzle-orm"
+import { and, countDistinct, eq, inArray, isNull } from "drizzle-orm"
 import { z } from "zod"
 import { aiRoutineInputSchema, generateRoutineWithAI } from "../services/ai-routines"
 import { createTweakDeps } from "../services/ai-routine-editor/deps-real"
@@ -297,6 +297,25 @@ export const routinesRouter = router({
       })
     }),
 
+  // Atletas con sesiones pendientes de esta plantilla: eliminarla las cancela (ver `delete`), así que la UI avisa antes
+  pendingAssignments: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
+      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, r.teamId)
+      const [row] = await db
+        .select({ athletes: countDistinct(athleteSession.athleteId) })
+        .from(trainingSession)
+        .innerJoin(athleteSession, eq(athleteSession.sessionId, trainingSession.id))
+        .where(and(
+          eq(trainingSession.routineId, input.id),
+          inArray(trainingSession.status, ["scheduled", "active"]),
+          inArray(athleteSession.status, ["scheduled", "active"]),
+        ))
+      return { athletes: Number(row?.athletes ?? 0) }
+    }),
+
   delete: protectedProcedure
     .input(z.object({ id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
@@ -304,6 +323,15 @@ export const routinesRouter = router({
       if (!r) throw new TRPCError({ code: "NOT_FOUND" })
       await assertCoach(ctx.session.user.id, r.teamId)
       assertRoutineFeature(ctx.session.user, r.category)
-      await db.delete(routine).where(eq(routine.id, input.id))
+      // Las sesiones asignadas pendientes sobreviven al borrado (routine_id pasa a null) y la app móvil las
+      // mostraba como "Sesión libre" mientras "Asignados" las ocultaba: se cancelan junto con la plantilla.
+      // Las completadas se conservan como historial.
+      await db.transaction(async (tx) => {
+        await tx
+          .update(trainingSession)
+          .set({ status: "cancelled" })
+          .where(and(eq(trainingSession.routineId, input.id), inArray(trainingSession.status, ["scheduled", "active"])))
+        await tx.delete(routine).where(eq(routine.id, input.id))
+      })
     }),
 })

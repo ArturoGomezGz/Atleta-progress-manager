@@ -40,6 +40,7 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
   // (a veces en pleno deslizamiento de vuelta) y luego saltaba a la lista real.
   const { onEntered, showContent, showSkeleton } = useRevealAfterEnter(routines !== undefined)
   const deleteRoutine = trpc.routines.delete.useMutation({ onSuccess: () => { refetch(); setDeleting(null) } })
+  const assigned = trpc.routines.pendingAssignments.useQuery({ id: deleting?.id ?? "" }, { enabled: !!deleting, gcTime: 0 })
   const duplicateRoutine = trpc.routines.duplicate.useMutation({ onSuccess: () => refetch() })
 
   const filtered = (routines ?? []).filter((r) => {
@@ -176,7 +177,8 @@ export default function PlantillasPage({ params }: { params: Promise<{ teamId: s
       {deleting && (
         <ConfirmDeleteDialog
           name={sc(deleting.name)}
-          pending={deleteRoutine.isPending}
+          pending={deleteRoutine.isPending || assigned.isLoading}
+          assignedAthletes={assigned.data?.athletes ?? 0}
           onCancel={() => setDeleting(null)}
           onConfirm={() => deleteRoutine.mutate({ id: deleting.id })}
         />
