@@ -1,7 +1,7 @@
 import { db } from "@atleta/db/client"
-import { exercise, routine, trainingSession, type RoutineContent } from "@atleta/db/schema"
+import { athleteSession, exercise, routine, trainingSession, type RoutineContent } from "@atleta/db/schema"
 import { TRPCError } from "@trpc/server"
-import { and, eq, inArray, isNull } from "drizzle-orm"
+import { and, countDistinct, eq, inArray, isNull } from "drizzle-orm"
 import { z } from "zod"
 import { aiRoutineInputSchema, generateRoutineWithAI } from "../services/ai-routines"
 import { createTweakDeps } from "../services/ai-routine-editor/deps-real"
@@ -295,6 +295,25 @@ export const routinesRouter = router({
           .returning()
         return updated!
       })
+    }),
+
+  // Atletas con sesiones pendientes de esta plantilla: eliminarla las cancela (ver `delete`), así que la UI avisa antes
+  pendingAssignments: protectedProcedure
+    .input(z.object({ id: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const [r] = await db.select().from(routine).where(eq(routine.id, input.id)).limit(1)
+      if (!r) throw new TRPCError({ code: "NOT_FOUND" })
+      await assertCoach(ctx.session.user.id, r.teamId)
+      const [row] = await db
+        .select({ athletes: countDistinct(athleteSession.athleteId) })
+        .from(trainingSession)
+        .innerJoin(athleteSession, eq(athleteSession.sessionId, trainingSession.id))
+        .where(and(
+          eq(trainingSession.routineId, input.id),
+          inArray(trainingSession.status, ["scheduled", "active"]),
+          inArray(athleteSession.status, ["scheduled", "active"]),
+        ))
+      return { athletes: Number(row?.athletes ?? 0) }
     }),
 
   delete: protectedProcedure

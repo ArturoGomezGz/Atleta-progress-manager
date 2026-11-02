@@ -203,11 +203,14 @@ export function RoutineActionsSheet({
 export function ConfirmDeleteDialog({
   name,
   pending,
+  assignedAthletes = 0,
   onCancel,
   onConfirm,
 }: {
   name: string
   pending: boolean
+  // Atletas con esta rutina asignada y pendiente: si hay, se advierte que desaparece también de su app
+  assignedAthletes?: number
   onCancel: () => void
   onConfirm: () => void
 }) {
@@ -242,6 +245,12 @@ export function ConfirmDeleteDialog({
         <p className="mt-1.5 text-sm text-muted-foreground break-words">
           <span className="font-medium text-foreground">{name}</span> se eliminará de tus entrenamientos. Esta acción no se puede deshacer.
         </p>
+        {assignedAthletes > 0 && (
+          <p className="mt-2 text-sm text-destructive break-words">
+            Esta rutina está asignada y pendiente para {assignedAthletes} {assignedAthletes === 1 ? "atleta" : "atletas"}. Al eliminarla
+            también se cancelará en su app y dejará de aparecerles por completo. ¿Deseas continuar?
+          </p>
+        )}
         <div className="mt-5 grid grid-cols-2 gap-2">
           <button
             type="button"
