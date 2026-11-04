@@ -54,11 +54,39 @@ export function inlineDateLabel(iso: string) {
   return `${p.weekday} ${p.day} de ${p.month}`
 }
 
-/** "Oct – Nov" para la cabecera de la tira de días. */
-export function monthRangeLabel(fromIso: string, toIso: string) {
-  const a = parts(fromIso).month.slice(0, 3)
-  const b = parts(toIso).month.slice(0, 3)
-  return a === b ? capitalize(a) : `${capitalize(a)} – ${capitalize(b)}`
+/** "Noviembre 2026" para la cabecera del calendario. */
+export function monthYearLabel(iso: string) {
+  return `${capitalize(parts(iso).month)} ${iso.slice(0, 4)}`
+}
+
+/** Lunes de la semana (YYYY-MM-DD) que contiene `iso`. */
+export function startOfWeekISO(iso: string) {
+  const [y, m, d] = iso.split("-").map(Number)
+  const dow = new Date(y!, m! - 1, d!, 12).getDay() // 0 = domingo
+  return addDaysISO(iso, -((dow + 6) % 7))
+}
+
+/** Primer día del mes de `iso`. */
+export function startOfMonthISO(iso: string) {
+  return `${iso.slice(0, 7)}-01`
+}
+
+/** Primer día del mes `n` meses después (o antes, con n negativo). */
+export function addMonthsISO(iso: string, n: number) {
+  const [y, m] = iso.split("-").map(Number)
+  return localDateISO(new Date(y!, m! - 1 + n, 1, 12))
+}
+
+/** Los 7 días (lunes a domingo) de la semana de `iso`. */
+export function weekDays(iso: string) {
+  const start = startOfWeekISO(iso)
+  return Array.from({ length: 7 }, (_, k) => addDaysISO(start, k))
+}
+
+/** Cuadrícula del mes: 6 semanas (42 días) desde el lunes de la semana del día 1. */
+export function monthGrid(monthStart: string) {
+  const start = startOfWeekISO(monthStart)
+  return Array.from({ length: 42 }, (_, k) => addDaysISO(start, k))
 }
 
 /** "18:30" de un ISO UTC, en hora local. */

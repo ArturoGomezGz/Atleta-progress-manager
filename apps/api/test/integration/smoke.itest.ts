@@ -105,7 +105,8 @@ describe("smoke: API + Postgres", { skip: integrationSkip }, () => {
 
     const session = await caller.sessions.create({ routineId: r.id, teamId: fx.teams.a.id, athleteIds: [fx.users.athleteA.id] })
     assert.equal(session.status, "active")
-    assert.equal(session.scheduledDate, null)
+    // "Ahora" se guarda con la fecha de hoy (queda congelada en ese día)
+    assert.equal(session.scheduledDate, new Date().toISOString().split("T")[0])
     assert.equal(session.planAssignmentId, null)
 
     const exercises = await db.select().from(sessionExercise).where(eq(sessionExercise.sessionId, session.id))
