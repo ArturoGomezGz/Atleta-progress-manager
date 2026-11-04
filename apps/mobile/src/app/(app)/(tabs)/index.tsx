@@ -3,25 +3,20 @@
 import { Button } from "@/components/button"
 import { ConfirmSheet } from "@/components/confirm-sheet"
 import { Text } from "@/components/text"
-import { addDaysISO, dayNumber, inlineDateLabel, localDateISO, localTimeLabel, longDateLabel, monthRangeLabel, weekdayShort } from "@/lib/dates"
-import { kindLabel, kindNoun, lockMessage, type LockReason } from "@/lib/session-kind"
+import { CollapsibleCalendar, Dot, type DotKind } from "@/components/workout/collapsible-calendar"
+import { inlineDateLabel, localDateISO, localTimeLabel, longDateLabel, monthGrid, startOfMonthISO } from "@/lib/dates"
+import { kindLabel, kindNoun, lockMessage } from "@/lib/session-kind"
 import { colors, radius, radiusLg } from "@/lib/theme"
 import { trpc, type RouterOutputs } from "@/lib/trpc"
 import { useReduceMotion } from "@/lib/use-reduce-motion"
 import { router, useFocusEffect } from "expo-router"
-import { Check, ChevronLeft, Eye, Inbox, Lock, Moon, Play, Users } from "lucide-react-native"
+import { Check, ChevronLeft, Eye, Lock, Moon, Play, Users } from "lucide-react-native"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ActivityIndicator, Animated, Easing, Pressable, RefreshControl, ScrollView, StyleSheet, View } from "react-native"
 
 type Item = RouterOutputs["sessions"]["myCalendar"][number]
 type TileState = "active" | "done" | "locked" | "skipped" | "plan" | "eval"
-type DotKind = "done" | "today" | "plan" | "rest"
 
-const DAYS_BACK = 7
-const DAYS_AHEAD = 14
-const PILL_W = 48
-const PILL_GAP = 6
-const STRIP_PAD = 16
 const CARD_DIM = "#0f1319"
 
 const isPending = (i: Item) => i.status === "scheduled" || i.status === "active"
@@ -33,10 +28,16 @@ export default function WorkoutsScreen() {
   const [today, setToday] = useState(() => localDateISO())
   const [selected, setSelected] = useState<string | null>(null) // null = hoy
   const sel = selected ?? today
-  const from = addDaysISO(today, -DAYS_BACK)
-  const to = addDaysISO(today, DAYS_AHEAD)
+  // Mes que muestra el calendario; se pide la cuadrícula completa (42 días) para marcar los puntos de cada día
+  const [month, setMonth] = useState(() => startOfMonthISO(localDateISO()))
+  const grid = useMemo(() => monthGrid(month), [month])
+  const from = grid[0]!
+  const to = grid[grid.length - 1]!
 
-  const { data, isLoading, isError, refetch, isRefetching } = trpc.sessions.myCalendar.useQuery({ from, to, localDate: today })
+  const { data, isLoading, isError, refetch, isRefetching } = trpc.sessions.myCalendar.useQuery(
+    { from, to, localDate: today },
+    { placeholderData: (prev) => prev },
+  )
 
   // Al volver a la pestaña se recalcula "hoy" (por si cambió el día) y se refresca.
   const firstFocus = useRef(true)
@@ -58,23 +59,11 @@ export default function WorkoutsScreen() {
   }, [])
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current) }, [])
 
-  // Sacudida de una tarjeta bloqueada: el objeto cambia en cada toque aunque sea la misma tarjeta.
-  const [shake, setShake] = useState<{ id: string } | null>(null)
-  const refuse = (id: string, msg: string) => {
-    setShake({ id })
-    showToast(msg)
-  }
-
   const byDate = useMemo(() => {
     const m = new Map<string, Item[]>()
     for (const i of data ?? []) m.set(i.scheduledDate, [...(m.get(i.scheduledDate) ?? []), i])
     return m
   }, [data])
-
-  const days = useMemo(
-    () => Array.from({ length: DAYS_BACK + DAYS_AHEAD + 1 }, (_, k) => addDaysISO(today, k - DAYS_BACK)),
-    [today],
-  )
 
   // Saltar / abandonar
   const [confirm, setConfirm] = useState<Item | null>(null)
@@ -99,11 +88,25 @@ export default function WorkoutsScreen() {
 
   const open = (id: string) => router.push({ pathname: "/session/[id]", params: { id } })
   const pickDay = (d: string) => setSelected(d === today ? null : d)
+  const backToToday = () => {
+    setSelected(null)
+    setMonth(startOfMonthISO(today))
+  }
 
   const items = byDate.get(sel) ?? []
 
   return (
     <View style={styles.root}>
+      <CollapsibleCalendar
+        today={today}
+        selected={sel}
+        month={month}
+        dotOf={(d) => dotFor(d, today, byDate.get(d))}
+        reduceMotion={reduceMotion}
+        onPick={pickDay}
+        onMonthChange={setMonth}
+      />
+      <Legend />
       {isLoading ? (
         <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>
       ) : (
@@ -111,50 +114,38 @@ export default function WorkoutsScreen() {
           contentContainerStyle={styles.scroll}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} tintColor={colors.primary} colors={[colors.primary]} />}
         >
-          {!data || data.length === 0 ? (
+          {isError && !data ? (
             <View style={styles.empty}>
-              <Text heading size={28} center>{isError ? "No pudimos cargar tus rutinas" : "Todo al día"}</Text>
-              <Text color={colors.mutedForeground} center>
-                {isError ? "Desliza hacia abajo para reintentar." : "No tienes rutinas pendientes. Tu coach te asignará la próxima."}
-              </Text>
+              <Text heading size={28} center>No pudimos cargar tus rutinas</Text>
+              <Text color={colors.mutedForeground} center>Desliza hacia abajo para reintentar.</Text>
             </View>
           ) : (
-            <>
-              <View style={styles.stripHead}>
-                <Text size={13} color={colors.mutedForeground}>{monthRangeLabel(days[0]!, days[days.length - 1]!)}</Text>
-              </View>
-              <DayStrip days={days} today={today} selected={sel} byDate={byDate} onPick={pickDay} />
-              <Legend />
-              <Animated.View
-                style={{
-                  opacity: fade,
-                  transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
-                }}
-              >
-                <DayDetail
-                  date={sel}
-                  today={today}
-                  items={items}
-                  shake={shake}
-                  reduceMotion={reduceMotion}
-                  onOpen={open}
-                  onRefuse={refuse}
-                  onToast={showToast}
-                  onSkip={setConfirm}
-                />
-                {sel !== today && (
-                  <Pressable
-                    onPress={() => setSelected(null)}
-                    accessibilityRole="button"
-                    accessibilityLabel="Volver a hoy"
-                    style={styles.back}
-                  >
-                    <ChevronLeft size={18} color={colors.mutedForeground} />
-                    <Text weight="semibold" color={colors.mutedForeground}>Volver a hoy</Text>
-                  </Pressable>
-                )}
-              </Animated.View>
-            </>
+            <Animated.View
+              style={{
+                opacity: fade,
+                transform: [{ translateY: fade.interpolate({ inputRange: [0, 1], outputRange: [8, 0] }) }],
+              }}
+            >
+              <DayDetail
+                date={sel}
+                today={today}
+                items={items}
+                onOpen={open}
+                onToast={showToast}
+                onSkip={setConfirm}
+              />
+              {sel !== today && (
+                <Pressable
+                  onPress={backToToday}
+                  accessibilityRole="button"
+                  accessibilityLabel="Volver a hoy"
+                  style={styles.back}
+                >
+                  <ChevronLeft size={18} color={colors.mutedForeground} />
+                  <Text weight="semibold" color={colors.mutedForeground}>Volver a hoy</Text>
+                </Pressable>
+              )}
+            </Animated.View>
           )}
         </ScrollView>
       )}
@@ -184,86 +175,13 @@ export default function WorkoutsScreen() {
   )
 }
 
-/* ---------- Tira de días ---------- */
+/* ---------- Calendario ---------- */
 
 function dotFor(date: string, today: string, items: Item[] | undefined): DotKind {
   const live = (items ?? []).filter((i) => i.status !== "cancelled")
   if (live.length === 0) return "rest"
   if (date > today) return "plan"
   return live.some(isPending) ? "today" : "done"
-}
-
-function DayStrip({ days, today, selected, byDate, onPick }: {
-  days: string[]
-  today: string
-  selected: string
-  byDate: Map<string, Item[]>
-  onPick: (d: string) => void
-}) {
-  const ref = useRef<ScrollView>(null)
-  const [width, setWidth] = useState(0)
-  const centered = useRef(false)
-
-  // Auto-scroll inicial: "Hoy" queda centrado
-  useEffect(() => {
-    if (width === 0 || centered.current) return
-    centered.current = true
-    const center = STRIP_PAD + DAYS_BACK * (PILL_W + PILL_GAP) + PILL_W / 2
-    ref.current?.scrollTo({ x: Math.max(0, center - width / 2), animated: false })
-  }, [width])
-
-  return (
-    <ScrollView
-      ref={ref}
-      horizontal
-      // Sin flexGrow: 0, un ScrollView horizontal dentro del contenido (flexGrow: 1) se estira
-      // a lo alto y empuja la leyenda y el detalle del día hacia abajo.
-      style={{ flexGrow: 0 }}
-      showsHorizontalScrollIndicator={false}
-      onLayout={(e) => setWidth(e.nativeEvent.layout.width)}
-      contentContainerStyle={styles.strip}
-      accessibilityRole="tablist"
-      accessibilityLabel="Días"
-    >
-      {days.map((d) => {
-        const isToday = d === today
-        const on = d === selected
-        const dot = dotFor(d, today, byDate.get(d))
-        return (
-          <Pressable
-            key={d}
-            onPress={() => onPick(d)}
-            accessibilityRole="tab"
-            accessibilityState={{ selected: on }}
-            accessibilityLabel={`${isToday ? "Hoy, " : ""}${longDateLabel(d)}, ${dotText(dot)}`}
-            style={[
-              styles.pill,
-              on && (isToday ? styles.pillSelToday : styles.pillSel),
-            ]}
-          >
-            <Text size={10} weight="semibold" color={on && isToday ? "#fff" : colors.mutedForeground} style={styles.upper}>
-              {isToday ? "Hoy" : weekdayShort(d)}
-            </Text>
-            <Text heading size={22} color={on && isToday ? "#fff" : isToday ? colors.primary : colors.foreground}>
-              {dayNumber(d)}
-            </Text>
-            <Dot kind={dot} onPrimary={on && isToday} />
-          </Pressable>
-        )
-      })}
-    </ScrollView>
-  )
-}
-
-const dotText = (k: DotKind) => (k === "done" ? "hecho" : k === "today" ? "con pendientes" : k === "plan" ? "planeado" : "descanso")
-
-function Dot({ kind, onPrimary }: { kind: DotKind; onPrimary?: boolean }) {
-  const style =
-    kind === "done" ? { backgroundColor: colors.success }
-    : kind === "today" ? { backgroundColor: onPrimary ? "#fff" : colors.primary }
-    : kind === "plan" ? { borderWidth: 1.5, borderColor: onPrimary ? "#fff" : "#5a6576" }
-    : { backgroundColor: colors.border }
-  return <View style={[styles.dot, style]} />
 }
 
 function Legend() {
@@ -291,15 +209,12 @@ type DetailProps = {
   date: string
   today: string
   items: Item[]
-  shake: { id: string } | null
-  reduceMotion: boolean
   onOpen: (sessionId: string) => void
-  onRefuse: (id: string, msg: string) => void
   onToast: (msg: string) => void
   onSkip: (item: Item) => void
 }
 
-function DayDetail({ date, today, items, shake, reduceMotion, onOpen, onRefuse, onToast, onSkip }: DetailProps) {
+function DayDetail({ date, today, items, onOpen, onToast, onSkip }: DetailProps) {
   const future = date > today
   const isToday = date === today
   const chain = items.filter((i) => !isEval(i))
@@ -368,16 +283,11 @@ function DayDetail({ date, today, items, shake, reduceMotion, onOpen, onRefuse, 
           numbered={inChain}
           state={state}
           hint={hint}
-          shake={shake?.id === i.sessionId ? shake : null}
-          reduceMotion={reduceMotion}
           canSkip={!future && !isEval(i) && (state === "active" || state === "locked")}
           onSkip={() => onSkip(i)}
           onPress={() => {
-            if (state === "done") return onOpen(i.sessionId)
             if (state === "skipped") return onToast("Bloque saltado.")
-            if (state === "plan") return onRefuse(i.sessionId, `Planeado. ${lockMessage("FUTURE", inlineDateLabel(date))}`)
-            if (state === "locked") return onRefuse(i.sessionId, lockMessage(i.lockReason ?? "PREVIOUS_STEP_PENDING"))
-            if (state === "eval" && i.locked) return onRefuse(i.sessionId, lockMessage(i.lockReason, inlineDateLabel(date)))
+            // La vista previa se abre siempre; el botón de empezar solo aparece si el servidor lo permite
             onOpen(i.sessionId)
           }}
         />
@@ -455,34 +365,20 @@ function Badge({ kind }: { kind: "now" | "done" | "plan" }) {
 
 /* ---------- Tarjeta de bloque ---------- */
 
-function Tile({ item, index, numbered, state, hint, shake, reduceMotion, canSkip, onPress, onSkip }: {
+function Tile({ item, index, numbered, state, hint, canSkip, onPress, onSkip }: {
   item: Item
   index: number
   numbered: boolean
   state: TileState
   hint?: string
-  shake: { id: string } | null
-  reduceMotion: boolean
   canSkip: boolean
   onPress: () => void
   onSkip: () => void
 }) {
+  const reduceMotion = useReduceMotion()
   const inProgress = item.status === "active"
   const evaluation = isEval(item)
   const kind = kindLabel(item.kind, item.category)
-
-  // Sacudida al tocar un bloque bloqueado o planeado
-  const x = useRef(new Animated.Value(0)).current
-  useEffect(() => {
-    if (!shake || reduceMotion) return
-    Animated.sequence([
-      Animated.timing(x, { toValue: -8, duration: 60, useNativeDriver: true }),
-      Animated.timing(x, { toValue: 8, duration: 80, useNativeDriver: true }),
-      Animated.timing(x, { toValue: -5, duration: 70, useNativeDriver: true }),
-      Animated.timing(x, { toValue: 5, duration: 70, useNativeDriver: true }),
-      Animated.timing(x, { toValue: 0, duration: 60, useNativeDriver: true }),
-    ]).start()
-  }, [shake, reduceMotion, x])
 
   // Pop del check cuando el bloque pasa a completado estando a la vista
   const scale = useRef(new Animated.Value(1)).current
@@ -518,7 +414,6 @@ function Tile({ item, index, numbered, state, hint, shake, reduceMotion, canSkip
         dim && styles.tileDim,
         state === "plan" && styles.tilePlan,
         state === "locked" && { opacity: 0.8 },
-        { transform: [{ translateX: x }] },
       ]}
     >
       <Pressable
@@ -595,21 +490,6 @@ const styles = StyleSheet.create({
   scroll: { paddingTop: 4, paddingBottom: 32, flexGrow: 1 },
   empty: { flex: 1, alignItems: "center", justifyContent: "center", padding: 32, gap: 8 },
   upper: { textTransform: "uppercase", letterSpacing: 0.5 },
-  stripHead: { paddingHorizontal: 16, paddingBottom: 4 },
-  strip: { paddingHorizontal: STRIP_PAD, paddingVertical: 4, gap: PILL_GAP },
-  pill: {
-    width: PILL_W,
-    height: 70,
-    borderRadius: 14,
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 4,
-    borderWidth: 1,
-    borderColor: "transparent",
-  },
-  pillSel: { backgroundColor: colors.card, borderColor: colors.border },
-  pillSelToday: { backgroundColor: colors.primary, borderColor: colors.primary },
-  dot: { width: 6, height: 6, borderRadius: 3 },
   legend: { flexDirection: "row", flexWrap: "wrap", gap: 12, paddingHorizontal: 16, paddingTop: 4, paddingBottom: 14 },
   legendItem: { flexDirection: "row", alignItems: "center", gap: 5 },
   dayHead: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, paddingHorizontal: 16, marginBottom: 6 },

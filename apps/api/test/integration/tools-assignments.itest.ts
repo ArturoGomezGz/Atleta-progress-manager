@@ -37,7 +37,7 @@ describe("MCP: herramientas de asignados", { skip: integrationSkip }, () => {
   it("assign_routine sin fechas: una sesión activa ahora", async () => {
     const r = await coach.ok<Assigned>("assign_routine", { routineId, athleteIds: [fx.users.athleteA.id, fx.users.athleteA.id] })
     assert.equal(r.sessions.length, 1)
-    assert.equal(r.sessions[0]!.date, null)
+    assert.equal(r.sessions[0]!.date, utcDate(0))
     assert.equal(r.sessions[0]!.status, "active")
   })
 

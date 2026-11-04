@@ -477,6 +477,8 @@ export const sessionsRouter = router({
       teamId: z.string().uuid(),
       athleteIds: z.array(z.string()).min(1),
       scheduledDate: z.string().date().optional(),
+      // Fecha local del coach: es el día en que queda planeada una asignación "Ahora" (ver resolveAthleteToday)
+      localDate: localDateInput,
       // Solo entrenamientos: por defecto el tipo de la rutina y, sin insertIndex ni position, al final del día
       kind: routineKindSchema.optional(),
       position: positionInput.optional(),
@@ -491,7 +493,7 @@ export const sessionsRouter = router({
       if (r.category === "evaluation") assertFeature(ctx.session.user, "evaluation")
       if (input.scheduledDate != null) assertFeature(ctx.session.user, "scheduled_sessions")
 
-      const today = todayUtc()
+      const today = resolveAthleteToday(input.localDate)
       const [session] = await db.transaction((tx) =>
         createAssignedSessions(tx, {
           routine: r,
@@ -523,6 +525,7 @@ export const sessionsRouter = router({
       athleteIds: z.array(z.string()).min(1).max(MAX_ASSIGN_ATHLETES),
       dates: z.array(z.string().date()).min(1).max(MAX_ASSIGN_DATES)
         .refine((d) => new Set(d).size === d.length, "Las fechas no se pueden repetir"),
+      localDate: localDateInput,
       kind: routineKindSchema.optional(),
       position: positionInput.optional(),
       insertIndex: insertIndexInput.optional(),
@@ -535,7 +538,7 @@ export const sessionsRouter = router({
 
       const r = await loadAssignableRoutine(input.routineId, input.teamId)
       if (r.category === "evaluation") assertFeature(ctx.session.user, "evaluation")
-      const today = todayUtc()
+      const today = resolveAthleteToday(input.localDate)
       if (input.dates.some((d) => d > today)) assertFeature(ctx.session.user, "scheduled_sessions")
 
       const dates = [...input.dates].sort()

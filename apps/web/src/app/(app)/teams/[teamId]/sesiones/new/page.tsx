@@ -18,7 +18,11 @@ import type { RoutineContent } from "@atleta/db/schema"
 
 const sc = (s: string) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()
 // Mismo criterio que el servidor: "hoy" en UTC
-const todayUtc = new Date().toISOString().split("T")[0]
+// Fecha local del navegador: es el día en que queda planeada una asignación "Ahora"
+const localToday = (() => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
+})()
 const tomorrow = new Date(Date.now() + 86400000).toISOString().split("T")[0]
 
 // ─── Template preview bottom sheet ───────────────────────────────────────────
@@ -241,7 +245,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
   const kind = kindOverride && kindOverride.routineId === selectedRoutineId ? kindOverride.kind : routineKind
 
   // ¿Qué tienen ya esos atletas ese día? "Ahora" = hoy
-  const assignDate = hasScheduling && startMode === "scheduled" ? scheduledDate : todayUtc
+  const assignDate = hasScheduling && startMode === "scheduled" ? scheduledDate : localToday
   const athleteIdList = Array.from(selectedAthleteIds).sort()
   const dayPlanQuery = trpc.sessions.dayPlan.useQuery(
     { teamId, athleteIds: athleteIdList, date: assignDate },
@@ -285,6 +289,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               routineId: selectedRoutineId,
               teamId,
               athleteIds: Array.from(selectedAthleteIds),
+              localDate: localToday,
               ...(hasScheduling && startMode === "scheduled" ? { scheduledDate } : {}),
               ...(isTraining && kind !== routineKind ? { kind } : {}),
               ...(needsSlot ? { insertIndex: slot } : {}),
@@ -647,7 +652,7 @@ function NewSessionForm({ teamId }: { teamId: string }) {
               </h2>
               <p className="text-xs text-muted-foreground">
                 {athleteIdList.length > 1 ? "Entre los atletas elegidos, esto es lo que ya tienen" : "Esto es lo que ya tiene"}{" "}
-                {assignDate === todayUtc ? "hoy" : "ese día"}, en orden. Elige dónde se hace la nueva.
+                {assignDate === localToday ? "hoy" : "ese día"}, en orden. Elige dónde se hace la nueva.
               </p>
             </div>
 
