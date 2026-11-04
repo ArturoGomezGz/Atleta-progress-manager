@@ -58,13 +58,6 @@ export default function WorkoutsScreen() {
   }, [])
   useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current) }, [])
 
-  // Sacudida de una tarjeta bloqueada: el objeto cambia en cada toque aunque sea la misma tarjeta.
-  const [shake, setShake] = useState<{ id: string } | null>(null)
-  const refuse = (id: string, msg: string) => {
-    setShake({ id })
-    showToast(msg)
-  }
-
   const byDate = useMemo(() => {
     const m = new Map<string, Item[]>()
     for (const i of data ?? []) m.set(i.scheduledDate, [...(m.get(i.scheduledDate) ?? []), i])
@@ -135,10 +128,7 @@ export default function WorkoutsScreen() {
                   date={sel}
                   today={today}
                   items={items}
-                  shake={shake}
-                  reduceMotion={reduceMotion}
                   onOpen={open}
-                  onRefuse={refuse}
                   onToast={showToast}
                   onSkip={setConfirm}
                 />
@@ -291,15 +281,12 @@ type DetailProps = {
   date: string
   today: string
   items: Item[]
-  shake: { id: string } | null
-  reduceMotion: boolean
   onOpen: (sessionId: string) => void
-  onRefuse: (id: string, msg: string) => void
   onToast: (msg: string) => void
   onSkip: (item: Item) => void
 }
 
-function DayDetail({ date, today, items, shake, reduceMotion, onOpen, onRefuse, onToast, onSkip }: DetailProps) {
+function DayDetail({ date, today, items, onOpen, onToast, onSkip }: DetailProps) {
   const future = date > today
   const isToday = date === today
   const chain = items.filter((i) => !isEval(i))
@@ -368,16 +355,11 @@ function DayDetail({ date, today, items, shake, reduceMotion, onOpen, onRefuse, 
           numbered={inChain}
           state={state}
           hint={hint}
-          shake={shake?.id === i.sessionId ? shake : null}
-          reduceMotion={reduceMotion}
           canSkip={!future && !isEval(i) && (state === "active" || state === "locked")}
           onSkip={() => onSkip(i)}
           onPress={() => {
-            if (state === "done") return onOpen(i.sessionId)
             if (state === "skipped") return onToast("Bloque saltado.")
-            if (state === "plan") return onRefuse(i.sessionId, `Planeado. ${lockMessage("FUTURE", inlineDateLabel(date))}`)
-            if (state === "locked") return onRefuse(i.sessionId, lockMessage(i.lockReason ?? "PREVIOUS_STEP_PENDING"))
-            if (state === "eval" && i.locked) return onRefuse(i.sessionId, lockMessage(i.lockReason, inlineDateLabel(date)))
+            // La vista previa se abre siempre; el botón de empezar solo aparece si el servidor lo permite
             onOpen(i.sessionId)
           }}
         />
@@ -455,34 +437,20 @@ function Badge({ kind }: { kind: "now" | "done" | "plan" }) {
 
 /* ---------- Tarjeta de bloque ---------- */
 
-function Tile({ item, index, numbered, state, hint, shake, reduceMotion, canSkip, onPress, onSkip }: {
+function Tile({ item, index, numbered, state, hint, canSkip, onPress, onSkip }: {
   item: Item
   index: number
   numbered: boolean
   state: TileState
   hint?: string
-  shake: { id: string } | null
-  reduceMotion: boolean
   canSkip: boolean
   onPress: () => void
   onSkip: () => void
 }) {
+  const reduceMotion = useReduceMotion()
   const inProgress = item.status === "active"
   const evaluation = isEval(item)
   const kind = kindLabel(item.kind, item.category)
-
-  // Sacudida al tocar un bloque bloqueado o planeado
-  const x = useRef(new Animated.Value(0)).current
-  useEffect(() => {
-    if (!shake || reduceMotion) return
-    Animated.sequence([
-      Animated.timing(x, { toValue: -8, duration: 60, useNativeDriver: true }),
-      Animated.timing(x, { toValue: 8, duration: 80, useNativeDriver: true }),
-      Animated.timing(x, { toValue: -5, duration: 70, useNativeDriver: true }),
-      Animated.timing(x, { toValue: 5, duration: 70, useNativeDriver: true }),
-      Animated.timing(x, { toValue: 0, duration: 60, useNativeDriver: true }),
-    ]).start()
-  }, [shake, reduceMotion, x])
 
   // Pop del check cuando el bloque pasa a completado estando a la vista
   const scale = useRef(new Animated.Value(1)).current
@@ -518,7 +486,6 @@ function Tile({ item, index, numbered, state, hint, shake, reduceMotion, canSkip
         dim && styles.tileDim,
         state === "plan" && styles.tilePlan,
         state === "locked" && { opacity: 0.8 },
-        { transform: [{ translateX: x }] },
       ]}
     >
       <Pressable

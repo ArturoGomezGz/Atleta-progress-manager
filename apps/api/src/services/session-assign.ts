@@ -54,7 +54,7 @@ export type AssignSessionsInput = {
   routine: typeof routine.$inferSelect
   teamId: string
   athleteIds: string[]
-  /** Una sesión por elemento; null = sin fecha ("Ahora"). */
+  /** Una sesión por elemento; null = "Ahora": se guarda con la fecha de `today`. */
   dates: (string | null)[]
   startedBy: string
   planAssignmentId?: string
@@ -106,7 +106,9 @@ export async function createAssignedSessions(tx: Writer, a: AssignSessionsInput)
 
   const sessions: (typeof trainingSession.$inferSelect)[] = []
   for (const [i, originalDate] of a.dates.entries()) {
-    let date = originalDate
+    // "Ahora" (sin fecha) se planea para hoy y queda congelada en ese día: si pasa el día sin hacerla,
+    // hay que volver a esa fecha en el calendario para empezarla (ya no se mueve a "hoy").
+    const date = originalDate ?? a.today
     let position = 0
     if (isTraining) {
       const explicit = a.positions?.[i] ?? a.position
@@ -114,16 +116,13 @@ export async function createAssignedSessions(tx: Writer, a: AssignSessionsInput)
         position = explicit
       } else {
         // Orden dentro del día: el pedido (insertIndex) o, por defecto, al final. Se serializa por equipo y día.
-        const day = date ?? a.today
-        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`${a.teamId}:${day}`}))`)
-        const plan = await loadDayPlan(tx, { teamId: a.teamId, athleteIds: a.athleteIds, date: day, today: a.today })
+        await tx.execute(sql`select pg_advisory_xact_lock(hashtext(${`${a.teamId}:${date}`}))`)
+        const plan = await loadDayPlan(tx, { teamId: a.teamId, athleteIds: a.athleteIds, date, today: a.today })
         if (a.insertIndex !== undefined) position = await openSlot(tx, plan, a.insertIndex, a.today)
         else position = plan.length === 0 ? 0 : Math.max(...plan.map((s) => s.position)) + 1
-        // "Ahora" no forma secuencia: si el día ya tiene rutinas, la nueva se fija a hoy para que el orden se respete
-        if (date === null && plan.length > 0) date = a.today
       }
     }
-    const isScheduled = date != null && date > a.today
+    const isScheduled = date > a.today
     const [session] = await tx
       .insert(trainingSession)
       .values({
