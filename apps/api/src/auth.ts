@@ -50,6 +50,17 @@ function withAbsoluteCallback(url: string, fallback: string) {
   return u.toString()
 }
 
+// Esquemas extra de la app móvil (p. ej. "atleta-testing://" de la variante de testing), separados por comas.
+// Solo se aceptan esquemas propios de la app ("atleta" o "atleta-xxx"); el resto se descarta con aviso.
+function mobileAppOrigins(raw: string | undefined = process.env.MOBILE_APP_ORIGINS): string[] {
+  const valid: string[] = []
+  for (const o of (raw ?? "").split(",").map((v: string) => v.trim()).filter(Boolean)) {
+    if (/^atleta(-[a-z0-9]+)?:\/\/$/.test(o)) valid.push(o)
+    else console.warn(`MOBILE_APP_ORIGINS: se ignora "${o}" (formato esperado: atleta-xxx://)`)
+  }
+  return valid
+}
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
@@ -154,6 +165,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.WEB_URL ?? "http://localhost:3000",
     "atleta://",
+    ...mobileAppOrigins(),
     // Expo Go / dev client en desarrollo
     ...(process.env.NODE_ENV === "production" ? [] : ["exp://"]),
   ],
