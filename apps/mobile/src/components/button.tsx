@@ -1,6 +1,7 @@
 import { Text } from "@/components/text"
 import { colors, radius, radiusLg } from "@/lib/theme"
 import type { LucideIcon } from "lucide-react-native"
+import type { ReactNode } from "react"
 import { ActivityIndicator, Pressable, StyleSheet, View, type StyleProp, type ViewStyle } from "react-native"
 
 type Variant = "primary" | "destructive" | "secondary" | "outline" | "ghost"
@@ -14,6 +15,8 @@ type Props = {
   /** `lg` es el botón grande del pie del ejecutor (min-h-16 text-xl en la web). */
   size?: "md" | "lg"
   icon?: LucideIcon
+  /** Elemento propio a la izquierda de la etiqueta (p. ej. un logo a color); tiene prioridad sobre `icon`. */
+  leading?: ReactNode
   style?: StyleProp<ViewStyle>
 }
 
@@ -25,7 +28,7 @@ const palette: Record<Variant, { bg: string; fg: string; border?: string }> = {
   ghost: { bg: "transparent", fg: colors.mutedForeground },
 }
 
-export function Button({ label, onPress, loading, disabled, variant = "primary", size = "md", icon: Icon, style }: Props) {
+export function Button({ label, onPress, loading, disabled, variant = "primary", size = "md", icon: Icon, leading, style }: Props) {
   const p = palette[variant]
   const lg = size === "lg"
   return (
@@ -46,7 +49,7 @@ export function Button({ label, onPress, loading, disabled, variant = "primary",
       <View style={styles.row}>
         {loading
           ? <ActivityIndicator color={p.fg} />
-          : Icon && <Icon color={p.fg} size={lg ? 26 : 20} strokeWidth={lg ? 2.75 : 2} />}
+          : leading ?? (Icon && <Icon color={p.fg} size={lg ? 26 : 20} strokeWidth={lg ? 2.75 : 2} />)}
         <Text size={lg ? 20 : 16} weight={lg ? "bold" : "semibold"} color={p.fg}>{label}</Text>
       </View>
     </Pressable>

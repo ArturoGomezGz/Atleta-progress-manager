@@ -62,11 +62,32 @@ La app usa el cliente de `@better-auth/expo`: guarda la cookie de sesión en
 
 Como la app no envía cabecera `Origin`, el cliente manda `expo-origin: atleta://`
 y la API la copia a `origin` (`apps/api/src/services/mobile-origin.ts`) para
-validarla contra `trustedOrigins`. La API no instala `@better-auth/expo`: pnpm le
-resolvería Expo y React Native como peers y la imagen de Docker de la API
-crecería ~370 MB. Si la app llega a usar Google, hará falta el plugin oficial.
+validarla contra `trustedOrigins`.
 
-El registro y la verificación de correo siguen en la web.
+**Continuar con Google.** El botón de `login.tsx` llama a `signIn.social` con
+`callbackURL: "/"`, que el cliente convierte en el deep link `atleta:///`. Google se
+abre en el navegador del sistema (`expo-web-browser`), que no tiene la cookie de
+estado OAuth que dejó la petición de la app; sin ella el callback falla con
+`state_mismatch`. Por eso la API replica, en el mismo plugin local, las dos piezas
+del plugin de servidor de `@better-auth/expo` que hacen falta: `GET
+/api/auth/expo-authorization-proxy` (fija la cookie de estado y redirige a Google)
+y un hook tras `/callback/:id` que, al redirigir a un deep link de la app, agrega
+`?cookie=` con la sesión. No instalamos el paquete oficial: pnpm le resolvería Expo
+y React Native como peers y la imagen de Docker de la API crecería ~370 MB. Para no
+abrir una redirección, el proxy solo acepta `https://accounts.google.com` y el hook
+solo reescribe destinos que no son http/https y están en `trustedOrigins`. Al subir
+`better-auth`, compara con `dist/index.mjs` del paquete oficial. El URI de
+redirección en Google sigue siendo el del web (`BETTER_AUTH_URL/api/auth/callback/google`,
+ver [deploy.md](deploy.md)).
+
+Por confirmar en dispositivo: la cookie de estado la fija el proxy en el dominio por
+el que lo abre la app (`API_URL`), pero Google vuelve al dominio del web
+(`BETTER_AUTH_URL`). Si el login falla con `state_mismatch`, la app debe abrir el
+proxy por el dominio del web (que reenvía `/api/auth/*` a la API) o ambos deben
+compartir dominio.
+
+El registro con correo y la verificación siguen en la web; con Google la cuenta se
+crea directo desde la app.
 
 ## Build (APK de prueba)
 
