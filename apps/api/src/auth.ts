@@ -50,6 +50,11 @@ function withAbsoluteCallback(url: string, fallback: string) {
   return u.toString()
 }
 
+// Esquemas extra de la app móvil (p. ej. "atleta-testing://" de la variante de testing), separados por comas
+function mobileAppOrigins(raw: string | undefined = process.env.MOBILE_APP_ORIGINS): string[] {
+  return (raw ?? "").split(",").map((o: string) => o.trim()).filter((o: string) => /^[a-z][a-z0-9+.-]*:\/\/$/.test(o) && !/^https?:/.test(o))
+}
+
 export const auth = betterAuth({
   baseURL: process.env.BETTER_AUTH_URL,
   database: drizzleAdapter(db, {
@@ -154,6 +159,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.WEB_URL ?? "http://localhost:3000",
     "atleta://",
+    ...mobileAppOrigins(),
     // Expo Go / dev client en desarrollo
     ...(process.env.NODE_ENV === "production" ? [] : ["exp://"]),
   ],
