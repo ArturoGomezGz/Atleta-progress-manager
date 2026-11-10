@@ -50,9 +50,15 @@ function withAbsoluteCallback(url: string, fallback: string) {
   return u.toString()
 }
 
-// Esquemas extra de la app móvil (p. ej. "atleta-testing://" de la variante de testing), separados por comas
+// Esquemas extra de la app móvil (p. ej. "atleta-testing://" de la variante de testing), separados por comas.
+// Solo se aceptan esquemas propios de la app ("atleta" o "atleta-xxx"); el resto se descarta con aviso.
 function mobileAppOrigins(raw: string | undefined = process.env.MOBILE_APP_ORIGINS): string[] {
-  return (raw ?? "").split(",").map((o: string) => o.trim()).filter((o: string) => /^[a-z][a-z0-9+.-]*:\/\/$/.test(o) && !/^https?:/.test(o))
+  const valid: string[] = []
+  for (const o of (raw ?? "").split(",").map((v: string) => v.trim()).filter(Boolean)) {
+    if (/^atleta(-[a-z0-9]+)?:\/\/$/.test(o)) valid.push(o)
+    else console.warn(`MOBILE_APP_ORIGINS: se ignora "${o}" (formato esperado: atleta-xxx://)`)
+  }
+  return valid
 }
 
 export const auth = betterAuth({

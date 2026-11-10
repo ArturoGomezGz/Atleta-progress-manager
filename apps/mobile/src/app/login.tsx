@@ -52,7 +52,7 @@ export default function LoginScreen() {
     setError(null)
     setGoogleLoading(true)
     try {
-      // "/" se convierte en el deep link atleta:/// (esquema de la app, en trustedOrigins de la API)
+      // "/" se convierte en el deep link <esquema>:/// (atleta o atleta-testing según la variante; debe estar en trustedOrigins de la API)
       const { error } = await signIn.social({ provider: "google", callbackURL: "/", errorCallbackURL: "/login" })
       if (error) {
         setError("No pudimos iniciar sesión con Google. Intenta de nuevo.")
